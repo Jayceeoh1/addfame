@@ -1,0 +1,24 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/expire-badges",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/expire-campaigns",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/sync-social",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/profile-reminder",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/expire-credits",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}
