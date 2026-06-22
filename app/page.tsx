@@ -115,22 +115,10 @@ export default function HomePage() {
         const params = new URLSearchParams(window.location.search)
         const hashParams = new URLSearchParams(window.location.hash.replace('#', ''))
 
-        // Dacă vine cu ?code= — PKCE flow
-        const code = params.get('code')
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code)
-          if (!error) {
-            router.replace('/auth/reset-password')
-          } else {
-            router.replace('/auth/forgot-password?error=link_expirat')
-          }
-          return
-        }
-
         // Dacă vine cu error în hash — link expirat
         const hashError = hashParams.get('error') || params.get('error')
         if (hashError === 'access_denied') {
-          router.replace('/auth/forgot-password?error=link_expirat')
+          router.replace('/auth/reset-password')
           return
         }
 
