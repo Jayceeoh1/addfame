@@ -72,7 +72,7 @@ function ForgotPasswordContent() {
       // înainte de a trimite emailul de resetare
       await sb.auth.getSession()
       const { error: err } = await sb.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: 'https://addfame.ro'
+        redirectTo: 'https://addfame.ro/auth/reset-password'
       })
       if (err) throw err
       setSent(true)
@@ -86,7 +86,7 @@ function ForgotPasswordContent() {
       const { createClient } = await import('@/lib/supabase/client')
       const sb = createClient()
       await sb.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: 'https://addfame.ro'
+        redirectTo: 'https://addfame.ro/auth/reset-password'
       })
       setResent(true)
       setTimeout(() => setResent(false), 4000)
