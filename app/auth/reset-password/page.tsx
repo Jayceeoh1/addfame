@@ -18,8 +18,11 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabase = createClient()
 
-    // Implicit flow — tokenurile vin în hash: #access_token=...&type=recovery
     const hash = window.location.hash
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+
+    // Implicit flow — tokenurile vin în hash
     if (hash && hash.includes('access_token')) {
       const hashParams = new URLSearchParams(hash.replace('#', ''))
       const access_token = hashParams.get('access_token')
@@ -29,17 +32,24 @@ export default function ResetPasswordPage() {
       if (type === 'recovery' && access_token && refresh_token) {
         supabase.auth.setSession({ access_token, refresh_token })
           .then(({ error }) => {
-            if (error) {
-              setError('Link invalid sau expirat. Te rugăm să soliciți unul nou.')
-            } else {
-              setReady(true)
-            }
+            if (error) setError('Link invalid sau expirat. Te rugăm să soliciți unul nou.')
+            else setReady(true)
           })
         return
       }
     }
 
-    // Fallback — verifică dacă există deja sesiune activă de tip recovery
+    // PKCE flow — cod vine în ?code=
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code)
+        .then(({ error }) => {
+          if (error) setError('Link invalid sau expirat. Te rugăm să soliciți unul nou.')
+          else setReady(true)
+        })
+      return
+    }
+
+    // Fallback — sesiune existentă
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
         setReady(true)
@@ -48,9 +58,7 @@ export default function ResetPasswordPage() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setReady(true)
-      else if (!hash?.includes('access_token')) {
-        setError('Link invalid sau expirat. Te rugăm să soliciți unul nou.')
-      }
+      else setError('Link invalid sau expirat. Te rugăm să soliciți unul nou.')
     })
   }, [])
 
