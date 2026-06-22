@@ -113,21 +113,13 @@ export default function HomePage() {
       try {
         const supabase = createClient()
         const params = new URLSearchParams(window.location.search)
+        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''))
 
-        // Dacă vine cu ?error= — link expirat sau invalid
-        if (params.get('error')) {
-          const errorCode = params.get('error_code')
-          if (errorCode === 'otp_expired' || params.get('error') === 'access_denied') {
-            router.replace('/auth/forgot-password?error=link_expirat')
-          }
-          return
-        }
-
-        // Dacă vine cu ?code= — e recovery flow
-        if (params.get('code')) {
+        // Dacă vine cu ?code= sau hash code — e recovery flow PKCE
+        const code = params.get('code') || hashParams.get('code')
+        if (code) {
           try {
-            // Procesăm codul explicit
-            const { error } = await supabase.auth.exchangeCodeForSession(params.get('code')!)
+            const { error } = await supabase.auth.exchangeCodeForSession(code)
             if (!error) {
               router.replace('/auth/reset-password')
             } else {
@@ -136,6 +128,14 @@ export default function HomePage() {
           } catch {
             router.replace('/auth/forgot-password?error=link_expirat')
           }
+          return
+        }
+
+        // Dacă vine cu error în hash (de la Supabase implicit flow)
+        // Lăsăm SDK-ul să proceseze — el detectează automat hash-ul
+        const hashError = hashParams.get('error')
+        if (hashError === 'access_denied') {
+          router.replace('/auth/forgot-password?error=link_expirat')
           return
         }
 
