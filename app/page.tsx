@@ -111,12 +111,19 @@ export default function HomePage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Dacă vine cu ?code= de la Supabase, redirecționăm la reset-password
-        // unde SDK-ul are code_verifier în localStorage și poate procesa codul
         const supabase = createClient()
+        const params = new URLSearchParams(window.location.search)
+
+        // Dacă vine cu ?error= — link expirat sau invalid
+        if (params.get('error')) {
+          const errorCode = params.get('error_code')
+          if (errorCode === 'otp_expired' || params.get('error') === 'access_denied') {
+            router.replace('/auth/forgot-password?error=link_expirat')
+          }
+          return
+        }
 
         // Dacă vine cu ?code= — e recovery flow
-        const params = new URLSearchParams(window.location.search)
         if (params.get('code')) {
           try {
             // Procesăm codul explicit
