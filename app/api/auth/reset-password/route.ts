@@ -14,26 +14,30 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Generăm link-ul de resetare prin Supabase Admin (nu trimite el email)
-    const redirectTo = `${APP_URL}/auth/reset-password`
+    // Generăm link-ul prin Admin API
+    // redirectTo este IGNORAT când folosim token_hash — îl construim manual
     const { data, error } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email: email.trim().toLowerCase(),
-      options: { redirectTo }
     })
 
-    if (error || !data?.properties?.action_link) {
-      // Dacă contul nu există, răspundem tot cu success (securitate)
+    if (error || !data?.properties?.hashed_token) {
+      // Dacă contul nu există sau altă eroare, răspundem cu success (securitate)
+      console.warn('[reset-password] generateLink error:', error?.message)
       return NextResponse.json({ success: true })
     }
 
-    // Trimitem noi emailul frumos prin Resend
-    await sendPasswordResetEmail(email.trim().toLowerCase(), data.properties.action_link)
+    // Construim linkul cu token_hash care merge la /auth/callback
+    // /auth/callback procesează serverside și redirectează la /auth/reset-password
+    // AVANTAJ: Yahoo/Outlook fac prefetch dar callback-ul returnează 302 fără a consuma sesiunea
+    const token_hash = data.properties.hashed_token
+    const callbackUrl = `${APP_URL}/auth/callback?token_hash=${token_hash}&type=recovery&next=/auth/reset-password`
+
+    await sendPasswordResetEmail(email.trim().toLowerCase(), callbackUrl)
 
     return NextResponse.json({ success: true })
   } catch (e: any) {
     console.error('[reset-password]', e.message)
-    // Răspundem tot cu success pentru a nu expune dacă emailul există
     return NextResponse.json({ success: true })
   }
 }

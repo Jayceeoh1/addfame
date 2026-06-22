@@ -38,6 +38,12 @@ export async function GET(request: NextRequest) {
   }
 
   if (authSuccess) {
+    // Recovery flow — redirectăm direct la pagina de reset, sesiunea e deja setată în cookie
+    if (type === 'recovery') {
+      return NextResponse.redirect(new URL('/auth/reset-password', request.url))
+    }
+
+    // Orice alt flow — determinăm dashboard-ul corect
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: brand } = await supabase.from('brands').select('id').eq('user_id', user.id).maybeSingle()

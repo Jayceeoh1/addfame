@@ -58,15 +58,14 @@ function ForgotPasswordContent() {
     if (!email.trim()) { setError('Te rugăm să introduci emailul'); return }
     setLoading(true); setError(null)
     try {
-      const { createClient } = await import('@/lib/supabase/client')
-      const sb = createClient()
-      // Inițializăm o sesiune dummy ca să genereze code_verifier în localStorage
-      // înainte de a trimite emailul de resetare
-      await sb.auth.getSession()
-      const { error: err } = await sb.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: 'https://addfame.ro/auth/reset-password'
+      // Apelăm API-ul nostru care generează link cu token_hash și trimite prin Resend
+      // Evităm astfel ca Yahoo/Outlook link-preview să consume token-ul PKCE
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
       })
-      if (err) throw err
+      if (!res.ok) throw new Error('Server error')
       setSent(true)
     } catch (e: any) { setError(e.message || 'Nu s-a putut trimite emailul de resetare. Încearcă din nou.') }
     finally { setLoading(false) }
@@ -75,10 +74,10 @@ function ForgotPasswordContent() {
   async function handleResend() {
     setResending(true)
     try {
-      const { createClient } = await import('@/lib/supabase/client')
-      const sb = createClient()
-      await sb.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: 'https://addfame.ro/auth/reset-password'
+      await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
       })
       setResent(true)
       setTimeout(() => setResent(false), 4000)
