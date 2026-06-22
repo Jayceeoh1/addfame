@@ -1,10 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from 'lucide-react'
-import { Suspense } from 'react'
 
 function ResetPasswordContent() {
   const router = useRouter()
@@ -13,63 +11,65 @@ function ResetPasswordContent() {
   const [confirm, setConfirm] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [checking, setChecking] = useState(true)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    // Dacă Supabase a redirectat cu eroare (token expirat înainte ca callback să ruleze)
+    // Dacă Supabase a redirectat cu eroare (token expirat)
     const urlError = searchParams.get('error')
     const urlErrorCode = searchParams.get('error_code')
     if (urlError || urlErrorCode) {
       setError('Link-ul a expirat sau a fost deja folosit. Te rugăm să soliciți unul nou.')
+      setChecking(false)
       return
     }
 
-    const supabase = createClient()
-
-    // Callback-ul serverside a setat deja sesiunea în cookie — verificăm doar sesiunea
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setReady(true)
-      } else {
-        // Fallback: ascultăm evenimentul PASSWORD_RECOVERY (implicit flow vechi)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
-            setReady(true)
-            subscription.unsubscribe()
-          }
-        })
-
-        // Timeout dacă nu vine nimic în 3s
-        setTimeout(() => {
-          supabase.auth.getSession().then(({ data: { session } }) => {
-            if (!session) {
-              setError('Link invalid sau expirat. Te rugăm să soliciți unul nou.')
-              subscription.unsubscribe()
-            }
-          })
-        }, 3000)
-      }
-    })
+    // Verificăm dacă există sesiune serverside (setată de /auth/callback prin cookie)
+    // Facem un call la API-ul nostru server — dacă returnează 401, nu e sesiune
+    fetch('/api/auth/check-session')
+      .then(res => {
+        if (res.ok) {
+          setReady(true)
+        } else {
+          setError('Link invalid sau expirat. Te rugăm să soliciți unul nou.')
+        }
+      })
+      .catch(() => setError('Eroare de rețea. Încearcă din nou.'))
+      .finally(() => setChecking(false))
   }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (password.length < 8) { setError('Parola trebuie să aibă minim 8 caractere.'); return }
     if (password !== confirm) { setError('Parolele nu coincid.'); return }
+
     setLoading(true)
     setError(null)
-    const supabase = createClient()
-    const { error: err } = await supabase.auth.updateUser({ password })
-    if (err) {
-      setError(err.message)
+
+    try {
+      // Trimitem parola la API-ul server care folosește sesiunea din cookie
+      const res = await fetch('/api/auth/update-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Nu s-a putut schimba parola. Încearcă din nou.')
+        setLoading(false)
+        return
+      }
+
+      setSuccess(true)
+      setTimeout(() => router.replace('/auth/login?reset=success'), 2000)
+    } catch {
+      setError('Eroare de rețea. Încearcă din nou.')
       setLoading(false)
-      return
     }
-    await supabase.auth.signOut()
-    setSuccess(true)
-    setTimeout(() => router.replace('/auth/login?reset=success'), 2000)
   }
 
   return (
@@ -97,6 +97,13 @@ function ResetPasswordContent() {
               <p className="font-black text-gray-900 text-lg">Parola a fost schimbată!</p>
               <p className="text-sm text-gray-500 mt-2">Te redirecționăm la login...</p>
             </div>
+
+          ) : checking ? (
+            <div className="text-center py-8">
+              <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-gray-500 text-sm">Se verifică sesiunea...</p>
+            </div>
+
           ) : error && !ready ? (
             <div className="text-center py-4">
               <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
@@ -108,11 +115,7 @@ function ResetPasswordContent() {
                 Solicită un link nou
               </button>
             </div>
-          ) : !ready ? (
-            <div className="text-center py-8">
-              <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-500 text-sm">Se verifică sesiunea...</p>
-            </div>
+
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
