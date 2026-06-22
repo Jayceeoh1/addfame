@@ -118,15 +118,12 @@ export default function HomePage() {
         // Dacă vine cu ?code= — PKCE flow
         const code = params.get('code')
         if (code) {
-          // SDK-ul procesează automat codul prin onAuthStateChange
-          // Nu apelăm exchangeCodeForSession manual — lasăm SDK-ul să facă asta
-          supabase.auth.onAuthStateChange((event) => {
-            if (event === 'PASSWORD_RECOVERY') {
-              router.replace('/auth/reset-password')
-            }
-          })
-          // Triggerăm procesarea sesiunii
-          await supabase.auth.getSession()
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          if (!error) {
+            router.replace('/auth/reset-password')
+          } else {
+            router.replace('/auth/forgot-password?error=link_expirat')
+          }
           return
         }
 
