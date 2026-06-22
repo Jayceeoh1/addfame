@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { Mail, ArrowLeft, CheckCircle, AlertCircle, ExternalLink, RefreshCw, Inbox } from 'lucide-react'
 
@@ -51,13 +50,6 @@ function ForgotPasswordContent() {
   const [resending, setResending] = useState(false)
   const [resent, setResent] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const searchParams = useSearchParams()
-
-  useEffect(() => {
-    if (searchParams.get('error') === 'link_expirat') {
-      setError('Link-ul de resetare a expirat. Te rugăm să soliciți un link nou.')
-    }
-  }, [searchParams])
 
   const provider = getEmailProvider(email)
 

@@ -112,18 +112,8 @@ export default function HomePage() {
     const checkAuth = async () => {
       try {
         const supabase = createClient()
-        const params = new URLSearchParams(window.location.search)
-        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''))
-
-        // Dacă vine cu error în hash — link expirat
-        const hashError = hashParams.get('error') || params.get('error')
-        if (hashError === 'access_denied') {
-          router.replace('/auth/reset-password')
-          return
-        }
 
         // Ascultă evenimentul PASSWORD_RECOVERY de la Supabase SDK
-        // SDK-ul procesează automat ?code= din URL când detectSessionInUrl=true
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
           if (event === 'PASSWORD_RECOVERY') {
             subscription.unsubscribe()
