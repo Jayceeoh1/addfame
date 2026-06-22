@@ -118,13 +118,17 @@ export default function HomePage() {
         // Dacă vine cu ?code= — e recovery flow
         const params = new URLSearchParams(window.location.search)
         if (params.get('code')) {
-          // Înregistrăm listener ÎNAINTE — SDK-ul va procesa codul și va emite PASSWORD_RECOVERY
-          supabase.auth.onAuthStateChange((event) => {
-            if (event === 'PASSWORD_RECOVERY') {
+          try {
+            // Procesăm codul explicit
+            const { error } = await supabase.auth.exchangeCodeForSession(params.get('code')!)
+            if (!error) {
               router.replace('/auth/reset-password')
+            } else {
+              router.replace('/auth/forgot-password?error=link_expirat')
             }
-          })
-          // Nu continuăm cu restul logicii de auth
+          } catch {
+            router.replace('/auth/forgot-password?error=link_expirat')
+          }
           return
         }
 
