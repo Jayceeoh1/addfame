@@ -115,25 +115,23 @@ export default function HomePage() {
         const params = new URLSearchParams(window.location.search)
         const hashParams = new URLSearchParams(window.location.hash.replace('#', ''))
 
-        // Dacă vine cu ?code= sau hash code — e recovery flow PKCE
-        const code = params.get('code') || hashParams.get('code')
+        // Dacă vine cu ?code= — PKCE flow
+        const code = params.get('code')
         if (code) {
-          try {
-            const { error } = await supabase.auth.exchangeCodeForSession(code)
-            if (!error) {
+          // SDK-ul procesează automat codul prin onAuthStateChange
+          // Nu apelăm exchangeCodeForSession manual — lasăm SDK-ul să facă asta
+          supabase.auth.onAuthStateChange((event) => {
+            if (event === 'PASSWORD_RECOVERY') {
               router.replace('/auth/reset-password')
-            } else {
-              router.replace('/auth/forgot-password?error=link_expirat')
             }
-          } catch {
-            router.replace('/auth/forgot-password?error=link_expirat')
-          }
+          })
+          // Triggerăm procesarea sesiunii
+          await supabase.auth.getSession()
           return
         }
 
-        // Dacă vine cu error în hash (de la Supabase implicit flow)
-        // Lăsăm SDK-ul să proceseze — el detectează automat hash-ul
-        const hashError = hashParams.get('error')
+        // Dacă vine cu error în hash — link expirat
+        const hashError = hashParams.get('error') || params.get('error')
         if (hashError === 'access_denied') {
           router.replace('/auth/forgot-password?error=link_expirat')
           return
