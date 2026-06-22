@@ -220,7 +220,7 @@ export default function InfluencerDashboard() {
           .order('created_at', { ascending: false })
           .limit(10),
         sb.from('campaigns')
-          .select('id, title, brand_name, brand_id, budget_per_influencer, deadline, platforms, niches')
+          .select('id, title, brand_name, brand_id, budget_per_influencer, deadline, platforms, niches, campaign_type')
           .eq('status', 'ACTIVE')
           .order('created_at', { ascending: false })
           .limit(6),
@@ -694,7 +694,7 @@ export default function InfluencerDashboard() {
                       {alreadyApplied
                         ? <span className="pill" style={{ background: '#ede9fe', color: '#7c3aed' }}>Aplicat ✓</span>
                         : isBarter
-                          ? <span style={{ fontSize: 11, fontWeight: 900, background: '#fef3c7', color: '#92400e', padding: '5px 10px', borderRadius: 8, border: '1px solid #fde68a' }}>Aplică</span>
+                          ? <span style={{ fontSize: 12, fontWeight: 900, background: '#fef3c7', color: '#92400e', padding: '5px 10px', borderRadius: 8, border: '1px solid #fde68a' }}>🎁 Barter</span>
                           : <>
                             <p style={{ fontSize: 15, fontWeight: 900, color: '#16a34a', margin: 0 }}>{(camp.budget_per_influencer || 0).toLocaleString('ro-RO')} RON</p>
                             <p style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, margin: '2px 0 0' }}>per colaborare</p>

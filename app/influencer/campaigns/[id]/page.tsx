@@ -517,7 +517,7 @@ export default function CampaignBriefPage() {
               { num: '1', title: 'Aplică la campanie', sub: needsAddress ? 'Completează adresa de livrare' : 'Trimite aplicația ta' },
               isBarter && isDelivery && { num: '2', title: 'Primești produsul acasă', sub: 'Bifează în AddFame că l-ai primit' },
               isBarter && !isDelivery && { num: '2', title: 'Ridică de la locație', sub: campaign.pickup_location_name ? `Locație: ${campaign.pickup_location_name}` : 'Conform detaliilor brandului' },
-              { num: isBarter ? '3' : '2', title: `Postează în ${campaign.min_days_online || 5} zile de la primire`, sub: 'Respectă instrucțiunile și hashtag-urile' },
+              { num: isBarter ? '3' : '2', title: `Postează în ${campaign.post_deadline_days || 5} zile de la primire`, sub: 'Respectă instrucțiunile și hashtag-urile' },
               { num: isBarter ? '4' : '3', title: 'Trimite dovada în AddFame', sub: 'Link postare + screenshot obligatoriu' },
             ].filter(Boolean).map((step: any, i: number, arr: any[]) => (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingBottom: i < arr.length - 1 ? 16 : 0, position: 'relative' }}>
