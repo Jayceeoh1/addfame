@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,29 +10,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Parola trebuie să aibă minim 8 caractere.' }, { status: 400 })
     }
 
+    // Clientul SSR citește cookie-ul de sesiune setat de /auth/callback
     const supabase = await createClient()
-
-    // Verificăm că există sesiune validă (setată de /auth/callback)
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return NextResponse.json({ error: 'Sesiune expirată. Solicită un nou link de resetare.' }, { status: 401 })
+      console.error('[update-password] No session:', userError?.message)
+      return NextResponse.json(
+        { error: 'Sesiune expirată. Solicită un nou link de resetare.' },
+        { status: 401 }
+      )
     }
 
-    // Actualizăm parola folosind sesiunea din cookie (server-side)
-    const { error } = await supabase.auth.updateUser({ password })
+    // Folosim Admin API (service_role) care schimbă parola direct în DB
+    // updateUser() cu anon key nu funcționează în recovery flow
+    const admin = createAdminClient()
+    const { error: updateError } = await admin.auth.admin.updateUserById(user.id, {
+      password,
+    })
 
-    if (error) {
-      console.error('[update-password]', error.message)
-      return NextResponse.json({ error: error.message }, { status: 422 })
+    if (updateError) {
+      console.error('[update-password] Admin update failed:', updateError.message)
+      return NextResponse.json({ error: 'Nu s-a putut schimba parola. Încearcă din nou.' }, { status: 500 })
     }
 
-    // Sign out după schimbarea parolei
+    // Invalidăm sesiunea de recovery după schimbare
     await supabase.auth.signOut()
 
     return NextResponse.json({ success: true })
   } catch (e: any) {
-    console.error('[update-password]', e.message)
+    console.error('[update-password] Exception:', e.message)
     return NextResponse.json({ error: 'Eroare server. Încearcă din nou.' }, { status: 500 })
   }
 }
