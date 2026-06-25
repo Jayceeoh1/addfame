@@ -148,11 +148,11 @@ const BRAND_TEMPLATES: Record<string, Record<string, { subject: string; html: (d
 
           <div style="background:#f9fafb;border-radius:14px;padding:20px;border:1.5px solid #f0f0f0;margin:0 0 24px">
             <p style="margin:0 0 12px;font-size:14px;font-weight:900;color:#111;text-align:center">Dacă doriți să începem sau aveți întrebări, contactați-ne direct:</p>
-            <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
-              <a href="mailto:ciprian@addfame.ro" style="color:#f97316;font-weight:700;font-size:14px;text-decoration:none">📧 ciprian@addfame.ro</a>
-              <a href="mailto:cristiana@addfame.ro" style="color:#f97316;font-weight:700;font-size:14px;text-decoration:none">📧 cristiana@addfame.ro</a>
-              <a href="https://calendly.com/ciprian-addfame/30min" style="display:inline-block;padding:12px 28px;background:#f0fdf4;color:#15803d;text-decoration:none;border-radius:12px;font-weight:900;font-size:14px;border:2px solid #bbf7d0;margin-top:4px">📅 Rezervă un call gratuit de 30 min →</a>
-            </div>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+              <tr><td style="text-align:center;padding:4px 0"><a href="mailto:ciprian@addfame.ro" style="color:#f97316;font-weight:700;font-size:14px;text-decoration:none">📧 ciprian@addfame.ro</a></td></tr>
+              <tr><td style="text-align:center;padding:4px 0"><a href="mailto:cristiana@addfame.ro" style="color:#f97316;font-weight:700;font-size:14px;text-decoration:none">📧 cristiana@addfame.ro</a></td></tr>
+              <tr><td style="text-align:center;padding:8px 0 0"><a href="https://calendly.com/ciprian-addfame/30min" style="display:inline-block;padding:12px 24px;background:#f0fdf4;color:#15803d;text-decoration:none;border-radius:12px;font-weight:900;font-size:14px;border:2px solid #bbf7d0">📅 Rezervă un call gratuit de 30 min →</a></td></tr>
+            </table>
           </div>
 
           <p style="font-size:14px;color:#888;text-align:center;margin:0">Cu respect,<br/><strong>Ciprian | AddFame.ro</strong><br/>
