@@ -96,11 +96,17 @@ const SOCIAL_FOOTER = () => `
     <tr><td style="padding:20px 32px;text-align:center">
       <p style="font-size:12px;color:#9ca3af;font-weight:600;margin:0 0 12px">Urmărește-ne pe</p>
       <table cellpadding="0" cellspacing="0" style="margin:0 auto"><tr>
-        <td style="padding-right:10px">
-          <a href="https://www.instagram.com/addfame.ro/" style="display:inline-block;padding:8px 18px;background:#f97316;border-radius:20px;text-decoration:none;color:white;font-size:12px;font-weight:700">📸 Instagram</a>
+        <td style="padding-right:8px">
+          <a href="https://www.instagram.com/addfame.ro/" style="display:inline-block;padding:8px 14px;background:#f97316;border-radius:20px;text-decoration:none;color:white;font-size:12px;font-weight:700">📸 Instagram</a>
+        </td>
+        <td style="padding-right:8px">
+          <a href="https://www.tiktok.com/@addfame.ro" style="display:inline-block;padding:8px 14px;background:#111111;border-radius:20px;text-decoration:none;color:white;font-size:12px;font-weight:700">🎵 TikTok</a>
+        </td>
+        <td style="padding-right:8px">
+          <a href="https://www.facebook.com/profile.php?id=61591224535542" style="display:inline-block;padding:8px 14px;background:#1877f2;border-radius:20px;text-decoration:none;color:white;font-size:12px;font-weight:700">🖥️ Facebook</a>
         </td>
         <td>
-          <a href="https://www.tiktok.com/@addfame.ro" style="display:inline-block;padding:8px 18px;background:#111111;border-radius:20px;text-decoration:none;color:white;font-size:12px;font-weight:700">🎵 TikTok</a>
+          <a href="https://www.linkedin.com/company/addfame-ro/" style="display:inline-block;padding:8px 14px;background:#0a66c2;border-radius:20px;text-decoration:none;color:white;font-size:12px;font-weight:700">💼 LinkedIn</a>
         </td>
       </tr></table>
       <p style="font-size:11px;color:#d1d5db;margin:14px 0 0">
