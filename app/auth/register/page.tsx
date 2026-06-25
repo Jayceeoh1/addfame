@@ -824,9 +824,9 @@ function RegisterForm() {
 
           <p className="text-xs text-gray-400 text-center mt-8 leading-relaxed">
             Creând un cont ești de acord cu{' '}
-            <a href="#" className="underline hover:text-gray-600 transition">Termeni și Condiții</a>
+            <a href="/termeni" className="underline hover:text-gray-600 transition">Termeni și Condiții</a>
             {' '}și{' '}
-            <a href="#" className="underline hover:text-gray-600 transition">Politică de Confidențialitate</a>
+            <a href="/politica-de-confidentialitate" className="underline hover:text-gray-600 transition">Politică de Confidențialitate</a>
           </p>
         </div>
       </div>

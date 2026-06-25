@@ -125,64 +125,37 @@ const WRAPPER = (content: string) => `
 const BRAND_TEMPLATES: Record<string, Record<string, { subject: string; html: (d: any) => string }>> = {
   promo: {
     ro: {
-      subject: `🎁 3 influenceri GRATUIT pentru {name} — ofertă de lansare AddFame`,
+      subject: `🎁 3 micro-influenceri GRATUIT pentru {name} — ofertă AddFame`,
       html: (d) => WRAPPER(`
         ${HEADER('AddFame.ro — Platforma de influencer marketing din România 🚀')}
         <div style="padding:32px">
           <h1 style="font-size:22px;font-weight:900;margin:0 0 16px;color:#111">Bună ziua${d.contactName ? `, ${d.contactName}` : ''}! 👋</h1>
-          <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 14px">Mă numesc Ciprian și tocmai am lansat <strong>addfame.ro</strong> — o platformă românească de influencer marketing, proaspăt lansată în 2026. Am dat peste <strong>${d.companyName || 'compania voastră'}</strong> și ne-am gândit imediat că v-ar prinde bine o colaborare cu noi. 😊</p>
-          <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 14px">Avem deja peste <strong>700 de influenceri micro și macro</strong> înscriși în baza noastră de date, verificați și activi, din toate nișele — și asta în mai puțin de 3 luni de la lansare. Iar voi ați putea fi printre primele branduri cu care colaborăm — ceea ce înseamnă <strong>atenție maximă din partea noastră</strong> și o relație pe termen lung. 😎</p>
 
-          <div style="background:linear-gradient(135deg,#fff7ed,#fdf2f8);border-radius:14px;padding:20px;margin:0 0 20px;border:1.5px solid #fed7aa">
-            <p style="margin:0 0 10px;font-size:16px;font-weight:900;color:#111">Ce facem noi pentru voi, de la A la Z:</p>
-            ${[
-              ['🎯', 'Selectăm influencerii potriviți pentru brandul vostru'],
-              ['📋', 'Ne ocupăm de brief, contracte și comunicare'],
-              ['📊', 'Monitorizăm postările, engagement-ul și rezultatele'],
-              ['✅', 'Voi nu faceți nimic — noi gestionăm tot procesul'],
-            ].map(([icon, text]) => `
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-                <span style="font-size:18px">${icon}</span>
-                <span style="font-size:14px;color:#374151">${text}</span>
-              </div>`).join('')}
+          <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 14px">Sunt Ciprian de la <strong>AddFame.ro</strong>.</p>
+
+          <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 20px">În 2026, colaborările cu micro-influenceri sunt una dintre cele mai eficiente și accesibile metode de promovare — rezultate excelente la costuri reduse.</p>
+
+          <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:14px;padding:20px;margin:0 0 20px;border:1.5px solid #bbf7d0;text-align:center">
+            <p style="margin:0;font-size:18px;font-weight:900;color:#111">🎉 Campanie de test GRATUITĂ</p>
+            <p style="margin:8px 0 0;font-size:14px;color:#374151">Vă oferim gratuit o campanie cu <strong>3 micro-influenceri</strong>, ca să vedeți concret cum funcționează și ce rezultate poate aduce pentru brandul vostru.</p>
           </div>
 
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border:1.5px solid #f0f0f0;border-radius:16px;overflow:hidden">
-            <tr>
-              <td width="50%" style="padding:16px 8px;text-align:center;background:#ffffff;border-right:1.5px solid #f0f0f0">
-                <div style="font-size:20px;margin-bottom:4px">🎁</div>
-                <div style="font-size:13px;font-weight:900;color:#111">Campanii Barter</div>
-                <div style="font-size:12px;color:#6b7280;margin-top:4px">Influencerii primesc produse de la voi. Fără costuri cash — doar produse.</div>
-              </td>
-              <td width="50%" style="padding:16px 8px;text-align:center;background:#fafafa">
-                <div style="font-size:20px;margin-bottom:4px">💪</div>
-                <div style="font-size:13px;font-weight:900;color:#111">Campanii Paid</div>
-                <div style="font-size:12px;color:#6b7280;margin-top:4px">Campanii plătite pentru reach maxim și rezultate garantate.</div>
-              </td>
-            </tr>
-          </table>
-
-          <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:14px;padding:20px;margin:0 0 24px;border:1.5px solid #bbf7d0;text-align:center">
-            <p style="margin:0;font-size:18px;font-weight:900;color:#111">🎉 Ofertă de lansare</p>
-            <p style="margin:8px 0 0;font-size:14px;color:#374151">La prima campanie creată pe platformă, <strong>primii 3 influenceri sunt GRATUIT</strong> — nu plătiți comision de administrare pentru ei. Suportați doar eventualul produs pentru barter, dacă alegeți acest tip de campanie.</p>
-          </div>
-
-          <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 24px;text-align:center;font-weight:700">Am fi super încântați să vă avem printre primii noștri parteneri și să construim împreună ceva mișto. 🙌</p>
+          <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 20px">Vă invităm să vă creați un cont de brand pe AddFame.ro, unde puteți explora platforma și vedea cum funcționează colaborările cu influencerii.</p>
 
           <div style="text-align:center;margin:0 0 16px">
-            <a href="${APP_URL}/auth/register" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg,#f97316,#ec4899);color:white;text-decoration:none;border-radius:14px;font-weight:900;font-size:15px">📩 Înregistrează-te gratuit pe addfame.ro →</a>
-          </div>
-          <div style="text-align:center;margin:0 0 24px">
-            <a href="https://calendly.com/ciprian-addfame/30min" style="display:inline-block;padding:14px 32px;background:#f0fdf4;color:#15803d;text-decoration:none;border-radius:14px;font-weight:900;font-size:14px;border:2px solid #bbf7d0">📅 Rezervă un call gratuit de 30 min →</a>
+            <a href="${APP_URL}/auth/register" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg,#f97316,#ec4899);color:white;text-decoration:none;border-radius:14px;font-weight:900;font-size:15px">📩 Creează cont gratuit →</a>
           </div>
 
-          <div style="background:#f9fafb;border-radius:14px;padding:18px;border:1.5px solid #f0f0f0">
-            <p style="margin:0 0 8px;font-size:13px;color:#555;text-align:center">Sau răspunde direct la acest email — suntem bucuroși să discutăm.</p>
-            <p style="margin:0;font-size:13px;color:#9ca3af;text-align:center">
-              <a href="mailto:ciprian@addfame.ro" style="color:#f97316;font-weight:700">ciprian@addfame.ro</a>
-            </p>
+          <div style="background:#f9fafb;border-radius:14px;padding:20px;border:1.5px solid #f0f0f0;margin:0 0 24px">
+            <p style="margin:0 0 12px;font-size:14px;font-weight:900;color:#111;text-align:center">Dacă doriți să începem sau aveți întrebări, contactați-ne direct:</p>
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+              <a href="mailto:ciprian@addfame.ro" style="color:#f97316;font-weight:700;font-size:14px;text-decoration:none">📧 ciprian@addfame.ro</a>
+              <a href="mailto:cristiana@addfame.ro" style="color:#f97316;font-weight:700;font-size:14px;text-decoration:none">📧 cristiana@addfame.ro</a>
+              <a href="https://calendly.com/ciprian-addfame/30min" style="display:inline-block;padding:12px 28px;background:#f0fdf4;color:#15803d;text-decoration:none;border-radius:12px;font-weight:900;font-size:14px;border:2px solid #bbf7d0;margin-top:4px">📅 Rezervă un call gratuit de 30 min →</a>
+            </div>
           </div>
-          <p style="font-size:14px;color:#888;text-align:center;margin:20px 0 0">Cu drag,<br/><strong>Ciprian | AddFame.ro</strong><br/>
+
+          <p style="font-size:14px;color:#888;text-align:center;margin:0">Cu respect,<br/><strong>Ciprian | AddFame.ro</strong><br/>
           <span style="font-size:12px">🌐 addfame.ro &nbsp;·&nbsp; ✉️ ciprian@addfame.ro</span></p>
         </div>
         ${SOCIAL_FOOTER()}`),

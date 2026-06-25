@@ -11,7 +11,7 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 )
 
 export default function TermsPage() {
-  const updated = '12 Martie 2026'
+  const updated = '24 Iunie 2026'
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
@@ -33,7 +33,7 @@ export default function TermsPage() {
 
         <Section title="1. Acceptarea termenilor">
           <p>Prin accesarea și utilizarea platformei AddFame (addfame.ro), ești de acord cu acești termeni și condiții. Dacă nu ești de acord, te rugăm să nu utilizezi platforma.</p>
-          <p>AddFame este operată de o societate comercială înregistrată în România. Datele societății (denumire, CUI, sediu social) vor fi disponibile în curând.</p>
+          <p>AddFame este operată de <strong>ADD FAME DIGITAL S.R.L.</strong>, societate comercială înregistrată în România, CUI <strong>54992560</strong>, Nr. Reg. Com. <strong>J2026040984009</strong>, cu sediul în județul Argeș.</p>
         </Section>
 
         <Section title="2. Descrierea serviciului">
@@ -50,7 +50,7 @@ export default function TermsPage() {
         <Section title="4. Plăți și comisioane">
           <p><strong>Branduri:</strong> Creditele adăugate în wallet sunt utilizate pentru plata influencerilor. La aprobarea unui post, 15% din bugetul colaborării este reținut de AddFame ca comision de platformă, iar restul de 85% este creditat în walletul influencerului.</p>
           <p><strong>Influenceri:</strong> Fondurile câștigate pot fi retrase oricând. La retragere se aplică un fee de procesare de 5% din suma retrasă. Retragerile sunt procesate manual în 3-5 zile lucrătoare.</p>
-          <p>Toate prețurile sunt în EUR (RON ). AddFame nu răspunde pentru pierderile cauzate de fluctuațiile valutare.</p>
+          <p>Toate prețurile sunt exprimate în <strong>RON (lei românești)</strong>. Plățile și retragerile se procesează exclusiv în RON.</p>
         </Section>
 
         <Section title="5. Conținut și proprietate intelectuală">
@@ -75,7 +75,11 @@ export default function TermsPage() {
 
         <Section title="9. Contact">
           <p>Pentru întrebări: <a href="mailto:legal@addfame.ro" className="text-purple-600 font-bold hover:underline">legal@addfame.ro</a></p>
-          <p>Datele de contact ale societății vor fi disponibile în curând.</p>
+          <p><strong>ADD FAME DIGITAL S.R.L.</strong><br />
+          CUI: 54992560 · Reg. Com.: J2026040984009<br />
+          Județul Argeș, România<br />
+          Email: <a href="mailto:contact@addfame.ro" className="text-purple-600 font-bold hover:underline">contact@addfame.ro</a>
+          </p>
         </Section>
 
         <div className="border-t border-gray-100 pt-8 flex gap-6">

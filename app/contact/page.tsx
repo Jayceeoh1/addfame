@@ -12,10 +12,19 @@ export default function ContactPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    // Simulate send — integrate with Resend later
-    await new Promise(r => setTimeout(r, 1200))
-    setLoading(false)
-    setSent(true)
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error('Server error')
+      setSent(true)
+    } catch {
+      alert('A apărut o eroare. Încearcă din nou sau scrie direct la contact@addfame.ro')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const TOPICS = [
@@ -107,6 +116,16 @@ export default function ContactPage() {
             <div className="rounded-2xl p-6 border-2 border-dashed border-orange-200 bg-orange-50/50">
               <p className="text-sm font-bold text-orange-700 mb-1">⚡ Răspuns rapid</p>
               <p className="text-xs text-orange-600">Luni–Vineri, 9:00–18:00 (EET) răspundem de obicei în câteva ore.</p>
+            </div>
+
+            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+              <h3 className="font-black text-gray-900 mb-3">Date firmă</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                <strong>ADD FAME DIGITAL S.R.L.</strong><br />
+                CUI: 54992560<br />
+                Reg. Com.: J2026040984009<br />
+                Județul Argeș, România
+              </p>
             </div>
           </div>
 
@@ -200,7 +219,10 @@ export default function ContactPage() {
             <Link href="/privacy" className="hover:text-gray-700 transition">Confidențialitate</Link>
             <Link href="/about" className="hover:text-gray-700 transition">Despre noi</Link>
           </div>
-          <p className="text-sm text-gray-400">© {new Date().getFullYear()} AddFame.</p>
+          <div className="text-right">
+            <p className="text-sm text-gray-400">© {new Date().getFullYear()} AddFame.</p>
+            <p className="text-xs text-gray-400">ADD FAME DIGITAL S.R.L. · CUI: 54992560 · Reg. Com.: J2026040984009</p>
+          </div>
         </div>
       </footer>
     </div>

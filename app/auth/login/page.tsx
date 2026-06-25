@@ -279,9 +279,9 @@ function LoginContent() {
 
           <p className="fade-up text-xs text-gray-400 text-center mt-8 leading-relaxed">
             Autentificându-te ești de acord cu{' '}
-            <a href="#" className="underline hover:text-gray-600 transition">Termeni și Condiții</a>
+            <a href="/termeni" className="underline hover:text-gray-600 transition">Termeni și Condiții</a>
             {' '}și{' '}
-            <a href="#" className="underline hover:text-gray-600 transition">Politica de Confidențialitate</a>
+            <a href="/politica-de-confidentialitate" className="underline hover:text-gray-600 transition">Politica de Confidențialitate</a>
           </p>
         </div>
       </div>

@@ -25,10 +25,10 @@ export default function PrivacyPage() {
       </nav>
       <div className="max-w-4xl mx-auto px-6 py-12">
         <h1 className="text-4xl font-black text-gray-900 mb-2">Politica de Confidențialitate</h1>
-        <p className="text-sm text-gray-400 mb-10">Ultima actualizare: 12 Martie 2026</p>
+        <p className="text-sm text-gray-400 mb-10">Ultima actualizare: 24 Iunie 2026</p>
 
         <Section title="1. Cine suntem">
-          <p>AddFame SRL este operatorul de date personale responsabil pentru platforma addfame.ro. Ne poți contacta la <a href="mailto:privacy@addfame.ro" className="text-orange-500 font-bold hover:underline">privacy@addfame.ro</a>.</p>
+          <p><strong>ADD FAME DIGITAL S.R.L.</strong> este operatorul de date personale responsabil pentru platforma addfame.ro.</p><p>CUI: <strong>54992560</strong> · Reg. Com.: <strong>J2026040984009</strong> · Sediu: Județul Argeș, România</p><p>Contact GDPR: <a href="mailto:privacy@addfame.ro" className="text-orange-500 font-bold hover:underline">privacy@addfame.ro</a></p>
         </Section>
 
         <Section title="2. Ce date colectăm">

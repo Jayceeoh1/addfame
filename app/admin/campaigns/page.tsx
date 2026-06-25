@@ -11,7 +11,7 @@ import {
   Archive, EyeOff, Sparkles, Users, Send, Check, X,
   ChevronDown, ChevronUp, Eye, FileText, MapPin,
   CheckCircle, Clock, AlertCircle, Star, Package,
-  MessageSquare, Ban, ExternalLink, Copy, Download, Edit, User
+  MessageSquare, Ban, ExternalLink, Copy, Download, Edit, User, MessageCircle
 } from 'lucide-react'
 
 const STATUS_CFG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
@@ -543,6 +543,221 @@ function ReminderPanel({ campaignId, campaignTitle }: { campaignId: string; camp
         >
           📨 Trimite reminder acum
         </button>
+      )}
+    </div>
+  )
+}
+
+function WhatsAppReminderPanel({ campaignId }: { campaignId: string }) {
+  const [loading, setLoading] = useState(false)
+  const [collabs, setCollabs] = useState<any[]>([])
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [sending, setSending] = useState(false)
+  const [result, setResult] = useState<{ sent: number; failed: number } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
+
+  async function loadEligible() {
+    setLoading(true)
+    setError(null)
+    setResult(null)
+    try {
+      // Folosim API server-side cu admin client — bypass RLS
+      const res = await fetch(`/api/admin/whatsapp-eligible?campaign_id=${campaignId}`)
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Eroare la încărcare'); setLoading(false); return }
+      const eligible = data.eligible || []
+      setCollabs(eligible)
+      setSelected(new Set(eligible.map((c: any) => c.id)))
+    } catch (e: any) {
+      setError('Eroare la încărcare')
+    }
+    setLoading(false)
+  }
+
+  function toggleOpen() {
+    if (!open) loadEligible()
+    setOpen(o => !o)
+  }
+
+  function toggleAll() {
+    if (selected.size === collabs.length) setSelected(new Set())
+    else setSelected(new Set(collabs.map((c: any) => c.id)))
+  }
+
+  function toggleOne(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function sendReminders() {
+    if (selected.size === 0) return
+    setSending(true)
+    setError(null)
+    setResult(null)
+
+    const collabIds = Array.from(selected)
+    let sent = 0, failed = 0
+
+    for (const collabId of collabIds) {
+      try {
+        const res = await fetch('/api/admin/whatsapp-reminder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ collaboration_id: collabId, campaign_id: campaignId }),
+        })
+        if (res.ok) sent++
+        else failed++
+      } catch { failed++ }
+    }
+
+    setResult({ sent, failed })
+    setSending(false)
+    setSelected(new Set())
+    // Reîncărcăm lista
+    loadEligible()
+  }
+
+  function deadlineInfo(collab: any) {
+    if (!collab.package_received_at) return null
+    const ref = new Date(collab.package_received_at)
+    const days = collab.post_deadline_days || 5
+    const deadline = new Date(ref.getTime() + days * 86400000)
+    const hoursLeft = Math.round((deadline.getTime() - Date.now()) / 3600000)
+    return { deadline, hoursLeft }
+  }
+
+  return (
+    <div className="border border-green-100 rounded-2xl bg-green-50 overflow-hidden">
+      {/* Header — click to expand */}
+      <button
+        onClick={toggleOpen}
+        className="w-full flex items-center justify-between p-4 hover:bg-green-100/50 transition"
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-xl flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg,#25D366,#128C7E)' }}>
+            <MessageCircle className="w-4 h-4 text-white" />
+          </div>
+          <div className="text-left">
+            <p className="text-xs font-black text-green-800 uppercase tracking-wider">💬 WhatsApp Reminder manual</p>
+            <p className="text-xs text-green-600 mt-0.5">Doar influenceri cu colet primit, fără dovadă trimisă</p>
+          </div>
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-green-600" /> : <ChevronDown className="w-4 h-4 text-green-600" />}
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-green-100">
+          {loading ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="w-6 h-6 border-3 border-green-200 border-t-green-500 rounded-full animate-spin" />
+            </div>
+          ) : error ? (
+            <p className="text-xs text-red-500 font-bold py-3">{error}</p>
+          ) : collabs.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-2xl mb-2">📦</p>
+              <p className="text-xs font-bold text-gray-500">Niciun influencer eligibil</p>
+              <p className="text-xs text-gray-400 mt-1">Toți au trimis dovada sau nu au confirmat primirea coletului</p>
+            </div>
+          ) : (
+            <>
+              {/* Result banner */}
+              {result && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold ${result.failed === 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                  {result.failed === 0
+                    ? `✅ ${result.sent} mesaje trimise cu succes!`
+                    : `✅ ${result.sent} trimise · ❌ ${result.failed} eșuate`}
+                </div>
+              )}
+
+              {/* Select all + count */}
+              <div className="flex items-center justify-between pt-2">
+                <button onClick={toggleAll}
+                  className="text-xs font-bold text-green-700 hover:text-green-900 transition flex items-center gap-1.5">
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${selected.size === collabs.length ? 'bg-green-500 border-green-500' : 'border-green-400 bg-white'}`}>
+                    {selected.size === collabs.length && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                  {selected.size === collabs.length ? 'Deselectează toți' : 'Selectează toți'}
+                </button>
+                <span className="text-xs text-green-600 font-bold">{selected.size}/{collabs.length} selectați</span>
+              </div>
+
+              {/* Influencer list */}
+              <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                {collabs.map((collab: any) => {
+                  const inf = collab.influencers
+                  const di = deadlineInfo(collab)
+                  const isSelected = selected.has(collab.id)
+                  const urgent = di && di.hoursLeft < 24
+                  const sentFlags = [collab.reminder_48h_sent, collab.reminder_24h_sent, collab.reminder_12h_sent].filter(Boolean).length
+
+                  return (
+                    <div
+                      key={collab.id}
+                      onClick={() => toggleOne(collab.id)}
+                      className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition ${
+                        isSelected ? 'bg-white border-green-300' : 'bg-green-50/50 border-transparent hover:bg-white/60'
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition ${isSelected ? 'bg-green-500 border-green-500' : 'border-green-300 bg-white'}`}>
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-black text-gray-900 truncate">{inf?.name}</p>
+                          {(inf?.strikes || 0) > 0 && (
+                            <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-lg flex-shrink-0">
+                              ⚡ {inf.strikes} strike
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-[10px] text-gray-400">{collab.resolved_phone || inf?.phone || '—'}</p>
+                          {sentFlags > 0 && (
+                            <span className="text-[10px] text-blue-500 font-bold">{sentFlags} auto trimis</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Deadline */}
+                      {di && (
+                        <div className={`text-right flex-shrink-0 ${urgent ? 'text-red-500' : 'text-gray-400'}`}>
+                          <p className="text-[10px] font-black">{urgent ? '🔥' : '⏰'} {di.hoursLeft}h rămase</p>
+                          <p className="text-[9px]">{di.deadline.toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' })}</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Send button */}
+              <button
+                onClick={sendReminders}
+                disabled={sending || selected.size === 0}
+                className="w-full py-2.5 rounded-xl text-xs font-black text-white transition disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ background: 'linear-gradient(135deg,#25D366,#128C7E)' }}
+              >
+                {sending ? (
+                  <><span className="animate-spin">⏳</span> Se trimite...</>
+                ) : (
+                  <><MessageCircle className="w-4 h-4" /> Trimite WhatsApp ({selected.size})</>
+                )}
+              </button>
+              <p className="text-[10px] text-green-600 text-center">
+                Mesajele se loghează automat în WhatsApp Logs
+              </p>
+            </>
+          )}
+        </div>
       )}
     </div>
   )
@@ -2622,6 +2837,11 @@ export default function AdminCampaigns() {
                   {/* Reminder influenceri activi */}
                   {selectedCampaign.status === 'ACTIVE' && (
                     <ReminderPanel campaignId={selectedCampaign.id} campaignTitle={selectedCampaign.title} />
+                  )}
+
+                  {/* WhatsApp Reminder manual */}
+                  {selectedCampaign.status === 'ACTIVE' && (
+                    <WhatsAppReminderPanel campaignId={selectedCampaign.id} />
                   )}
 
                   {/* Control înscrieri — Varianta 3 Timeline */}

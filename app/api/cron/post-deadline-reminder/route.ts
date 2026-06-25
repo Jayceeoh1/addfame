@@ -16,8 +16,8 @@ async function sendEmail(to: string, subject: string, html: string) {
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN
-const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM // ex: whatsapp:+15559142769
-const TWILIO_TEMPLATE_SID = process.env.TWILIO_TEMPLATE_REMINDER_V2_SID || process.env.TWILIO_TEMPLATE_REMINDER_SID // Content SID din Twilio (HXxxxxxxx)
+const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM
+const TWILIO_TEMPLATE_SID = process.env.TWILIO_TEMPLATE_REMINDER_V2_SID || process.env.TWILIO_TEMPLATE_REMINDER_SID
 
 function normalizePhone(phone: string): string | null {
   if (!phone) return null
@@ -28,9 +28,16 @@ function normalizePhone(phone: string): string | null {
   return p
 }
 
-async function sendWhatsApp(phone: string, name: string, label: string, campaignTitle: string) {
+async function sendWhatsApp(
+  phone: string,
+  name: string,
+  label: string,
+  campaignTitle: string
+): Promise<{ success: boolean; sid?: string; error?: string }> {
   const to = normalizePhone(phone)
-  if (!to || !TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM || !TWILIO_TEMPLATE_SID) return false
+  if (!to || !TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM || !TWILIO_TEMPLATE_SID) {
+    return { success: false, error: 'Missing Twilio config' }
+  }
   try {
     const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64')
     const body = new URLSearchParams({
@@ -44,13 +51,17 @@ async function sendWhatsApp(phone: string, name: string, label: string, campaign
       headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
     })
-    return res.ok
-  } catch {
-    return false
+    const data = await res.json()
+    if (res.ok) {
+      return { success: true, sid: data.sid }
+    } else {
+      return { success: false, error: data.message || 'Twilio error' }
+    }
+  } catch (e: any) {
+    return { success: false, error: e.message }
   }
 }
 
-// Praguri de reminder: ore rămase + fereastra de toleranță + flag-ul din DB care marchează trimiterea
 const THRESHOLDS = [
   { hours: 48, flag: 'reminder_48h_sent', label: '2 zile', emailSubjectLabel: '2 zile', tolerance: 12 },
   { hours: 24, flag: 'reminder_24h_sent', label: '1 zi', emailSubjectLabel: '24 de ore', tolerance: 12 },
@@ -120,7 +131,6 @@ export async function GET(req: NextRequest) {
   const now = new Date()
   let sent = 0
 
-  // Fetch toate colaborările active fără dovadă trimisă
   const { data: collabs } = await admin
     .from('collaborations')
     .select(`
@@ -141,8 +151,6 @@ export async function GET(req: NextRequest) {
     const inf = collab.influencers as any
     const camp = collab.campaigns as any
     if (!inf || !camp) continue
-
-    // Deadline-ul personal de postare începe doar după confirmarea primirii coletului
     if (!collab.package_received_at) continue
 
     const referenceDate = new Date(collab.package_received_at)
@@ -150,7 +158,6 @@ export async function GET(req: NextRequest) {
     const deadline = new Date(referenceDate.getTime() + deadlineDays * 86400000)
     const hoursLeft = (deadline.getTime() - now.getTime()) / 3600000
 
-    // Verificăm fiecare prag în ordine (48h -> 24h -> 12h), trimitem doar UNUL per rulare
     for (const t of THRESHOLDS) {
       const alreadySent = (collab as any)[t.flag]
       if (alreadySent) continue
@@ -176,9 +183,25 @@ export async function GET(req: NextRequest) {
         )
       }
 
-      // ── WhatsApp ───────────────────────────────────────────────────────
+      // ── WhatsApp ── cu logging ─────────────────────────────────────────
       if (inf.phone) {
-        await sendWhatsApp(inf.phone, inf.name, t.label, camp.title)
+        const waResult = await sendWhatsApp(inf.phone, inf.name, t.label, camp.title)
+
+        // Logăm rezultatul în whatsapp_logs
+        await admin.from('whatsapp_logs').insert({
+          influencer_id: inf.id,
+          influencer_name: inf.name,
+          phone: normalizePhone(inf.phone),
+          campaign_id: camp.id,
+          campaign_title: camp.title,
+          collaboration_id: collab.id,
+          reminder_type: t.label, // '2 zile', '1 zi', '12 ore'
+          message_body: `Reminder ${t.label}: ${camp.title}`,
+          twilio_message_sid: waResult.sid || null,
+          success: waResult.success,
+          error_message: waResult.error || null,
+          sent_by_admin_id: null, // null = cron automat
+        })
       }
 
       // ── Notificare în platformă ────────────────────────────────────────
@@ -192,11 +215,10 @@ export async function GET(req: NextRequest) {
         })
       }
 
-      // Marcăm flag-ul ca trimis, ca să nu retrimitem la următoarea rulare
       await admin.from('collaborations').update({ [t.flag]: true }).eq('id', collab.id)
 
       sent++
-      break // trimitem un singur reminder per colaborare per rulare
+      break
     }
   }
 
