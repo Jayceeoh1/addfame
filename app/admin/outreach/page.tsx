@@ -21,6 +21,7 @@ const BRAND_TEMPLATES = [
   { key: 'presentation',   label: '📊 Prezentare platformă',          industries: [] },
   { key: 'followup',       label: '🔔 Follow-up campanie',            industries: [] },
   { key: 'promo',          label: '🎁 Ofertă specială',               industries: [] },
+  { key: 'ai_personalize', label: '✨ AI Personalizat (Claude)',        industries: [] },
   { key: 'custom',         label: '✏️ Custom',                        industries: [] },
 ]
 
@@ -938,7 +939,7 @@ export default function OutreachPage() {
       {/* CSV Import Modal */}
       {showCsvImport && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", maxHeight: '90vh' }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h2 className="font-black text-gray-900">Import Branduri (CSV / Excel)</h2>
@@ -948,7 +949,7 @@ export default function OutreachPage() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               {/* Format explicat */}
               <div style={{ background: '#f8faff', border: '1.5px solid #ddd6fe', borderRadius: 12, padding: '12px 14px' }}>
                 <p className="text-xs font-black text-purple-700 mb-2">Format CSV acceptat:</p>
@@ -1046,15 +1047,27 @@ export default function OutreachPage() {
                     </div>
                   )
                 })()}
-                <div className="space-y-2">
+                <select
+                  value={template}
+                  onChange={e => setTemplate(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-orange-400 transition bg-white"
+                >
                   {templates.map(t => (
-                    <label key={t.key} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition ${template === t.key ? 'border-orange-400 bg-orange-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                      <input type="radio" name="template" value={t.key} checked={template === t.key} onChange={() => setTemplate(t.key)} className="accent-orange-500" />
-                      <span className="text-sm font-semibold text-gray-700">{t.label}</span>
-                    </label>
+                    <option key={t.key} value={t.key}>{t.label}</option>
                   ))}
-                </div>
+                </select>
               </div>
+              {template === 'ai_personalize' && (
+                <div style={{ background: 'linear-gradient(135deg,#f3e8ff,#ede9fe)', border: '2px solid #c4b5fd', borderRadius: 14, padding: '12px 14px' }}>
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: '#6d28d9' }}>✨ Mod AI Activ</p>
+                  <p style={{ margin: '4px 0 0', fontSize: 11, color: '#7c3aed', lineHeight: 1.5 }}>
+                    Claude va genera un email unic pentru fiecare companie selectată, personalizat pe baza numelui companiei și industriei. Durează ~3-5 secunde per email.
+                  </p>
+                  <p style={{ margin: '6px 0 0', fontSize: 11, color: '#7c3aed', fontWeight: 700 }}>
+                    💡 Funcționează cel mai bine când leads-urile au completat câmpul "Industrie".
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-black text-gray-500 uppercase tracking-wide mb-2">Limbă</label>
                 <div className="flex gap-2">

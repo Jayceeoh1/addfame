@@ -489,9 +489,74 @@ export async function POST(req: NextRequest) {
     for (const lead of leads) {
       const lang = language || lead.language || 'ro'
       const name = type === 'influencer' ? lead.full_name : lead.company_name
-      const tmpl = template !== 'custom' ? templates[template]?.[lang] : null
-      const subject = (custom_subject || tmpl?.subject || 'AddFame').replace('{name}', name || '')
-      const html = custom_html || tmpl?.html({ companyName: name, contactName: lead.contact_name })
+      // ── AI Personalizare ────────────────────────────────────────────────
+      let subject: string
+      let html: string | null = null
+
+      if (template === 'ai_personalize') {
+        try {
+          const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': process.env.ANTHROPIC_API_KEY!,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-6',
+              max_tokens: 800,
+              system: 'Esti un expert in sales outreach B2B pentru AddFame.ro - platforma de influencer marketing din Romania. Scrii emailuri scurte, personalizate, in romana, care nu par automate. Raspunzi DOAR cu JSON valid, fara text in afara JSON-ului.',
+              messages: [{
+                role: 'user',
+                content: `Scrie un email de outreach personalizat pentru:
+- Companie: ${lead.company_name}
+- Industrie: ${lead.industry || 'necunoscuta'}
+- Contact: ${lead.contact_name || 'echipa'}
+- Website: ${lead.website || 'necunoscut'}
+
+Oferta AddFame: 3 micro-influenceri GRATUIT pentru prima campanie. Platforma conecteaza branduri romanesti cu influenceri locali prin campanii barter si platite. Sistem escrow sigur, contracte digitale, suport real.
+
+Raspunde DOAR JSON:
+{"subject":"subiect email cu emoji","opening":"2 fraze personalizate pentru aceasta companie","pitch":"2-3 fraze despre cum AddFame ajuta companii din industria lor","cta":"fraza call to action"}`
+              }]
+            })
+          })
+          const aiData = await aiRes.json()
+          const aiText = aiData.content?.[0]?.text || '{}'
+          const aiJson = JSON.parse(aiText.replace(/```json|```/g, '').trim())
+
+          subject = aiJson.subject || `Oferta speciala pentru ${lead.company_name}`
+          html = `
+            ${HEADER(`Buna ziua${lead.contact_name ? ', ' + lead.contact_name : ''}! `)}
+            <div style="padding:0 32px 24px">
+              <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 16px">${aiJson.opening || ''}</p>
+              <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 20px">${aiJson.pitch || ''}</p>
+              <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:16px;padding:20px;margin:20px 0">
+                <p style="font-weight:900;color:#15803d;margin:0 0 8px;font-size:15px">Oferta exclusiva pentru ${lead.company_name}:</p>
+                <p style="margin:0;font-size:14px;color:#166534">3 micro-influenceri GRATUIT pentru prima ta campanie pe AddFame.ro</p>
+              </div>
+              <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 24px">${aiJson.cta || ''}</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+                <tr><td style="text-align:center;padding:4px 0"><a href="mailto:ciprian@addfame.ro" style="color:#f97316;font-weight:700;font-size:14px;text-decoration:none">ciprian@addfame.ro</a></td></tr>
+                <tr><td style="text-align:center;padding:4px 0"><a href="mailto:cristiana@addfame.ro" style="color:#f97316;font-weight:700;font-size:14px;text-decoration:none">cristiana@addfame.ro</a></td></tr>
+                <tr><td style="text-align:center;padding:8px 0 0"><a href="https://calendly.com/ciprian-addfame/30min" style="display:inline-block;padding:12px 24px;background:#f0fdf4;color:#15803d;text-decoration:none;border-radius:12px;font-weight:900;font-size:14px;border:2px solid #bbf7d0">Rezerva un call gratuit de 30 min</a></td></tr>
+              </table>
+              <p style="font-size:13px;color:#9ca3af;text-align:center;margin-top:20px">Cu respect, Ciprian | AddFame.ro</p>
+            </div>
+            ${SOCIAL_FOOTER()}
+          `
+        } catch (aiErr: any) {
+          console.error('[AI Personalize Error]', aiErr.message)
+          results.push({ id: lead.id, ok: false, error: 'AI error: ' + aiErr.message })
+          continue
+        }
+      } else {
+        // Template normal
+        const tmpl = template !== 'custom' ? templates[template]?.[lang] : null
+        subject = (custom_subject || tmpl?.subject || 'AddFame').replace('{name}', name || '')
+        html = custom_html || tmpl?.html({ companyName: name, contactName: lead.contact_name }) || null
+      }
+      // ────────────────────────────────────────────────────────────────────
       if (!html) { results.push({ id: lead.id, ok: false, error: 'Invalid template' }); continue }
 
       try {

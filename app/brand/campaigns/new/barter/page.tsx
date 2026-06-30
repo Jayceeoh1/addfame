@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBarterCampaign } from '@/app/actions/barter-campaigns'
+import { AIBriefGenerator } from '@/components/shared/AIBriefGenerator'
 import { createClient } from '@/lib/supabase/client'
 import {
   ArrowLeft, ArrowRight, Check, Loader2, AlertCircle,
@@ -1355,6 +1356,23 @@ export default function BarterCampaignWizard() {
                   ))}
                 </div>
               </div>
+
+              {/* AI Brief Generator */}
+              <AIBriefGenerator
+                offerName={data.offer_name}
+                offerValue={data.offer_value}
+                offerDescription={data.offer_description}
+                platforms={data.platforms}
+                campaignType="BARTER"
+                onApply={(brief) => {
+                  if (brief.story_instructions) set({ story_instructions: brief.story_instructions })
+                  if (brief.required_hashtags) set({ required_hashtags: brief.required_hashtags })
+                  if (brief.required_caption) set({ required_caption: brief.required_caption })
+                  if (brief.key_messages) set({ key_messages: Array.isArray(brief.key_messages) ? brief.key_messages.join('\n') : brief.key_messages })
+                  if (brief.forbidden_content) set({ forbidden_content: brief.forbidden_content })
+                  if (brief.content_tone) set({ content_tone: brief.content_tone })
+                }}
+              />
 
               {/* Hashtag-uri */}
               <div>

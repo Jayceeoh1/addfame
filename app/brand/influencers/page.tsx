@@ -8,7 +8,7 @@ import {
   Search, Filter, Instagram, Youtube, Star, Users, TrendingUp,
   X, ChevronDown, Send, CheckCircle, AlertCircle, Eye,
   Bookmark, BookmarkCheck, SlidersHorizontal, Heart, ExternalLink,
-  Lock, Wallet, Zap, ArrowRight, Award, Plus, MapPin,
+  Lock, Wallet, Zap, ArrowRight, Award, Plus, MapPin, Sparkles, Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -104,8 +104,12 @@ const PLATFORM_FILTERS = ['Toate Platformele', 'Instagram', 'TikTok', 'YouTube',
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Cele mai noi' },
   { value: 'followers', label: 'Cei mai urmăriți' },
+  { value: 'engagement', label: 'Engagement rate' },
+  { value: 'success', label: 'Success rate' },
   { value: 'name', label: 'Nume A–Z' },
 ]
+
+const CREATOR_SCORE_LEVELS = ['Toate nivelurile', 'Starter', 'Rising', 'Pro', 'Elite']
 
 // ─── Locked screen ─────────────────────────────────────────────────────────────
 
@@ -545,11 +549,49 @@ export default function BrandInfluencersPage() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null)
   const [showSavedOnly, setShowSavedOnly] = useState(false)
+  const [maxFollowers, setMaxFollowers] = useState('')
+  const [scoreFilter, setScoreFilter] = useState('Toate nivelurile')
+  const [verifiedOnly, setVerifiedOnly] = useState(false)
+  const [aiRecs, setAiRecs] = useState<any[]>([])
+  const [aiSummary, setAiSummary] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [selectedCampaignForAI, setSelectedCampaignForAI] = useState<string>('')
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [showCampaignSheet, setShowCampaignSheet] = useState(false)
   const router = useRouter()
 
   useEffect(() => { fetchAll() }, [])
+
+  async function getAIRecommendations() {
+    if (!selectedCampaignForAI) { setAiError('Selectează o campanie mai întâi'); return }
+    setAiLoading(true)
+    setAiError(null)
+    setAiRecs([])
+    const campaign = campaigns.find(c => c.id === selectedCampaignForAI)
+    if (!campaign) return
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'recommend',
+          data: {
+            campaign: { title: campaign.title, type: campaign.campaign_type, platforms: campaign.platforms, min_followers: campaign.min_followers_target, description: campaign.offer_description, niche: campaign.target_niche },
+            influencers: influencers.map(i => ({ name: i.name, niches: i.niches, city: i.city, ig_followers: i.ig_followers, ig_engagement_rate: i.ig_engagement_rate, tt_followers: i.tt_followers, is_verified: i.is_verified }))
+          }
+        })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setAiRecs(data.recommendations || [])
+      setAiSummary(data.summary || '')
+    } catch (e: any) {
+      setAiError(e.message)
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   async function fetchAll() {
     setLoading(true)
@@ -649,7 +691,7 @@ export default function BrandInfluencersPage() {
     }
   }
 
-  useEffect(() => { setCurrentPage(1) }, [search, platformFilter, sortBy, showSavedOnly, cityFilter])
+  useEffect(() => { setCurrentPage(1) }, [search, platformFilter, sortBy, showSavedOnly, cityFilter, minFollowers, maxFollowers, scoreFilter, verifiedOnly, nicheFilter])
 
   // Normalizare pentru filtrare oraș
   const normalizeStr = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
@@ -669,6 +711,24 @@ export default function BrandInfluencersPage() {
       const min = parseInt(minFollowers.replace(/[^0-9]/g, ''), 10) * 1000
       list = list.filter(i => totalFollowers(i.platforms) >= min)
     }
+    if (maxFollowers) {
+      const max = parseInt(maxFollowers.replace(/[^0-9]/g, ''), 10) * 1000
+      list = list.filter(i => totalFollowers(i.platforms) <= max)
+    }
+    if (verifiedOnly) list = list.filter(i => i.is_verified)
+    if (scoreFilter !== 'Toate nivelurile') {
+      const scoreMap: Record<string, number[]> = {
+        'Starter': [0, 199],
+        'Rising': [200, 499],
+        'Pro': [500, 999],
+        'Elite': [1000, 99999],
+      }
+      const [min, max] = scoreMap[scoreFilter] || [0, 99999]
+      list = list.filter(i => {
+        const score = (i as any).creator_score ?? 0
+        return score >= min && score <= max
+      })
+    }
     // Filtrare după oraș
     if (cityFilter.trim()) {
       const q = normalizeStr(cityFilter)
@@ -676,20 +736,25 @@ export default function BrandInfluencersPage() {
     }
     if (sortBy === 'followers') list.sort((a, b) => totalFollowers(b.platforms) - totalFollowers(a.platforms))
     else if (sortBy === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
+    else if (sortBy === 'engagement') list.sort((a, b) => (b.ig_engagement_rate || 0) - (a.ig_engagement_rate || 0))
+    else if (sortBy === 'success') list.sort((a, b) => (statsMap[b.id]?.successRate || 0) - (statsMap[a.id]?.successRate || 0))
     list.sort((a, b) => {
       if (a.is_verified && !b.is_verified) return -1
       if (!a.is_verified && b.is_verified) return 1
       return 0
     })
     return list
-  }, [influencers, search, platformFilter, nicheFilter, sortBy, minFollowers, cityFilter, showSavedOnly, savedIds])
+  }, [influencers, search, platformFilter, nicheFilter, sortBy, minFollowers, maxFollowers, cityFilter, showSavedOnly, savedIds, scoreFilter, verifiedOnly, statsMap])
 
   const activeFilterCount = [
     platformFilter !== 'Toate Platformele',
     nicheFilter !== 'Toate Nișele',
     minFollowers !== '',
+    maxFollowers !== '',
     showSavedOnly,
     cityFilter !== '',
+    scoreFilter !== 'Toate nivelurile',
+    verifiedOnly,
   ].filter(Boolean).length
 
   if (loading) return (
@@ -781,6 +846,72 @@ export default function BrandInfluencersPage() {
         <LockedScreen reason={(access as any).reason} />
       ) : (
         <>
+          {/* ── AI Recomandări ───────────────────────────────────────────── */}
+          {campaigns.length > 0 && (
+            <div className="rounded-2xl border-2 border-purple-200 bg-purple-50/50 p-4 mb-5">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-purple-800">Recomandări AI</p>
+                  <p className="text-[11px] text-purple-500">Claude analizează campania și găsește cei mai potriviți influenceri</p>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <select
+                  value={selectedCampaignForAI}
+                  onChange={e => { setSelectedCampaignForAI(e.target.value); setAiRecs([]); setAiSummary('') }}
+                  className="flex-1 min-w-0 px-3 py-2 border border-purple-200 rounded-xl bg-white text-sm outline-none focus:ring-2 focus:ring-purple-300"
+                >
+                  <option value="">Selectează campania...</option>
+                  {campaigns.filter(c => c.status === 'ACTIVE' || c.status === 'DRAFT').map(c => (
+                    <option key={c.id} value={c.id}>{c.title}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={getAIRecommendations}
+                  disabled={aiLoading || !selectedCampaignForAI}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black text-white disabled:opacity-50 transition hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' }}
+                >
+                  {aiLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Se analizează...</> : <><Sparkles className="w-3.5 h-3.5" /> Găsește potriviri</>}
+                </button>
+              </div>
+              {aiError && <p className="text-xs text-red-500 font-bold mt-2">{aiError}</p>}
+              {aiSummary && <p className="text-xs text-purple-700 font-semibold mt-3 bg-white px-3 py-2 rounded-xl border border-purple-100">{aiSummary}</p>}
+              {aiRecs.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {aiRecs.map((rec, i) => {
+                    const inf = influencers.find(inf => inf.name === rec.name)
+                    return (
+                      <div key={i} className="flex items-start gap-3 bg-white px-3 py-2.5 rounded-xl border border-purple-100">
+                        <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 text-xs font-black text-purple-700">
+                          {i + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-black text-gray-900">{rec.name}</p>
+                            <span className="text-[10px] font-black bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Match {rec.score}%</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{rec.reason}</p>
+                        </div>
+                        {inf && (
+                          <button
+                            onClick={() => setSelectedInfluencer(inf)}
+                            className="text-[10px] font-black text-purple-600 hover:text-purple-800 transition flex-shrink-0 mt-1"
+                          >
+                            Vezi →
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Search + filter bar */}
           <div className="bg-card border border-border rounded-2xl p-4 mb-5">
             <div className="flex flex-col md:flex-row gap-3">
@@ -809,35 +940,88 @@ export default function BrandInfluencersPage() {
             </div>
 
             {showFilters && (
-              <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-2">Nișă</label>
-                  <select value={nicheFilter} onChange={e => setNicheFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-sm outline-none">
-                    <option>Toate Nișele</option>
-                    {INFLUENCER_NICHES.map(n => <option key={n}>{n}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-2">Urmăritori Minimi (K)</label>
-                  <Input type="number" placeholder="ex. 10 = 10K+" value={minFollowers} onChange={e => setMinFollowers(e.target.value)} className="text-sm" />
-                </div>
-                {/* Filtru oraș */}
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> Oraș
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                    <input type="text" placeholder="ex. Iași, Cluj..." value={cityFilter} onChange={e => setCityFilter(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 border border-input rounded-lg bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30" />
-                    {cityFilter && <button onClick={() => setCityFilter('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"><X className="w-3 h-3" /></button>}
+              <div className="mt-4 pt-4 border-t border-border space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Nișă */}
+                  <div>
+                    <label className="block text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">Nișă</label>
+                    <select value={nicheFilter} onChange={e => setNicheFilter(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-input rounded-xl bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30">
+                      <option>Toate Nișele</option>
+                      {INFLUENCER_NICHES.map(n => <option key={n}>{n}</option>)}
+                    </select>
+                  </div>
+                  {/* Oraș */}
+                  <div>
+                    <label className="block text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> Oraș
+                    </label>
+                    <div className="relative">
+                      <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                      <input type="text" placeholder="ex. București, Cluj, Iași..." value={cityFilter} onChange={e => setCityFilter(e.target.value)}
+                        className="w-full pl-8 pr-8 py-2.5 border border-input rounded-xl bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+                      {cityFilter && <button onClick={() => setCityFilter('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"><X className="w-3 h-3" /></button>}
+                    </div>
+                  </div>
+                  {/* Creator Score */}
+                  <div>
+                    <label className="block text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">Creator Score</label>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {CREATOR_SCORE_LEVELS.map(level => {
+                        const colors: Record<string, string> = {
+                          'Toate nivelurile': 'bg-gray-100 text-gray-600 border-gray-200',
+                          'Starter': 'bg-gray-100 text-gray-700 border-gray-300',
+                          'Rising': 'bg-blue-100 text-blue-700 border-blue-300',
+                          'Pro': 'bg-purple-100 text-purple-700 border-purple-300',
+                          'Elite': 'bg-amber-100 text-amber-700 border-amber-300',
+                        }
+                        const active = scoreFilter === level
+                        return (
+                          <button key={level} onClick={() => setScoreFilter(level)}
+                            className={`text-xs font-bold px-3 py-1.5 rounded-xl border-2 transition ${active ? colors[level] + ' border-opacity-100' : 'border-border text-muted-foreground hover:border-primary/30'}`}
+                            style={active ? { borderColor: 'currentColor' } : {}}>
+                            {level === 'Toate nivelurile' ? 'Toate' : level}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-end">
-                  <button onClick={() => { setPlatformFilter('Toate Platformele'); setNicheFilter('Toate Nișele'); setMinFollowers(''); setShowSavedOnly(false); setCityFilter('') }}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  {/* Followeri min */}
+                  <div>
+                    <label className="block text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">Followeri minimi (K)</label>
+                    <Input type="number" placeholder="ex. 5 = 5.000+" value={minFollowers} onChange={e => setMinFollowers(e.target.value)} className="text-sm" />
+                  </div>
+                  {/* Followeri max */}
+                  <div>
+                    <label className="block text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">Followeri maximi (K)</label>
+                    <Input type="number" placeholder="ex. 100 = max 100.000" value={maxFollowers} onChange={e => setMaxFollowers(e.target.value)} className="text-sm" />
+                  </div>
+                  {/* Toggleuri + Clear */}
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => setVerifiedOnly(v => !v)}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition ${verifiedOnly ? 'bg-green-50 border-green-400 text-green-700' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
+                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${verifiedOnly ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                        {verifiedOnly && <span className="text-white text-[10px]">✓</span>}
+                      </div>
+                      Doar verificați
+                    </button>
+                    <button onClick={() => setShowSavedOnly(v => !v)}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition ${showSavedOnly ? 'bg-orange-50 border-orange-400 text-orange-700' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
+                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${showSavedOnly ? 'bg-orange-500 border-orange-500' : 'border-gray-300'}`}>
+                        {showSavedOnly && <span className="text-white text-[10px]">✓</span>}
+                      </div>
+                      Doar salvați
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button onClick={() => { setPlatformFilter('Toate Platformele'); setNicheFilter('Toate Nișele'); setMinFollowers(''); setMaxFollowers(''); setShowSavedOnly(false); setCityFilter(''); setScoreFilter('Toate nivelurile'); setVerifiedOnly(false) }}
                     className="text-sm text-muted-foreground hover:text-foreground underline">
-                    Clear all filters
+                    Șterge toate filtrele
                   </button>
                 </div>
               </div>
@@ -859,7 +1043,7 @@ export default function BrandInfluencersPage() {
               </p>
               {(search || activeFilterCount > 0) && (
                 <Button variant="outline" size="sm" className="mt-4"
-                  onClick={() => { setSearch(''); setPlatformFilter('Toate Platformele'); setNicheFilter('Toate Nișele'); setMinFollowers(''); setShowSavedOnly(false); setCityFilter('') }}>
+                  onClick={() => { setSearch(''); setPlatformFilter('Toate Platformele'); setNicheFilter('Toate Nișele'); setMinFollowers(''); setMaxFollowers(''); setShowSavedOnly(false); setCityFilter(''); setScoreFilter('Toate nivelurile'); setVerifiedOnly(false) }}>
                   Clear filters
                 </Button>
               )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -9,7 +9,8 @@ import { VerificationBanner } from '@/components/shared/verification-banner'
 import {
   Zap, Users, TrendingUp, DollarSign, Plus, ArrowRight,
   Briefcase, Clock, AlertCircle, RefreshCw,
-  ChevronRight, X, Coins, Sparkles, Search
+  ChevronRight, X, Coins, Sparkles, Search,
+  MessageCircle, Send, Bot, Minimize2
 } from 'lucide-react'
 
 const STATUS_CFG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
@@ -25,6 +26,182 @@ const STATUS_CFG: Record<string, { label: string; bg: string; text: string; dot:
 const fmt = (n: number) => `${(n || 0).toLocaleString('ro-RO', { minimumFractionDigits: 0 })} RON`
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
+// ── AI Assistant Widget ──────────────────────────────────────────────────────
+const QUICK_QUESTIONS = [
+  'Cum lansez prima campanie?',
+  'Ce comision are AddFame?',
+  'Cum funcționează escrow-ul?',
+  'Ce este Creator Score?',
+]
+
+function AIAssistant() {
+  const [open, setOpen] = useState(false)
+  const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([
+    { role: 'ai', text: 'Salut! 👋 Sunt asistentul AI AddFame. Cu ce te pot ajuta azi?' }
+  ])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  async function sendMessage(text: string) {
+    if (!text.trim() || loading) return
+    const userMsg = text.trim()
+    setInput('')
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }])
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'chat', data: { message: userMsg } }),
+      })
+      const data = await res.json()
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        text: data.message || 'Îmi pare rău, nu am putut genera un răspuns.'
+      }])
+    } catch {
+      setMessages(prev => [...prev, { role: 'ai', text: 'Eroare de conexiune. Încearcă din nou.' }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <>
+      {/* Floating button */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          title="AddFame Chat"
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 50,
+            background: 'linear-gradient(135deg,#f97316,#ec4899)',
+            color: 'white',
+            border: 'none',
+            borderRadius: 100,
+            padding: '12px 20px',
+            fontSize: 14,
+            fontWeight: 800,
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            cursor: 'pointer',
+            boxShadow: '0 8px 24px rgba(249,115,22,0.4)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Bot className="w-4 h-4" />
+          AddFame Chat
+        </button>
+      )}
+
+      {/* Chat window */}
+      {open && (
+        <div
+          className="fixed z-50 overflow-hidden shadow-2xl flex flex-col"
+          style={{ bottom: 88, right: 24, width: 'min(320px, calc(100vw - 48px))', height: 'min(440px, calc(100vh - 120px))', borderRadius: 24, border: '1.5px solid #f0f0f0', background: 'white' }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-white font-black text-sm">AddFame Chat</p>
+                <p className="text-white/70 text-[10px]">Ask me anything</p>
+              </div>
+            </div>
+            <button onClick={() => setOpen(false)} className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition">
+              <Minimize2 className="w-3.5 h-3.5 text-white" />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ scrollbarWidth: 'none' }}>
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm font-medium leading-relaxed ${
+                    m.role === 'user'
+                      ? 'text-white rounded-br-sm'
+                      : 'bg-gray-50 text-gray-800 rounded-bl-sm border border-gray-100'
+                  }`}
+                  style={m.role === 'user' ? { background: 'linear-gradient(135deg,#f97316,#ec4899)' } : {}}
+                >
+                  <span dangerouslySetInnerHTML={{ __html: m.text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n/g, '<br/>') 
+                  }} />
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-50 border border-gray-100 px-3 py-2 rounded-2xl rounded-bl-sm flex gap-1">
+                  {[0, 1, 2].map(i => (
+                    <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Quick questions */}
+          {messages.length === 1 && (
+            <div className="px-3 pb-2 flex flex-wrap gap-1.5 flex-shrink-0">
+              {QUICK_QUESTIONS.map(q => (
+                <button
+                  key={q}
+                  onClick={() => sendMessage(q)}
+                  className="text-[11px] font-bold px-2.5 py-1 rounded-full border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 transition"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input */}
+          <div className="px-3 pb-3 flex-shrink-0" style={{ borderTop: '1px solid #f0f0f0', paddingTop: 8 }}>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-3 py-2 border border-gray-200 focus-within:border-orange-300 transition">
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage(input)}
+                placeholder="Scrie o întrebare..."
+                className="flex-1 bg-transparent text-sm outline-none font-medium text-gray-700 placeholder:text-gray-400"
+                disabled={loading}
+              />
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={!input.trim() || loading}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white transition disabled:opacity-40"
+                style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ── Main Dashboard ───────────────────────────────────────────────────────────
 export default function BrandDashboard() {
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)
@@ -77,7 +254,6 @@ export default function BrandDashboard() {
   const creditsBalance = profile?.credits_balance || 0
   const totalSpent = profile?.total_spent || 0
 
-  // Featured: campania activă (sau prima dacă nu e niciuna)
   const featuredCampaign = activeCampaigns[0] || campaigns[0]
   const featuredStats = featuredCampaign ? {
     total: collabs.filter(c => c.campaign_id === featuredCampaign.id).length,
@@ -108,7 +284,7 @@ export default function BrandDashboard() {
         .stat-mini:hover { box-shadow:0 8px 24px rgba(0,0,0,0.05);transform:translateY(-1px); }
       `}</style>
 
-      {/* ── TOP BAR ─────────────── */}
+      {/* TOP BAR */}
       <div className="flex items-center justify-between mb-5 fade-up flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black text-gray-900">
@@ -148,14 +324,12 @@ export default function BrandDashboard() {
         </div>
       )}
 
-      {/* Onboarding checklist */}
       {!onboardingDone && (
         <div className="fade-up" style={{ animationDelay: '.02s' }}>
           <OnboardingChecklist role="brand" steps={onboardingSteps} />
         </div>
       )}
 
-      {/* Verification banner */}
       {profile && profile.verification_status !== 'verified' && (
         <div className="mb-5 fade-up" style={{ animationDelay: '.04s' }}>
           <VerificationBanner
@@ -165,7 +339,7 @@ export default function BrandDashboard() {
         </div>
       )}
 
-      {/* ── HERO ─────────────── */}
+      {/* HERO */}
       {featuredCampaign ? (
         <div className="hero-bg rounded-3xl p-7 mb-5 text-white relative overflow-hidden fade-up" style={{ animationDelay: '.06s' }}>
           <div className="glow-orb" />
@@ -182,24 +356,9 @@ export default function BrandDashboard() {
               </p>
               {featuredStats && (
                 <div className="flex gap-7 flex-wrap">
-                  <div>
-                    <p className="text-xl font-black">{featuredStats.total}</p>
-                    <p className="text-[11px] opacity-60 mt-0.5">Aplicații totale</p>
-                  </div>
-                  <div>
-                    <p className="text-xl font-black text-green-300">{featuredStats.accepted}</p>
-                    <p className="text-[11px] opacity-60 mt-0.5">Acceptate</p>
-                  </div>
-                  <div>
-                    <p className="text-xl font-black text-amber-300">{featuredStats.pending}</p>
-                    <p className="text-[11px] opacity-60 mt-0.5">În așteptare</p>
-                  </div>
-                  {featuredCampaign.max_influencers > 0 && (
-                    <div>
-                      <p className="text-xl font-black">{featuredStats.accepted} <span className="opacity-50">/ {featuredCampaign.max_influencers}</span></p>
-                      <p className="text-[11px] opacity-60 mt-0.5">Slot-uri</p>
-                    </div>
-                  )}
+                  <div><p className="text-xl font-black">{featuredStats.total}</p><p className="text-[11px] opacity-60 mt-0.5">Aplicații totale</p></div>
+                  <div><p className="text-xl font-black text-green-300">{featuredStats.accepted}</p><p className="text-[11px] opacity-60 mt-0.5">Acceptate</p></div>
+                  <div><p className="text-xl font-black text-amber-300">{featuredStats.pending}</p><p className="text-[11px] opacity-60 mt-0.5">În așteptare</p></div>
                 </div>
               )}
             </div>
@@ -222,7 +381,7 @@ export default function BrandDashboard() {
         </div>
       )}
 
-      {/* ── KPI mini cards ─────────────── */}
+      {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {[
           { label: 'Campanii active', value: activeCampaigns.length, icon: Zap, color: 'bg-orange-50 text-orange-500', href: '/brand/campaigns', trend: null as string | null },
@@ -232,9 +391,7 @@ export default function BrandDashboard() {
         ].map((s, i) => (
           <Link key={s.label} href={s.href} className="stat-mini fade-up block" style={{ animationDelay: `${0.08 + i * 0.04}s` }}>
             <div className="flex items-center justify-between mb-3">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${s.color}`}>
-                <s.icon className="w-4 h-4" />
-              </div>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${s.color}`}><s.icon className="w-4 h-4" /></div>
               {s.trend && <span className="text-[10px] font-black bg-green-50 text-green-600 px-2 py-0.5 rounded-full">{s.trend}</span>}
             </div>
             <p className="text-2xl font-black text-gray-900">{s.value}</p>
@@ -243,9 +400,8 @@ export default function BrandDashboard() {
         ))}
       </div>
 
-      {/* ── Two-column section ─────────────── */}
+      {/* Two-column */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* LEFT — Recent applications */}
         <div className="card overflow-hidden fade-up" style={{ animationDelay: '.32s' }}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1.5px solid #f5f5f5' }}>
             <h2 className="font-black text-gray-900 flex items-center gap-2"><Users className="w-4 h-4 text-orange-400" /> Aplicații recente</h2>
@@ -255,7 +411,6 @@ export default function BrandDashboard() {
             <div className="text-center py-12">
               <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
               <p className="font-bold text-gray-400 text-sm">Nicio aplicație încă</p>
-              <p className="text-xs text-gray-300 mt-1">Publică o campanie pentru a primi aplicații</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
@@ -283,15 +438,11 @@ export default function BrandDashboard() {
           )}
         </div>
 
-        {/* RIGHT — Quick actions + Summary stacked */}
         <div className="space-y-4">
           <div className="card p-5 fade-up" style={{ animationDelay: '.36s' }}>
             <h2 className="font-black text-gray-900 mb-3 text-sm">Acțiuni rapide</h2>
             <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setShowSheet(true)}
-                className="flex flex-col items-start gap-2 px-3 py-3 rounded-xl font-bold text-xs transition bg-orange-50 text-orange-600 hover:bg-orange-100 text-left"
-              >
+              <button onClick={() => setShowSheet(true)} className="flex flex-col items-start gap-2 px-3 py-3 rounded-xl font-bold text-xs transition bg-orange-50 text-orange-600 hover:bg-orange-100 text-left">
                 <Plus className="w-4 h-4" /> Creează campanie
               </button>
               {[
@@ -326,7 +477,7 @@ export default function BrandDashboard() {
         </div>
       </div>
 
-      {/* ── Recent campaigns table ─────────────── */}
+      {/* Recent campaigns table */}
       {campaigns.length > 0 && (
         <div className="card overflow-hidden fade-up mt-4" style={{ animationDelay: '.44s' }}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1.5px solid #f5f5f5' }}>
@@ -365,14 +516,11 @@ export default function BrandDashboard() {
         </div>
       )}
 
-      {/* ── Campaign type bottom sheet ─────────────────────────────────────── */}
+      {/* Campaign type sheet */}
       {showSheet && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={() => setShowSheet(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div
-            className="relative bg-white rounded-t-3xl border-t border-gray-100 px-4 pt-4 pb-12"
-            onClick={e => e.stopPropagation()}
-          >
+          <div className="relative bg-white rounded-t-3xl border-t border-gray-100 px-4 pt-4 pb-12" onClick={e => e.stopPropagation()}>
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
             <div className="flex items-center justify-between mb-4 px-1">
               <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Cum vrei să creezi campania?</p>
@@ -380,12 +528,8 @@ export default function BrandDashboard() {
                 <X className="w-3.5 h-3.5 text-gray-500" />
               </button>
             </div>
-
-            {/* Wizard — Rapid */}
-            <button
-              onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/wizard') }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-100 transition mb-3 text-left group"
-            >
+            <button onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/wizard') }}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-100 transition mb-3 text-left group">
               <div className="w-14 h-14 rounded-2xl bg-orange-100 border border-orange-200 flex items-center justify-center flex-shrink-0 text-3xl group-hover:scale-105 transition">🚀</div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
@@ -396,45 +540,25 @@ export default function BrandDashboard() {
               </div>
               <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-orange-400 transition flex-shrink-0" />
             </button>
-
             <p className="text-xs text-gray-400 text-center mb-3 font-medium">sau alege tipul manual</p>
             <div className="flex gap-3 mb-3">
               <button onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/barter') }}
                 className="flex-1 flex items-center gap-3 p-3.5 rounded-2xl border-2 border-gray-100 hover:border-orange-200 hover:bg-orange-50/50 transition text-left group">
                 <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0 text-xl group-hover:scale-105 transition">🎁</div>
-                <div className="min-w-0">
-                  <p className="font-black text-gray-900 text-sm">Barter</p>
-                  <p className="text-xs text-gray-500">Produs gratuit</p>
-                </div>
+                <div className="min-w-0"><p className="font-black text-gray-900 text-sm">Barter</p><p className="text-xs text-gray-500">Produs gratuit</p></div>
               </button>
               <button onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new') }}
                 className="flex-1 flex items-center gap-3 p-3.5 rounded-2xl border-2 border-gray-100 hover:border-purple-200 hover:bg-purple-50/50 transition text-left group">
                 <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center flex-shrink-0 text-xl group-hover:scale-105 transition">💰</div>
-                <div className="min-w-0">
-                  <p className="font-black text-gray-900 text-sm">Plătită</p>
-                  <p className="text-xs text-gray-500">Cash per post</p>
-                </div>
+                <div className="min-w-0"><p className="font-black text-gray-900 text-sm">Plătită</p><p className="text-xs text-gray-500">Cash per post</p></div>
               </button>
-            </div>
-
-            {/* Paid Campaign — în curând */}
-            <div className="relative w-full rounded-2xl overflow-hidden">
-              <div className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 text-left opacity-60 pointer-events-none select-none" style={{ filter: 'blur(1.5px)' }}>
-                <div className="w-14 h-14 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center flex-shrink-0 text-3xl">💰</div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-black text-gray-900 text-base">Paid Campaign</p>
-                  <p className="text-sm text-gray-500 mt-0.5">Plătești influencerii per conținut livrat</p>
-                  <span className="inline-block mt-1.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Buget per influencer</span>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-300 flex-shrink-0" />
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/60">
-                <span className="text-xs font-black text-purple-700 bg-purple-100 px-3 py-1.5 rounded-full border border-purple-200">🚀 În curând</span>
-              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* AI Assistant Widget */}
+      <AIAssistant />
     </div>
   )
 }

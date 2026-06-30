@@ -23,6 +23,8 @@ export default function CampaignReportPage() {
   const [performance, setPerformance] = useState<Record<string, any>>({})
   const [posts, setPosts] = useState<Record<string, any[]>>({})
   const [loading, setLoading] = useState(true)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null)
 
   // PDF generat via window.print()
 
@@ -70,6 +72,49 @@ export default function CampaignReportPage() {
   useEffect(() => {
     if (shouldPrint && !loading) setTimeout(() => window.print(), 600)
   }, [shouldPrint, loading])
+
+  async function generateAIAnalysis() {
+    setAiLoading(true)
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'campaign_report',
+          data: {
+            campaign_title: campaign?.title,
+            brand_name: campaign?.brands?.name || campaign?.brand_name,
+            campaign_type: campaign?.campaign_type,
+            platforms: campaign?.platforms,
+            total_reach: totalReach,
+            total_engagement: totalEngagement,
+            avg_er: avgER,
+            total_posts: allPosts.length,
+            num_influencers: numInfluencers,
+            traditional_cost: manualTraditionalCost ?? traditionalCost,
+            platform_cost: manualPlatformCost ?? platformCost,
+            savings: (manualTraditionalCost ?? traditionalCost) - (manualPlatformCost ?? platformCost),
+            post_types: postTypesStr,
+            sentiment: sentimentPct,
+            influencers: collabStats?.map((c: any) => ({
+              name: c.influencers?.name,
+              ig_followers: c.influencers?.ig_followers,
+              tt_followers: c.influencers?.tt_followers,
+              posts: c.posts?.length || 0,
+              reach: c.posts?.reduce((s: number, p: any) => s + (p.reach || 0), 0) || 0,
+              avg_er: c.posts?.length ? (c.posts.reduce((s: number, p: any) => s + (p.engagement_rate || 0), 0) / c.posts.length).toFixed(2) : 0,
+            }))
+          }
+        })
+      })
+      const data = await res.json()
+      if (data.success) setAiAnalysis(data.analysis)
+    } catch (e) {
+      console.error('AI report error', e)
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', fontFamily: 'Inter' }}>Se încarcă raportul...</div>
 
@@ -375,6 +420,73 @@ export default function CampaignReportPage() {
           >
             📥 Descărcă PDF
           </button>
+          <button
+            onClick={generateAIAnalysis}
+            disabled={aiLoading || !hasData}
+            className="print-btn no-print"
+            style={{ background: 'linear-gradient(135deg,#8b5cf6,#6d28d9)', marginLeft: 8, opacity: (aiLoading || !hasData) ? 0.6 : 1 }}
+          >
+            {aiLoading ? '⏳ Analizez...' : '✨ Analiză AI'}
+          </button>
+        </div>
+      )}
+
+      {/* ── AI Analysis Panel ── */}
+      {aiAnalysis && (
+        <div className="no-print" style={{ margin: '16px auto', maxWidth: 794, background: 'linear-gradient(135deg,#f3e8ff,#ede9fe)', border: '2px solid #c4b5fd', borderRadius: 16, padding: 24, fontFamily: 'Inter, sans-serif' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <span style={{ fontSize: 20 }}>✨</span>
+            <div>
+              <p style={{ margin: 0, fontWeight: 900, fontSize: 15, color: '#4c1d95' }}>Analiză AI — Generat de Claude</p>
+              <p style={{ margin: 0, fontSize: 11, color: '#7c3aed' }}>Insights și recomandări bazate pe datele campaniei</p>
+            </div>
+          </div>
+
+          {aiAnalysis.summary && (
+            <div style={{ background: 'white', borderRadius: 12, padding: 16, marginBottom: 12, border: '1px solid #ddd6fe' }}>
+              <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Rezumat campanie</p>
+              <p style={{ margin: 0, fontSize: 13, color: '#374151', lineHeight: 1.6 }}>{aiAnalysis.summary}</p>
+            </div>
+          )}
+
+          {aiAnalysis.top_performers && aiAnalysis.top_performers.length > 0 && (
+            <div style={{ background: 'white', borderRadius: 12, padding: 16, marginBottom: 12, border: '1px solid #ddd6fe' }}>
+              <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.06em' }}>🏆 Top Influenceri</p>
+              {aiAnalysis.top_performers.map((p: any, i: number) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#8b5cf6', minWidth: 18 }}>{i+1}.</span>
+                  <div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{p.name}</span>
+                    <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 6 }}>{p.reason}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {aiAnalysis.insights && aiAnalysis.insights.length > 0 && (
+            <div style={{ background: 'white', borderRadius: 12, padding: 16, marginBottom: 12, border: '1px solid #ddd6fe' }}>
+              <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.06em' }}>📊 Insights cheie</p>
+              {aiAnalysis.insights.map((insight: string, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                  <span style={{ color: '#8b5cf6', flexShrink: 0 }}>•</span>
+                  <p style={{ margin: 0, fontSize: 12, color: '#374151', lineHeight: 1.5 }}>{insight}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {aiAnalysis.recommendations && aiAnalysis.recommendations.length > 0 && (
+            <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #ddd6fe' }}>
+              <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.06em' }}>🚀 Recomandări campanie următoare</p>
+              {aiAnalysis.recommendations.map((rec: string, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                  <span style={{ color: '#10b981', flexShrink: 0, fontWeight: 700 }}>✓</span>
+                  <p style={{ margin: 0, fontSize: 12, color: '#374151', lineHeight: 1.5 }}>{rec}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

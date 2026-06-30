@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
-import { MessageSquare, Send, Search, AlertCircle, ArrowLeft } from 'lucide-react'
+import { MessageSquare, Send, Search, AlertCircle, ArrowLeft, Sparkles, Loader2 } from 'lucide-react'
 
 // Generează o culoare consistentă per brand bazată pe numele lui
 function brandColor(name: string): string {
@@ -63,6 +63,8 @@ function InboxContent() {
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [showAiSuggestions, setShowAiSuggestions] = useState(false)
   const [search, setSearch] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -143,6 +145,42 @@ function InboxContent() {
 
     return () => { sb.removeChannel(channel) }
   }, [selected?.id, loadMessages])
+
+  async function askAI(question: string) {
+    if (!selected || aiLoading) return
+    setAiLoading(true)
+    setShowAiSuggestions(false)
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'campaign_qa',
+          data: {
+            campaign_title: selected.campaigns?.title || selected.title,
+            brand_name: selected.brand?.name || 'brand',
+            campaign_type: selected.campaign_type || 'BARTER',
+            story_instructions: selected.story_instructions,
+            required_hashtags: selected.required_hashtags,
+            required_caption: selected.required_caption,
+            key_messages: selected.key_messages,
+            forbidden_content: selected.forbidden_content,
+            content_tone: selected.content_tone,
+            deadline: selected.deadline,
+            question,
+          }
+        })
+      })
+      const data = await res.json()
+      if (data.message) {
+        setText(`🤖 ${data.message}`)
+      }
+    } catch (e) {
+      console.error('AI QA error', e)
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   async function sendMessage() {
     if (!text.trim() || !selected || !userId || sending) return
@@ -325,6 +363,26 @@ function InboxContent() {
             </div>
           )}
 
+          {/* AI Quick Questions */}
+          {showAiSuggestions && (
+            <div className="bg-purple-50 border-t border-purple-100 px-4 py-3 flex flex-col gap-2">
+              <p className="text-[11px] font-black text-purple-600 uppercase tracking-wide">Întrebări frecvente despre campanie:</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  'Ce hashtag-uri trebuie să folosesc?',
+                  'Cum trebuie să arate postarea?',
+                  'Ce să evit în postare?',
+                  'Care e deadline-ul?',
+                  'Ce mesaje cheie să transmit?',
+                ].map(q => (
+                  <button key={q} onClick={() => askAI(q)}
+                    className="text-xs font-bold px-3 py-1.5 rounded-full bg-white border border-purple-200 text-purple-700 hover:bg-purple-100 transition">
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="bg-white px-4 py-3 flex items-end gap-3 flex-shrink-0" style={{ borderTop: '1.5px solid #f0f0f0' }}>
             <textarea className="msg-input" rows={1}
               placeholder="Scrie un mesaj… (Enter pentru trimitere)"
@@ -332,6 +390,12 @@ function InboxContent() {
               onChange={e => { setText(e.target.value); setSendError(null) }}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
             />
+            <button onClick={() => setShowAiSuggestions(v => !v)}
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition border-2 ${showAiSuggestions ? 'bg-purple-100 border-purple-400 text-purple-600' : 'border-purple-200 text-purple-400 hover:bg-purple-50'}`}
+              title="Întreabă AI despre campanie"
+            >
+              {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            </button>
             <button onClick={sendMessage} disabled={!text.trim() || sending}
               className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition text-white disabled:opacity-40"
               style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 3px 10px rgba(139,92,246,.3)' }}>

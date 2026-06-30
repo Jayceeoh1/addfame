@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useLang } from '@/lib/i18n/context'
 import {
-  ArrowRight, CheckCircle, Star, Users, TrendingUp, Zap,
+  ArrowRight, CheckCircle, Star, Users , Zap,
   Play, ChevronDown, Instagram, Youtube, Menu, X,
   MessageCircle, Shield, Clock, Award, BarChart3,
 } from 'lucide-react'

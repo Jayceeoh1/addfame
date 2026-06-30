@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, X, Clock, ExternalLink, Search, RefreshCw } from 'lucide-react'
+import { AIProofAnalyzer } from '@/components/shared/AIProofAnalyzer'
 
 const PLATFORM_ICON = {
   instagram: '📸', tiktok: '🎵', youtube: '▶️', facebook: '👤'
@@ -339,6 +340,14 @@ export default function AdminReviewsPage() {
                               <X className="w-4 h-4" /> Respinge
                             </button>
                           </div>
+                          <AIProofAnalyzer collaboration={{
+                            proof_link: urls[0],
+                            proof_caption: c.proof_caption,
+                            required_hashtags: c.campaigns?.required_hashtags,
+                            required_caption: c.campaigns?.required_caption,
+                            story_instructions: c.campaigns?.story_instructions,
+                            campaigns: { title: c.campaigns?.title, brand_name: c.campaigns?.brand_name }
+                          }} />
                         </div>
                       )
                     })}
@@ -419,6 +428,16 @@ export default function AdminReviewsPage() {
                   )}
                 </div>
 
+                {/* AI Analyzer */}
+                <AIProofAnalyzer collaboration={{
+                  proof_link: urls[0],
+                  proof_caption: c.proof_caption,
+                  required_hashtags: c.campaigns?.required_hashtags,
+                  required_caption: c.campaigns?.required_caption,
+                  story_instructions: c.campaigns?.story_instructions,
+                  campaigns: { title: c.campaigns?.title, brand_name: c.campaigns?.brand_name }
+                }} />
+
                 {/* Actiuni */}
                 <div className="flex gap-3">
                   <button onClick={() => approve(c.id)} disabled={!!working}
@@ -436,6 +455,14 @@ export default function AdminReviewsPage() {
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
+                <AIProofAnalyzer collaboration={{
+                  proof_link: urls[0],
+                  proof_caption: c.proof_caption,
+                  required_hashtags: c.campaigns?.required_hashtags,
+                  required_caption: c.campaigns?.required_caption,
+                  story_instructions: c.campaigns?.story_instructions,
+                  campaigns: { title: c.campaigns?.title, brand_name: c.campaigns?.brand_name }
+                }} />
               </div>
             </div>
           )
