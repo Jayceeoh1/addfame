@@ -162,9 +162,7 @@ function LoginContent() {
 
           {/* Mobile logo */}
           <Link href="/" className="lg:hidden flex items-center gap-2.5 mb-10 justify-center fade-up">
-            <div className="w-9 h-9 brand-grad rounded-xl flex items-center justify-center" style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.35)' }}>
-              <img src="/logo.png" alt="AddFame" style={{ width: "80%", height: "80%", objectFit: "contain" }} />
-            </div>
+            <img src="/logo.png" alt="AddFame" style={{ width: 36, height: 36, objectFit: "contain" }} />
             <span className="font-black text-xl tracking-tight">AddFame</span>
           </Link>
 
