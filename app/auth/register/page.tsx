@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   AlertCircle, ArrowRight, ArrowLeft, Eye, EyeOff,
   TrendingUp, Users, CheckCircle, Clock, MapPin, X, Loader2,
+  Building2, ChevronRight,
 } from 'lucide-react'
 import {
   BRAND_INDUSTRIES, COMPANY_SIZES, INFLUENCER_NICHES,
@@ -39,6 +40,7 @@ function RegisterForm() {
   const [companySize, setCompanySize] = useState('')
   const [website, setWebsite] = useState('')
   const [cui, setCui] = useState('')
+  const [showCompanyModal, setShowCompanyModal] = useState(false)
   const [companyLegalName, setCompanyLegalName] = useState('')
   const [companyAddress, setCompanyAddress] = useState('')
 
@@ -314,7 +316,7 @@ function RegisterForm() {
               style={{ boxShadow: `0 4px 14px ${accentColor}55` }}>
               <img src="/logo.png" alt="AddFame" style={{ width: '110%', height: '110%', objectFit: 'contain' }} />
             </div>
-            <span className="font-black text-xl tracking-tight">Influe<span style={{ color: accentColor }}>X</span></span>
+            <span className="font-black text-xl tracking-tight">AddFame</span>
           </Link>
 
           {/* Step progress */}
@@ -533,31 +535,22 @@ function RegisterForm() {
               </div>
 
               <div className="d4b fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">CUI / CIF firmă *</label>
-                <input className="f" placeholder="ex. RO12345678 sau 12345678" value={cui}
-                  onChange={e => setCui(e.target.value)} disabled={loading} required />
-                {cui.trim().length > 0 && !/^(RO)?[0-9]{2,10}$/i.test(cui.trim()) ? (
-                  <p className="text-xs text-red-500 mt-1.5 font-bold">CUI invalid — trebuie să conțină doar cifre (opțional cu prefix RO).</p>
-                ) : (
-                  <p className="text-xs text-gray-400 mt-1.5">Necesar pentru verificarea contului de brand. Codul Unic de Înregistrare al firmei tale.</p>
-                )}
-              </div>
-
-              <div className="d4c fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Denumire legală firmă *</label>
-                <input className="f" placeholder="ex. SC Exemplu Marketing SRL" value={companyLegalName}
-                  onChange={e => setCompanyLegalName(e.target.value)} disabled={loading} required />
-                <p className="text-xs text-gray-400 mt-1.5">Așa cum apare la Registrul Comerțului.</p>
-              </div>
-
-              <div className="d4d fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Sediu social / Adresă firmă *</label>
-                <input className="f" placeholder="ex. Str. Exemplu nr. 1, București" value={companyAddress}
-                  onChange={e => setCompanyAddress(e.target.value)} disabled={loading} required />
+                <button type="button" onClick={() => setShowCompanyModal(true)} disabled={loading}
+                  className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border-2 border-gray-200 hover:border-orange-300 hover:bg-orange-50/40 transition text-left">
+                  <span className="flex items-center gap-2.5 text-sm font-bold text-gray-700">
+                    <Building2 className="w-4 h-4 text-gray-400" />
+                    Informații firmă
+                    <span className="text-xs font-medium text-gray-400">(opțional)</span>
+                    {cui.trim() && companyLegalName.trim() && companyAddress.trim() && (
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                    )}
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-gray-300" />
+                </button>
               </div>
 
               <div className="d5 fade-up pt-1">
-                <button type="submit" disabled={loading || !brandName || !industry || !/^(RO)?[0-9]{2,10}$/i.test(cui.trim()) || companyLegalName.trim().length < 5 || companyAddress.trim().length < 8} className="btn"
+                <button type="submit" disabled={loading || !brandName || !industry} className="btn"
                   style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 6px 20px rgba(249,115,22,0.38)' }}>
                   {loading
                     ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Se creează contul…</>
@@ -830,6 +823,62 @@ function RegisterForm() {
           </p>
         </div>
       </div>
+
+      {/* Modal informații firmă (opțional) */}
+      {showCompanyModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setShowCompanyModal(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="font-black text-gray-900 text-lg">Informații firmă</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Opțional — le poți completa și mai târziu din setări</p>
+              </div>
+              <button onClick={() => setShowCompanyModal(false)} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition flex-shrink-0">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-black text-gray-700 mb-2">CUI / CIF firmă</label>
+                <input className="f" placeholder="ex. RO12345678 sau 12345678" value={cui}
+                  onChange={e => setCui(e.target.value)} disabled={loading} />
+                {cui.trim().length > 0 && !/^(RO)?[0-9]{2,10}$/i.test(cui.trim()) ? (
+                  <p className="text-xs text-red-500 mt-1.5 font-bold">CUI invalid — trebuie să conțină doar cifre (opțional cu prefix RO).</p>
+                ) : (
+                  <p className="text-xs text-gray-400 mt-1.5">Necesar pentru verificarea contului de brand.</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-black text-gray-700 mb-2">Denumire legală firmă</label>
+                <input className="f" placeholder="ex. SC Exemplu Marketing SRL" value={companyLegalName}
+                  onChange={e => setCompanyLegalName(e.target.value)} disabled={loading} />
+                <p className="text-xs text-gray-400 mt-1.5">Așa cum apare la Registrul Comerțului.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-black text-gray-700 mb-2">Sediu social / Adresă firmă</label>
+                <input className="f" placeholder="ex. Str. Exemplu nr. 1, București" value={companyAddress}
+                  onChange={e => setCompanyAddress(e.target.value)} disabled={loading} />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button type="button" onClick={() => setShowCompanyModal(false)}
+                className="flex-1 py-3 rounded-xl font-bold text-sm text-gray-500 bg-gray-100 hover:bg-gray-200 transition">
+                Anulează
+              </button>
+              <button type="button" onClick={() => setShowCompanyModal(false)}
+                className="flex-1 py-3 rounded-xl font-black text-sm text-white transition"
+                style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+                Salvează
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
