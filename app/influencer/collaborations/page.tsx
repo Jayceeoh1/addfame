@@ -838,11 +838,21 @@ export default function CollaborationsPage() {
     setActionLoading(collabId)
     try {
       const sb = createClient()
-      const newStatus = action === 'accept' ? 'ACTIVE' : 'REJECTED'
+      // Dacă e invitație de la admin (admin_invited), acceptarea pune PENDING (brandul trebuie să aprobe)
+      // Dacă e aplicație normală, acceptarea pune ACTIVE direct
+      const isAdminInvite = inv?.admin_invited === true
+      const newStatus = action === 'accept'
+        ? (isAdminInvite ? 'PENDING' : 'ACTIVE')
+        : 'REJECTED'
       const { error } = await sb.from('collaborations').update({ status: newStatus }).eq('id', collabId)
       if (error) throw error
       setCollabs(prev => prev.map(c => c.id === collabId ? { ...c, status: newStatus } : c))
-      notify(action === 'accept' ? '🎉 Invitație acceptată! Ești activ pe această campanie.' : 'Invitație refuzată.', action === 'accept')
+      notify(
+        action === 'accept'
+          ? (isAdminInvite ? '✅ Invitație acceptată! Brandul va confirma colaborarea.' : '🎉 Ești activ pe această campanie.')
+          : 'Invitație refuzată.',
+        action === 'accept'
+      )
     } catch (e: any) { notify(e.message || 'Ceva a mers greșit.', false) }
     finally { setActionLoading(null) }
   }
@@ -856,8 +866,11 @@ export default function CollaborationsPage() {
     setActionLoading(addressModal.collabId)
     try {
       const sb = createClient()
+      const collab = collabs.find(c => c.id === addressModal.collabId)
+      const isAdminInvite = collab?.admin_invited === true
+      const newStatus = isAdminInvite ? 'PENDING' : 'ACTIVE'
       const { error } = await sb.from('collaborations').update({
-        status: 'ACTIVE',
+        status: newStatus,
         delivery_name: address.name,
         delivery_phone: address.phone,
         delivery_address: address.address,
@@ -866,9 +879,9 @@ export default function CollaborationsPage() {
         delivery_postal_code: address.postal_code,
       }).eq('id', addressModal.collabId)
       if (error) throw error
-      setCollabs(prev => prev.map(c => c.id === addressModal.collabId ? { 
-        ...c, 
-        status: 'ACTIVE',
+      setCollabs(prev => prev.map(c => c.id === addressModal.collabId ? {
+        ...c,
+        status: newStatus,
         delivery_name: address.name,
         delivery_phone: address.phone,
         delivery_address: address.address,
@@ -878,7 +891,7 @@ export default function CollaborationsPage() {
       } : c))
       setAddressModal(null)
       setAddress({ name: '', phone: '', address: '', city: '', county: '', postal_code: '' })
-      notify('🎉 Invitație acceptată! Brandul va primi adresa ta de livrare.', true)
+      notify(isAdminInvite ? '✅ Invitație acceptată! Brandul va confirma colaborarea.' : '🎉 Invitație acceptată! Brandul va primi adresa ta de livrare.', true)
     } catch (e: any) { notify(e.message || 'Eroare', false) }
     finally { setActionLoading(null) }
   }

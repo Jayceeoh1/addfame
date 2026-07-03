@@ -49,16 +49,15 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
       if (!user) return
       sb.from('brands').select('name, industry, logo, credits_balance, onboarding_done').eq('user_id', user.id).single()
         .then(({ data }) => {
-          if (data && data.onboarding_done === false && !window.location.pathname.startsWith('/brand/onboarding')) {
-            router.replace('/brand/onboarding')
-            return
-          }
           if (data) setProfile({
             name: data.name || 'Brand',
             industry: data.industry || '',
             logo: data.logo || null,
             credits_balance: data.credits_balance ?? 0,
           })
+          if (data && data.onboarding_done === false && !window.location.pathname.startsWith('/brand/onboarding')) {
+            router.replace('/brand/onboarding')
+          }
         })
     })
   }, [])

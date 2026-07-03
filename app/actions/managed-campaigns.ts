@@ -242,7 +242,7 @@ export async function inviteInfluencersToBarter(
         influencer_id: infId,
         brand_id: campaign.brand_id,
         status: 'INVITED',
-        message: 'Ai fost invitat să colaborezi la această campanie.',
+        message: 'Ai fost invitat să colaborezi la această campanie. Acceptă invitația pentru a începe!',
         admin_invited: true,
       }))
 

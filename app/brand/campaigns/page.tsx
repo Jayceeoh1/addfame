@@ -328,8 +328,8 @@ export default function BrandCampaignsPage() {
                         {openMenu === c.id && (
                           <div className="dropdown dropdown-anim">
                             {c.status === 'DRAFT' && (
-                              <button className="dropdown-item" onClick={() => handleStatusChange(c.id, 'ACTIVE')}>
-                                <Play className="w-4 h-4 text-green-500" /> Publish campaign
+                              <button className="dropdown-item" onClick={() => router.push(`/brand/campaigns/new/barter?draftId=${c.id}`)}>
+                                <Play className="w-4 h-4 text-green-500" /> Continuă campania
                               </button>
                             )}
                             {c.status === 'ACTIVE' && (
@@ -391,15 +391,11 @@ export default function BrandCampaignsPage() {
                         {c.status === 'DRAFT' && (
                           <button
                             className="btn-publish"
-                            onClick={() => handleStatusChange(c.id, 'ACTIVE')}
-                            disabled={isLoading}
+                            onClick={() => router.push(`/brand/campaigns/new/barter?draftId=${c.id}`)}
                             style={{ boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}
                           >
-                            {isLoading
-                              ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                              : <Eye className="w-3.5 h-3.5" />
-                            }
-                            Publish
+                            <Eye className="w-3.5 h-3.5" />
+                            Continuă
                           </button>
                         )}
                         {c.status === 'ACTIVE' && (

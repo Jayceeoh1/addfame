@@ -499,10 +499,20 @@ export default function CampaignDetailPage() {
                           {campaign?.delivery_method === 'pickup' && isActive && (collab.checked_in_at ? <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">📍 La locație</span> : <span className="text-[10px] font-black text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">📍 Neconfirmat</span>)}
                           <a href={`/influencer/${infSlug}`} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold text-gray-400 hover:text-orange-500 border border-gray-200 hover:border-orange-200 px-2 py-1 rounded-lg transition flex items-center gap-1"><ArrowUpRight className="w-3 h-3" /> Profil</a>
                         </div>
-                        {(isPending || isInvited) && (
+                        {isInvited && (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
+                              ⏳ Așteaptă răspunsul influencerului
+                            </span>
+                            <button className="btn-decline" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>
+                              {isBusy ? <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <X className="w-3.5 h-3.5" />} Anulează
+                            </button>
+                          </div>
+                        )}
+                        {isPending && (
                           <div className="flex items-center gap-1.5">
                             <button className="btn-decline" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>{isBusy ? <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <X className="w-3.5 h-3.5" />} Refuză</button>
-                            <button className="btn-approve" onClick={() => collabAction(collab.id, 'ACTIVE')} disabled={isBusy}>{isBusy ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Check className="w-3.5 h-3.5" />} {isPending ? 'Aprobă' : 'Confirmă'}</button>
+                            <button className="btn-approve" onClick={() => collabAction(collab.id, 'ACTIVE')} disabled={isBusy}>{isBusy ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Check className="w-3.5 h-3.5" />} Aprobă</button>
                           </div>
                         )}
                         {isActive && <button className="btn-decline" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>{isBusy ? <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <X className="w-3.5 h-3.5" />} Refuză</button>}

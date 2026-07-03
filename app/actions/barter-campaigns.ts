@@ -230,6 +230,187 @@ export async function createBarterCampaign(data: CreateBarterCampaignInput) {
   }
 }
 
+// ─── Salvează campanie ca draft (fără taxă, fără validări stricte) ───────────
+export async function saveDraftBarterCampaign(data: Partial<CreateBarterCampaignInput>, existingId?: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) throw new Error('Sesiune expirată. Te rugăm să te autentifici din nou.')
+
+    const { data: brand, error: brandError } = await supabase
+      .from('brands').select('id, name, city').eq('user_id', user.id).single()
+    if (brandError || !brand) throw new Error('Profilul brandului nu a fost găsit.')
+
+    // Dacă există un draft, verificăm că aparține acestui brand
+    if (existingId) {
+      const { data: existing } = await supabase
+        .from('campaigns').select('id, brand_id, status').eq('id', existingId).single()
+      if (!existing || existing.brand_id !== brand.id) throw new Error('Draft invalid.')
+      if (existing.status !== 'DRAFT') throw new Error('Campania nu mai este draft.')
+    }
+
+    const offerTypeLabel = data.offer_type === 'service' ? 'Serviciu gratuit' : 'Produs gratuit'
+    const platformLabel = data.platforms?.length === 1
+      ? data.platforms[0].charAt(0) + data.platforms[0].slice(1).toLowerCase()
+      : data.platforms?.length && data.platforms.length > 1 ? 'Multi-platform' : 'Social Media'
+    const title = data.offer_name
+      ? `[Barter] ${brand.name} — ${offerTypeLabel} (${platformLabel})`
+      : `[Draft] ${brand.name} — campanie nouă`
+
+    const deadline = data.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+    let campaignCity = ''
+    if (data.delivery_method === 'pickup' && data.pickup_location_address) {
+      campaignCity = extractCityFromAddress(data.pickup_location_address)
+    }
+    if (!campaignCity && brand.city) campaignCity = brand.city
+
+    const payload = {
+      brand_id: brand.id, brand_name: brand.name,
+      title,
+      description: data.offer_description || (data.offer_name ? `${offerTypeLabel}: ${data.offer_name}` : null),
+      budget: 0, budget_per_influencer: 0,
+      max_influencers: data.offer_count || 1,
+      current_influencers: 0,
+      platforms: data.platforms?.length ? data.platforms : ['INSTAGRAM'],
+      deliverables: buildDeliverables(data as CreateBarterCampaignInput),
+      deadline, countries: [], niches: [],
+      status: 'DRAFT',
+      campaign_type: 'BARTER',
+      offer_type: data.offer_type || 'product',
+      offer_name: data.offer_name?.trim() || null,
+      offer_value: data.offer_value || 0,
+      offer_description: data.offer_description?.trim() || null,
+      offer_image_url: data.offer_image_urls?.[0] || data.offer_image_url || null,
+      offer_count: data.offer_count || 1,
+      delivery_method: data.delivery_method || 'delivery',
+      pickup_location_name: data.pickup_location_name || null,
+      pickup_location_address: data.pickup_location_address || null,
+      reservation_required: data.reservation_required || false,
+      auto_accept_influencers: data.auto_accept_influencers || false,
+      story_include_instagram: data.story_include_instagram || false,
+      story_include_atmosphere: data.story_include_atmosphere || false,
+      story_include_product: data.story_include_product || false,
+      story_instructions: data.story_instructions?.trim() || null,
+      min_followers_target: data.min_followers_target || 0,
+      tasks_stories_count: data.tasks_stories_count || 0,
+      tasks_include_post: data.tasks_include_post || false,
+      tasks_ig_reel: data.tasks_ig_reel || false,
+      tasks_ig_reel_duration: data.tasks_ig_reel_duration || null,
+      tasks_ig_post: data.tasks_ig_post || false,
+      tasks_ig_live: data.tasks_ig_live || false,
+      tasks_ig_days_online: data.tasks_ig_days_online || 30,
+      tasks_tt_video: data.tasks_tt_video || data.tasks_tiktok_video || false,
+      tasks_tt_video_duration: data.tasks_tt_video_duration || null,
+      tasks_tt_live: data.tasks_tt_live || false,
+      tasks_tt_duet: data.tasks_tt_duet || false,
+      tasks_tt_days_online: data.tasks_tt_days_online || 30,
+      tasks_yt_short: data.tasks_yt_short || data.tasks_youtube_short || false,
+      tasks_yt_short_duration: data.tasks_yt_short_duration || null,
+      tasks_yt_video: data.tasks_yt_video || data.tasks_youtube_video || false,
+      tasks_yt_video_duration: data.tasks_yt_video_duration || null,
+      tasks_yt_mention: data.tasks_yt_mention || false,
+      tasks_yt_link_in_desc: data.tasks_yt_link_in_desc || false,
+      tasks_fb_post: data.tasks_fb_post || data.tasks_facebook_post || false,
+      tasks_fb_story: data.tasks_fb_story || data.tasks_facebook_story || false,
+      tasks_fb_reel: data.tasks_fb_reel || false,
+      tasks_fb_share: data.tasks_fb_share || false,
+      promotion_link: data.promotion_link?.trim() || null,
+      promotion_link_placement: data.promotion_link_placement || [],
+      required_hashtags: data.required_hashtags || [],
+      required_caption: data.required_caption?.trim() || null,
+      content_tone: data.content_tone || [],
+      key_messages: data.key_messages || [],
+      forbidden_mentions: data.forbidden_mentions || [],
+      forbidden_content: data.forbidden_content?.trim() || null,
+      min_days_online: data.min_days_online || 30,
+      city: campaignCity || null,
+      latitude: data.pickup_lat || null,
+      longitude: data.pickup_lon || null,
+      invited_influencers: [], accepted_influencers: [], declined_influencers: [],
+    }
+
+    let campaignId = existingId
+    if (existingId) {
+      const { error } = await supabase.from('campaigns').update(payload).eq('id', existingId)
+      if (error) throw new Error(`Eroare la salvare draft: ${error.message}`)
+    } else {
+      const { data: inserted, error } = await supabase.from('campaigns').insert(payload).select('id').single()
+      if (error) throw new Error(`Eroare la creare draft: ${error.message}`)
+      campaignId = inserted.id
+    }
+
+    revalidatePath('/brand/campaigns')
+    return { success: true, campaignId }
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Eroare la salvare draft.' }
+  }
+}
+
+// ─── Publică un draft existent (validează + debitează 149 RON) ───────────────
+export async function publishBarterDraft(campaignId: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) throw new Error('Sesiune expirată. Te rugăm să te autentifici din nou.')
+
+    const { data: brand, error: brandError } = await supabase
+      .from('brands').select('id, name, credits_balance').eq('user_id', user.id).single()
+    if (brandError || !brand) throw new Error('Profilul brandului nu a fost găsit.')
+
+    const { data: campaign, error: campError } = await supabase
+      .from('campaigns').select('*').eq('id', campaignId).single()
+    if (campError || !campaign) throw new Error('Campania nu a fost găsită.')
+    if (campaign.brand_id !== brand.id) throw new Error('Nu ai permisiunea de a publica această campanie.')
+    if (campaign.status !== 'DRAFT') throw new Error('Campania nu mai este în stare de draft.')
+
+    // Validări complete
+    if (!campaign.offer_name?.trim()) throw new Error('Numele ofertei este obligatoriu.')
+    if (!campaign.offer_value || campaign.offer_value <= 0) throw new Error('Valoarea ofertei trebuie să fie mai mare de 0.')
+    if (!campaign.offer_count || campaign.offer_count < 1) throw new Error('Numărul de influenceri trebuie să fie minim 1.')
+    if (!campaign.delivery_method) throw new Error('Selectează modul de ridicare a ofertei.')
+    if (campaign.delivery_method === 'pickup' && !campaign.pickup_location_name) throw new Error('Selectează locația de ridicare.')
+
+    const hasContent = campaign.tasks_stories_count > 0 || campaign.tasks_include_post ||
+      campaign.tasks_ig_reel || campaign.tasks_ig_post || campaign.tasks_ig_live ||
+      campaign.tasks_tt_video || campaign.tasks_tt_live || campaign.tasks_tt_duet ||
+      campaign.tasks_yt_short || campaign.tasks_yt_video || campaign.tasks_yt_mention ||
+      campaign.tasks_fb_post || campaign.tasks_fb_story || campaign.tasks_fb_reel || campaign.tasks_fb_share
+    if (!hasContent) throw new Error('Selectează cel puțin un tip de conținut.')
+
+    // Verificare credite
+    const BARTER_FEE = 149
+    if ((brand.credits_balance || 0) < BARTER_FEE) {
+      return {
+        success: false,
+        error: `Sold insuficient. Ai nevoie de ${BARTER_FEE} RON pentru a publica. Sold curent: ${(brand.credits_balance || 0).toFixed(2)} RON.`,
+        insufficientCredits: true,
+      }
+    }
+
+    // Publică: schimbă status + debitează taxa
+    const { error: updateError } = await supabase
+      .from('campaigns').update({ status: 'PENDING_REVIEW' }).eq('id', campaignId)
+    if (updateError) throw new Error(`Eroare la publicare: ${updateError.message}`)
+
+    const newBalance = (brand.credits_balance || 0) - BARTER_FEE
+    await supabase.from('brands').update({ credits_balance: newBalance }).eq('id', brand.id)
+    await supabase.from('brand_transactions').insert({
+      brand_id: brand.id,
+      type: 'CAMPAIGN_FEE',
+      amount: -BARTER_FEE,
+      description: `Taxă publicare campanie barter — ${campaign.offer_name}`,
+      status: 'completed',
+    })
+
+    revalidatePath('/brand/campaigns')
+    revalidatePath('/brand/wallet')
+    return { success: true, campaignId }
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Eroare la publicare.' }
+  }
+}
+
 export async function getBarterCampaignsForInfluencer() {
   try {
     const supabase = await createClient()

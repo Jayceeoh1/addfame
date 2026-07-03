@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { createBarterCampaign } from '@/app/actions/barter-campaigns'
+import { useState, useRef, useCallback, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createBarterCampaign, saveDraftBarterCampaign, publishBarterDraft } from '@/app/actions/barter-campaigns'
 import { AIBriefGenerator } from '@/components/shared/AIBriefGenerator'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -579,8 +579,81 @@ const INITIAL: WizardData = {
 }
 
 export default function BarterCampaignWizard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" /></div>}>
+      <BarterCampaignWizardContent />
+    </Suspense>
+  )
+}
+
+function BarterCampaignWizardContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Preîncarcă draft din URL dacă există ?draftId=
+  useEffect(() => {
+    const urlDraftId = searchParams.get('draftId')
+    if (!urlDraftId) return
+    setDraftId(urlDraftId)
+    const sb = createClient()
+    sb.from('campaigns').select('*').eq('id', urlDraftId).single().then(({ data: c }) => {
+      if (!c || c.status !== 'DRAFT') return
+      setData(prev => ({
+        ...prev,
+        offer_type: c.offer_type || prev.offer_type,
+        offer_name: c.offer_name || prev.offer_name,
+        offer_value: c.offer_value ? String(c.offer_value) : prev.offer_value,
+        offer_description: c.offer_description || prev.offer_description,
+        offer_count: c.offer_count || prev.offer_count,
+        offer_image_urls: c.offer_image_url ? [c.offer_image_url] : prev.offer_image_urls,
+        delivery_method: c.delivery_method || prev.delivery_method,
+        pickup_location_name: c.pickup_location_name || prev.pickup_location_name,
+        pickup_location_address: c.pickup_location_address || prev.pickup_location_address,
+        pickup_lat: c.latitude || prev.pickup_lat,
+        pickup_lon: c.longitude || prev.pickup_lon,
+        reservation_required: c.reservation_required ?? prev.reservation_required,
+        auto_accept_influencers: c.auto_accept_influencers ?? prev.auto_accept_influencers,
+        story_include_instagram: c.story_include_instagram ?? prev.story_include_instagram,
+        story_include_atmosphere: c.story_include_atmosphere ?? prev.story_include_atmosphere,
+        story_include_product: c.story_include_product ?? prev.story_include_product,
+        story_instructions: c.story_instructions || prev.story_instructions,
+        tasks_stories_count: c.tasks_stories_count ?? prev.tasks_stories_count,
+        tasks_include_post: c.tasks_include_post ?? prev.tasks_include_post,
+        tasks_ig_reel: c.tasks_ig_reel ?? prev.tasks_ig_reel,
+        tasks_ig_reel_duration: c.tasks_ig_reel_duration || prev.tasks_ig_reel_duration,
+        tasks_ig_post: c.tasks_ig_post ?? prev.tasks_ig_post,
+        tasks_ig_live: c.tasks_ig_live ?? prev.tasks_ig_live,
+        tasks_ig_days_online: c.tasks_ig_days_online || prev.tasks_ig_days_online,
+        tasks_tt_video: c.tasks_tt_video ?? prev.tasks_tt_video,
+        tasks_tt_video_duration: c.tasks_tt_video_duration || prev.tasks_tt_video_duration,
+        tasks_tt_live: c.tasks_tt_live ?? prev.tasks_tt_live,
+        tasks_tt_duet: c.tasks_tt_duet ?? prev.tasks_tt_duet,
+        tasks_tt_days_online: c.tasks_tt_days_online || prev.tasks_tt_days_online,
+        tasks_yt_short: c.tasks_yt_short ?? prev.tasks_yt_short,
+        tasks_yt_short_duration: c.tasks_yt_short_duration || prev.tasks_yt_short_duration,
+        tasks_yt_video: c.tasks_yt_video ?? prev.tasks_yt_video,
+        tasks_yt_video_duration: c.tasks_yt_video_duration || prev.tasks_yt_video_duration,
+        tasks_yt_mention: c.tasks_yt_mention ?? prev.tasks_yt_mention,
+        tasks_yt_link_in_desc: c.tasks_yt_link_in_desc ?? prev.tasks_yt_link_in_desc,
+        tasks_fb_post: c.tasks_fb_post ?? prev.tasks_fb_post,
+        tasks_fb_story: c.tasks_fb_story ?? prev.tasks_fb_story,
+        tasks_fb_reel: c.tasks_fb_reel ?? prev.tasks_fb_reel,
+        tasks_fb_share: c.tasks_fb_share ?? prev.tasks_fb_share,
+        promotion_link: c.promotion_link || prev.promotion_link,
+        required_hashtags: c.required_hashtags?.join(' ') || prev.required_hashtags,
+        required_caption: c.required_caption || prev.required_caption,
+        content_tone: c.content_tone || prev.content_tone,
+        key_messages: c.key_messages?.join('\n') || prev.key_messages,
+        forbidden_content: c.forbidden_content || prev.forbidden_content,
+        min_days_online: c.min_days_online || prev.min_days_online,
+        min_followers_target: c.min_followers_target || prev.min_followers_target,
+      }))
+    })
+  }, [])
   const [step, setStep] = useState(0)
+  const [draftId, setDraftId] = useState<string | null>(null)
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [draftSaved, setDraftSaved] = useState(false)
   const [data, setData] = useState<WizardData>(INITIAL)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -692,11 +765,92 @@ export default function BarterCampaignWizard() {
   }
   const back = () => { setError(null); setStep(s => Math.max(0, s - 1)) }
 
+  const saveDraft = async () => {
+    setSavingDraft(true)
+    setDraftSaved(false)
+    try {
+      const result = await saveDraftBarterCampaign({
+        offer_type: data.offer_type,
+        offer_name: data.offer_name,
+        offer_value: data.offer_value ? parseFloat(data.offer_value) : undefined,
+        offer_description: data.offer_description,
+        reservation_required: data.reservation_required,
+        offer_image_urls: data.offer_image_urls,
+        offer_count: data.offer_count,
+        delivery_method: data.delivery_method,
+        pickup_location_name: data.pickup_location_name,
+        pickup_location_address: data.pickup_location_address,
+        pickup_lat: data.pickup_lat,
+        pickup_lon: data.pickup_lon,
+        story_include_instagram: data.story_include_instagram,
+        story_include_atmosphere: data.story_include_atmosphere,
+        story_include_product: data.story_include_product,
+        story_instructions: data.story_instructions,
+        auto_accept_influencers: data.auto_accept_influencers,
+        tasks_stories_count: data.tasks_stories_count,
+        tasks_include_post: data.tasks_include_post,
+        tasks_ig_reel: data.tasks_ig_reel,
+        tasks_ig_reel_duration: data.tasks_ig_reel_duration,
+        tasks_ig_post: data.tasks_ig_post,
+        tasks_ig_live: data.tasks_ig_live,
+        tasks_ig_days_online: data.tasks_ig_days_online,
+        tasks_tt_video: data.tasks_tt_video,
+        tasks_tt_video_duration: data.tasks_tt_video_duration,
+        tasks_tt_live: data.tasks_tt_live,
+        tasks_tt_duet: data.tasks_tt_duet,
+        tasks_tt_days_online: data.tasks_tt_days_online,
+        tasks_yt_short: data.tasks_yt_short,
+        tasks_yt_short_duration: data.tasks_yt_short_duration,
+        tasks_yt_video: data.tasks_yt_video,
+        tasks_yt_video_duration: data.tasks_yt_video_duration,
+        tasks_yt_mention: data.tasks_yt_mention,
+        tasks_yt_link_in_desc: data.tasks_yt_link_in_desc,
+        tasks_fb_post: data.tasks_fb_post,
+        tasks_fb_story: data.tasks_fb_story,
+        tasks_fb_reel: data.tasks_fb_reel,
+        tasks_fb_share: data.tasks_fb_share,
+        promotion_link: data.promotion_link,
+        promotion_link_placement: data.promotion_link_placement,
+        required_hashtags: data.required_hashtags ? data.required_hashtags.split(/\s+/).filter(Boolean).map(h => h.replace(/^#/, '')) : [],
+        required_caption: data.required_caption,
+        content_tone: data.content_tone,
+        key_messages: data.key_messages ? data.key_messages.split('\n').filter(Boolean) : [],
+        forbidden_content: data.forbidden_content,
+        min_days_online: data.min_days_online,
+        min_followers_target: data.min_followers_target,
+        platforms: [
+          ...(data.tasks_stories_count > 0 || data.tasks_ig_reel || data.tasks_ig_post || data.tasks_ig_live ? ['INSTAGRAM'] : []),
+          ...(data.tasks_tt_video || data.tasks_tt_live || data.tasks_tt_duet ? ['TIKTOK'] : []),
+          ...(data.tasks_yt_short || data.tasks_yt_video || data.tasks_yt_mention ? ['YOUTUBE'] : []),
+          ...(data.tasks_fb_post || data.tasks_fb_story || data.tasks_fb_reel || data.tasks_fb_share ? ['FACEBOOK'] : []),
+        ],
+      }, draftId || undefined)
+      if (result.success && result.campaignId) {
+        setDraftId(result.campaignId)
+        setDraftSaved(true)
+        setTimeout(() => setDraftSaved(false), 3000)
+      } else {
+        setError(result.error || 'Eroare la salvare draft.')
+      }
+    } catch (e: any) {
+      setError(e.message || 'Eroare la salvare draft.')
+    } finally {
+      setSavingDraft(false)
+    }
+  }
+
   const handleSubmit = async () => {
     setLoading(true)
     setError(null)
     try {
-      const result = await createBarterCampaign({
+      let result: { success: boolean; error?: string; insufficientCredits?: boolean; campaign?: any; campaignId?: string }
+
+      if (draftId) {
+        // Publică draft-ul existent
+        result = await publishBarterDraft(draftId)
+      } else {
+        // Creare + publicare directă
+        result = await createBarterCampaign({
         offer_type: data.offer_type!,
         offer_name: data.offer_name,
         offer_value: parseFloat(data.offer_value),
@@ -757,9 +911,10 @@ export default function BarterCampaignWizard() {
           ...(data.tasks_yt_short || data.tasks_yt_video || data.tasks_yt_mention ? ['YOUTUBE'] : []),
           ...(data.tasks_fb_post || data.tasks_fb_story || data.tasks_fb_reel || data.tasks_fb_share ? ['FACEBOOK'] : []),
         ],
-      })
+        })
+      }
       if (!result.success) {
-        if ((result as any).insufficientCredits) {
+        if (result.insufficientCredits) {
           router.push('/brand/wallet?topup=barter')
           return
         }
@@ -1572,20 +1727,37 @@ export default function BarterCampaignWizard() {
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border px-4 py-4 safe-area-pb">
         <div className="max-w-lg mx-auto">
           {step < 7 ? (
-            <button
-              type="button"
-              onClick={next}
-              disabled={!canProceed()}
-              className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                background: canProceed() ? 'linear-gradient(135deg, #f97316, #ec4899)' : undefined,
-                backgroundColor: canProceed() ? undefined : 'hsl(var(--muted))'
-              }}
-            >
-              Continuă
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={next}
+                disabled={!canProceed()}
+                className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background: canProceed() ? 'linear-gradient(135deg, #f97316, #ec4899)' : undefined,
+                  backgroundColor: canProceed() ? undefined : 'hsl(var(--muted))'
+                }}
+              >
+                Continuă
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={saveDraft}
+                disabled={savingDraft}
+                className="w-full py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition border-2"
+                style={{ borderColor: '#f97316', color: draftSaved ? '#16a34a' : '#f97316', background: draftSaved ? '#f0fdf4' : 'white' }}
+              >
+                {savingDraft
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />Se salvează...</>
+                  : draftSaved
+                    ? <>✓ Draft salvat!</>
+                    : <>Salvează draft</>
+                }
+              </button>
+            </div>
           ) : (
+            <div className="flex flex-col gap-2">
             <button
               type="button"
               onClick={handleSubmit}
@@ -1598,6 +1770,21 @@ export default function BarterCampaignWizard() {
                 : <><Zap className="w-4 h-4" />Publică oferta</>
               }
             </button>
+              <button
+                type="button"
+                onClick={saveDraft}
+                disabled={savingDraft}
+                className="w-full py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition border-2"
+                style={{ borderColor: '#f97316', color: draftSaved ? '#16a34a' : '#f97316', background: draftSaved ? '#f0fdf4' : 'white' }}
+              >
+                {savingDraft
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />Se salvează...</>
+                  : draftSaved
+                    ? <>✓ Draft salvat!</>
+                    : <>Salvează draft</>
+                }
+              </button>
+            </div>
           )}
         </div>
       </div>

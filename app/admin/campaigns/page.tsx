@@ -2277,8 +2277,7 @@ export default function AdminCampaigns() {
                       <div className="flex gap-2 flex-wrap">
                         {[
                           { key: 'ALL', label: 'Toți', color: 'bg-gray-100 text-gray-600' },
-                          { key: 'PENDING', label: `Aplicat (${statusCounts.PENDING || 0})`, color: 'bg-amber-50 text-amber-700' },
-                          { key: 'INVITED', label: `Invitat (${statusCounts.INVITED || 0})`, color: 'bg-blue-50 text-blue-700' },
+                          { key: 'PENDING', label: `Aplicații (${(statusCounts.PENDING || 0) + (statusCounts.INVITED || 0)})`, color: 'bg-amber-50 text-amber-700' },
                           { key: 'ACTIVE', label: `Activ (${statusCounts.ACTIVE || 0})`, color: 'bg-purple-50 text-purple-700' },
                           { key: 'COMPLETED', label: `Finalizat (${statusCounts.COMPLETED || 0})`, color: 'bg-green-50 text-green-700' },
                           { key: 'REJECTED', label: `Respins (${statusCounts.REJECTED || 0})`, color: 'bg-red-50 text-red-600' },
@@ -2303,7 +2302,7 @@ export default function AdminCampaigns() {
                     </div>
                   ) : (
                     campaignCollabs
-                    .filter(c => collabFilter === 'ALL' || c.status === collabFilter)
+                    .filter(c => collabFilter === 'ALL' || c.status === collabFilter || (collabFilter === 'PENDING' && c.status === 'INVITED'))
                     .map(collab => {
                       const inf = collab.influencers
                       const hasPending = !!collab.deliverable_submitted_at && !collab.deliverable_approved_at && !collab.deliverable_rejected_at && collab.status !== 'COMPLETED'
@@ -2311,13 +2310,13 @@ export default function AdminCampaigns() {
 
                       const STATUS_COLORS: Record<string, string> = {
                         PENDING: 'bg-amber-50 text-amber-700',
-                        INVITED: 'bg-blue-50 text-blue-700',
+                        INVITED: 'bg-amber-50 text-amber-700',
                         ACTIVE: 'bg-purple-50 text-purple-700',
                         COMPLETED: 'bg-green-50 text-green-700',
                         REJECTED: 'bg-gray-100 text-gray-500',
                       }
                       const STATUS_LABELS: Record<string, string> = {
-                        PENDING: 'Aplicat', INVITED: 'Invitat', ACTIVE: 'Activ', COMPLETED: 'Finalizat', REJECTED: 'Respins'
+                        PENDING: 'Aplicat', INVITED: 'Invitat (așteaptă acceptare)', ACTIVE: 'Activ', COMPLETED: 'Finalizat', REJECTED: 'Respins'
                       }
 
                       // Sub-status vizual — calculat din campurile existente, nu schimba DB
@@ -2602,16 +2601,16 @@ export default function AdminCampaigns() {
                             </div>
                           )}
 
-                          {/* Admin: activează din INVITED */}
+                          {/* Admin: invitat, așteaptă acceptarea influencerului */}
                           {collab.status === 'INVITED' && (
-                            <div className="px-4 pb-4 flex gap-2">
-                              <button onClick={() => approveCollab(collab.id)} disabled={collabAction === collab.id}
-                                className="flex-1 py-2.5 rounded-xl font-black text-sm text-white bg-purple-500 hover:bg-purple-600 disabled:opacity-50 transition flex items-center justify-center gap-2">
-                                ✓ Activează direct
-                              </button>
+                            <div className="px-4 pb-4">
+                              <div className="flex items-center gap-2 py-2.5 px-3 rounded-xl bg-amber-50 border border-amber-200">
+                                <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                                <span className="text-xs font-bold text-amber-700">Invitație trimisă — influencerul trebuie să accepte</span>
+                              </div>
                               <button onClick={() => rejectCollab(collab.id)} disabled={collabAction === collab.id}
-                                className="px-4 py-2.5 rounded-xl font-black text-sm text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition">
-                                ✕
+                                className="mt-2 w-full py-2 rounded-xl font-bold text-xs text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 transition">
+                                ✕ Anulează invitația
                               </button>
                             </div>
                           )}

@@ -83,7 +83,7 @@ function InboxContent() {
 
       const { data: colls } = await sb
         .from('collaborations')
-        .select('*, campaigns(id, title, brand_name, brand_id)')
+        .select('*, campaigns(id, title, brand_name, brand_id, story_instructions, required_hashtags, required_caption, key_messages, forbidden_content, content_tone, deadline)')
         .eq('influencer_id', inf.id)
         .in('status', ['ACTIVE', 'COMPLETED', 'INVITED'])
         .order('created_at', { ascending: false })
@@ -158,22 +158,32 @@ function InboxContent() {
           type: 'campaign_qa',
           data: {
             campaign_title: selected.campaigns?.title || selected.title,
-            brand_name: selected.brand?.name || 'brand',
-            campaign_type: selected.campaign_type || 'BARTER',
-            story_instructions: selected.story_instructions,
-            required_hashtags: selected.required_hashtags,
-            required_caption: selected.required_caption,
-            key_messages: selected.key_messages,
-            forbidden_content: selected.forbidden_content,
-            content_tone: selected.content_tone,
-            deadline: selected.deadline,
+            brand_name: selected.brand?.name || selected.campaigns?.brand_name || 'brand',
+            campaign_type: selected.campaign_type || selected.campaigns?.campaign_type || 'BARTER',
+            story_instructions: selected.campaigns?.story_instructions || selected.story_instructions,
+            required_hashtags: selected.campaigns?.required_hashtags || selected.required_hashtags,
+            required_caption: selected.campaigns?.required_caption || selected.required_caption,
+            key_messages: selected.campaigns?.key_messages || selected.key_messages,
+            forbidden_content: selected.campaigns?.forbidden_content || selected.forbidden_content,
+            content_tone: selected.campaigns?.content_tone || selected.content_tone,
+            deadline: selected.campaigns?.deadline || selected.deadline,
             question,
           }
         })
       })
       const data = await res.json()
       if (data.message) {
-        setText(`🤖 ${data.message}`)
+        const aiMsg = {
+          id: `ai-${Date.now()}`,
+          collaboration_id: selected.id,
+          sender_id: 'ai',
+          sender_role: 'system',
+          content: `🤖 ${data.message}`,
+          created_at: new Date().toISOString(),
+          _local: true,
+        }
+        setMessages(prev => [...prev, aiMsg])
+        scrollBottom()
       }
     } catch (e) {
       console.error('AI QA error', e)
@@ -334,6 +344,7 @@ function InboxContent() {
             )}
             {messages.map((m, i) => {
               const isMe = m.sender_role === 'influencer'
+              const isAI = m.sender_role === 'system'
               const showDay = i === 0 || fmtDay(messages[i - 1].created_at) !== fmtDay(m.created_at)
               return (
                 <div key={m.id}>
@@ -342,6 +353,15 @@ function InboxContent() {
                       <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">{fmtDay(m.created_at)}</span>
                     </div>
                   )}
+                  {isAI ? (
+                    <div className="flex justify-center my-2">
+                      <div className="max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed text-purple-800"
+                        style={{ background: 'linear-gradient(135deg,#f3e8ff,#ede9fe)', border: '1.5px solid #d8b4fe' }}>
+                        <p style={{ whiteSpace: 'pre-wrap' }}>{m.content}</p>
+                        <p className="text-[10px] mt-1 text-purple-400 text-right">{fmtTime(m.created_at)}</p>
+                      </div>
+                    </div>
+                  ) : (
                   <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${m._pending ? 'msg-pending' : ''}`}>
                     <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm font-medium leading-relaxed ${isMe ? 'text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm'}`}
                       style={isMe ? { background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' } : { border: '1.5px solid #f0f0f0' }}>
@@ -351,6 +371,7 @@ function InboxContent() {
                       </p>
                     </div>
                   </div>
+                  )}
                 </div>
               )
             })}
