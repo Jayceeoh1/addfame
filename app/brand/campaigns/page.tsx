@@ -5,11 +5,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { updateCampaignStatus } from '@/app/actions/campaigns'
+import { duplicateBarterCampaign } from '@/app/actions/barter-campaigns'
 import { VerificationBanner } from '@/components/shared/verification-banner'
 import {
   Plus, Search, Briefcase, Clock, Users, TrendingUp,
   CheckCircle, AlertCircle, Eye, EyeOff, Globe,
-  ChevronRight, Zap, MoreHorizontal, Play, Pause, Archive, ArrowRight, X
+  ChevronRight, Zap, MoreHorizontal, Play, Pause, Archive, ArrowRight, X, Copy
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -111,6 +112,16 @@ export default function BrandCampaignsPage() {
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
   }, [fetchCampaigns])
+
+  const handleDuplicate = async (campaignId: string) => {
+    setOpenMenu(null)
+    const result = await duplicateBarterCampaign(campaignId)
+    if (result.success && result.campaignId) {
+      router.push(`/brand/campaigns/new/barter?draftId=${result.campaignId}`)
+    } else {
+      alert(result.error || 'Eroare la duplicare.')
+    }
+  }
 
   async function handleStatusChange(campaignId: string, newStatus: 'ACTIVE' | 'DRAFT' | 'PAUSED' | 'COMPLETED') {
     if (newStatus === 'ACTIVE' && brandVerification.status !== 'verified') {
@@ -332,6 +343,9 @@ export default function BrandCampaignsPage() {
                                 <Play className="w-4 h-4 text-green-500" /> Continuă campania
                               </button>
                             )}
+                            <button className="dropdown-item" onClick={() => handleDuplicate(c.id)}>
+                              <Copy className="w-4 h-4 text-blue-500" /> Duplică campania
+                            </button>
                             {c.status === 'ACTIVE' && (
                               <button className="dropdown-item" onClick={() => handleStatusChange(c.id, 'PAUSED')}>
                                 <Pause className="w-4 h-4 text-gray-500" /> Pause campaign

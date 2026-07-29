@@ -5,7 +5,7 @@ import { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Users, LayoutDashboard, LogOut, ShieldCheck, Briefcase, ChevronRight, DollarSign, Building2, Menu, X, Handshake, ArrowUpRight, TrendingUp, Crown, Mail, Send, Bell, Package, Settings, CheckSquare, FileSignature, MessageCircle } from 'lucide-react'
+import { Users, LayoutDashboard, LogOut, ShieldCheck, Briefcase, ChevronRight, DollarSign, Building2, Menu, X, Handshake, ArrowUpRight, TrendingUp, Crown, Mail, Send, Bell, Package, Settings, CheckSquare, FileSignature, MessageCircle, PartyPopper } from 'lucide-react'
 import RoleSwitcher from '@/components/shared/role-switcher'
 
 const NAV = [
@@ -28,6 +28,7 @@ const NAV = [
   { icon: Crown, label: 'Admini', href: '/admin/admins', superAdminOnly: true },
   { icon: FileSignature, label: 'Contracte', href: '/admin/contracts' },
   { icon: MessageCircle, label: 'WhatsApp Logs', href: '/admin/whatsapp-logs' },
+  { icon: PartyPopper, label: 'Eveniment Toamnă', href: '/admin/event-signups' },
   { icon: Settings, label: 'Setări platformă', href: '/admin/settings' },
 ]
 

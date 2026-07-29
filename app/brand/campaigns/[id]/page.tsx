@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { updateCampaignStatus } from '@/app/actions/campaigns'
+import { duplicateBarterCampaign } from '@/app/actions/barter-campaigns'
 import { getPlatformSettings } from '@/app/actions/admin'
 import { ArrowLeft, CheckCircle, AlertCircle, X, Check, Star, MessageSquare, ArrowUpRight, Send, Users } from 'lucide-react'
 import Link from 'next/link'
@@ -371,6 +372,15 @@ export default function CampaignDetailPage() {
         onChangeStatus={changeStatus}
         onShowPause={() => setShowPauseModal(true)}
         onShowDraft={() => setShowDraftModal(true)}
+        onDuplicate={async () => {
+          setMenuOpen(false)
+          const result = await duplicateBarterCampaign(campaign.id)
+          if (result.success && result.campaignId) {
+            router.push(`/brand/campaigns/new/barter?draftId=${result.campaignId}`)
+          } else {
+            alert(result.error || 'Eroare la duplicare.')
+          }
+        }}
       />
 
       <CampaignAnalytics

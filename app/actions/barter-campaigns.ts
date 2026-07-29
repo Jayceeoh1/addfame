@@ -411,6 +411,104 @@ export async function publishBarterDraft(campaignId: string) {
   }
 }
 
+// ─── Duplică o campanie barter ca draft nou ──────────────────────────────────
+export async function duplicateBarterCampaign(campaignId: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) throw new Error('Sesiune expirată.')
+
+    const { data: brand } = await supabase
+      .from('brands').select('id, name, city').eq('user_id', user.id).single()
+    if (!brand) throw new Error('Profilul brandului nu a fost găsit.')
+
+    const { data: src } = await supabase
+      .from('campaigns').select('*').eq('id', campaignId).single()
+    if (!src) throw new Error('Campania sursă nu a fost găsită.')
+    if (src.brand_id !== brand.id) throw new Error('Nu ai permisiunea de a duplica această campanie.')
+
+    const deadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+    const { data: newCamp, error } = await supabase.from('campaigns').insert({
+      brand_id: brand.id,
+      brand_name: brand.name,
+      title: `${src.title} (copie)`,
+      description: src.description,
+      budget: 0,
+      budget_per_influencer: 0,
+      max_influencers: src.max_influencers,
+      current_influencers: 0,
+      platforms: src.platforms,
+      deliverables: src.deliverables,
+      deadline,
+      countries: src.countries || [],
+      niches: src.niches || [],
+      status: 'DRAFT',
+      campaign_type: src.campaign_type,
+      offer_type: src.offer_type,
+      offer_name: src.offer_name,
+      offer_value: src.offer_value,
+      offer_description: src.offer_description,
+      offer_image_url: src.offer_image_url,
+      offer_count: src.offer_count,
+      delivery_method: src.delivery_method,
+      pickup_location_name: src.pickup_location_name,
+      pickup_location_address: src.pickup_location_address,
+      reservation_required: src.reservation_required,
+      auto_accept_influencers: src.auto_accept_influencers,
+      story_include_instagram: src.story_include_instagram,
+      story_include_atmosphere: src.story_include_atmosphere,
+      story_include_product: src.story_include_product,
+      story_instructions: src.story_instructions,
+      min_followers_target: src.min_followers_target,
+      tasks_stories_count: src.tasks_stories_count,
+      tasks_include_post: src.tasks_include_post,
+      tasks_ig_reel: src.tasks_ig_reel,
+      tasks_ig_reel_duration: src.tasks_ig_reel_duration,
+      tasks_ig_post: src.tasks_ig_post,
+      tasks_ig_live: src.tasks_ig_live,
+      tasks_ig_days_online: src.tasks_ig_days_online,
+      tasks_tt_video: src.tasks_tt_video,
+      tasks_tt_video_duration: src.tasks_tt_video_duration,
+      tasks_tt_live: src.tasks_tt_live,
+      tasks_tt_duet: src.tasks_tt_duet,
+      tasks_tt_days_online: src.tasks_tt_days_online,
+      tasks_yt_short: src.tasks_yt_short,
+      tasks_yt_short_duration: src.tasks_yt_short_duration,
+      tasks_yt_video: src.tasks_yt_video,
+      tasks_yt_video_duration: src.tasks_yt_video_duration,
+      tasks_yt_mention: src.tasks_yt_mention,
+      tasks_yt_link_in_desc: src.tasks_yt_link_in_desc,
+      tasks_fb_post: src.tasks_fb_post,
+      tasks_fb_story: src.tasks_fb_story,
+      tasks_fb_reel: src.tasks_fb_reel,
+      tasks_fb_share: src.tasks_fb_share,
+      promotion_link: src.promotion_link,
+      promotion_link_placement: src.promotion_link_placement,
+      required_hashtags: src.required_hashtags,
+      required_caption: src.required_caption,
+      content_tone: src.content_tone,
+      key_messages: src.key_messages,
+      forbidden_mentions: src.forbidden_mentions,
+      forbidden_content: src.forbidden_content,
+      min_days_online: src.min_days_online,
+      city: src.city,
+      latitude: src.latitude,
+      longitude: src.longitude,
+      invited_influencers: [],
+      accepted_influencers: [],
+      declined_influencers: [],
+    }).select('id').single()
+
+    if (error) throw new Error(`Eroare la duplicare: ${error.message}`)
+
+    revalidatePath('/brand/campaigns')
+    return { success: true, campaignId: newCamp.id }
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Eroare la duplicare.' }
+  }
+}
+
 export async function getBarterCampaignsForInfluencer() {
   try {
     const supabase = await createClient()

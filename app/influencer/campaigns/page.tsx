@@ -305,7 +305,7 @@ export default function CampaignsPage() {
   const [barterCampaigns, setBarterCampaigns] = useState<any[]>([])
   const [noReplyCollabs, setNoReplyCollabs] = useState<any[]>([])
   const [showArchived, setShowArchived] = useState(false)
-  const [activeTab, setActiveTab] = useState<'paid' | 'barter' | 'noReply'>('paid')
+  const [activeTab, setActiveTab] = useState<'paid' | 'barter' | 'noReply'>('barter')
   const [identityVerified, setIdentityVerified] = useState(false)
   const [influencerId, setInfluencerId] = useState<string | null>(null)
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set())

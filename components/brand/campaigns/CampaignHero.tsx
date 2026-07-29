@@ -1,6 +1,6 @@
 // @ts-nocheck
 'use client'
-import { Calendar, DollarSign, Edit2, Eye, MoreHorizontal, Pause, Play, RefreshCw, Save, TrendingUp, Users, X, EyeOff, Archive } from 'lucide-react'
+import { Calendar, DollarSign, Edit2, Eye, MoreHorizontal, Pause, Play, RefreshCw, Save, TrendingUp, Users, X, EyeOff, Archive, Copy } from 'lucide-react'
 import { STATUS_CFG, fmt, fmtDate, daysLeft } from './types'
 
 const PLATFORM_ICON: Record<string, React.ReactElement> = {
@@ -9,7 +9,7 @@ const PLATFORM_ICON: Record<string, React.ReactElement> = {
   youtube: <span className="text-red-500">YT</span>,
 }
 
-export function CampaignHero({ campaign, collabs, counts, editing, editForm, setEditForm, saving, statusLoading, menuOpen, setMenuOpen, menuRef, onRefresh, onSaveEdit, onCancelEdit, onStartEdit, onChangeStatus, onShowPause, onShowDraft }: any) {
+export function CampaignHero({ campaign, collabs, counts, editing, editForm, setEditForm, saving, statusLoading, menuOpen, setMenuOpen, menuRef, onRefresh, onSaveEdit, onCancelEdit, onStartEdit, onChangeStatus, onShowPause, onShowDraft, onDuplicate }: any) {
   const cfg = STATUS_CFG[campaign.status] ?? STATUS_CFG.DRAFT
   const days = daysLeft(campaign.deadline)
   const expired = days < 0
@@ -74,6 +74,7 @@ export function CampaignHero({ campaign, collabs, counts, editing, editForm, set
                     {campaign.status !== 'ACTIVE' && <button className="d-item" onClick={() => onChangeStatus('ACTIVE')}><Play className="w-4 h-4 text-green-500" /> Publică</button>}
                     {campaign.status !== 'DRAFT' && <button className="d-item" onClick={() => campaign.status === 'ACTIVE' ? onShowDraft() : onChangeStatus('DRAFT')}><EyeOff className="w-4 h-4 text-amber-500" /> Mută în Draft</button>}
                     {campaign.status !== 'PAUSED' && campaign.status !== 'COMPLETED' && <button className="d-item" onClick={onShowPause}><Pause className="w-4 h-4 text-gray-500" /> Pauză</button>}
+                    <button className="d-item" onClick={onDuplicate}><Copy className="w-4 h-4 text-blue-500" /> Duplică campania</button>
                     {campaign.status !== 'COMPLETED' && <button className="d-item red" onClick={() => onChangeStatus('COMPLETED')}><Archive className="w-4 h-4" /> Marchează Finalizat</button>}
                   </div>
                 )}
