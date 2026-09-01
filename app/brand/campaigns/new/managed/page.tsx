@@ -52,6 +52,7 @@ interface FormData {
   // Step 3 — Buget & Timeline
   budget: number
   custom_budget: string
+  negotiable: boolean
   deadline_days: number
   influencer_count: number
   // Step 4 — Brief
@@ -70,6 +71,7 @@ const INITIAL: FormData = {
   target_niches: [],
   budget: 100,
   custom_budget: '',
+  negotiable: false,
   deadline_days: 14,
   influencer_count: 8,
   key_messages: '',
@@ -105,7 +107,7 @@ export default function NewManagedCampaign() {
   const canNext = () => {
     if (step === 1) return !!form.objective && form.platforms.length > 0
     if (step === 2) return !!form.product_name.trim() && !!form.product_description.trim()
-    if (step === 3) return (form.budget > 0 || +form.custom_budget > 0) && form.influencer_count >= 1
+    if (step === 3) return (form.negotiable || form.budget > 0 || +form.custom_budget > 0) && form.influencer_count >= 1
     return true
   }
 
@@ -127,7 +129,8 @@ export default function NewManagedCampaign() {
         product_description: form.product_description,
         product_url: form.product_url,
         target_niches: form.target_niches,
-        budget: totalBudget,
+        budget: form.negotiable ? 0 : totalBudget,
+        payment_negotiable: form.negotiable,
         influencer_count: form.influencer_count,
         deadline_days: form.deadline_days,
         key_messages: form.key_messages,
@@ -363,6 +366,27 @@ export default function NewManagedCampaign() {
               <p className="text-sm text-gray-400 mb-6">Noi distribuim bugetul optim între influenceri</p>
 
               <div className="space-y-5">
+                {/* Mod de plată: fix vs de discutat */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => set({ negotiable: false })}
+                    className={`p-3 rounded-2xl border-2 text-center transition ${!form.negotiable ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'}`}>
+                    <p className="font-black text-sm text-gray-900">💵 Preț fix</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Setezi suma per influencer</p>
+                  </button>
+                  <button type="button" onClick={() => set({ negotiable: true })}
+                    className={`p-3 rounded-2xl border-2 text-center transition ${form.negotiable ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'}`}>
+                    <p className="font-black text-sm text-gray-900">💬 De discutat</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Prețul se stabilește cu influencerul</p>
+                  </button>
+                </div>
+
+                {form.negotiable && (
+                  <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-sm text-purple-700 leading-relaxed">
+                    Nu setezi un buget acum. Prețul se discută individual cu fiecare influencer, iar echipa AddFame stabilește sumele la momentul alocării.
+                  </div>
+                )}
+
+                {!form.negotiable && (<>
                 {/* Budget options */}
                 <div>
                   <label className="block text-sm font-black text-gray-700 mb-3">Suma per influencer <span className="text-purple-500">(cât primește fiecare)</span></label>
@@ -429,6 +453,7 @@ export default function NewManagedCampaign() {
                     </div>
                   </div>
                 )}
+                </>)}
 
                 {/* Influencer count */}
                 <div>

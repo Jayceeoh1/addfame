@@ -13,6 +13,7 @@ export interface CreateManagedCampaignInput {
   product_image_url?: string
   target_niches: string[]
   budget: number
+  payment_negotiable?: boolean
   influencer_count: number
   deadline_days: number
   key_messages?: string
@@ -32,7 +33,7 @@ export async function createManagedCampaign(data: CreateManagedCampaignInput) {
 
     if (!data.product_name?.trim()) throw new Error('Numele produsului este obligatoriu.')
     if (!data.product_description?.trim()) throw new Error('Descrierea produsului este obligatorie.')
-    if (!data.budget || data.budget < 100) throw new Error('Bugetul minim este 100 RON.')
+    if (!data.payment_negotiable && (!data.budget || data.budget < 100)) throw new Error('Bugetul minim este 100 RON.')
     if (!data.objective) throw new Error('Selectează un obiectiv.')
     if (!data.platforms?.length) throw new Error('Selectează cel puțin o platformă.')
 
@@ -49,7 +50,8 @@ export async function createManagedCampaign(data: CreateManagedCampaignInput) {
       title: `[Managed] ${data.product_name}`,
       description: data.product_description,
       budget: data.budget,
-      budget_per_influencer: Math.round(data.budget / data.influencer_count),
+      budget_per_influencer: data.payment_negotiable ? 0 : Math.round(data.budget / Math.max(1, data.influencer_count)),
+      payment_mode: data.payment_negotiable ? 'NEGOTIABLE' : 'FIXED',
       max_influencers: data.influencer_count,
       current_influencers: 0,
       platforms: data.platforms,
@@ -82,10 +84,10 @@ export async function createManagedCampaign(data: CreateManagedCampaignInput) {
       const { sendEmail } = await import('@/lib/email')
       await sendEmail(
         process.env.FROM_EMAIL || 'noreply@addfame.ro',
-        `🆕 Campanie Managed nouă: ${data.product_name} — ${data.budget} RON`,
+        `🆕 Campanie Managed nouă: ${data.product_name} — ${data.payment_negotiable ? 'preț de discutat' : data.budget + ' RON'}`,
         `<p>Brand: <strong>${brand.name}</strong></p>
          <p>Produs: ${data.product_name}</p>
-         <p>Buget: ${data.budget} RON | Influenceri: ${data.influencer_count}</p>
+         <p>Buget: ${data.payment_negotiable ? 'de discutat cu influencerii' : data.budget + ' RON'} | Influenceri: ${data.influencer_count}</p>
          <p>Obiectiv: ${data.objective}</p>
          <p>Platforme: ${data.platforms.join(', ')}</p>
          <p><a href="https://addfame.ro/admin/campaigns">Vezi în admin →</a></p>`
@@ -242,7 +244,7 @@ export async function inviteInfluencersToBarter(
         influencer_id: infId,
         brand_id: campaign.brand_id,
         status: 'INVITED',
-        message: 'Ai fost invitat să colaborezi la această campanie. Acceptă invitația pentru a începe!',
+        message: 'Ai fost invitat să colaborezi la această campanie.',
         admin_invited: true,
       }))
 

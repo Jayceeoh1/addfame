@@ -1,38 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID!
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET!
-const REDIRECT_URI = 'https://addfame.ro/api/auth/instagram/callback'
-const APP_URL = 'https://www.addfame.ro'
+
+// Toate redirect-urile de succes/eroare merg pe același host pe care a
+// aterizat callback-ul, ca să nu introducem inutil 307-uri.
+function profileUrl(host: string, query: string) {
+  return `https://${host}/influencer/profile?${query}`
+}
+
+function clearOauthCookies(store: Awaited<ReturnType<typeof cookies>>) {
+  const opts = { path: '/', domain: '.addfame.ro' as const }
+  store.delete({ name: 'ig_oauth_state', ...opts })
+  store.delete({ name: 'ig_oauth_redirect', ...opts })
+  store.delete({ name: 'ig_oauth_user', ...opts })
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
-  const error = searchParams.get('error')
+  const errorParam = searchParams.get('error')
+  const errorDesc = searchParams.get('error_description')
   const stateParam = searchParams.get('state')
 
-  // ── CSRF state verification ──────────────────────────────────────────────
+  const host = req.headers.get('host') || 'addfame.ro'
   const cookieStore = await cookies()
+
   const savedState = cookieStore.get('ig_oauth_state')?.value
+  const savedRedirect = cookieStore.get('ig_oauth_redirect')?.value
+  const savedUserId = cookieStore.get('ig_oauth_user')?.value
 
-  // Clear state cookie immediately (one-time use)
-  cookieStore.delete('ig_oauth_state')
+  // Cookie-urile sunt one-time — le ștergem imediat.
+  clearOauthCookies(cookieStore)
 
-  if (!savedState || stateParam !== savedState) {
-    console.error('[IG Callback] CSRF state mismatch — possible attack')
-    return NextResponse.redirect(`${APP_URL}/influencer/profile?instagram=error&reason=csrf`)
+  // ── User a refuzat pe Instagram ───────────────────────────────────────────
+  if (errorParam) {
+    const msg = encodeURIComponent(errorDesc || errorParam)
+    return NextResponse.redirect(profileUrl(host, `instagram=error&reason=denied&msg=${msg}`))
   }
-  // ────────────────────────────────────────────────────────────────────────
 
-  if (error || !code) {
-    return NextResponse.redirect(`${APP_URL}/influencer/profile?instagram=error`)
+  // ── Validări de bază ──────────────────────────────────────────────────────
+  if (!code) {
+    return NextResponse.redirect(profileUrl(host, 'instagram=error&reason=no_code'))
+  }
+  if (!savedState || stateParam !== savedState) {
+    console.error('[IG Callback] CSRF state mismatch', { hasState: !!savedState, match: stateParam === savedState })
+    return NextResponse.redirect(profileUrl(host, 'instagram=error&reason=csrf'))
+  }
+  if (!savedRedirect) {
+    return NextResponse.redirect(profileUrl(host, 'instagram=error&reason=no_redirect_cookie'))
+  }
+  if (!savedUserId) {
+    return NextResponse.redirect(profileUrl(host, 'instagram=error&reason=no_user_cookie'))
   }
 
   try {
-    // 1. Exchange code for token
+    // ── 1. Schimbăm code-ul pe short-lived token ────────────────────────────
+    // IMPORTANT: redirect_uri trebuie să fie EXACT cel folosit în /instagram
+    // (din cookie, nu recompus). Instagram face byte-exact match.
     const tokenRes = await fetch('https://api.instagram.com/oauth/access_token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -40,82 +67,126 @@ export async function GET(req: NextRequest) {
         client_id: INSTAGRAM_APP_ID,
         client_secret: INSTAGRAM_APP_SECRET,
         grant_type: 'authorization_code',
-        redirect_uri: REDIRECT_URI,
-        code: code,
+        redirect_uri: savedRedirect,
+        code,
       }).toString(),
     })
 
     const tokenData = await tokenRes.json()
 
-    if (!tokenData.access_token) {
-      throw new Error(`No access token: ${JSON.stringify(tokenData)}`)
+    if (!tokenRes.ok || !tokenData.access_token) {
+      console.error('[IG Callback] Token exchange failed', {
+        status: tokenRes.status,
+        data: tokenData,
+        redirect_uri: savedRedirect,
+      })
+      const msg = encodeURIComponent(
+        tokenData.error_message || tokenData.error?.message || `HTTP ${tokenRes.status}`
+      )
+      return NextResponse.redirect(profileUrl(host, `instagram=error&reason=token_exchange&msg=${msg}`))
     }
 
-    const shortToken = tokenData.access_token
-    const igUserId = tokenData.user_id
+    const shortToken: string = tokenData.access_token
+    const igUserId: string = String(tokenData.user_id || '')
 
-    // 2. Exchange for long-lived token
-    const longTokenRes = await fetch(
-      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${shortToken}`
-    )
-    const longTokenData = await longTokenRes.json()
-    const accessToken = longTokenData.access_token || shortToken
-    const expiresIn = longTokenData.expires_in || 5184000
+    // ── 2. Long-lived token (60 zile) ───────────────────────────────────────
+    const longUrl = new URL('https://graph.instagram.com/access_token')
+    longUrl.searchParams.set('grant_type', 'ig_exchange_token')
+    longUrl.searchParams.set('client_secret', INSTAGRAM_APP_SECRET)
+    longUrl.searchParams.set('access_token', shortToken)
 
-    // 3. Get profile
-    const profileRes = await fetch(
-      `https://graph.instagram.com/v21.0/me?fields=id,username,biography,followers_count,follows_count,media_count,profile_picture_url&access_token=${accessToken}`
-    )
+    const longRes = await fetch(longUrl.toString())
+    const longData = await longRes.json()
+
+    // Dacă long-lived exchange eșuează (ex. cont Personal fără Business),
+    // continuăm cu short-lived — expiră în 1h dar cel puțin conectăm.
+    const accessToken: string = longData.access_token || shortToken
+    const expiresIn: number = longData.expires_in || 3600
+    const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
+
+    // ── 3. Profil ───────────────────────────────────────────────────────────
+    const profileFields = [
+      'id',
+      'user_id',
+      'username',
+      'account_type',
+      'media_count',
+      'followers_count',
+      'follows_count',
+      'biography',
+      'profile_picture_url',
+      'website',
+    ].join(',')
+
+    const profileUrl2 = new URL('https://graph.instagram.com/v21.0/me')
+    profileUrl2.searchParams.set('fields', profileFields)
+    profileUrl2.searchParams.set('access_token', accessToken)
+
+    const profileRes = await fetch(profileUrl2.toString())
     const profile = await profileRes.json()
 
-    // 4. Engagement rate
-    const mediaRes = await fetch(
-      `https://graph.instagram.com/v21.0/me/media?fields=like_count,comments_count&limit=12&access_token=${accessToken}`
-    )
-    const mediaData = await mediaRes.json()
-    let engagementRate = 0
-    if (mediaData.data?.length > 0 && profile.followers_count > 0) {
-      const totalEng = mediaData.data.reduce((s: number, p: any) =>
-        s + (p.like_count || 0) + (p.comments_count || 0), 0)
-      engagementRate = (totalEng / mediaData.data.length / profile.followers_count) * 100
+    if (!profileRes.ok) {
+      console.error('[IG Callback] Profile fetch failed', { status: profileRes.status, data: profile })
     }
 
-    // 5. Get Supabase user
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll: () => cookieStore.getAll(), setAll: () => { } } }
-    )
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.redirect(`${APP_URL}/auth/login`)
+    // ── 4. Engagement rate — best-effort (nu blocăm conectarea dacă pică) ───
+    let engagementRate = 0
+    try {
+      const mediaUrl = new URL('https://graph.instagram.com/v21.0/me/media')
+      mediaUrl.searchParams.set('fields', 'like_count,comments_count')
+      mediaUrl.searchParams.set('limit', '12')
+      mediaUrl.searchParams.set('access_token', accessToken)
 
-    // 6. Save to DB
+      const mediaRes = await fetch(mediaUrl.toString())
+      const mediaData = await mediaRes.json()
+
+      if (mediaData.data?.length > 0 && profile.followers_count > 0) {
+        const totalEng = mediaData.data.reduce(
+          (s: number, p: any) => s + (p.like_count || 0) + (p.comments_count || 0),
+          0
+        )
+        engagementRate = (totalEng / mediaData.data.length / profile.followers_count) * 100
+      }
+    } catch (e) {
+      console.warn('[IG Callback] Engagement calc failed', e)
+    }
+
+    // ── 5. Salvare în DB (service role, bypass RLS) ─────────────────────────
     const admin = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const { error: updateError } = await admin.from('influencers').update({
-      instagram_access_token: accessToken,
-      instagram_token_expires: new Date(Date.now() + expiresIn * 1000).toISOString(),
-      instagram_user_id: String(igUserId || profile.id),
-      instagram_connected: true,
-      instagram_handle: profile.username,
-      ig_followers: profile.followers_count || 0,
-      ig_following: profile.follows_count || 0,
-      ig_posts_count: profile.media_count || 0,
-      ig_bio: profile.biography || null,
-      ig_avatar: profile.profile_picture_url || null,
-      ig_engagement_rate: Math.round(engagementRate * 100) / 100,
-      ig_last_sync: new Date().toISOString(),
-    }).eq('user_id', user.id)
+    const { error: updateError } = await admin
+      .from('influencers')
+      .update({
+        instagram_connected: true,
+        instagram_handle: profile.username || null,
+        instagram_user_id: String(igUserId || profile.user_id || profile.id || ''),
+        instagram_access_token: accessToken,
+        instagram_token_expires: expiresAt,
+        ig_account_type: profile.account_type || null,
+        ig_followers: profile.followers_count || 0,
+        ig_following: profile.follows_count || 0,
+        ig_posts_count: profile.media_count || 0,
+        ig_bio: profile.biography || null,
+        ig_avatar: profile.profile_picture_url || null,
+        ig_engagement_rate: Math.round(engagementRate * 100) / 100,
+        ig_last_sync: new Date().toISOString(),
+      })
+      .eq('user_id', savedUserId)
 
-    if (updateError) throw new Error(updateError.message)
+    if (updateError) {
+      console.error('[IG Callback] DB update failed', updateError)
+      const msg = encodeURIComponent(updateError.message)
+      return NextResponse.redirect(profileUrl(host, `instagram=error&reason=db&msg=${msg}`))
+    }
 
-    return NextResponse.redirect(`${APP_URL}/influencer/profile?instagram=success`)
-
+    return NextResponse.redirect(profileUrl(host, 'instagram=success'))
   } catch (e: any) {
-    return NextResponse.redirect(`${APP_URL}/influencer/profile?instagram=error&msg=${encodeURIComponent(e.message)}`)
+    console.error('[IG Callback] Unexpected error', e)
+    const msg = encodeURIComponent(e?.message || 'unknown')
+    return NextResponse.redirect(profileUrl(host, `instagram=error&reason=exception&msg=${msg}`))
   }
 }

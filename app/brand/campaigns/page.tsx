@@ -5,12 +5,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { updateCampaignStatus } from '@/app/actions/campaigns'
-import { duplicateBarterCampaign } from '@/app/actions/barter-campaigns'
 import { VerificationBanner } from '@/components/shared/verification-banner'
 import {
   Plus, Search, Briefcase, Clock, Users, TrendingUp,
   CheckCircle, AlertCircle, Eye, EyeOff, Globe,
-  ChevronRight, Zap, MoreHorizontal, Play, Pause, Archive, ArrowRight, X, Copy
+  ChevronRight, Zap, MoreHorizontal, Play, Pause, Archive, ArrowRight, X
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -112,16 +111,6 @@ export default function BrandCampaignsPage() {
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
   }, [fetchCampaigns])
-
-  const handleDuplicate = async (campaignId: string) => {
-    setOpenMenu(null)
-    const result = await duplicateBarterCampaign(campaignId)
-    if (result.success && result.campaignId) {
-      router.push(`/brand/campaigns/new/barter?draftId=${result.campaignId}`)
-    } else {
-      alert(result.error || 'Eroare la duplicare.')
-    }
-  }
 
   async function handleStatusChange(campaignId: string, newStatus: 'ACTIVE' | 'DRAFT' | 'PAUSED' | 'COMPLETED') {
     if (newStatus === 'ACTIVE' && brandVerification.status !== 'verified') {
@@ -339,13 +328,10 @@ export default function BrandCampaignsPage() {
                         {openMenu === c.id && (
                           <div className="dropdown dropdown-anim">
                             {c.status === 'DRAFT' && (
-                              <button className="dropdown-item" onClick={() => router.push(`/brand/campaigns/new/barter?draftId=${c.id}`)}>
-                                <Play className="w-4 h-4 text-green-500" /> Continuă campania
+                              <button className="dropdown-item" onClick={() => handleStatusChange(c.id, 'ACTIVE')}>
+                                <Play className="w-4 h-4 text-green-500" /> Publish campaign
                               </button>
                             )}
-                            <button className="dropdown-item" onClick={() => handleDuplicate(c.id)}>
-                              <Copy className="w-4 h-4 text-blue-500" /> Duplică campania
-                            </button>
                             {c.status === 'ACTIVE' && (
                               <button className="dropdown-item" onClick={() => handleStatusChange(c.id, 'PAUSED')}>
                                 <Pause className="w-4 h-4 text-gray-500" /> Pause campaign
@@ -405,11 +391,15 @@ export default function BrandCampaignsPage() {
                         {c.status === 'DRAFT' && (
                           <button
                             className="btn-publish"
-                            onClick={() => router.push(`/brand/campaigns/new/barter?draftId=${c.id}`)}
+                            onClick={() => handleStatusChange(c.id, 'ACTIVE')}
+                            disabled={isLoading}
                             style={{ boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}
                           >
-                            <Eye className="w-3.5 h-3.5" />
-                            Continuă
+                            {isLoading
+                              ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                              : <Eye className="w-3.5 h-3.5" />
+                            }
+                            Publish
                           </button>
                         )}
                         {c.status === 'ACTIVE' && (
@@ -482,25 +472,39 @@ export default function BrandCampaignsPage() {
               <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-orange-400 group-hover:translate-x-0.5 transition flex-shrink-0" />
             </button>
 
-            {/* Managed — în curând */}
-            <div className="relative w-full rounded-2xl overflow-hidden">
-              <div className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 text-left opacity-60 pointer-events-none select-none" style={{ filter: 'blur(1.5px)' }}>
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-3xl"
-                  style={{ background: 'linear-gradient(135deg,#f3e8ff,#e0f2fe)' }}>✨</div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-black text-gray-900 text-base">Campanie Managed</p>
-                    <span className="text-[9px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded-full">NOU</span>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-0.5">Noi selectăm influencerii și gestionăm campania</p>
-                  <span className="inline-block mt-1.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Full service · 25% comision</span>
+            {/* Campanie Plătită */}
+            <button
+              onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/wizard?type=PAID') }}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-green-200 hover:bg-green-50/50 transition mb-3 text-left group"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-green-50 border border-green-100 flex items-center justify-center flex-shrink-0 text-3xl group-hover:scale-105 transition">
+                💰
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-black text-gray-900 text-base">Campanie Plătită</p>
+                <p className="text-sm text-gray-500 mt-0.5">Plătești influencerii cash — sumă fixă sau de discutat</p>
+                <span className="inline-block mt-1.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-green-100 text-green-700">Fără comision</span>
+              </div>
+              <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-green-400 group-hover:translate-x-0.5 transition flex-shrink-0" />
+            </button>
+
+            {/* Campanie Managed */}
+            <button
+              onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/managed') }}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-purple-200 hover:bg-purple-50/50 transition text-left group"
+            >
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-3xl group-hover:scale-105 transition"
+                style={{ background: 'linear-gradient(135deg,#f3e8ff,#e0f2fe)' }}>✨</div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-black text-gray-900 text-base">Campanie Managed</p>
+                  <span className="text-[9px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded-full">NOU</span>
                 </div>
-                <ArrowRight className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                <p className="text-sm text-gray-500 mt-0.5">Noi selectăm influencerii și gestionăm campania</p>
+                <span className="inline-block mt-1.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Full service · preț fix sau de discutat</span>
               </div>
-              <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/60">
-                <span className="text-xs font-black text-purple-700 bg-purple-100 px-3 py-1.5 rounded-full border border-purple-200">🚀 În curând</span>
-              </div>
-            </div>
+              <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-purple-400 group-hover:translate-x-0.5 transition flex-shrink-0" />
+            </button>
           </div>
         </div>
       )}

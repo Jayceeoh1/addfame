@@ -305,7 +305,7 @@ export default function CampaignsPage() {
   const [barterCampaigns, setBarterCampaigns] = useState<any[]>([])
   const [noReplyCollabs, setNoReplyCollabs] = useState<any[]>([])
   const [showArchived, setShowArchived] = useState(false)
-  const [activeTab, setActiveTab] = useState<'paid' | 'barter' | 'noReply'>('barter')
+  const [activeTab, setActiveTab] = useState<'paid' | 'barter' | 'noReply'>('paid')
   const [identityVerified, setIdentityVerified] = useState(false)
   const [influencerId, setInfluencerId] = useState<string | null>(null)
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set())
@@ -1068,7 +1068,7 @@ export default function CampaignsPage() {
                   )}
                 </div>
                 <h2 className="font-black text-gray-900 text-lg leading-tight">
-                  {selected.title?.replace(/^\[Barter\]\s*/i, '') || selected.brand_name}
+                  {selected.title?.replace(/^\[(Barter|Managed|Paid)\]\s*/i, '') || selected.brand_name}
                 </h2>
                 <p className="text-sm text-gray-500 font-semibold mt-0.5">{selected.brand_name}</p>
               </div>
@@ -1287,12 +1287,33 @@ export default function CampaignsPage() {
                 </>
               ) : (
                 <>
-                  {/* Paid/Managed stats — la fel ca barter */}
+                  {/* Paid/Managed: banner de imagini (la fel ca barter) */}
+                  {(() => {
+                    const imgs = [
+                      ...(Array.isArray(selected.offer_images) ? selected.offer_images : []),
+                      ...(Array.isArray(selected.offer_image_urls) ? selected.offer_image_urls : []),
+                      ...(selected.offer_image_url ? [selected.offer_image_url] : []),
+                    ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i)
+                    if (imgs.length === 0) return null
+                    return <CampaignImageSlider images={imgs} alt={selected.title || 'Campanie'} />
+                  })()}
+
+                  {/* Paid/Managed stats */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="bg-green-50 border border-green-100 rounded-2xl p-3.5 text-center">
-                      <p className="text-xs font-black text-green-500 mb-1">RON</p>
-                      <p className="text-lg font-black text-green-600">{selected.budget_per_influencer || selected.budget || '—'}</p>
-                      <p className="text-[10px] text-gray-400 font-medium">Câștig tău</p>
+                      {((selected as any).payment_mode === 'NEGOTIABLE' || (!selected.budget_per_influencer && !selected.budget)) ? (
+                        <>
+                          <p className="text-xs font-black text-green-500 mb-1">💬</p>
+                          <p className="text-sm font-black text-green-600 leading-tight">De discutat</p>
+                          <p className="text-[10px] text-gray-400 font-medium">Preț</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-xs font-black text-green-500 mb-1">RON</p>
+                          <p className="text-lg font-black text-green-600">{selected.budget_per_influencer || selected.budget}</p>
+                          <p className="text-[10px] text-gray-400 font-medium">Câștig tău</p>
+                        </>
+                      )}
                     </div>
                     <div className="bg-purple-50 border border-purple-100 rounded-2xl p-3.5 text-center">
                       <Calendar className="w-4 h-4 text-purple-500 mx-auto mb-1" />
@@ -1322,14 +1343,18 @@ export default function CampaignsPage() {
                 )}
 
                 {/* Câștig potențial */}
-                {(collabAmounts[selected.id] || selected.budget_per_influencer) && (
+                {(collabAmounts[selected.id] || selected.budget_per_influencer || (selected as any).payment_mode === 'NEGOTIABLE') && (
                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4">
                     <p className="text-xs font-black text-green-700 uppercase tracking-wider mb-2">💰 Câștigul tău</p>
                     <div className="flex items-center justify-between">
                       <div>
                         {(() => {
                           const perInf = collabAmounts[selected.id] || selected.budget_per_influencer || 0
-                          return <>
+                          const negotiable = (selected as any).payment_mode === 'NEGOTIABLE' || !perInf
+                          return negotiable ? <>
+                            <p className="text-2xl font-black text-green-600">De discutat</p>
+                            <p className="text-xs text-green-600 text-opacity-70">prețul se stabilește cu brandul</p>
+                          </> : <>
                             <p className="text-2xl font-black text-green-600">{perInf} RON</p>
                             <p className="text-xs text-green-600 text-opacity-70">câștig net după finalizare</p>
                           </>

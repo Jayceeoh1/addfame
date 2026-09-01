@@ -203,6 +203,55 @@ export default function ProfilePage() {
 
   useEffect(() => { fetchProfile() }, [])
 
+  // ── Feedback după redirectul OAuth Instagram ─────────────────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const status = params.get('instagram')
+    if (status === 'success') {
+      setIgStatus('success')
+      // Curățăm query-ul din URL ca să nu apară la refresh
+      window.history.replaceState({}, '', '/influencer/profile')
+      // Reîncărcăm profilul ca să afișăm datele proaspete
+      fetchProfile()
+      setTimeout(() => setIgStatus('idle'), 6000)
+    } else if (status === 'error') {
+      setIgStatus('error')
+      const reason = params.get('reason')
+      const msg = params.get('msg')
+      console.error('[IG OAuth] error', { reason, msg })
+      window.history.replaceState({}, '', '/influencer/profile')
+      setTimeout(() => setIgStatus('idle'), 8000)
+    }
+  }, [])
+
+  async function disconnectInstagram() {
+    if (!confirm('Sigur vrei să deconectezi contul Instagram? Va trebui să te reconectezi ca să vezi date live.')) return
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('influencers').update({
+        instagram_connected: false,
+        instagram_access_token: null,
+        instagram_token_expires: null,
+        instagram_handle: null,
+        instagram_user_id: null,
+        ig_followers: null,
+        ig_following: null,
+        ig_posts_count: null,
+        ig_bio: null,
+        ig_avatar: null,
+        ig_engagement_rate: null,
+        ig_account_type: null,
+        ig_last_sync: null,
+      }).eq('user_id', user.id)
+      setIgData(null)
+    } catch (e) {
+      console.error('Disconnect failed', e)
+    }
+  }
+
   async function fetchProfile() {
     try {
       const supabase = createClient()
@@ -453,6 +502,26 @@ export default function ProfilePage() {
       <h1 className="text-3xl font-bold mb-2">Profilul Tău</h1>
       <p className="text-muted-foreground mb-8">Gestionează profilul tău public și conturile conectate</p>
 
+      {/* ── Banner rezultat OAuth Instagram ─────────────────────────────── */}
+      {igStatus === 'success' && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold text-green-900">Instagram conectat cu succes!</p>
+            <p className="text-green-700">Datele contului tău (followers, engagement, media) au fost sincronizate.</p>
+          </div>
+        </div>
+      )}
+      {igStatus === 'error' && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold text-red-900">Conectarea Instagram a eșuat</p>
+            <p className="text-red-700">Încearcă din nou. Dacă problema persistă, contactează-ne.</p>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
 
         {/* Avatar */}
@@ -601,7 +670,16 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <p className="font-medium text-sm">{platform.label}</p>
-                      {connected ? (
+                      {platform.id === 'instagram' && igData?.connected ? (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          <span className="text-xs font-black text-gray-800">@{igData?.handle}</span>
+                          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">{(igData?.followers || 0).toLocaleString()} followers</span>
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">{igData?.posts} posts</span>
+                          {(igData?.engagement || 0) > 0 && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">ER {igData?.engagement}%</span>}
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">API</span>
+                          {igData?.lastSync && <span className="text-xs text-gray-400">Sync: {new Date(igData.lastSync).toLocaleDateString('ro-RO')}</span>}
+                        </div>
+                      ) : connected ? (
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-muted-foreground truncate max-w-[160px]">{connected.url}</p>
                           {connected.followers && (
@@ -613,14 +691,9 @@ export default function ProfilePage() {
                           {connected.avg_views && (
                             <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">{connected.avg_views} views</span>
                           )}
-                        </div>
-                      ) : platform.id === 'instagram' && igData?.connected ? (
-                        <div className="flex flex-wrap gap-1.5 mt-1">
-                          <span className="text-xs font-black text-gray-800">@{igData?.handle}</span>
-                          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">{(igData?.followers || 0).toLocaleString()} followers</span>
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">{igData?.posts} posts</span>
-                          {(igData?.engagement || 0) > 0 && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">ER {igData?.engagement}%</span>}
-                          {igData?.lastSync && <span className="text-xs text-gray-400">Sync: {new Date(igData.lastSync).toLocaleDateString('ro-RO')}</span>}
+                          {platform.id === 'instagram' && (
+                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">manual</span>
+                          )}
                         </div>
                       ) : (
                         <p className="text-xs text-muted-foreground">Neconectat</p>
@@ -648,14 +721,49 @@ export default function ProfilePage() {
                       </>
                     )}
                     {platform.id === 'instagram' ? (
-                      <Button
-                        variant={connected ? 'outline' : 'default'}
-                        size="sm"
-                        onClick={() => openAddSocial(platform.id)}
-                        className={!connected ? 'bg-gradient-to-r from-primary to-accent' : ''}
-                      >
-                        {connected ? 'Editează' : 'Conectează'}
-                      </Button>
+                      igData?.connected ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={disconnectInstagram}
+                        >
+                          Deconectează
+                        </Button>
+                      ) : connected ? (
+                        // Are deja intrare manuală — poate edita SAU face upgrade la OAuth
+                        <div className="flex flex-col items-end gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => { window.location.href = '/api/auth/instagram' }}
+                            className="bg-gradient-to-r from-primary to-accent"
+                          >
+                            Conectează cu API
+                          </Button>
+                          <button
+                            onClick={() => openAddSocial(platform.id)}
+                            className="text-xs text-muted-foreground hover:text-foreground underline"
+                          >
+                            Editează manual
+                          </button>
+                        </div>
+                      ) : (
+                        // Nimic — arată ambele opțiuni
+                        <div className="flex flex-col items-end gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => { window.location.href = '/api/auth/instagram' }}
+                            className="bg-gradient-to-r from-primary to-accent"
+                          >
+                            Conectează cu Instagram
+                          </Button>
+                          <button
+                            onClick={() => openAddSocial(platform.id)}
+                            className="text-xs text-muted-foreground hover:text-foreground underline"
+                          >
+                            sau adaugă manual
+                          </button>
+                        </div>
+                      )
                     ) : (
                       <Button
                         variant={connected ? 'outline' : 'default'}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Check, Rocket, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -50,7 +50,7 @@ function LivePreview({ data }: { data: any }) {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
           {[
-            { label: data.campaign_type === 'BARTER' ? '🎁 Ofertă Barter' : '💰 Campanie Plătită', sub: data.campaign_type === 'BARTER' ? 'Produs gratuit' : 'Cash per postare' },
+            { label: data.campaign_type === 'BARTER' ? '🎁 Ofertă Barter' : '💰 Campanie Plătită', sub: data.campaign_type === 'BARTER' ? 'Produs gratuit' : (data.payment_mode === 'FIXED' ? (data.pay_amount ? `${data.pay_amount} RON` : 'Sumă fixă') : 'De discutat') },
             { label: data.deadline ? new Date(data.deadline).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }) : '— iul', sub: 'Deadline' },
             { label: `0/${data.max_influencers || '5'}`, sub: 'Locuri' },
           ].map((s, i) => (
@@ -162,6 +162,8 @@ export default function WizardPage() {
 
   const [data, setData] = useState({
     campaign_type: 'BARTER',
+    payment_mode: 'FIXED',
+    pay_amount: '',
     title: '',
     product_name: '',
     product_description: '',
@@ -181,6 +183,12 @@ export default function WizardPage() {
   })
 
   const set = (key: string, val: any) => setData(d => ({ ...d, [key]: val }))
+
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('type')
+    if (t === 'PAID' || t === 'BARTER') setData(d => ({ ...d, campaign_type: t }))
+  }, [])
+
   const togglePlatform = (p: string) => setData(d => ({
     ...d, platforms: d.platforms.includes(p) ? d.platforms.filter(x => x !== p) : [...d.platforms, p]
   }))
@@ -203,6 +211,9 @@ export default function WizardPage() {
         brand_id: brand.id,
         title: data.title || data.product_name || 'Campanie nouă',
         campaign_type: data.campaign_type,
+        payment_mode: data.campaign_type === 'PAID' ? data.payment_mode : null,
+        budget_per_influencer: data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' ? (parseFloat(data.pay_amount) || 0) : 0,
+        budget: data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' ? (parseFloat(data.pay_amount) || 0) * (parseInt(data.max_influencers) || 5) : 0,
         status: 'ACTIVE',
         platforms: data.platforms,
         offer_name: data.product_name || null,
@@ -249,6 +260,35 @@ export default function WizardPage() {
             </button>
           ))}
         </div>
+
+        {data.campaign_type === 'PAID' && (
+          <div style={{ marginTop: 14 }}>
+            <label style={LBL}>Mod de plată</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { mode: 'FIXED', icon: '💵', title: 'Sumă fixă', desc: 'Setezi cât primește fiecare influencer.' },
+                { mode: 'NEGOTIABLE', icon: '💬', title: 'De discutat cu influencerul', desc: 'Fără sumă fixată — vă înțelegeți direct.' },
+              ].map(opt => (
+                <button key={opt.mode} type="button" onClick={() => set('payment_mode', opt.mode)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, border: data.payment_mode === opt.mode ? '2px solid #16a34a' : '1.5px solid #e5e7eb', background: data.payment_mode === opt.mode ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: data.payment_mode === opt.mode ? '#bbf7d0' : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{opt.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#111' }}>{opt.title}</p>
+                    <p style={{ margin: '1px 0 0', fontSize: 12, color: '#6b7280' }}>{opt.desc}</p>
+                  </div>
+                  {data.payment_mode === opt.mode && <Check size={15} color="#16a34a" />}
+                </button>
+              ))}
+            </div>
+            {data.payment_mode === 'FIXED' && (
+              <div style={{ marginTop: 10 }}>
+                <label style={LBL}>Sumă per influencer (RON) *</label>
+                <input type="number" min={1} value={data.pay_amount} onChange={e => set('pay_amount', e.target.value)} placeholder="ex. 200" style={INP} />
+                <p style={{ margin: '5px 0 0', fontSize: 11, color: '#9ca3af' }}>Fără comision — suma întreagă merge la influencer. Plata se face direct de către brand.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     )
 
@@ -380,6 +420,7 @@ export default function WizardPage() {
         <div style={{ background: 'white', border: '1.5px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: 10 }}>
           {[
             { label: 'Tip', value: data.campaign_type === 'BARTER' ? '🎁 Barter' : '💰 Plătită', ok: true },
+            ...(data.campaign_type === 'PAID' ? [{ label: 'Plată', value: data.payment_mode === 'FIXED' ? `${data.pay_amount || '—'} RON / influencer` : 'De discutat cu influencerul', ok: data.payment_mode === 'NEGOTIABLE' || !!data.pay_amount }] : []),
             { label: 'Titlu', value: data.title || data.product_name, ok: !!(data.title || data.product_name) },
             { label: 'Produs', value: data.product_name || null, ok: !!data.product_name },
             { label: 'Platforme', value: data.platforms.join(', '), ok: data.platforms.length > 0 },
