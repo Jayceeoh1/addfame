@@ -57,6 +57,8 @@ export async function createSmartBillInvoice(
       name: params.clientName,
       vatCode: params.clientCif || '',
       address: params.clientAddress || '',
+      city: '',
+      country: 'Romania',
       isTaxPayer: false,
       email: params.clientEmail,
       saveToDb: false,
