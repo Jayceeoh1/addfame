@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 
     if (!existing) {
       // FIX: Creăm tranzacția DOAR acum, când plata e confirmată
-      await supabase.from('brand_transactions').insert({
+      const { data: newTx } = await supabase.from('brand_transactions').insert({
         brand_id: brandId,
         type: 'TOPUP',
         amount,
@@ -100,7 +100,19 @@ export async function POST(req: NextRequest) {
         payment_method: 'stripe_card',
         invoice_number: invoiceNumber,
         stripe_payment_intent_id: pi.id,
-      })
+      }).select('id').single()
+
+      // Emite factură SmartBill (non-blocking)
+      if (newTx?.id) {
+        fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'}/api/smartbill/create-invoice`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': process.env.ADMIN_SECRET_KEY!,
+          },
+          body: JSON.stringify({ transaction_id: newTx.id }),
+        }).catch(err => console.error('[webhook] SmartBill invoice failed:', err))
+      }
     } else {
       // Dacă există deja (creat din altă parte), doar o marcăm completed
       await supabase

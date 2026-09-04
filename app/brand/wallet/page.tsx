@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   Wallet, TrendingUp, ArrowUpRight, ArrowDownLeft, Clock,
@@ -23,6 +23,7 @@ type Transaction = {
   status: 'completed' | 'pending' | 'failed'
   payment_method?: string
   invoice_number?: string
+  smartbill_invoice_number?: string
   billing_details?: Record<string, string>
   created_at: string
 }
@@ -149,169 +150,6 @@ const fmt = (n: number) => `${n.toLocaleString('ro-RO', { minimumFractionDigits:
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 const fmtDateTime = (d: string) => new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
-// ─── Invoice generator (HTML → print/download) ────────────────────────────────
-function generateInvoiceHTML(tx: Transaction, brand: BrandInfo, amount: number): string {
-  const date = new Date(tx.created_at)
-  const dueDate = new Date(date)
-  dueDate.setDate(dueDate.getDate() + 7)
-  const fmt2 = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Invoice ${tx.invoice_number} — AddFame</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #111; background: #fff; font-size: 14px; line-height: 1.5; }
-  .page { max-width: 760px; margin: 0 auto; padding: 48px 48px; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; }
-  .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-mark { width: 44px; height: 44px; background: linear-gradient(135deg, #7c3aed, #06b6d4); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 18px; }
-  .logo-text { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
-  .invoice-badge { background: #f3f0ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 10px 16px; text-align: right; }
-  .invoice-badge .label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; }
-  .invoice-badge .number { font-size: 20px; font-weight: 800; color: #7c3aed; margin-top: 2px; }
-  .status-badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 20px; margin-top: 4px; background: ${tx.status === 'completed' ? '#d1fae5' : '#fef3c7'}; color: ${tx.status === 'completed' ? '#065f46' : '#92400e'}; }
-  .divider { height: 1px; background: #e5e7eb; margin: 32px 0; }
-  .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
-  .party-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; margin-bottom: 10px; }
-  .party-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-  .party-detail { color: #6b7280; font-size: 13px; line-height: 1.6; }
-  .dates { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; background: #f9fafb; border-radius: 12px; padding: 18px 24px; margin-bottom: 36px; }
-  .date-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; margin-bottom: 4px; }
-  .date-item .value { font-weight: 600; font-size: 14px; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
-  thead tr { background: #7c3aed; color: white; }
-  thead th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-  thead th:last-child { text-align: right; }
-  tbody tr { border-bottom: 1px solid #f3f4f6; }
-  tbody td { padding: 14px 16px; font-size: 13px; }
-  tbody td:last-child { text-align: right; font-weight: 600; }
-  .totals { display: flex; justify-content: flex-end; }
-  .totals-table { min-width: 260px; }
-  .totals-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: #6b7280; }
-  .totals-row.total { border-top: 2px solid #7c3aed; margin-top: 8px; padding-top: 14px; font-size: 18px; font-weight: 800; color: #111; }
-  .totals-row.total span:last-child { color: #7c3aed; }
-  .payment-section { background: #f9fafb; border-radius: 12px; padding: 20px 24px; margin-bottom: 32px; }
-  .payment-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; margin-bottom: 12px; }
-  .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .payment-row { font-size: 13px; }
-  .payment-row .key { color: #6b7280; }
-  .payment-row .val { font-weight: 600; color: #111; }
-  .notes { border-left: 3px solid #7c3aed; padding: 12px 16px; background: #f5f3ff; border-radius: 0 8px 8px 0; margin-bottom: 32px; font-size: 13px; color: #5b21b6; }
-  .footer { text-align: center; color: #9ca3af; font-size: 12px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
-  @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } .page { padding: 32px; } }
-</style>
-</head>
-<body>
-<div class="page">
-
-  <div class="header">
-    <div class="logo">
-      <div class="logo-mark">IX</div>
-      <div>
-        <div class="logo-text">AddFame</div>
-        <div style="font-size:12px;color:#6b7280">Platformă Marketing Influenceri</div>
-      </div>
-    </div>
-    <div class="invoice-badge">
-      <div class="label">Factură</div>
-      <div class="number">${tx.invoice_number}</div>
-      <div><span class="status-badge">${tx.status === 'completed' ? 'PAID' : 'PENDING PAYMENT'}</span></div>
-    </div>
-  </div>
-
-  <div class="parties">
-    <div>
-      <div class="party-label">De la</div>
-      <div class="party-name">${COMPANY.name}</div>
-      <div class="party-detail">
-        ${COMPANY.address}<br/>
-        ${COMPANY.country} · CUI: ${COMPANY.cui}<br/>
-        ${COMPANY.email}<br/>
-        ${COMPANY.website}
-      </div>
-    </div>
-    <div>
-      <div class="party-label">Facturat către</div>
-      <div class="party-name">${brand.name}</div>
-      <div class="party-detail">
-        ${brand.email}<br/>
-        ${brand.website ? brand.website + '<br/>' : ''}
-        ${brand.country ? brand.country : ''}
-      </div>
-    </div>
-  </div>
-
-  <div class="dates">
-    <div class="date-item">
-      <div class="label">Data Facturii</div>
-      <div class="value">${fmt2(date)}</div>
-    </div>
-    <div class="date-item">
-      <div class="label">Scadență</div>
-      <div class="value">${fmt2(dueDate)}</div>
-    </div>
-    <div class="date-item">
-      <div class="label">Metodă de Plată</div>
-      <div class="value">${PAYMENT_METHODS.find(m => m.id === tx.payment_method)?.label ?? tx.payment_method ?? '—'}</div>
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th style="width:50%">Descriere</th>
-        <th>Cant.</th>
-        <th>Preț Unitar</th>
-        <th>Sumă</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-          <strong>Credite Platformă AddFame</strong><br/>
-          <span style="color:#6b7280;font-size:12px">Credite publicitare prepaid pentru campanii cu influenceri</span>
-        </td>
-        <td>1</td>
-        <td>${fmt(amount)}</td>
-        <td>${fmt(amount)}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="totals">
-    <div class="totals-table">
-      <div class="totals-row total"><span>Total de Plată</span><span>${fmt(amount)}</span></div>
-    </div>
-  </div>
-
-  <div class="divider"></div>
-
-  <div class="payment-section">
-    <div class="payment-title">Instrucțiuni de Plată</div>
-    <div class="payment-grid">
-      ${Object.entries(PAYMENT_METHODS.find(m => m.id === tx.payment_method)?.details ?? {})
-      .map(([k, v]) => `<div class="payment-row"><span class="key">${k}: </span><span class="val">${v === '← use your invoice number' || v === '← include your invoice number' || v === '← include invoice number in memo' ? tx.invoice_number : v}</span></div>`)
-      .join('')}
-    </div>
-  </div>
-
-  <div class="notes">
-    <strong>Important:</strong> Te rugăm să incluzi numărul facturii <strong>${tx.invoice_number}</strong> ca referință de plată. Creditele vor fi adăugate în cont în termen de 1–3 zile lucrătoare după confirmarea plății.
-  </div>
-
-  <div class="footer">
-    <p>Mulțumim că ai ales AddFame · întrebări? contactează ${COMPANY.support}</p>
-    <p style="margin-top:4px">${COMPANY.name} · ${COMPANY.address}, ${COMPANY.country} · CUI ${COMPANY.cui}</p>
-  </div>
-
-</div>
-</body>
-</html>`
-}
 
 // ─── Copy helper ───────────────────────────────────────────────────────────────
 function CopyButton({ text }: { text: string }) {
@@ -355,8 +193,6 @@ export default function BrandWalletPage() {
   const [successTx, setSuccessTx] = useState<Transaction | null>(null)
 
   // Invoice viewer
-  const [viewingInvoice, setViewingInvoice] = useState<Transaction | null>(null)
-  const invoiceRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { fetchAll() }, [])
 
@@ -443,42 +279,19 @@ export default function BrandWalletPage() {
   }
 
   function openInvoice(tx: Transaction) {
-    if (!brand) return
-    const html = generateInvoiceHTML(tx, brand, tx.amount)
-    const w = window.open('', '_blank')
-    if (w) { w.document.write(html); w.document.close() }
+    if (!tx.smartbill_invoice_number) {
+      alert('Factura este în curs de generare. Încearcă din nou în câteva minute.')
+      return
+    }
+    window.open(`/api/smartbill/invoice-pdf?transaction_id=${tx.id}`, '_blank')
   }
 
   function printInvoiceAsPDF(tx: Transaction) {
-    if (!brand) return
-    const html = generateInvoiceHTML(tx, brand, tx.amount)
-    // Deschidem într-un tab nou și declanșăm print dialog automat → Save as PDF
-    const w = window.open('', '_blank')
-    if (w) {
-      w.document.write(html)
-      w.document.close()
-      // Așteptăm să se încarce, apoi print
-      w.onload = () => {
-        setTimeout(() => {
-          w.focus()
-          w.print()
-        }, 300)
-      }
-      // Fallback dacă onload nu se declanșează
-      setTimeout(() => {
-        try { w.focus(); w.print() } catch (_) {}
-      }, 800)
-    }
+    openInvoice(tx)
   }
 
   function downloadInvoiceHTML(tx: Transaction) {
-    if (!brand) return
-    const html = generateInvoiceHTML(tx, brand, tx.amount)
-    const blob = new Blob([html], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = `factura-${tx.invoice_number}.html`
-    a.click(); URL.revokeObjectURL(url)
+    openInvoice(tx)
   }
 
   function closeModal() {
@@ -896,18 +709,18 @@ export default function BrandWalletPage() {
 
                 {/* Billing */}
                 <div className="border border-border rounded-xl p-4 space-y-3">
-                  <p className="text-sm font-semibold">Billing Details <span className="text-muted-foreground font-normal">(for invoice)</span></p>
+                  <p className="text-sm font-semibold">Date Facturare <span className="text-muted-foreground font-normal">(pentru factură)</span></p>
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-1">Company / Full Name *</label>
-                    <Input placeholder={brand?.name ?? 'Company name'} value={billingName} onChange={e => setBillingName(e.target.value)} className="h-9 text-sm" />
+                    <label className="block text-xs text-muted-foreground mb-1">Firmă / Nume Complet *</label>
+                    <Input placeholder={brand?.name ?? 'Numele firmei'} value={billingName} onChange={e => setBillingName(e.target.value)} className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-1">Billing Address</label>
-                    <Input placeholder="Street, City, Country" value={billingAddress} onChange={e => setBillingAddress(e.target.value)} className="h-9 text-sm" />
+                    <label className="block text-xs text-muted-foreground mb-1">Adresă Facturare</label>
+                    <Input placeholder="Strada, Oraș, Județ" value={billingAddress} onChange={e => setBillingAddress(e.target.value)} className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-1">VAT / Tax ID <span className="text-muted-foreground">(optional)</span></label>
-                    <Input placeholder="RO12345678" value={billingVat} onChange={e => setBillingVat(e.target.value)} className="h-9 text-sm" />
+                    <label className="block text-xs text-muted-foreground mb-1">CUI / CNP <span className="text-muted-foreground">(opțional, pentru factură)</span></label>
+                    <Input placeholder="ex: RO54992560 sau CNP" value={billingVat} onChange={e => setBillingVat(e.target.value)} className="h-9 text-sm" />
                   </div>
                 </div>
 

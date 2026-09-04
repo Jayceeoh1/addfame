@@ -65,6 +65,16 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Emite factură SmartBill (non-blocking)
+  fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'}/api/smartbill/create-invoice`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-key': process.env.ADMIN_SECRET_KEY!,
+    },
+    body: JSON.stringify({ transaction_id }),
+  }).catch(err => console.error('[confirm-payment] SmartBill invoice failed:', err))
+
   return NextResponse.json({
     success: true,
     new_balance: newBalance,
