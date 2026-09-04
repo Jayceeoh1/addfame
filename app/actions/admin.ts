@@ -666,7 +666,12 @@ export async function confirmPayment(transactionId: string) {
     const { data: brand } = await sb.from('brands').select('credits_balance, credits_reserved, user_id, name, email').eq('id', tx.brand_id).single()
     if (brand) {
       const newBalance = (brand.credits_balance || 0) + tx.amount
-      await sb.from('brands').update({ credits_balance: newBalance }).eq('id', tx.brand_id)
+      const newExpiresAt = new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString()
+      await sb.from('brands').update({
+        credits_balance: newBalance,
+        credits_expires_at: newExpiresAt,
+        credits_loaded_at: new Date().toISOString(),
+      }).eq('id', tx.brand_id)
       if (brand.user_id) {
         try {
           await sb.from('notifications').insert({
@@ -683,6 +688,17 @@ export async function confirmPayment(transactionId: string) {
         }
       }
     }
+
+    // Emite factură SmartBill (non-blocking)
+    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'}/api/smartbill/create-invoice`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-key': process.env.ADMIN_SECRET_KEY!,
+      },
+      body: JSON.stringify({ transaction_id: transactionId }),
+    }).catch(err => console.error('[confirmPayment] SmartBill invoice failed:', err))
+
     revalidatePath('/admin/payments')
     return { success: true }
   } catch (e: any) { return { error: e.message } }
