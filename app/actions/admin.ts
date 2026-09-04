@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireSuperAdmin } from '@/lib/supabase/verify-admin'
 import { revalidatePath } from 'next/cache'
 import { emailInfluencerApproved, emailInfluencerRejected, emailBrandVerified, emailBrandVerificationRejected, emailTopupConfirmed, emailWithdrawalApproved, emailWithdrawalRejected } from '@/lib/email'
+import { createSmartBillInvoice } from '@/lib/smartbill'
 
 // Helper: Generate URL-friendly slug
 function generateSlugFromName(name: string): string {
@@ -689,15 +690,24 @@ export async function confirmPayment(transactionId: string) {
       }
     }
 
-    // Emite factură SmartBill (non-blocking)
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'}/api/smartbill/create-invoice`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-key': process.env.ADMIN_SECRET_KEY!,
-      },
-      body: JSON.stringify({ transaction_id: transactionId }),
-    }).catch(err => console.error('[confirmPayment] SmartBill invoice failed:', err))
+    // Emite factură SmartBill direct (fără fetch intern)
+    try {
+      const billing = tx.billing_details as any
+      const sbResult = await createSmartBillInvoice({
+        clientName: billing?.name || brand?.name || 'Client AddFame',
+        clientCif: billing?.vat || undefined,
+        clientAddress: billing?.address || undefined,
+        clientEmail: brand?.email || '',
+        amountRon: tx.amount,
+        description: `Credite publicitare prepaid — platforma AddFame (${tx.amount.toFixed(2)} RON)`,
+      })
+      await sb.from('brand_transactions')
+        .update({ smartbill_invoice_number: sbResult.smartbillNumber })
+        .eq('id', transactionId)
+      console.log(`[SmartBill] ✅ Factura emisa: ${sbResult.smartbillNumber}`)
+    } catch (sbErr: any) {
+      console.error('[SmartBill] ❌ Eroare factura:', sbErr.message)
+    }
 
     revalidatePath('/admin/payments')
     return { success: true }
