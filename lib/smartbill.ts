@@ -57,35 +57,27 @@ export async function createSmartBillInvoice(
       name: params.clientName,
       vatCode: params.clientCif || '',
       address: params.clientAddress || '',
-      isTaxPayer: !!(params.clientCif && params.clientCif.startsWith('RO')),
+      isTaxPayer: false,
       email: params.clientEmail,
       saveToDb: false,
     },
     issueDate: invoiceDate,
     seriesName: series,
     isDraft: false,
-    // Neplatitor TVA — nu se aplică TVA
-    isTaxIncluded: false,
     currency: 'RON',
     language: 'RO',
     precision: 2,
     products: [
       {
-        name: params.description || 'Credite publicitare prepaid — platformă AddFame',
+        name: params.description || 'Credite publicitare prepaid — platforma AddFame',
         measuringUnitName: 'buc',
         currency: 'RON',
         quantity: 1,
         price: params.amountRon,
-        // Neplatitor TVA → taxName gol și taxPercentage 0
-        isTaxIncluded: false,
-        taxName: '',
-        taxPercentage: 0,
         isService: true,
         saveToDb: false,
-        productDescription: 'Credite pentru campanii de marketing cu influenceri pe platforma AddFame (addfame.ro)',
       },
     ],
-    // Trimitere email automat către client
     sendEmail: true,
     email: {
       to: params.clientEmail,
@@ -109,15 +101,20 @@ export async function createSmartBillInvoice(
   const data = await res.json()
 
   if (!res.ok || data.errorText) {
-    const errorsDetail = Array.isArray(data.errors)
-      ? data.errors.map((e: any) => JSON.stringify(e)).join(' | ')
-      : JSON.stringify(data.errors)
-    console.error('[SmartBill] Invoice creation failed', {
-      status: res.status,
-      errors: errorsDetail,
-      fullData: JSON.stringify(data),
-    })
-    throw new Error(errorsDetail || data.errorText || data.message || `SmartBill error ${res.status}`)
+    let errorsDetail = ''
+    try {
+      const errs = data.errors
+      if (errs) {
+        const vals = Object.values(errs)
+        errorsDetail = vals.map((e: any) => 
+          typeof e === 'object' ? `field:${e.field} msg:${e.message} val:${e.rejectedValue}` : String(e)
+        ).join(' | ')
+      }
+    } catch (ex) {
+      errorsDetail = String(data.errors)
+    }
+    console.error('[SmartBill] EROARE DETALIATA:', errorsDetail || JSON.stringify(data))
+    throw new Error(errorsDetail || `SmartBill error ${res.status}`)
   }
 
   // SmartBill returnează: { series, number, ... }
