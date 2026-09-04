@@ -7,12 +7,11 @@ import {
   CheckCircle, XCircle, AlertCircle, X, Plus, CreditCard,
   Briefcase, Download, Receipt, BarChart3, Calendar,
   Building2, Smartphone, Globe, ChevronRight, Copy, Check,
-  FileText, Printer, Shield, Info, Lock, Zap,
+  FileText, Shield, Info,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { COMPANY, BANK, REVOLUT, WISE, PAYPAL, CRYPTO, TOPUP_MIN, TOPUP_MAX } from '@/lib/payment-config'
-import { StripePaymentModal } from '@/components/stripe/stripe-payment'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Transaction = {
@@ -176,10 +175,6 @@ export default function BrandWalletPage() {
   const [activeTab, setActiveTab] = useState<'transactions' | 'campaigns'>('transactions')
   const [filterType, setFilterType] = useState('ALL')
 
-  // Stripe modal
-  const [stripeModal, setStripeModal] = useState(false)
-  const [stripeAmount, setStripeAmount] = useState<number | null>(null)
-
   // Modal state machine: null | 'select_method' | 'enter_amount' | 'instructions' | 'success'
   const [modal, setModal] = useState<null | 'select_method' | 'enter_amount' | 'instructions' | 'success'>(null)
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
@@ -228,15 +223,7 @@ export default function BrandWalletPage() {
   }
 
   const resolvedAmount = amount ?? (customAmount ? parseFloat(customAmount) : 0)
-  const STRIPE_METHOD = {
-    id: 'stripe_card', label: 'Card bancar', icon: CreditCard,
-    color: 'text-indigo-600', bg: 'bg-indigo-100', border: 'border-indigo-300',
-    description: 'Visa, Mastercard · instant', active: true,
-    details: {}, note: 'Plată instant prin Stripe.',
-  }
-  const methodObj = selectedMethod === 'stripe_card'
-    ? STRIPE_METHOD
-    : PAYMENT_METHODS.find(m => m.id === selectedMethod)
+  const methodObj = PAYMENT_METHODS.find(m => m.id === selectedMethod)
 
   async function handleSubmitPayment() {
     setSubmitError(null)
@@ -605,20 +592,17 @@ export default function BrandWalletPage() {
               <div className="p-6 space-y-3">
                 <p className="text-sm text-muted-foreground mb-4">Alege cum vrei să încarci credite în contul tău AddFame.</p>
 
-                {/* Stripe Card — opțiunea principală */}
-                <button
-                  onClick={() => { setSelectedMethod('stripe_card'); setModal('enter_amount') }}
-                  className="w-full flex items-center gap-4 p-4 border-2 border-indigo-300 bg-indigo-50/50 rounded-xl hover:border-indigo-400 hover:bg-indigo-50 transition text-left group relative overflow-hidden">
-                  <span className="absolute top-2 right-10 text-[10px] font-black bg-indigo-500 text-white px-2 py-0.5 rounded-full">RECOMANDAT</span>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-indigo-100">
-                    <CreditCard className="w-5 h-5 text-indigo-600" />
+                {/* Card bancar — în curând */}
+                <div className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-gray-200 bg-gray-50 rounded-xl opacity-60 cursor-not-allowed relative">
+                  <span className="absolute top-2 right-3 text-[10px] font-black bg-gray-400 text-white px-2 py-0.5 rounded-full">ÎN CURÂND</span>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100">
+                    <CreditCard className="w-5 h-5 text-gray-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-black text-sm text-indigo-700">Card bancar</p>
-                    <p className="text-xs text-indigo-500">Visa, Mastercard · instant · cardul se salvează</p>
+                    <p className="font-black text-sm text-gray-400">Card bancar</p>
+                    <p className="text-xs text-gray-400">Visa, Mastercard · în curând disponibil</p>
                   </div>
-                  <Zap className="w-4 h-4 text-indigo-400 group-hover:text-indigo-600 transition" />
-                </button>
+                </div>
 
                 {/* Transfer bancar și alte metode */}
                 {PAYMENT_METHODS.map(m => {
@@ -728,21 +712,11 @@ export default function BrandWalletPage() {
                   onClick={() => {
                     if (!resolvedAmount || resolvedAmount < TOPUP_MIN) { setSubmitError(`Suma minimă este ${TOPUP_MIN} RON.`); return }
                     setSubmitError(null)
-                    if (selectedMethod === 'stripe_card') {
-                      setStripeAmount(resolvedAmount)
-                      setModal(null)
-                      setStripeModal(true)
-                    } else {
-                      if (!billingName.trim()) { setSubmitError('Completează numele pentru factură.'); return }
-                      setModal('instructions')
-                    }
+                    if (!billingName.trim()) { setSubmitError('Completează numele pentru factură.'); return }
+                    setModal('instructions')
                   }}
                   disabled={resolvedAmount < TOPUP_MIN}>
-                  {resolvedAmount > 0
-                    ? selectedMethod === 'stripe_card'
-                      ? `Plătește cu cardul — ${fmt(resolvedAmount)}`
-                      : `Vezi instrucțiuni de plată — ${fmt(resolvedAmount)}`
-                    : 'Selectează o sumă'}
+                  {resolvedAmount > 0 ? `Vezi instrucțiuni de plată — ${fmt(resolvedAmount)}` : 'Selectează o sumă'}
                 </Button>
               </div>
             )}
@@ -886,14 +860,6 @@ export default function BrandWalletPage() {
         </div>
       )}
 
-      {/* ── Stripe Payment Modal ── */}
-      {stripeModal && stripeAmount && (
-        <StripePaymentModal
-          amount={stripeAmount}
-          onSuccess={() => { fetchAll(); setStripeModal(false) }}
-          onClose={() => setStripeModal(false)}
-        />
-      )}
     </div>
   )
 }
