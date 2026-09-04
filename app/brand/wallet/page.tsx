@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { COMPANY, BANK, REVOLUT, WISE, PAYPAL, CRYPTO, TOPUP_MIN, TOPUP_MAX, VAT_RATE } from '@/lib/payment-config'
+import { COMPANY, BANK, REVOLUT, WISE, PAYPAL, CRYPTO, TOPUP_MIN, TOPUP_MAX } from '@/lib/payment-config'
 import { StripePaymentModal } from '@/components/stripe/stripe-payment'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -155,8 +155,6 @@ function generateInvoiceHTML(tx: Transaction, brand: BrandInfo, amount: number):
   const dueDate = new Date(date)
   dueDate.setDate(dueDate.getDate() + 7)
   const fmt2 = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-  const vat = (amount * 0.19).toFixed(2)
-  const subtotal = (amount / 1.19).toFixed(2)
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -278,16 +276,14 @@ function generateInvoiceHTML(tx: Transaction, brand: BrandInfo, amount: number):
           <span style="color:#6b7280;font-size:12px">Credite publicitare prepaid pentru campanii cu influenceri</span>
         </td>
         <td>1</td>
-        <td>${fmt(parseFloat(subtotal))}</td>
-        <td>${fmt(parseFloat(subtotal))}</td>
+        <td>${fmt(amount)}</td>
+        <td>${fmt(amount)}</td>
       </tr>
     </tbody>
   </table>
 
   <div class="totals">
     <div class="totals-table">
-      <div class="totals-row"><span>Subtotal (excl. VAT)</span><span>${fmt(parseFloat(subtotal))}</span></div>
-      <div class="totals-row"><span>VAT 19%</span><span>${fmt(parseFloat(vat))}</span></div>
       <div class="totals-row total"><span>Total de Plată</span><span>${fmt(amount)}</span></div>
     </div>
   </div>
@@ -309,7 +305,7 @@ function generateInvoiceHTML(tx: Transaction, brand: BrandInfo, amount: number):
 
   <div class="footer">
     <p>Mulțumim că ai ales AddFame · întrebări? contactează ${COMPANY.support}</p>
-    <p style="margin-top:4px">${COMPANY.name} · ${COMPANY.address}, ${COMPANY.country} · CUI ${COMPANY.cui} · TVA ${COMPANY.vat}</p>
+    <p style="margin-top:4px">${COMPANY.name} · ${COMPANY.address}, ${COMPANY.country} · CUI ${COMPANY.cui}</p>
   </div>
 
 </div>
@@ -881,34 +877,22 @@ export default function BrandWalletPage() {
                 </div>
 
                 {/* Preview */}
-                {resolvedAmount > 0 && (() => {
-                  const stripeFee = selectedMethod === 'stripe_card'
-                    ? parseFloat((resolvedAmount * 0.014 + 0.25).toFixed(2))
-                    : 0
-                  const totalCharged = parseFloat((resolvedAmount + stripeFee).toFixed(2))
-                  return (
-                    <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-xl p-4 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Credite adăugate</span>
-                        <span className="font-semibold">{fmt(resolvedAmount)}</span>
-                      </div>
-                      {selectedMethod === 'stripe_card' && stripeFee > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Fee procesare card (1.4% + 0.25 RON)</span>
-                          <span className="font-semibold text-amber-600">+{stripeFee.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RON</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-sm border-t border-primary/10 pt-2">
-                        <span className="font-bold">Total de plătit</span>
-                        <span className="font-black text-primary text-base">{selectedMethod === 'stripe_card' ? fmt(totalCharged) : fmt(resolvedAmount)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm border-t border-primary/10 pt-2">
-                        <span className="text-muted-foreground">Sold după încărcare</span>
-                        <span className="font-bold text-green-600">{fmt(wallet.credits_balance + resolvedAmount)}</span>
-                      </div>
+                {resolvedAmount > 0 && (
+                  <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-xl p-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Credite adăugate</span>
+                      <span className="font-semibold">{fmt(resolvedAmount)}</span>
                     </div>
-                  )
-                })()}
+                    <div className="flex justify-between text-sm border-t border-primary/10 pt-2">
+                      <span className="font-bold">Total de plătit</span>
+                      <span className="font-black text-primary text-base">{fmt(resolvedAmount)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm border-t border-primary/10 pt-2">
+                      <span className="text-muted-foreground">Sold după încărcare</span>
+                      <span className="font-bold text-green-600">{fmt(wallet.credits_balance + resolvedAmount)}</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Billing */}
                 <div className="border border-border rounded-xl p-4 space-y-3">
@@ -932,8 +916,7 @@ export default function BrandWalletPage() {
                     if (!resolvedAmount || resolvedAmount < TOPUP_MIN) { setSubmitError(`Suma minimă este ${TOPUP_MIN} RON.`); return }
                     setSubmitError(null)
                     if (selectedMethod === 'stripe_card') {
-                      const fee = parseFloat((resolvedAmount * 0.014 + 0.25).toFixed(2))
-                      setStripeAmount(parseFloat((resolvedAmount + fee).toFixed(2)))
+                      setStripeAmount(resolvedAmount)
                       setModal(null)
                       setStripeModal(true)
                     } else {
@@ -942,9 +925,11 @@ export default function BrandWalletPage() {
                     }
                   }}
                   disabled={resolvedAmount < TOPUP_MIN}>
-                  {selectedMethod === 'stripe_card'
-                    ? resolvedAmount > 0 ? `Plătește cu cardul — ${fmt(resolvedAmount)}` : 'Selectează o sumă'
-                    : resolvedAmount > 0 ? `Vezi instrucțiuni de plată — ${fmt(resolvedAmount)}` : 'Selectează o sumă'}
+                  {resolvedAmount > 0
+                    ? selectedMethod === 'stripe_card'
+                      ? `Plătește cu cardul — ${fmt(resolvedAmount)}`
+                      : `Vezi instrucțiuni de plată — ${fmt(resolvedAmount)}`
+                    : 'Selectează o sumă'}
                 </Button>
               </div>
             )}

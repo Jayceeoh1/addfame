@@ -9,21 +9,21 @@
  */
 
 export const COMPANY = {
-  name: 'AddFame SRL',            // ← numele firmei tale
-  cui: 'RO12345678',              // ← CUI-ul tău (de la ANAF)
-  vat: 'RO12345678',              // ← același cu CUI dacă ești plătitor TVA
-  address: 'Str. Victoriei 12, București', // ← adresa sediului social
+  name: 'Add Fame Digital S.R.L.',
+  cui: '54992560',
+  vat: 'RO54992560',
+  address: 'Bulevardul Nicolae Bălcescu, Bl. C5, Scara B, Etaj 2, Ap. 9, Municipiul Pitești, Jud. Argeș',
   country: 'România',
-  email: 'payments@addfame.ro',  // ← emailul pentru plăți
+  email: 'payments@addfame.ro',
   support: 'support@addfame.ro',
   website: 'www.addfame.ro',
 }
 
 export const BANK = {
-  name: 'Salt Bank (ING Bank)',
-  iban: 'RO19 INGB 0000 9999 0921 7800',
-  bic: 'INGBROBU',
-  holder: COMPANY.name,
+  name: 'Banca Transilvania',
+  iban: 'RO38 BTRL RONC RT0D F823 7101',
+  bic: 'BTRLRO22',
+  holder: 'Add Fame Digital S.R.L.',
 }
 
 export const REVOLUT = {
@@ -54,7 +54,5 @@ export const CRYPTO = {
 export const TOPUP_MIN = 50      // RON minim per încărcare
 export const TOPUP_MAX = 250000  // RON maxim per încărcare
 
-// ─── Comisioane platformă ────────────────────────────────────────────────────
-export const COMMISSION_BRAND = 0.15    // 15% comision din bugetul campaniei
-export const COMMISSION_WITHDRAWAL = 0.05 // 5% fee la retragere influencer
-export const VAT_RATE = 0.19            // TVA România
+// ─── Platformă fără comisioane ───────────────────────────────────────────────
+// Nu se aplică comisioane brandurilor sau influencerilor.
