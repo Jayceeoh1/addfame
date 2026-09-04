@@ -80,12 +80,7 @@ export async function createSmartBillInvoice(
         saveToDb: false,
       },
     ],
-    sendEmail: true,
-    email: {
-      to: params.clientEmail,
-      subject: `Factură AddFame — ${params.amountRon.toLocaleString('ro-RO')} RON`,
-      bodyText: `Bună ziua,\n\nVă transmitem factura pentru încărcarea de credite pe platforma AddFame.\n\nSuma: ${params.amountRon.toLocaleString('ro-RO')} RON\n\nVă mulțumim!\nEchipa AddFame`,
-    },
+    sendEmail: false,
     mentions: `Credite valabile 6 luni de la data emiterii. Platforma AddFame — addfame.ro`,
     useStock: false,
   }
@@ -102,21 +97,15 @@ export async function createSmartBillInvoice(
 
   const data = await res.json()
 
-  if (!res.ok || data.errorText) {
-    let errorsDetail = ''
-    try {
-      const errs = data.errors
-      if (errs) {
-        const vals = Object.values(errs)
-        errorsDetail = vals.map((e: any) => 
-          typeof e === 'object' ? `field:${e.field} msg:${e.message} val:${e.rejectedValue}` : String(e)
-        ).join(' | ')
-      }
-    } catch (ex) {
-      errorsDetail = String(data.errors)
-    }
-    console.error('[SmartBill] EROARE DETALIATA:', errorsDetail || JSON.stringify(data))
-    throw new Error(errorsDetail || `SmartBill error ${res.status}`)
+  // Dacă factura a fost creată (are series + number) dar e eroare de email → continuăm
+  const hasInvoice = data.series && data.number && data.number !== '0'
+  if ((!res.ok || data.errorText) && !hasInvoice) {
+    console.error('[SmartBill] EROARE FATALA:', JSON.stringify(data))
+    throw new Error(data.errorText || `SmartBill error ${res.status}`)
+  }
+  if (data.errorText) {
+    // Eroare non-fatală (ex: email encoding) — factura e creată, logăm și continuăm
+    console.warn('[SmartBill] Avertisment (non-fatal):', data.errorText)
   }
 
   // SmartBill returnează: { series, number, ... }
