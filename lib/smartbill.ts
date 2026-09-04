@@ -111,9 +111,10 @@ export async function createSmartBillInvoice(
   if (!res.ok || data.errorText) {
     console.error('[SmartBill] Invoice creation failed', {
       status: res.status,
-      data,
+      data: JSON.stringify(data),
+      payload: JSON.stringify(payload),
     })
-    throw new Error(data.errorText || data.message || `SmartBill error ${res.status}`)
+    throw new Error(data.errorText || data.message || data.error || `SmartBill error ${res.status}: ${JSON.stringify(data)}`)
   }
 
   // SmartBill returnează: { series, number, ... }
