@@ -277,8 +277,7 @@ export default function HomePage() {
             </span>
           </h1>
           <p className="fade-up d2" style={{ fontSize:18, color:'#888', maxWidth:520, margin:'0 auto 40px', lineHeight:1.7, fontWeight:500 }}>
-            Plătești <strong style={{ color:'#fff' }}>0 RON</strong> până când postul e aprobat.{' '}
-            <strong style={{ color:'#fff' }}>15% comision</strong> doar la rezultat confirmat.
+            Plătești <strong style={{ color:'#fff' }}>0 RON</strong> până când postul e aprobat. Fără comisioane ascunse, doar rezultate.
           </p>
           <div className="hero-btns fade-up d3" style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap', marginBottom:64 }}>
             <Link href="/auth/register?type=brand" style={{ background:'#f97316', color:'white', fontSize:15, fontWeight:800, padding:'16px 32px', borderRadius:12, textDecoration:'none', display:'inline-flex', alignItems:'center', gap:8 }}>
@@ -294,7 +293,7 @@ export default function HomePage() {
             {[
               { label:'Influenceri', value: liveStats.influencers > 0 ? `${liveStats.influencers}+` : '710+', color:'#fff' },
               { label:'Branduri', value: liveStats.brands > 0 ? String(liveStats.brands) : '28', color:'#fff' },
-              { label:'Comision platformă', value:'15%', color:'#f97316' },
+              { label:'Campanii active', value: liveStats.campaigns > 0 ? String(liveStats.campaigns) : '12+', color:'#a78bfa' },
               { label:'Până la rezultat', value:'0 RON', color:'#22c55e' },
             ].map((s) => (
               <div key={s.label} style={{ background:'#0d0d0d', padding:'24px 16px', textAlign:'center' }}>
@@ -370,7 +369,7 @@ export default function HomePage() {
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             {[
-              { label:'Comision platformă', value:'15%', sub:'din colaborare finalizată', color:'#f97316' },
+
               { label:'Plată în avans', value:'0 RON', sub:'plătești doar la rezultat aprobat', color:'#22c55e' },
               { label:'Timp mediu lansare campanie', value:'< 24h', sub:'de la înregistrare la primele aplicări', color:'#888' },
             ].map((card, i) => (
