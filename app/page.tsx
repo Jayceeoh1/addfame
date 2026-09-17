@@ -294,7 +294,7 @@ export default function HomePage() {
               { label:'Influenceri', value: liveStats.influencers > 0 ? `${liveStats.influencers}+` : '710+', color:'#fff' },
               { label:'Branduri', value: liveStats.brands > 0 ? String(liveStats.brands) : '28', color:'#fff' },
               { label:'Campanii active', value: liveStats.campaigns > 0 ? String(liveStats.campaigns) : '12+', color:'#a78bfa' },
-              { label:'Până la rezultat', value:'0 RON', color:'#22c55e' },
+              { label:'Satisfacție garantată', value:'100%', color:'#22c55e' },
             ].map((s) => (
               <div key={s.label} style={{ background:'#0d0d0d', padding:'24px 16px', textAlign:'center' }}>
                 <p style={{ fontSize:28, fontWeight:900, color:s.color, margin:'0 0 4px' }}>{s.value}</p>
