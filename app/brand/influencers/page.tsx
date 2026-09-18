@@ -61,8 +61,6 @@ type Campaign = { id: string; title: string; status: string }
 type AccessState =
   | { granted: true }
   | { granted: false; reason: 'no_credits' }
-  | { granted: false; reason: 'no_active_campaign' }
-  | { granted: false; reason: 'both' }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -155,9 +153,8 @@ function FakeCard() {
   )
 }
 
-function LockedScreen({ reason }: { reason: 'no_credits' | 'no_active_campaign' | 'both' }) {
-  const noCredits = reason === 'no_credits' || reason === 'both'
-  const noCampaign = reason === 'no_active_campaign' || reason === 'both'
+function LockedScreen({ reason }: { reason: 'no_credits' }) {
+  const noCredits = true
   return (
     <div className="relative">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 blur-sm pointer-events-none select-none opacity-60">
@@ -170,30 +167,10 @@ function LockedScreen({ reason }: { reason: 'no_credits' | 'no_active_campaign' 
           </div>
           <h2 className="text-xl font-black text-foreground mb-2">Lista de influenceri este blocată</h2>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            To access our full creator network you need{' '}
-            {reason === 'both' ? 'an active campaign and credits in your wallet.'
-              : reason === 'no_credits' ? 'credits in your wallet.'
-                : 'at least one active campaign.'}
+            Pentru a accesa rețeaua completă de creatori ai nevoie de minimum <strong>50 RON credite</strong> în wallet.
           </p>
           <div className="space-y-3 mb-6 text-left">
-            <div className={`flex items-center gap-3 p-3 rounded-xl border ${noCampaign ? 'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800' : 'border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800'}`}>
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${noCampaign ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
-                {noCampaign ? <Zap className="w-3.5 h-3.5 text-amber-600" /> : <CheckCircle className="w-3.5 h-3.5 text-green-600" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-bold ${noCampaign ? 'text-amber-800 dark:text-amber-300' : 'text-green-800 dark:text-green-300'}`}>
-                  {noCampaign ? 'Create an active campaign' : 'Active campaign ✓'}
-                </p>
-                {noCampaign && <p className="text-xs text-amber-600 dark:text-amber-400">Draft campaigns don't count — publish it first</p>}
-              </div>
-              {noCampaign && (
-                <Link href="/brand/campaigns/new">
-                  <Button size="sm" variant="outline" className="text-xs border-amber-300 text-amber-700 hover:bg-amber-100 flex-shrink-0">
-                    Create <ArrowRight className="w-3 h-3 ml-1" />
-                  </Button>
-                </Link>
-              )}
-            </div>
+
             <div className={`flex items-center gap-3 p-3 rounded-xl border ${noCredits ? 'border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800' : 'border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800'}`}>
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${noCredits ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
                 {noCredits ? <Wallet className="w-3.5 h-3.5 text-orange-600" /> : <CheckCircle className="w-3.5 h-3.5 text-green-600" />}
@@ -608,20 +585,11 @@ export default function BrandInfluencersPage() {
       if (!brand) return
       setBrandId(brand.id)
 
-      const { data: activeCampaigns } = await supabase
-        .from('campaigns')
-        .select('id, title, status')
-        .eq('brand_id', brand.id)
-        .eq('status', 'ACTIVE')
-
       const hasCredits = (brand.credits_balance ?? 0) >= 50
-      const hasActiveCampaign = (activeCampaigns?.length ?? 0) > 0
 
-      let accessState: AccessState
-      if (hasCredits && hasActiveCampaign) accessState = { granted: true }
-      else if (!hasCredits && !hasActiveCampaign) accessState = { granted: false, reason: 'both' }
-      else if (!hasCredits) accessState = { granted: false, reason: 'no_credits' }
-      else accessState = { granted: false, reason: 'no_active_campaign' }
+      const accessState: AccessState = hasCredits
+        ? { granted: true }
+        : { granted: false, reason: 'no_credits' }
       setAccess(accessState)
 
       if (accessState.granted) {
@@ -843,7 +811,7 @@ export default function BrandInfluencersPage() {
       )}
 
       {access && !access.granted ? (
-        <LockedScreen reason={(access as any).reason} />
+        <LockedScreen reason='no_credits' />
       ) : (
         <>
           {/* ── AI Recomandări ───────────────────────────────────────────── */}
