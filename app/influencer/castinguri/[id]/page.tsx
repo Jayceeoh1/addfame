@@ -34,6 +34,7 @@ export default function CastingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [applying, setApplying] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [registrationCount, setRegistrationCount] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -65,6 +66,13 @@ export default function CastingDetailPage() {
           .single()
         setApplication(app)
       }
+
+      // Număr înscrieri
+      const { count } = await supabase
+        .from('event_registrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('campaign_id', id)
+      setRegistrationCount(count || 0)
 
       setLoading(false)
     }
@@ -179,9 +187,49 @@ export default function CastingDetailPage() {
         </div>
       )}
 
+      {/* Social proof banner animat */}
+      {registrationCount > 0 && (
+        <div className="relative overflow-hidden rounded-2xl mb-4 bg-gradient-to-r from-orange-500 to-pink-500 p-4">
+          {/* Shimmer animation */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            style={{ animation: 'shimmer 2s infinite', transform: 'translateX(-100%)' }} />
+          <style>{"@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }"}</style>
+          <div className="relative flex items-center gap-3">
+            <div className="flex -space-x-2">
+              {[...Array(Math.min(3, registrationCount))].map((_, i) => (
+                <div key={i} className="w-8 h-8 rounded-full bg-white/30 border-2 border-white flex items-center justify-center text-xs font-black text-white">
+                  {['🌟', '✨', '🔥'][i]}
+                </div>
+              ))}
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-black text-sm">
+                🔥 {registrationCount} {registrationCount === 1 ? 'influencer s-a înscris' : 'influenceri s-au înscris'} deja!
+              </p>
+              <p className="text-white/80 text-xs mt-0.5">Nu rata ocazia — locurile sunt limitate!</p>
+            </div>
+            <div className="w-2 h-2 rounded-full bg-white animate-ping" />
+          </div>
+        </div>
+      )}
+
       {/* Buton înscriere extern SAU formular intern */}
       {campaign.registration_link ? (
-        <a href={campaign.registration_link} target="_blank" rel="noopener noreferrer" className="block w-full">
+        <a
+          href={campaign.registration_link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full"
+          onClick={async () => {
+            if (!influencer) return
+            const supabase = createClient()
+            await supabase.from('event_registrations').upsert({
+              campaign_id: id,
+              influencer_id: influencer.id,
+            }, { onConflict: 'campaign_id,influencer_id' })
+            setRegistrationCount(c => c + 1)
+          }}
+        >
           <div className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-accent flex items-center justify-center gap-2 text-white font-black text-base hover:opacity-90 transition cursor-pointer">
             🎤 Înscrie-te acum
           </div>
