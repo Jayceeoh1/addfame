@@ -1021,8 +1021,11 @@ export default function AdminCampaigns() {
 
     setAssigning(campaignId)
     let res
-    if (selectedCampaign?.campaign_type?.toUpperCase() === 'BARTER') {
+    const campType = selectedCampaign?.campaign_type?.toUpperCase()
+    if (campType === 'BARTER') {
       res = await inviteInfluencersToBarter(campaignId, ids)
+    } else if (campType === 'OPEN_CALL') {
+      res = await inviteInfluencersToOpenCall(campaignId, ids)
     } else {
       res = await assignInfluencersToManaged(campaignId, ids, influencersWithAmounts)
     }
