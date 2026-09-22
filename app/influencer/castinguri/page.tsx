@@ -61,7 +61,7 @@ export default function CastinguriPage() {
         .select(`
           id, title, description, banner_url, event_date, event_location,
           min_followers, application_deadline, platforms, created_at,
-          brand:brands(name, logo, verified)
+          brand:brands(name, logo, verification_status)
         `)
         .eq('campaign_type', 'OPEN_CALL')
         .eq('status', 'ACTIVE')
@@ -139,7 +139,7 @@ export default function CastinguriPage() {
                       </div>
                     )}
                     <span className="text-xs font-bold text-muted-foreground">{c.brand?.name}</span>
-                    {c.brand?.verified && <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">✓ Verificat</span>}
+                    {c.brand?.verification_status === 'verified' && <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">✓ Verificat</span>}
                   </div>
 
                   <h2 className="font-black text-base mb-2 line-clamp-2">{c.title}</h2>
