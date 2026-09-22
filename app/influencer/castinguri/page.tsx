@@ -22,6 +22,7 @@ type OpenCall = {
     logo: string | null
     verified: boolean
   } | null
+  registration_count?: number
   // Dacă influencerul a aplicat deja
   my_application?: { status: string } | null
 }
@@ -70,6 +71,18 @@ export default function CastinguriPage() {
       if (!camps) { setLoading(false); return }
 
       // Verificăm aplicațiile existente ale influencerului
+      // Număr înscrieri pentru fiecare campanie
+      const campIds = camps.map((c: any) => c.id)
+      const { data: regCounts } = await supabase
+        .from('event_registrations')
+        .select('campaign_id')
+        .in('campaign_id', campIds)
+
+      const countMap = new Map<string, number>()
+      regCounts?.forEach((r: any) => {
+        countMap.set(r.campaign_id, (countMap.get(r.campaign_id) || 0) + 1)
+      })
+
       if (inf) {
         const { data: apps } = await supabase
           .from('campaign_applications')
@@ -82,11 +95,13 @@ export default function CastinguriPage() {
           ...c,
           brand: Array.isArray(c.brand) ? c.brand[0] : c.brand,
           my_application: appMap.has(c.id) ? { status: appMap.get(c.id)! } : null,
+          registration_count: countMap.get(c.id) || 0,
         })))
       } else {
         setCampaigns(camps.map((c: any) => ({
           ...c,
           brand: Array.isArray(c.brand) ? c.brand[0] : c.brand,
+          registration_count: countMap.get(c.id) || 0,
         })))
       }
 
@@ -104,8 +119,8 @@ export default function CastinguriPage() {
   return (
     <div className="max-w-2xl mx-auto p-4 pb-20">
       <div className="mb-6">
-        <h1 className="text-2xl font-black flex items-center gap-2">🎤 Evenimente & Open Call</h1>
-        <p className="text-sm text-muted-foreground mt-1">Brandurile organizează evenimente. Aplică dacă vrei să participi!</p>
+        <h1 className="text-2xl font-black flex items-center gap-2">🎤 Castinguri & Open Call</h1>
+        <p className="text-sm text-muted-foreground mt-1">Brandurile organizează evenimente și castinguri. Aplică dacă vrei să participi!</p>
       </div>
 
       {campaigns.length === 0 ? (
@@ -167,6 +182,16 @@ export default function CastinguriPage() {
                   </div>
 
                   {/* Status aplicație */}
+                  {/* Contor înscrieri */}
+                  {(c.registration_count || 0) > 0 && (
+                    <div className="flex items-center gap-1.5 mb-3 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2">
+                      <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse flex-shrink-0" />
+                      <p className="text-xs font-bold text-orange-700">
+                        🔥 {c.registration_count} {c.registration_count === 1 ? 'influencer s-a înscris' : 'influenceri s-au înscris'} deja
+                      </p>
+                    </div>
+                  )}
+
                   {c.my_application ? (
                     <div className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1 ${
                       c.my_application.status === 'approved' ? 'bg-green-100 text-green-700' :
