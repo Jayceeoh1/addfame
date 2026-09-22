@@ -363,7 +363,7 @@ export default function CampaignsPage() {
       }
       // profileMissing already set above
       const [{ data: camp }, { data: barter }] = await Promise.all([
-        sb.from('campaigns').select('*, offer_images, offer_image_url, offer_image_urls, brief_pdf_url').eq('status', 'ACTIVE').neq('campaign_type', 'BARTER').order('created_at', { ascending: false }),
+        sb.from('campaigns').select('*, offer_images, offer_image_url, offer_image_urls, brief_pdf_url').eq('status', 'ACTIVE').neq('campaign_type', 'BARTER').neq('campaign_type', 'OPEN_CALL').neq('campaign_type', 'MANAGED').order('created_at', { ascending: false }),
         sb.from('campaigns').select('*, offer_images, offer_image_url, offer_image_urls, brief_pdf_url').eq('status', 'ACTIVE').eq('campaign_type', 'BARTER').order('created_at', { ascending: false }),
       ])
       if (camp) setCampaigns(camp)
