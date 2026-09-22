@@ -105,14 +105,14 @@ export default function CastinguriPage() {
     <div className="max-w-2xl mx-auto p-4 pb-20">
       <div className="mb-6">
         <h1 className="text-2xl font-black flex items-center gap-2">🎤 Castinguri & Open Call</h1>
-        <p className="text-sm text-muted-foreground mt-1">Brandurile caută influenceri pentru campanii și evenimente. Aplică dacă te potrivești!</p>
+        <p className="text-sm text-muted-foreground mt-1">Brandurile organizează evenimente și castinguri. Aplică dacă vrei să participi!</p>
       </div>
 
       {campaigns.length === 0 ? (
         <div className="text-center py-16">
           <Megaphone className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="font-bold text-lg">Niciun casting activ momentan</p>
-          <p className="text-sm text-muted-foreground mt-1">Revino în curând — brandurile postează constant oportunități noi.</p>
+          <p className="font-bold text-lg">Niciun eveniment activ momentan</p>
+          <p className="text-sm text-muted-foreground mt-1">Revino în curând — brandurile postează constant evenimente și oportunități noi.</p>
         </div>
       ) : (
         <div className="space-y-4">
