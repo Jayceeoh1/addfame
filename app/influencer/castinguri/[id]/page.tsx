@@ -180,39 +180,29 @@ export default function CastingDetailPage() {
         </div>
       )}
 
-      {/* Registration link — buton extern */}
-      {campaign.registration_link && (
-        <a
-          href={campaign.registration_link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full"
-        >
-          <div className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-accent flex items-center justify-center gap-2 text-white font-black text-base hover:opacity-90 transition">
+      {/* Buton înscriere extern SAU formular intern */}
+      {campaign.registration_link ? (
+        <a href={campaign.registration_link} target="_blank" rel="noopener noreferrer" className="block w-full">
+          <div className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary to-accent flex items-center justify-center gap-2 text-white font-black text-base hover:opacity-90 transition cursor-pointer">
             🎤 Înscrie-te acum
           </div>
         </a>
-      )}
-
-      {/* Application section — formular intern (doar dacă nu e link extern) */}
-      {!campaign.registration_link && (success || (hasApplied && !isRejected)) ? (
+      ) : success || (hasApplied && !isRejected) ? (
         <div className={`rounded-2xl p-6 text-center border ${isApproved ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
           <CheckCircle className={`w-10 h-10 mx-auto mb-3 ${isApproved ? 'text-green-600' : 'text-amber-500'}`} />
           <p className="font-black text-lg mb-1">
             {isApproved ? '🎉 Felicitări! Ai fost selectat!' : '⏳ Aplicație trimisă'}
           </p>
           <p className="text-sm text-muted-foreground">
-            {isApproved
-              ? 'Brandul te-a aprobat. Verifică mesajele pentru detalii.'
-              : 'Aplicația ta este în curs de revizuire. Te vom notifica când brandul răspunde.'}
+            {isApproved ? 'Brandul te-a aprobat. Verifică mesajele pentru detalii.' : 'Aplicația ta este în curs de revizuire. Te vom notifica când brandul răspunde.'}
           </p>
         </div>
-      ) : !campaign.registration_link && isRejected ? (
+      ) : isRejected ? (
         <div className="rounded-2xl p-6 text-center border border-red-200 bg-red-50">
           <p className="font-black text-lg mb-1">❌ Aplicație respinsă</p>
           <p className="text-sm text-muted-foreground">Din păcate nu ai fost selectat pentru această campanie.</p>
         </div>
-      ) : !campaign.registration_link ? (
+      ) : (
         <div className="border border-border rounded-2xl p-5">
           <h2 className="font-black mb-1">Aplică la acest casting</h2>
           <p className="text-sm text-muted-foreground mb-4">Datele tale de profil vor fi trimise automat brandului.</p>
