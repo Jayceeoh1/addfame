@@ -167,9 +167,8 @@ export default function CastingDetailPage() {
       </div>
 
       {/* Description */}
-      <div className="bg-muted/30 rounded-2xl p-5 mb-6">
-        <h2 className="font-black mb-3 text-sm uppercase tracking-wide text-muted-foreground">Brief</h2>
-        <div className="text-sm leading-relaxed whitespace-pre-wrap">{campaign.description}</div>
+      <div className="mb-6">
+        <div className="text-base leading-8 whitespace-pre-wrap text-foreground">{campaign.description}</div>
       </div>
 
       {/* Deadline */}
