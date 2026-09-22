@@ -63,7 +63,7 @@ export default function CastingDetailPage() {
           .select('id, status, message, created_at')
           .eq('campaign_id', id)
           .eq('influencer_id', inf.id)
-          .single()
+          .maybeSingle()
         setApplication(app)
       }
 
