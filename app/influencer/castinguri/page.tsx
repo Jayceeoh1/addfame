@@ -104,7 +104,7 @@ export default function CastinguriPage() {
   return (
     <div className="max-w-2xl mx-auto p-4 pb-20">
       <div className="mb-6">
-        <h1 className="text-2xl font-black flex items-center gap-2">🎤 Castinguri & Open Call</h1>
+        <h1 className="text-2xl font-black flex items-center gap-2">🎤 Evenimente & Open Call</h1>
         <p className="text-sm text-muted-foreground mt-1">Brandurile organizează evenimente și castinguri. Aplică dacă vrei să participi!</p>
       </div>
 
