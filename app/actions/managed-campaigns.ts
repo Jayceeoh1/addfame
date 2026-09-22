@@ -284,3 +284,69 @@ export async function inviteInfluencersToBarter(
     return { success: false, error: err.message }
   }
 }
+
+export async function inviteInfluencersToOpenCall(
+  campaignId: string,
+  influencerIds: string[]
+) {
+  try {
+    const admin = createAdminClient()
+
+    const { data: campaign } = await admin
+      .from('campaigns').select('id, brand_id, title, brand_name, campaign_type')
+      .eq('id', campaignId).single()
+    if (!campaign) throw new Error('Campania nu există.')
+
+    // Activează campania dacă e în pending review
+    await admin.from('campaigns')
+      .update({ status: 'ACTIVE' })
+      .eq('id', campaignId)
+      .eq('status', 'PENDING_REVIEW')
+
+    // Trimite notificări influencerilor
+    const notifLink = `/influencer/castinguri/${campaignId}`
+    const notifications = []
+
+    for (const infId of influencerIds) {
+      const { data: inf } = await admin
+        .from('influencers').select('user_id, name, email').eq('id', infId).single()
+      if (!inf) continue
+
+      notifications.push({
+        user_id: inf.user_id,
+        title: `🎪 Eveniment nou de la ${campaign.brand_name}!`,
+        body: `"${campaign.title}" — înscrie-te acum!`,
+        link: notifLink,
+        read: false,
+      })
+
+      // Email
+      try {
+        const email = inf.email || (await admin.auth.admin.getUserById(inf.user_id))?.data?.user?.email
+        if (email) {
+          const { sendEmail } = await import('@/lib/email')
+          const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'
+          await sendEmail(email, `🎪 Eveniment nou — ${campaign.title}`, `
+            <div style='font-family:Arial,sans-serif;max-width:560px;margin:0 auto'>
+              <h2>Salut ${inf.name || 'Influencer'} 👋</h2>
+              <p><strong>${campaign.brand_name}</strong> te invită la evenimentul:</p>
+              <h3 style='color:#f97316'>${campaign.title}</h3>
+              <p>Intră pe platformă și înscrie-te acum!</p>
+              <a href='${APP_URL}${notifLink}' style='display:inline-block;background:linear-gradient(135deg,#f97316,#ec4899);color:white;font-weight:900;text-decoration:none;padding:14px 32px;border-radius:50px;margin-top:12px'>
+                🎤 Vezi evenimentul
+              </a>
+            </div>
+          `)
+        }
+      } catch (e) { console.error('[OpenCall email failed]', e) }
+    }
+
+    if (notifications.length > 0) {
+      await admin.from('notifications').insert(notifications)
+    }
+
+    return { success: true, count: influencerIds.length }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
