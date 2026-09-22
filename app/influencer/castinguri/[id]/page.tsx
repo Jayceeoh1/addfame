@@ -45,7 +45,7 @@ export default function CastingDetailPage() {
         supabase.from('campaigns').select(`
           id, title, description, banner_url, event_date, event_location,
           min_followers, application_deadline, registration_link, platforms, created_at, status,
-          brand:brands(id, name, logo, verified, website)
+          brand:brands(id, name, logo, verification_status, website)
         `).eq('id', id).single(),
         supabase.from('influencers').select('id, name, avatar, ig_followers, tt_followers, instagram_handle, niches').eq('user_id', user.id).single(),
       ])
@@ -131,7 +131,7 @@ export default function CastingDetailPage() {
           <p className="font-black">{campaign.brand?.name}</p>
           {campaign.brand?.website && <p className="text-xs text-muted-foreground">{campaign.brand.website}</p>}
         </div>
-        {campaign.brand?.verified && (
+        {campaign.brand?.verification_status === 'verified' && (
           <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-bold">✓ Brand Verificat</span>
         )}
       </div>
