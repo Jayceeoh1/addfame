@@ -242,7 +242,8 @@ export default function CampaignDetailPage() {
       if (error) throw error
       for (const infId of selectedInfs) {
         const inf = influencerData[infId]
-        if (inf?.user_id) await sb.from('notifications').insert({ user_id: inf.user_id, title: '🎉 Invitație nouă!', body: `${campaign?.brand_name || 'Un brand'} te-a invitat la campania "${campaign?.title}". Verifică detaliile!`, link: '/influencer/collaborations', read: false })
+        const notifLink = campaign?.campaign_type === 'OPEN_CALL' ? `/influencer/castinguri/${campaignId}` : '/influencer/collaborations'
+        if (inf?.user_id) await sb.from('notifications').insert({ user_id: inf.user_id, title: campaign?.campaign_type === 'OPEN_CALL' ? '🎪 Eveniment nou!' : '🎉 Invitație nouă!', body: campaign?.campaign_type === 'OPEN_CALL' ? `${campaign?.brand_name || 'Un brand'} te invită la evenimentul "${campaign?.title}". Vezi detaliile și înscrie-te!` : `${campaign?.brand_name || 'Un brand'} te-a invitat la campania "${campaign?.title}". Verifică detaliile!`, link: notifLink, read: false })
       }
       notify(`✅ ${selectedInfs.length} influencer${selectedInfs.length > 1 ? 'i invitați' : ' invitat'}!`)
       setSelectedInfs([]); setBulkMode(false)
