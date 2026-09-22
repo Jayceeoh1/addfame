@@ -21,7 +21,7 @@ const BADGE_PRICE = 50 // RON
 const NAV = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/influencer/dashboard' },
   { icon: Briefcase, label: 'Campanii', href: '/influencer/campaigns' },
-  { icon: Megaphone, label: 'Castinguri', href: '/influencer/castinguri' },
+  { icon: Megaphone, label: 'Evenimente', href: '/influencer/castinguri' },
   { icon: Zap, label: 'Colaborări', href: '/influencer/collaborations' },
   { icon: MessageSquare, label: 'Mesaje', href: '/influencer/inbox' },
   { icon: Wallet, label: 'Portofel', href: '/influencer/wallet' },
