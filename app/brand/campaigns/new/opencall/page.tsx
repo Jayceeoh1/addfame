@@ -24,6 +24,7 @@ export default function NewOpenCallPage() {
     event_location: '',
     min_followers: '1000',
     application_deadline: '',
+    registration_link: '',
     platforms: [] as string[],
   })
 
@@ -88,6 +89,7 @@ export default function NewOpenCallPage() {
         banner_url: bannerUrl,
         event_date: form.event_date || null,
         event_location: form.event_location || null,
+        registration_link: form.registration_link || null,
         min_followers: parseInt(form.min_followers) || 0,
         application_deadline: deadline,
         max_influencers: 999,
@@ -223,6 +225,17 @@ export default function NewOpenCallPage() {
             <label className="text-sm font-bold flex items-center gap-2"><Calendar className="w-4 h-4" /> Deadline aplicare</label>
             <Input type="date" value={form.application_deadline} onChange={e => set('application_deadline', e.target.value)} />
           </div>
+        </div>
+
+        {/* Link înscriere */}
+        <div className="space-y-2">
+          <label className="text-sm font-bold flex items-center gap-2">🔗 Link înscriere <span className="text-muted-foreground font-normal">(opțional)</span></label>
+          <Input
+            placeholder="ex: https://forms.gle/... sau orice link de înregistrare"
+            value={form.registration_link}
+            onChange={e => set('registration_link', e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">Influencerii vor vedea un buton "Înscrie-te" care îi duce la acest link.</p>
         </div>
 
         {/* Submit */}
