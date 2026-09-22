@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { NotificationsBell } from '@/components/shared/notifications-bell'
 import AdminFloatingButton from '@/components/AdminFloatingButton'
 import {
-  LayoutDashboard, Briefcase, Zap, MessageSquare,
+  LayoutDashboard, Briefcase, Zap, MessageSquare, Megaphone,
   Wallet, Settings, LogOut, Menu, X, User, ChevronRight, Sliders,
   Star, Award, Building2, CreditCard, AlertCircle, Check, Copy, ArrowLeft, Shield, BarChart2, FileText, Lock, Loader2
 } from 'lucide-react'
@@ -21,6 +21,7 @@ const BADGE_PRICE = 50 // RON
 const NAV = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/influencer/dashboard' },
   { icon: Briefcase, label: 'Campanii', href: '/influencer/campaigns' },
+  { icon: Megaphone, label: 'Castinguri', href: '/influencer/castinguri' },
   { icon: Zap, label: 'Colaborări', href: '/influencer/collaborations' },
   { icon: MessageSquare, label: 'Mesaje', href: '/influencer/inbox' },
   { icon: Wallet, label: 'Portofel', href: '/influencer/wallet' },
