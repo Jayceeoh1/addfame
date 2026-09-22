@@ -56,6 +56,8 @@ export default function CampaignBriefPage() {
         .from('campaigns').select('*').eq('id', campaignId).eq('status', 'ACTIVE').single()
 
       if (error || !camp) { router.replace('/influencer/campaigns'); return }
+      // Redirectăm OPEN_CALL la pagina de evenimente
+      if (camp.campaign_type === 'OPEN_CALL') { router.replace('/influencer/castinguri/' + campaignId); return }
       setCampaign(camp)
 
       if (inf) {
