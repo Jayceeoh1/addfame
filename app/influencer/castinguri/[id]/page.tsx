@@ -45,7 +45,7 @@ export default function CastingDetailPage() {
       const [{ data: camp }, { data: inf }] = await Promise.all([
         supabase.from('campaigns').select(`
           id, title, description, banner_url, event_date, event_location,
-          min_followers, application_deadline, registration_link, platforms, created_at, status,
+          min_followers, application_deadline, registration_link, manual_registrations, platforms, created_at, status,
           brand:brands(id, name, logo, verification_status, website)
         `).eq('id', id).single(),
         supabase.from('influencers').select('id, name, avatar, ig_followers, tt_followers, instagram_handle, niches').eq('user_id', user.id).single(),
@@ -72,7 +72,7 @@ export default function CastingDetailPage() {
         .from('event_registrations')
         .select('*', { count: 'exact', head: true })
         .eq('campaign_id', id)
-      setRegistrationCount(count || 0)
+      setRegistrationCount((count || 0) + (camp.manual_registrations || 0))
 
       setLoading(false)
     }
