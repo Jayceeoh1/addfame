@@ -777,6 +777,9 @@ export default function AdminCampaigns() {
   const [influencerAmounts, setInfluencerAmounts] = useState<Record<string, Record<string, string>>>({}) // campaignId -> infId -> amount
   const [budgetMode, setBudgetMode] = useState<Record<string, 'fixed' | 'manual'>>({}) // campaignId -> mode
   const [assigning, setAssigning] = useState<string | null>(null)
+  const [openCallRegistrations, setOpenCallRegistrations] = useState<any[]>([])
+  const [manualRegCount, setManualRegCount] = useState<string>('')
+  const [savingManualReg, setSavingManualReg] = useState(false)
   const [infSearch, setInfSearch] = useState('')
   const [filterCity, setFilterCity] = useState<string>('')
   const [filterNiche, setFilterNiche] = useState<string>('')
@@ -1548,8 +1551,12 @@ export default function AdminCampaigns() {
             <div className="px-4 py-3 border-b border-gray-100 flex gap-2 flex-shrink-0 overflow-x-auto" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
               {[
                 { id: 'brief', label: 'Brief & Detalii', icon: FileText },
-                { id: 'influencers', label: `Influenceri (${(selectedInfluencers[selectedCampaign.id] || []).length} sel.)`, icon: Users },
-                { id: 'collabs', label: `Colaborări (${campaignCollabs.length})`, icon: CheckCircle },
+                ...(selectedCampaign.campaign_type === 'OPEN_CALL' ? [
+                  { id: 'registrations', label: `Înscrieri (${(openCallRegistrations.length + (selectedCampaign.manual_registrations || 0))})`, icon: Users },
+                ] : [
+                  { id: 'influencers', label: `Influenceri (${(selectedInfluencers[selectedCampaign.id] || []).length} sel.)`, icon: Users },
+                  { id: 'collabs', label: `Colaborări (${campaignCollabs.length})`, icon: CheckCircle },
+                ]),
                 { id: 'actions', label: 'Acțiuni Admin', icon: CheckCircle },
               ].map(s => (
                 <button key={s.id}
@@ -2764,6 +2771,84 @@ export default function AdminCampaigns() {
               )}
 
               {/* ── ACȚIUNI ADMIN ── */}
+              {activeSection === 'registrations' && selectedCampaign.campaign_type === 'OPEN_CALL' && (
+                <div className="space-y-4">
+                  {/* Manual registrations control */}
+                  <div className="border-2 border-orange-200 rounded-2xl p-4 bg-orange-50">
+                    <p className="text-xs font-black text-orange-600 uppercase tracking-wider mb-3">⚙️ Setare manuală inscrieri</p>
+                    <p className="text-xs text-gray-500 mb-3">Adaugă un număr suplimentar de înscrieri afișate influencerilor (ex: înscrieri de pe alte canale).</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={manualRegCount}
+                        onChange={e => setManualRegCount(e.target.value)}
+                        className="flex-1 border-2 border-orange-200 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-orange-400"
+                        placeholder="0"
+                      />
+                      <button
+                        onClick={async () => {
+                          setSavingManualReg(true)
+                          const sb = (await import('@/lib/supabase/client')).createClient()
+                          const val = parseInt(manualRegCount) || 0
+                          await sb.from('campaigns').update({ manual_registrations: val }).eq('id', selectedCampaign.id)
+                          setSelectedCampaign((p: any) => ({ ...p, manual_registrations: val }))
+                          setCampaigns(p => p.map(c => c.id === selectedCampaign.id ? { ...c, manual_registrations: val } : c))
+                          setSavingManualReg(false)
+                          notify('✅ Număr actualizat!')
+                        }}
+                        disabled={savingManualReg}
+                        className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-black rounded-xl transition"
+                      >
+                        {savingManualReg ? 'Se salvează...' : 'Salvează'}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Înscrieri reale: <strong>{openCallRegistrations.length}</strong> + Manual: <strong>{selectedCampaign.manual_registrations || 0}</strong> = <strong className="text-orange-600">{openCallRegistrations.length + (selectedCampaign.manual_registrations || 0)} total afișat</strong>
+                    </p>
+                  </div>
+
+                  {/* List of registrations */}
+                  <div>
+                    <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Influenceri înscriși ({openCallRegistrations.length})</p>
+                    {openCallRegistrations.length === 0 ? (
+                      <div className="text-center py-8 text-gray-400">
+                        <p className="text-sm">Niciun influencer înscris încă.</p>
+                        <p className="text-xs mt-1">Când influencerii dau click pe "Înscrie-te acum", apar aici.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {openCallRegistrations.map((r: any) => {
+                          const inf = Array.isArray(r.influencer) ? r.influencer[0] : r.influencer
+                          return (
+                            <div key={r.id} className="flex items-center gap-3 p-3 border border-gray-100 rounded-xl bg-white">
+                              {inf?.avatar ? (
+                                <img src={inf.avatar} alt={inf?.name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                              ) : (
+                                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center font-black text-primary text-sm flex-shrink-0">
+                                  {inf?.name?.[0] || '?'}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-sm truncate">{inf?.name || 'Influencer'}</p>
+                                <p className="text-xs text-gray-400">
+                                  {inf?.ig_followers ? `${(inf.ig_followers/1000).toFixed(0)}k IG` : ''}
+                                  {inf?.tt_followers ? ` · ${(inf.tt_followers/1000).toFixed(0)}k TT` : ''}
+                                  {inf?.city ? ` · ${inf.city}` : ''}
+                                </p>
+                              </div>
+                              <p className="text-xs text-gray-400 flex-shrink-0">
+                                {new Date(r.clicked_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {activeSection === 'actions' && (
                 <div className="space-y-4">
 
