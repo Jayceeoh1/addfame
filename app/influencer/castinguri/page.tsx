@@ -23,6 +23,7 @@ type OpenCall = {
     verified: boolean
   } | null
   registration_count?: number
+  manual_registrations?: number
   // Dacă influencerul a aplicat deja
   my_application?: { status: string } | null
 }
@@ -61,7 +62,7 @@ export default function CastinguriPage() {
         .from('campaigns')
         .select(`
           id, title, description, banner_url, event_date, event_location,
-          min_followers, application_deadline, platforms, created_at,
+          min_followers, application_deadline, manual_registrations, platforms, created_at,
           brand:brands(name, logo, verification_status)
         `)
         .eq('campaign_type', 'OPEN_CALL')
@@ -95,13 +96,13 @@ export default function CastinguriPage() {
           ...c,
           brand: Array.isArray(c.brand) ? c.brand[0] : c.brand,
           my_application: appMap.has(c.id) ? { status: appMap.get(c.id)! } : null,
-          registration_count: countMap.get(c.id) || 0,
+          registration_count: (countMap.get(c.id) || 0) + (c.manual_registrations || 0),
         })))
       } else {
         setCampaigns(camps.map((c: any) => ({
           ...c,
           brand: Array.isArray(c.brand) ? c.brand[0] : c.brand,
-          registration_count: countMap.get(c.id) || 0,
+          registration_count: (countMap.get(c.id) || 0) + (c.manual_registrations || 0),
         })))
       }
 
