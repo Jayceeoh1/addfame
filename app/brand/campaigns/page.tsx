@@ -4,12 +4,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { updateCampaignStatus } from '@/app/actions/campaigns'
+import { updateCampaignStatus, deleteCampaign } from '@/app/actions/campaigns'
 import { VerificationBanner } from '@/components/shared/verification-banner'
 import {
   Plus, Search, Briefcase, Clock, Users, TrendingUp,
   CheckCircle, AlertCircle, Eye, EyeOff, Globe, Lock,
-  ChevronRight, Zap, MoreHorizontal, Play, Pause, Archive, ArrowRight, X
+  ChevronRight, Zap, MoreHorizontal, Play, Pause, Archive, ArrowRight, X, Trash2
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -68,6 +68,7 @@ export default function BrandCampaignsPage() {
   const [collabCounts, setCollabCounts] = useState<Record<string, number>>({})
   const [brandVerification, setBrandVerification] = useState<{ status: string; reason?: string | null }>({ status: 'unverified' })
   const [canCreateCampaign, setCanCreateCampaign] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type })
@@ -82,7 +83,7 @@ export default function BrandCampaignsPage() {
       const { data: brand } = await supabase.from('brands').select('id, verification_status, verification_rejection_reason, credits_balance, influencers_access').eq('user_id', user.id).single()
       if (brand) {
         setBrandVerification({ status: brand.verification_status || 'unverified', reason: brand.verification_rejection_reason })
-        const hasAccess = (brand.credits_balance ?? 0) >= 500 || brand.influencers_access === true
+        const hasAccess = (brand.credits_balance ?? 0) >= 250 || brand.influencers_access === true
         setCanCreateCampaign(hasAccess)
       }
       if (!brand) return
@@ -91,6 +92,7 @@ export default function BrandCampaignsPage() {
         .from('campaigns')
         .select('*')
         .eq('brand_id', brand.id)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
 
       if (data) setCampaigns(data)
@@ -127,16 +129,34 @@ export default function BrandCampaignsPage() {
     try {
       const result = await updateCampaignStatus(campaignId, newStatus)
       if (!result.success) throw new Error(result.error)
-      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: newStatus } : c))
       const msgs: Record<string, string> = {
-        ACTIVE: '🚀 Campaign is now live — influencers can see and apply!',
+        ACTIVE: '📋 Campania a fost trimisă la aprobare! Vei fi notificat când este activată.',
         DRAFT: 'Campaign moved back to draft.',
         PAUSED: 'Campaign paused.',
         COMPLETED: 'Campaign marked as completed.',
       }
+      // Publish → campania merge în PENDING_REVIEW, nu ACTIVE
+      const displayStatus = newStatus === 'ACTIVE' ? 'PENDING_REVIEW' : newStatus
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: displayStatus } : c))
       showToast(msgs[newStatus] || 'Status actualizat.', 'success')
     } catch (err: any) {
       showToast(err.message || 'Eroare la actualizarea statusului.', 'error')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  async function handleDelete(campaignId: string) {
+    setActionLoading(campaignId)
+    setOpenMenu(null)
+    setConfirmDelete(null)
+    try {
+      const result = await deleteCampaign(campaignId)
+      if (!result.success) throw new Error(result.error)
+      setCampaigns(prev => prev.filter(c => c.id !== campaignId))
+      showToast('Campania a fost ștearsă.', 'success')
+    } catch (err: any) {
+      showToast(err.message || 'Eroare la ștergere.', 'error')
     } finally {
       setActionLoading(null)
     }
@@ -375,6 +395,14 @@ export default function BrandCampaignsPage() {
                                 <Archive className="w-4 h-4" /> Mark completed
                               </button>
                             )}
+                            {(c.status === 'DRAFT' || c.status === 'REJECTED') && (
+                              <>
+                                <div style={{ height: 1, background: '#fee2e2', margin: '4px 0' }} />
+                                <button className="dropdown-item danger" onClick={() => { setConfirmDelete(c.id); setOpenMenu(null) }}>
+                                  <Trash2 className="w-4 h-4" /> Șterge campania
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -547,6 +575,36 @@ export default function BrandCampaignsPage() {
               </div>
               <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-pink-400 group-hover:translate-x-0.5 transition flex-shrink-0" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Dialog */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 mx-auto">
+              <Trash2 className="w-6 h-6 text-red-500" />
+            </div>
+            <h3 className="text-lg font-black text-gray-900 text-center mb-2">Ștergi campania?</h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Campania va fi mutată în arhivă și poate fi recuperată în termen de 30 de zile de echipa AddFame.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition"
+              >
+                Anulează
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDelete)}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition"
+                disabled={!!actionLoading}
+              >
+                {actionLoading ? '...' : 'Șterge'}
+              </button>
+            </div>
           </div>
         </div>
       )}
