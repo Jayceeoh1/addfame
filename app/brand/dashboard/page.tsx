@@ -253,7 +253,7 @@ export default function BrandDashboard() {
   const totalBudget = campaigns.reduce((s, c) => s + (c.budget || 0), 0)
   const creditsBalance = profile?.credits_balance || 0
   const totalSpent = profile?.total_spent || 0
-  const canCreateCampaign = creditsBalance >= 500 || profile?.influencers_access === true
+  const canCreateCampaign = creditsBalance >= 250 || profile?.influencers_access === true
 
   const featuredCampaign = activeCampaigns[0] || campaigns[0]
   const featuredStats = featuredCampaign ? {
@@ -316,7 +316,7 @@ export default function BrandDashboard() {
             <Link
               href="/brand/wallet"
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black bg-gray-100 text-gray-400 border border-gray-200"
-              title="Ai nevoie de minimum 500 RON pentru a crea campanii"
+              title="Ai nevoie de minimum 250 RON pentru a crea campanii"
             >
               <Lock className="w-4 h-4" /> New Campaign
             </Link>
@@ -391,7 +391,7 @@ export default function BrandDashboard() {
               </button>
             ) : (
               <Link href="/brand/wallet" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 transition px-6 py-3 rounded-xl font-black text-sm text-white">
-                <Lock className="w-4 h-4" /> Adaugă 500 RON pentru acces
+                <Lock className="w-4 h-4" /> Adaugă 250 RON pentru acces
               </Link>
             )}
           </div>
@@ -464,7 +464,7 @@ export default function BrandDashboard() {
                   <Plus className="w-4 h-4" /> Creează campanie
                 </button>
               ) : (
-                <Link href="/brand/wallet" className="flex flex-col items-start gap-2 px-3 py-3 rounded-xl font-bold text-xs transition bg-gray-50 text-gray-400 hover:bg-gray-100 text-left" title="500 RON necesari">
+                <Link href="/brand/wallet" className="flex flex-col items-start gap-2 px-3 py-3 rounded-xl font-bold text-xs transition bg-gray-50 text-gray-400 hover:bg-gray-100 text-left" title="250 RON necesari">
                   <Lock className="w-4 h-4" /> Creează campanie
                 </Link>
               )}
