@@ -8,7 +8,7 @@ import { updateCampaignStatus } from '@/app/actions/campaigns'
 import { VerificationBanner } from '@/components/shared/verification-banner'
 import {
   Plus, Search, Briefcase, Clock, Users, TrendingUp,
-  CheckCircle, AlertCircle, Eye, EyeOff, Globe,
+  CheckCircle, AlertCircle, Eye, EyeOff, Globe, Lock,
   ChevronRight, Zap, MoreHorizontal, Play, Pause, Archive, ArrowRight, X
 } from 'lucide-react'
 import Link from 'next/link'
@@ -67,6 +67,7 @@ export default function BrandCampaignsPage() {
   const router = useRouter()
   const [collabCounts, setCollabCounts] = useState<Record<string, number>>({})
   const [brandVerification, setBrandVerification] = useState<{ status: string; reason?: string | null }>({ status: 'unverified' })
+  const [canCreateCampaign, setCanCreateCampaign] = useState(false)
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type })
@@ -78,8 +79,12 @@ export default function BrandCampaignsPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: brand } = await supabase.from('brands').select('id, verification_status, verification_rejection_reason').eq('user_id', user.id).single()
-      if (brand) setBrandVerification({ status: brand.verification_status || 'unverified', reason: brand.verification_rejection_reason })
+      const { data: brand } = await supabase.from('brands').select('id, verification_status, verification_rejection_reason, credits_balance, influencers_access').eq('user_id', user.id).single()
+      if (brand) {
+        setBrandVerification({ status: brand.verification_status || 'unverified', reason: brand.verification_rejection_reason })
+        const hasAccess = (brand.credits_balance ?? 0) >= 500 || brand.influencers_access === true
+        setCanCreateCampaign(hasAccess)
+      }
       if (!brand) return
 
       const { data } = await supabase
@@ -211,13 +216,23 @@ export default function BrandCampaignsPage() {
             {counts.Draft > 0 && <> · <span className="text-amber-600 font-bold">{counts.Draft} draft</span></>}
           </p>
         </div>
-        <button
-          onClick={() => setShowSheet(true)}
-          className="inline-flex items-center gap-2 brand-grad text-white font-bold text-sm px-5 py-2.5 rounded-xl hover:-translate-y-0.5 transition flex-shrink-0"
-          style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.35)' }}
-        >
-          <Plus className="w-4 h-4" /> New Campaign
-        </button>
+        {canCreateCampaign ? (
+          <button
+            onClick={() => setShowSheet(true)}
+            className="inline-flex items-center gap-2 brand-grad text-white font-bold text-sm px-5 py-2.5 rounded-xl hover:-translate-y-0.5 transition flex-shrink-0"
+            style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.35)' }}
+          >
+            <Plus className="w-4 h-4" /> New Campaign
+          </button>
+        ) : (
+          <Link
+            href="/brand/wallet"
+            className="inline-flex items-center gap-2 bg-gray-100 text-gray-500 font-bold text-sm px-5 py-2.5 rounded-xl transition flex-shrink-0 border border-gray-200"
+            title="Ai nevoie de minimum 500 RON credite sau aprobare admin pentru a crea campanii"
+          >
+            <Lock className="w-4 h-4" /> New Campaign
+          </Link>
+        )}
       </div>
 
       {/* Verification banner */}
@@ -276,12 +291,20 @@ export default function BrandCampaignsPage() {
               : `No ${activeTab.toLowerCase()} campaigns found.`}
           </p>
           {campaigns.length === 0 && (
-            <button
-              onClick={() => setShowSheet(true)}
-              className="inline-flex items-center gap-2 brand-grad text-white font-bold text-sm px-6 py-3 rounded-xl"
-              style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.3)' }}>
-              <Plus className="w-4 h-4" /> Create Campaign
-            </button>
+            canCreateCampaign ? (
+              <button
+                onClick={() => setShowSheet(true)}
+                className="inline-flex items-center gap-2 brand-grad text-white font-bold text-sm px-6 py-3 rounded-xl"
+                style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.3)' }}>
+                <Plus className="w-4 h-4" /> Create Campaign
+              </button>
+            ) : (
+              <div className="text-center">
+                <Link href="/brand/wallet" className="inline-flex items-center gap-2 bg-orange-500 text-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-orange-600 transition">
+                  <Lock className="w-4 h-4" /> Adaugă 500 RON pentru a crea campanii
+                </Link>
+              </div>
+            )
           )}
         </div>
       ) : (
