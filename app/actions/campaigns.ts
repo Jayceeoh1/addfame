@@ -141,68 +141,16 @@ export async function updateCampaignStatus(campaignId: string, status: 'ACTIVE' 
       }
     }
 
-    // ── ACTIVE: publică campania și blochează escrow ──────────────────────────
-    if (status === 'ACTIVE' && campaign.status === 'DRAFT') {
-      const escrowNeeded = campaign.budget || 0
+    // ── ACTIVE (Publish): brandul trimite campania la aprobare admin ─────────
+    // Campania merge în PENDING_REVIEW, nu ACTIVE direct.
+    // Escrow-ul se blochează doar după aprobare admin (via adminApproveCampaign).
+    if (status === 'ACTIVE' && (campaign.status === 'DRAFT' || campaign.status === 'REJECTED')) {
+      await admin.from('campaigns').update({
+        status: 'PENDING_REVIEW',
+      }).eq('id', campaignId)
 
-      if (escrowNeeded > 0) {
-        // Blochează escrow-ul atomic via RPC (fix race condition)
-        const { data: lockResult } = await admin.rpc('lock_campaign_escrow', {
-          p_brand_id: brand.id,
-          p_amount: escrowNeeded,
-        })
-        if (!lockResult?.ok) {
-          return {
-            success: false,
-            error: `Credite insuficiente. Ai ${(lockResult?.available || 0).toFixed(2)} RON disponibili, campania necesită ${escrowNeeded.toFixed(2)} RON buget total.`,
-            insufficientFunds: true,
-            required: escrowNeeded,
-            available: lockResult?.available || 0,
-          }
-        }
-
-        // credits_reserved actualizat deja atomic de RPC de mai sus
-
-        await admin.from('campaigns').update({
-          status,
-          escrow_amount: escrowNeeded,
-          escrow_reserved_at: new Date().toISOString(),
-        }).eq('id', campaignId)
-
-        await admin.from('brand_transactions').insert({
-          brand_id: brand.id,
-          type: 'ESCROW_LOCK',
-          amount: escrowNeeded,
-          description: `Escrow blocat pentru campania: "${campaign.title}" (${escrowNeeded.toFixed(2)} RON)`,
-          status: 'completed',
-          campaign_id: campaignId,
-        })
-
-        // Notifică influencerii potriviți
-        try {
-          const { data: campFull } = await admin.from('campaigns').select('title, budget_per_influencer, niches, platforms').eq('id', campaignId).single()
-          if (campFull) {
-            const { data: influencers } = await admin.from('influencers').select('telegram_chat_id, niches').not('telegram_chat_id', 'is', null).eq('approval_status', 'approved')
-            if (influencers?.length) {
-              const campNiches = campFull.niches || []
-              for (const inf of influencers) {
-                const matches = campNiches.some((n: string) => (inf.niches || []).includes(n))
-                if (matches || campNiches.length === 0) {
-                  notifyNewCampaign(inf.telegram_chat_id, campFull.title, campFull.budget_per_influencer || 0).catch(() => {})
-                }
-              }
-            }
-          }
-        } catch (e) { /* fail silently */ }
-
-        revalidatePath('/brand/campaigns')
-        return { success: true, escrowLocked: escrowNeeded }
-      }
-
-      // Campanie fără buget — publică direct
-      await admin.from('campaigns').update({ status }).eq('id', campaignId)
       revalidatePath('/brand/campaigns')
-      return { success: true }
+      return { success: true, pendingReview: true }
     }
 
     // ── PAUSED / înapoi la DRAFT: verifică colaborări active + aplică penalitate ──
@@ -529,5 +477,42 @@ export async function expireOverdueCampaigns() {
     }
 
     return { success: true, expired: count }
+  } catch (e: any) { return { error: e.message } }
+}
+
+export async function deleteCampaign(campaignId: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Neautorizat' }
+
+    // Only DRAFT campaigns can be deleted by brand
+    const { data: campaign } = await supabase
+      .from('campaigns')
+      .select('id, status, brand_id')
+      .eq('id', campaignId)
+      .single()
+
+    if (!campaign) return { error: 'Campania nu există.' }
+    if (!['DRAFT', 'REJECTED'].includes(campaign.status)) {
+      return { error: 'Doar campaniile Draft sau Respinse pot fi șterse.' }
+    }
+
+    // Verify brand ownership
+    const { data: brand } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!brand || brand.id !== campaign.brand_id) return { error: 'Neautorizat' }
+
+    const { error } = await supabase
+      .from('campaigns')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', campaignId)
+
+    if (error) return { error: error.message }
+    return { success: true }
   } catch (e: any) { return { error: e.message } }
 }
