@@ -589,7 +589,7 @@ export default function BrandInfluencersPage() {
       if (!brand) return
       setBrandId(brand.id)
 
-      const hasCredits = (brand.credits_balance ?? 0) >= 500
+      const hasCredits = (brand.credits_balance ?? 0) >= 250
       const adminAccess = brand.influencers_access === true
 
       const accessState: AccessState = (hasCredits || adminAccess)
