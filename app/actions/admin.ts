@@ -436,8 +436,63 @@ export async function adminUpdateCampaignStatus(id: string, status: string, shou
     const auth = await requireAdmin()
     if ('error' in auth) return auth
     const sb = createAdminClient()
-    const { error } = await sb.from('campaigns').update({ status }).eq('id', id)
-    if (error) return { error: error.message }
+
+    // ── Aprobare campanie: PENDING_REVIEW → ACTIVE cu blocare escrow ──────────
+    if (status === 'ACTIVE') {
+      const { data: camp } = await sb.from('campaigns')
+        .select('id, status, budget, brand_id, title, escrow_amount')
+        .eq('id', id).single()
+
+      if (camp && camp.status === 'PENDING_REVIEW' && (camp.budget || 0) > 0) {
+        // Blochează escrow atomic via RPC
+        const { data: lockResult } = await sb.rpc('lock_campaign_escrow', {
+          p_brand_id: camp.brand_id,
+          p_amount: camp.budget,
+        })
+
+        if (!lockResult?.ok) {
+          return {
+            success: false,
+            error: `Brandul nu are suficiente credite. Disponibil: ${(lockResult?.available || 0).toFixed(2)} RON, necesar: ${camp.budget.toFixed(2)} RON.`,
+            insufficientFunds: true,
+          }
+        }
+
+        await sb.from('campaigns').update({
+          status: 'ACTIVE',
+          escrow_amount: camp.budget,
+          escrow_reserved_at: new Date().toISOString(),
+        }).eq('id', id)
+
+        await sb.from('brand_transactions').insert({
+          brand_id: camp.brand_id,
+          type: 'ESCROW_LOCK',
+          amount: camp.budget,
+          description: `Escrow blocat la aprobare campanie: "${camp.title}" (${camp.budget.toFixed(2)} RON)`,
+          status: 'completed',
+          campaign_id: id,
+        })
+
+        // Notifică brandul că campania a fost aprobată
+        const { data: brand } = await sb.from('brands').select('user_id').eq('id', camp.brand_id).single()
+        if (brand) {
+          await sb.from('notifications').insert({
+            user_id: brand.user_id,
+            title: '✅ Campania ta a fost aprobată!',
+            body: `"${camp.title}" este acum live și vizibilă pentru influenceri.`,
+            link: '/brand/campaigns',
+            read: false,
+          })
+        }
+      } else {
+        // Orice alt status → actualizare directă
+        const { error } = await sb.from('campaigns').update({ status }).eq('id', id)
+        if (error) return { error: error.message }
+      }
+    } else {
+      const { error } = await sb.from('campaigns').update({ status }).eq('id', id)
+      if (error) return { error: error.message }
+    }
 
     // Când campania devine ACTIVE și shouldNotify = true → notifică influencerii
     if (status === 'ACTIVE' && shouldNotify) {
