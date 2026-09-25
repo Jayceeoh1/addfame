@@ -205,11 +205,21 @@ function BrandWalletPageInner() {
 
       const { data: b } = await supabase
         .from('brands')
-        .select('id, name, email, website, country, phone, company_size, industry, credits_balance, credits_reserved, total_spent, credits_expires_at, verification_status')
+        .select('id, name, email, website, country, phone, company_size, industry, credits_balance, credits_reserved, total_spent, credits_expires_at, verification_status, billing_company, billing_cui, billing_address, billing_email')
         .eq('user_id', user.id)
         .single()
 
       if (!b) return
+
+      // Autofill billing din datele salvate în Settings → Facturare
+      if (b.billing_company || b.billing_cui) {
+        setBillingType('pj')
+        setBillingName(b.billing_company || b.name || '')
+        setBillingVat(b.billing_cui || '')
+        setBillingAddress(b.billing_address || '')
+      } else {
+        setBillingName(b.name || '')
+      }
       setBrand(b)
       setWallet({ credits_balance: b.credits_balance ?? 0, credits_reserved: b.credits_reserved ?? 0, total_spent: b.total_spent ?? 0, credits_expires_at: b.credits_expires_at ?? null })
 
