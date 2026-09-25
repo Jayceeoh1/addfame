@@ -197,6 +197,12 @@ export default function WizardPage() {
   const hasContent = data.tasks_ig_reel || data.tasks_ig_post || data.tasks_tt_video || data.tasks_stories_count > 0
 
   async function publish() {
+    // Validări înainte de submit
+    const numInfluencers = parseInt(data.max_influencers) || 0
+    if (numInfluencers < 1) { alert('Numărul de influenceri trebuie să fie cel puțin 1.'); return }
+    if (data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' && (!data.pay_amount || parseFloat(data.pay_amount) <= 0)) {
+      alert('Te rugăm să introduci suma per influencer.'); return
+    }
     setSaving(true)
     try {
       const sb = createClient()
@@ -214,7 +220,7 @@ export default function WizardPage() {
         payment_mode: data.campaign_type === 'PAID' ? data.payment_mode : null,
         budget_per_influencer: data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' ? (parseFloat(data.pay_amount) || 0) : 0,
         budget: data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' ? (parseFloat(data.pay_amount) || 0) * (parseInt(data.max_influencers) || 5) : 0,
-        status: 'ACTIVE',
+        status: 'PENDING_REVIEW',
         platforms: data.platforms,
         offer_name: data.product_name || null,
         offer_value: parseFloat(data.offer_value) || 0,
@@ -416,7 +422,7 @@ export default function WizardPage() {
     return (
       <div>
         <h2 style={{ fontSize: 17, fontWeight: 900, color: '#111', margin: '0 0 4px' }}>Totul arată bine?</h2>
-        <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px' }}>Verifică înainte să activezi campania.</p>
+        <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px' }}>Verifică înainte să trimiți campania la aprobare.</p>
         <div style={{ background: 'white', border: '1.5px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: 10 }}>
           {[
             { label: 'Tip', value: data.campaign_type === 'BARTER' ? '🎁 Barter' : '💰 Plătită', ok: true },
@@ -536,7 +542,7 @@ export default function WizardPage() {
           ) : (
             <button onClick={publish} disabled={saving}
               style={{ flex: 1, padding: '11px', borderRadius: 11, border: 'none', background: saving ? '#9ca3af' : 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white', fontSize: 14, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-              <Rocket size={16} /> {saving ? 'Se publică...' : 'Activează campania'}
+              <Rocket size={16} /> {saving ? 'Se trimite...' : 'Trimite la aprobare'}
             </button>
           )}
         </div>
