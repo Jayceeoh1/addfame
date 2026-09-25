@@ -452,6 +452,35 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
                 </button>
               </div>
 
+              {/* ── ACCES PLATFORMĂ ── */}
+              <div className="mt-6 pt-6" style={{ borderTop: '1.5px solid #f5f5f5' }}>
+                <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">🔑 Acces Platformă</p>
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-black text-purple-800">Acces influenceri &amp; campanii</p>
+                      <p className="text-xs text-purple-600 mt-0.5">
+                        {selected.influencers_access ? '✅ Acces acordat de admin' : selected.credits_balance >= 500 ? '✅ Deblocat automat (≥500 RON)' : '🔒 Blocat — sub 500 RON și fără aprobare'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const { toggleBrandInfluencersAccess } = await import('@/app/actions/admin')
+                        const newVal = !selected.influencers_access
+                        const res = await toggleBrandInfluencersAccess(selected.id, newVal)
+                        if ('error' in res) { notify('❌ Eroare: ' + res.error); return }
+                        setSelected((p: any) => ({ ...p, influencers_access: newVal }))
+                        setBrands(p => p.map(b => b.id === selected.id ? { ...b, influencers_access: newVal } : b))
+                        notify(newVal ? '✅ Acces acordat' : '🔒 Acces revocat')
+                      }}
+                      className={`px-4 py-2 rounded-xl text-sm font-black transition ${selected.influencers_access ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-purple-500 text-white hover:bg-purple-600'}`}
+                    >
+                      {selected.influencers_access ? 'Revocă acces' : 'Acordă acces'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* ── CREDITE MANAGEMENT ── */}
               <div className="mt-6 pt-6" style={{ borderTop: '1.5px solid #f5f5f5' }}>
                 <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-4">💳 Management Credite</p>
