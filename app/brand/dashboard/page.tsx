@@ -8,7 +8,7 @@ import { OnboardingChecklist } from '@/components/shared/onboarding-checklist'
 import { VerificationBanner } from '@/components/shared/verification-banner'
 import {
   Zap, Users, TrendingUp, DollarSign, Plus, ArrowRight,
-  Briefcase, Clock, AlertCircle, RefreshCw,
+  Briefcase, Clock, AlertCircle, RefreshCw, Lock,
   ChevronRight, X, Coins, Sparkles, Search,
   MessageCircle, Send, Bot, Minimize2
 } from 'lucide-react'
@@ -253,6 +253,7 @@ export default function BrandDashboard() {
   const totalBudget = campaigns.reduce((s, c) => s + (c.budget || 0), 0)
   const creditsBalance = profile?.credits_balance || 0
   const totalSpent = profile?.total_spent || 0
+  const canCreateCampaign = creditsBalance >= 500 || profile?.influencers_access === true
 
   const featuredCampaign = activeCampaigns[0] || campaigns[0]
   const featuredStats = featuredCampaign ? {
@@ -264,7 +265,7 @@ export default function BrandDashboard() {
   const onboardingSteps = [
     { id: 'profile', label: 'Completează profilul brandului', desc: 'Adaugă logo, descriere și informații de contact', href: '/brand/settings', done: !!(profile?.logo || profile?.description) },
     { id: 'verify', label: 'Verifică-ți brandul', desc: 'Trimite verificarea pentru a debloca publicarea', href: '/brand/verify', done: profile?.verification_status === 'verified' },
-    { id: 'campaign', label: 'Creează prima ta campanie', desc: 'Definește obiectivele, bugetul și livrabilele', href: '/brand/campaigns/new', done: campaigns.length > 0 },
+    { id: 'campaign', label: 'Creează prima ta campanie', desc: 'Definește obiectivele, bugetul și livrabilele', href: canCreateCampaign ? '/brand/campaigns/new' : '/brand/wallet', done: campaigns.length > 0 },
     { id: 'publish', label: 'Publică o campanie', desc: 'Lansează pentru ca influencerii să poată aplica', href: '/brand/campaigns', done: activeCampaigns.length > 0 },
     { id: 'wallet', label: 'Adaugă credite în wallet', desc: 'Finanțează contul pentru a plăti colaboratorii', href: '/brand/wallet', done: (creditsBalance + totalSpent) > 0 },
   ]
@@ -303,13 +304,23 @@ export default function BrandDashboard() {
           <button onClick={load} className="p-2 rounded-xl border border-gray-200 bg-white text-gray-400 hover:text-orange-500 transition">
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setShowSheet(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black text-white brand-grad"
-            style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.3)' }}
-          >
-            <Plus className="w-4 h-4" /> New Campaign
-          </button>
+          {canCreateCampaign ? (
+            <button
+              onClick={() => setShowSheet(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black text-white brand-grad"
+              style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.3)' }}
+            >
+              <Plus className="w-4 h-4" /> New Campaign
+            </button>
+          ) : (
+            <Link
+              href="/brand/wallet"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black bg-gray-100 text-gray-400 border border-gray-200"
+              title="Ai nevoie de minimum 500 RON pentru a crea campanii"
+            >
+              <Lock className="w-4 h-4" /> New Campaign
+            </Link>
+          )}
         </div>
       </div>
 
@@ -374,9 +385,15 @@ export default function BrandDashboard() {
             <Sparkles className="w-10 h-10 mx-auto mb-3 text-orange-300" />
             <h2 className="text-2xl font-black mb-2">Lansează prima ta campanie</h2>
             <p className="text-sm opacity-70 mb-5 max-w-md mx-auto">Conectează-te cu influenceri reali, pe barter. Setezi campania în sub 5 minute.</p>
-            <button onClick={() => setShowSheet(true)} className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-black text-sm">
-              <Plus className="w-4 h-4" /> Creează campanie
-            </button>
+            {canCreateCampaign ? (
+              <button onClick={() => setShowSheet(true)} className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-black text-sm">
+                <Plus className="w-4 h-4" /> Creează campanie
+              </button>
+            ) : (
+              <Link href="/brand/wallet" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 transition px-6 py-3 rounded-xl font-black text-sm text-white">
+                <Lock className="w-4 h-4" /> Adaugă 500 RON pentru acces
+              </Link>
+            )}
           </div>
         </div>
       )}
@@ -442,9 +459,15 @@ export default function BrandDashboard() {
           <div className="card p-5 fade-up" style={{ animationDelay: '.36s' }}>
             <h2 className="font-black text-gray-900 mb-3 text-sm">Acțiuni rapide</h2>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setShowSheet(true)} className="flex flex-col items-start gap-2 px-3 py-3 rounded-xl font-bold text-xs transition bg-orange-50 text-orange-600 hover:bg-orange-100 text-left">
-                <Plus className="w-4 h-4" /> Creează campanie
-              </button>
+              {canCreateCampaign ? (
+                <button onClick={() => setShowSheet(true)} className="flex flex-col items-start gap-2 px-3 py-3 rounded-xl font-bold text-xs transition bg-orange-50 text-orange-600 hover:bg-orange-100 text-left">
+                  <Plus className="w-4 h-4" /> Creează campanie
+                </button>
+              ) : (
+                <Link href="/brand/wallet" className="flex flex-col items-start gap-2 px-3 py-3 rounded-xl font-bold text-xs transition bg-gray-50 text-gray-400 hover:bg-gray-100 text-left" title="500 RON necesari">
+                  <Lock className="w-4 h-4" /> Creează campanie
+                </Link>
+              )}
               {[
                 { label: 'Caută influenceri', href: '/brand/influencers', icon: Search, color: 'bg-pink-50 text-pink-600 hover:bg-pink-100' },
                 { label: 'Colaborări', href: '/brand/collaborations', icon: Briefcase, color: 'bg-purple-50 text-purple-600 hover:bg-purple-100' },
