@@ -154,7 +154,7 @@ export async function middleware(request: NextRequest) {
         .single()
 
       if (brand) {
-        const hasAccess = (brand.credits_balance ?? 0) >= 500 || brand.influencers_access === true
+        const hasAccess = (brand.credits_balance ?? 0) >= 250 || brand.influencers_access === true
         if (!hasAccess) {
           return NextResponse.redirect(new URL('/brand/wallet?locked=1', request.url))
         }
