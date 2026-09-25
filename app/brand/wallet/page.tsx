@@ -183,9 +183,11 @@ function BrandWalletPageInner() {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
   const [amount, setAmount] = useState<number | null>(null)
   const [customAmount, setCustomAmount] = useState('')
+  const [billingType, setBillingType] = useState<'pf' | 'pj'>('pj')
   const [billingName, setBillingName] = useState('')
   const [billingAddress, setBillingAddress] = useState('')
   const [billingVat, setBillingVat] = useState('')
+  const [billingRegCom, setBillingRegCom] = useState('')
   const [submitLoading, setSubmitLoading] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successTx, setSuccessTx] = useState<Transaction | null>(null)
@@ -242,7 +244,7 @@ function BrandWalletPageInner() {
         body: JSON.stringify({
           amount: resolvedAmount,
           method: selectedMethod,
-          billing: { name: billingName, address: billingAddress, vat: billingVat },
+          billing: { type: billingType, name: billingName, address: billingAddress, vat: billingVat, reg_com: billingRegCom },
         }),
       })
       const data = await res.json()
@@ -286,7 +288,7 @@ function BrandWalletPageInner() {
 
   function closeModal() {
     setModal(null); setSelectedMethod(null); setAmount(null); setCustomAmount('')
-    setBillingName(''); setBillingAddress(''); setBillingVat('')
+    setBillingName(''); setBillingAddress(''); setBillingVat(''); setBillingRegCom(''); setBillingType('pj')
     setSubmitError(null); setSuccessTx(null)
   }
 
@@ -729,19 +731,57 @@ function BrandWalletPageInner() {
 
                 {/* Billing */}
                 <div className="border border-border rounded-xl p-4 space-y-3">
-                  <p className="text-sm font-semibold">Date Facturare <span className="text-muted-foreground font-normal">(pentru factură)</span></p>
-                  <div>
-                    <label className="block text-xs text-muted-foreground mb-1">Firmă / Nume Complet *</label>
-                    <Input placeholder={brand?.name ?? 'Numele firmei'} value={billingName} onChange={e => setBillingName(e.target.value)} className="h-9 text-sm" />
+                  <p className="text-sm font-semibold">Date Facturare</p>
+
+                  {/* Toggle PF / PJ */}
+                  <div className="flex rounded-lg border border-border overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setBillingType('pf')}
+                      className={`flex-1 py-2 text-sm font-semibold transition ${billingType === 'pf' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+                    >
+                      Persoană Fizică
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBillingType('pj')}
+                      className={`flex-1 py-2 text-sm font-semibold transition ${billingType === 'pj' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+                    >
+                      Persoană Juridică
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-xs text-muted-foreground mb-1">Adresă Facturare</label>
-                    <Input placeholder="Strada, Oraș, Județ" value={billingAddress} onChange={e => setBillingAddress(e.target.value)} className="h-9 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-muted-foreground mb-1">CUI / CNP <span className="text-muted-foreground">(opțional, pentru factură)</span></label>
-                    <Input placeholder="ex: RO54992560 sau CNP" value={billingVat} onChange={e => setBillingVat(e.target.value)} className="h-9 text-sm" />
-                  </div>
+
+                  {billingType === 'pf' ? (
+                    <>
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">Nume Complet *</label>
+                        <Input placeholder="Ion Popescu" value={billingName} onChange={e => setBillingName(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">CNP <span className="text-muted-foreground">(opțional)</span></label>
+                        <Input placeholder="1234567890123" value={billingVat} onChange={e => setBillingVat(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">Denumire Firmă *</label>
+                        <Input placeholder={brand?.name ?? 'FIRMA SRL'} value={billingName} onChange={e => setBillingName(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">CUI / CIF *</label>
+                        <Input placeholder="ex: RO43782172" value={billingVat} onChange={e => setBillingVat(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">Adresă Sediu *</label>
+                        <Input placeholder="Strada, Nr., Oraș, Județ" value={billingAddress} onChange={e => setBillingAddress(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-1">Reg. Comerțului <span className="text-muted-foreground">(opțional)</span></label>
+                        <Input placeholder="ex: J40/1234/2020" value={billingRegCom} onChange={e => setBillingRegCom(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <Button className="w-full h-12 bg-gradient-to-r from-primary to-accent font-semibold text-base"
@@ -749,6 +789,8 @@ function BrandWalletPageInner() {
                     if (!resolvedAmount || resolvedAmount < TOPUP_MIN) { setSubmitError(`Suma minimă este ${TOPUP_MIN} RON.`); return }
                     setSubmitError(null)
                     if (!billingName.trim()) { setSubmitError('Completează numele pentru factură.'); return }
+                    if (billingType === 'pj' && !billingVat.trim()) { setSubmitError('CUI-ul este obligatoriu pentru persoane juridice.'); return }
+                    if (billingType === 'pj' && !billingAddress.trim()) { setSubmitError('Adresa sediului este obligatorie pentru persoane juridice.'); return }
                     setModal('instructions')
                   }}
                   disabled={resolvedAmount < TOPUP_MIN}>
