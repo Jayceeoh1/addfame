@@ -1420,3 +1420,20 @@ export async function updateCampaignImages(campaignId: string, imageUrl: string)
     return { error: e.message }
   }
 }
+
+export async function toggleBrandInfluencersAccess(brandId: string, value: boolean) {
+  try {
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth
+    const sb = createAdminClient()
+    const { error } = await sb
+      .from('brands')
+      .update({ influencers_access: value })
+      .eq('id', brandId)
+    if (error) return { error: error.message }
+    revalidatePath('/admin/brands')
+    return { success: true }
+  } catch (e: any) {
+    return { error: e.message }
+  }
+}
