@@ -60,7 +60,7 @@ type Campaign = { id: string; title: string; status: string }
 
 type AccessState =
   | { granted: true }
-  | { granted: false; reason: 'no_credits' }
+  | { granted: false; reason: 'no_credits' | 'no_admin_access' }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -167,30 +167,34 @@ function LockedScreen({ reason }: { reason: 'no_credits' }) {
           </div>
           <h2 className="text-xl font-black text-foreground mb-2">Lista de influenceri este blocată</h2>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            Pentru a accesa rețeaua completă de creatori ai nevoie de minimum <strong>50 RON credite</strong> în wallet.
+            Pentru a accesa rețeaua completă de creatori ai nevoie de <strong>minimum 500 RON credite</strong> în wallet sau aprobare din partea echipei AddFame.
           </p>
           <div className="space-y-3 mb-6 text-left">
-
-            <div className={`flex items-center gap-3 p-3 rounded-xl border ${noCredits ? 'border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800' : 'border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800'}`}>
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${noCredits ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
-                {noCredits ? <Wallet className="w-3.5 h-3.5 text-orange-600" /> : <CheckCircle className="w-3.5 h-3.5 text-green-600" />}
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-orange-100 dark:bg-orange-900/40">
+                <Wallet className="w-3.5 h-3.5 text-orange-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-bold ${noCredits ? 'text-orange-800 dark:text-orange-300' : 'text-green-800 dark:text-green-300'}`}>
-                  {noCredits ? 'Add credits to your wallet' : 'Wallet funded ✓'}
-                </p>
-                {noCredits && <p className="text-xs text-orange-600 dark:text-orange-400">Minimum 50 RON required to unlock</p>}
+                <p className="text-sm font-bold text-orange-800 dark:text-orange-300">Adaugă credite în wallet</p>
+                <p className="text-xs text-orange-600 dark:text-orange-400">Minim 500 RON necesari pentru acces</p>
               </div>
-              {noCredits && (
-                <Link href="/brand/wallet">
-                  <Button size="sm" variant="outline" className="text-xs border-orange-300 text-orange-700 hover:bg-orange-100 flex-shrink-0">
-                    Add funds <ArrowRight className="w-3 h-3 ml-1" />
-                  </Button>
-                </Link>
-              )}
+              <Link href="/brand/wallet">
+                <Button size="sm" variant="outline" className="text-xs border-orange-300 text-orange-700 hover:bg-orange-100 flex-shrink-0">
+                  Adaugă fonduri <ArrowRight className="w-3 h-3 ml-1" />
+                </Button>
+              </Link>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-200 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-800">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-100 dark:bg-purple-900/40">
+                <Zap className="w-3.5 h-3.5 text-purple-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-purple-800 dark:text-purple-300">Aprobare echipă AddFame</p>
+                <p className="text-xs text-purple-600 dark:text-purple-400">Contactează-ne pentru acces rapid</p>
+              </div>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Odată ce ambele condiții sunt îndeplinite, lista completă de creatori se deblochează imediat.</p>
+          <p className="text-xs text-muted-foreground">Una dintre cele două condiții este suficientă pentru a debloca accesul la rețeaua completă de creatori.</p>
         </div>
       </div>
     </div>
@@ -579,15 +583,16 @@ export default function BrandInfluencersPage() {
 
       const { data: brand } = await supabase
         .from('brands')
-        .select('id, credits_balance')
+        .select('id, credits_balance, influencers_access')
         .eq('user_id', user.id)
         .single()
       if (!brand) return
       setBrandId(brand.id)
 
-      const hasCredits = (brand.credits_balance ?? 0) >= 50
+      const hasCredits = (brand.credits_balance ?? 0) >= 500
+      const adminAccess = brand.influencers_access === true
 
-      const accessState: AccessState = hasCredits
+      const accessState: AccessState = (hasCredits || adminAccess)
         ? { granted: true }
         : { granted: false, reason: 'no_credits' }
       setAccess(accessState)
