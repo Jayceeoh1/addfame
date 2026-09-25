@@ -135,6 +135,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
+  // ── Access control: crearea campaniilor și lista influenceri ─────────────
+  // Brandurile au nevoie de 500 RON SAU influencers_access=true
+  const isCampaignNew = pathname.startsWith('/brand/campaigns/new')
+  const isInfluencerList = pathname === '/brand/influencers'
+
+  if (user && (isCampaignNew || isInfluencerList)) {
+    try {
+      const serviceClient = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      )
+      const { data: brand } = await serviceClient
+        .from('brands')
+        .select('credits_balance, influencers_access')
+        .eq('user_id', user.id)
+        .single()
+
+      if (brand) {
+        const hasAccess = (brand.credits_balance ?? 0) >= 500 || brand.influencers_access === true
+        if (!hasAccess) {
+          return NextResponse.redirect(new URL('/brand/wallet?locked=1', request.url))
+        }
+      }
+    } catch {
+      // dacă query-ul eșuează, lăsăm să treacă (clientul va face oricum verificarea)
+    }
+  }
+
   if (isProtected && user && pathname.startsWith('/influencer')) {
     const cacheKey = `active:${user.id}`
     const cached = rateLimitMap.get(cacheKey)
