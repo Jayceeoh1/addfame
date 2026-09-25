@@ -1409,10 +1409,16 @@ export default function AdminCampaigns() {
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
                               {c.status === 'PENDING_REVIEW' && (
-                                <button className="action-btn green" title="Aprobă"
-                                  onClick={() => changeStatus(c.id, 'ACTIVE')} disabled={busy}>
-                                  <CheckCircle className="w-3.5 h-3.5" />
-                                </button>
+                                <>
+                                  <button className="action-btn green" title="Aprobă campania"
+                                    onClick={() => changeStatus(c.id, 'ACTIVE')} disabled={busy}>
+                                    <CheckCircle className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button className="action-btn red" title="Respinge campania"
+                                    onClick={() => changeStatus(c.id, 'REJECTED')} disabled={busy}>
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
                               )}
                               {c.status !== 'ACTIVE' && c.status !== 'PENDING_REVIEW' && (
                                 <button className="action-btn" onClick={() => changeStatus(c.id, 'ACTIVE')} disabled={busy} title="Activează">
