@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   Wallet, TrendingUp, ArrowUpRight, ArrowDownLeft, Clock,
   CheckCircle, XCircle, AlertCircle, X, Plus, CreditCard,
   Briefcase, Download, Receipt, BarChart3, Calendar,
   Building2, Smartphone, Globe, ChevronRight, Copy, Check,
-  FileText, Shield, Info,
+  FileText, Shield, Info, Lock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -165,7 +166,9 @@ function CopyButton({ text }: { text: string }) {
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
-export default function BrandWalletPage() {
+function BrandWalletPageInner() {
+  const searchParams = useSearchParams()
+  const isLocked = searchParams.get('locked') === '1'
   const [wallet, setWallet] = useState<BrandWallet>({ credits_balance: 0, credits_reserved: 0, total_spent: 0, credits_expires_at: null })
   const [brand, setBrand] = useState<BrandInfo | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -326,6 +329,26 @@ export default function BrandWalletPage() {
           <Plus className="w-4 h-4 mr-2" /> Adaugă Credite
         </Button>
       </div>
+
+      {/* Banner acces blocat */}
+      {isLocked && (
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5 mb-6 flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+            <Lock className="w-5 h-5 text-orange-600" />
+          </div>
+          <div className="flex-1">
+            <p className="font-black text-orange-800 text-sm mb-1">Acces restricționat</p>
+            <p className="text-xs text-orange-700 leading-relaxed">
+              Pentru a accesa lista de influenceri și a crea campanii ai nevoie de <strong>minimum 500 RON credite</strong> în cont.
+              Adaugă credite mai jos sau contactează echipa AddFame la{' '}
+              <a href="mailto:ciprian@addfame.ro" className="underline font-bold">ciprian@addfame.ro</a> pentru acces anticipat.
+            </p>
+          </div>
+          <Button onClick={() => setModal('select_method')} size="sm" className="bg-orange-500 hover:bg-orange-600 text-white flex-shrink-0">
+            Adaugă acum
+          </Button>
+        </div>
+      )}
 
       {/* Pending alert */}
       {pendingTx.length > 0 && (
@@ -590,6 +613,19 @@ export default function BrandWalletPage() {
             {/* ── Step 1: Select method ─────────────────────────────────────── */}
             {modal === 'select_method' && (
               <div className="p-6 space-y-3">
+                {/* Banner securitate */}
+                <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 mb-2">
+                  <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-black text-blue-800">Pentru siguranța dumneavoastră</p>
+                    <p className="text-xs text-blue-700 mt-0.5 leading-relaxed">
+                      Echipa AddFame <strong>nu vă va solicita niciodată</strong> date bancare prin telefon, email sau chat. Toate plățile se fac exclusiv prin platformă.
+                      Dacă aveți nelămuriri, contactați-ne la{' '}
+                      <a href="mailto:ciprian@addfame.ro" className="underline font-bold">ciprian@addfame.ro</a>{' '}
+                      sau <a href="tel:+40724796883" className="underline font-bold">+40 724 796 883</a>.
+                    </p>
+                  </div>
+                </div>
                 <p className="text-sm text-muted-foreground mb-4">Alege cum vrei să încarci credite în contul tău AddFame.</p>
 
                 {/* Card bancar — în curând */}
@@ -861,5 +897,13 @@ export default function BrandWalletPage() {
       )}
 
     </div>
+  )
+}
+
+export default function BrandWalletPage() {
+  return (
+    <Suspense fallback={null}>
+      <BrandWalletPageInner />
+    </Suspense>
   )
 }
