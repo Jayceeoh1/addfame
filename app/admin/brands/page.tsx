@@ -281,12 +281,12 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
                     </p>
                     {selected.cui && (
                       <a
-                        href={`https://www.listafirme.ro/${selected.cui.replace(/[^0-9]/g, '')}`}
+                        href={`https://termene.ro/firma/${selected.cui.replace(/[^0-9]/g, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs font-black text-indigo-600 hover:text-indigo-800 underline"
                       >
-                        Verifică pe ListaFirme →
+                        Verifică pe Termene →
                       </a>
                     )}
                   </div>
