@@ -1,0 +1,15 @@
+{
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "crons": [
+    { "path": "/api/cron/expire-badges", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/expire-campaigns", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/deadline-reminder", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/sync-social", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/profile-reminder", "schedule": "0 10 * * *" },
+    { "path": "/api/cron/expire-credits", "schedule": "0 1 * * *" },
+    { "path": "/api/cron/registration-reminder-2days", "schedule": "0 11 * * *" },
+    { "path": "/api/cron/check-missed-deadlines", "schedule": "0 8 * * *" },
+    { "path": "/api/cron/check-inbox-response", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/post-deadline-reminder", "schedule": "0 9 * * *" }
+  ]
+}

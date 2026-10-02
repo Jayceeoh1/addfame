@@ -1,0 +1,20 @@
+CONTRACT CESIUNE DREPTURI DE AUTOR - fisiere de adaugat in proiect
+===================================================================
+
+1) Ruleaza in Supabase -> SQL Editor:
+   cesiune_contracts.sql
+
+2) Copiaza folderul app/ peste cel din proiect (fisiere NOI, nu suprascriu UGC/Colaborare,
+   cu EXCEPTIA lui app/admin/contracts/page.tsx care e versiunea noua cu al 3-lea tab):
+
+   app/api/admin/contracts/cesiune/route.ts
+   app/api/admin/contracts/cesiune/[id]/route.ts
+   app/api/cesiune-contracts/[token]/route.ts
+   app/api/cesiune-contracts/[token]/pdf/route.ts
+   app/contract-cesiune/[token]/page.tsx
+   app/admin/contracts/page.tsx        <-- INLOCUIESTE fisierul existent
+
+3) Commit + push (Vercel face deploy automat).
+
+Nota: app/admin/contracts/page.tsx e bazat pe versiunea din proiect_v112.
+Daca l-ai modificat intre timp, spune-mi si il reaplic pe versiunea ta curenta.

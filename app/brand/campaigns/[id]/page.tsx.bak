@@ -1,0 +1,1897 @@
+'use client'
+// @ts-nocheck
+import React from 'react'
+
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { updateCampaignStatus } from '@/app/actions/campaigns'
+import { getPlatformSettings } from '@/app/actions/admin'
+import { LeaveReview } from '@/components/shared/leave-review'
+import {
+  ArrowLeft, Clock, Users, TrendingUp, CheckCircle, AlertCircle,
+  Eye, EyeOff, Play, Pause, Archive, Briefcase, Instagram, Youtube,
+  Star, MessageSquare, MoreHorizontal, X, Check, DollarSign,
+  Globe, RefreshCw, Edit2, Save, Calendar, Tag, BarChart2,
+  Zap, Target, Award, PieChart, ArrowUpRight, Wallet, Send
+} from 'lucide-react'
+import Link from 'next/link'
+
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z" />
+  </svg>
+)
+
+const fmt = (n: number) => `${(n || 0).toLocaleString('ro-RO', { minimumFractionDigits: 0 })} RON`
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })
+const fmtNum = (n: number) => {
+  if (!n) return '0'
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`
+  return String(n)
+}
+const daysLeft = (d: string) => Math.ceil((new Date(d).getTime() - Date.now()) / 864e5)
+
+const PLATFORM_ICON: Record<string, React.ReactElement> = {
+  instagram: <Instagram className="w-4 h-4 text-pink-500" />,
+  tiktok: <TikTokIcon className="w-4 h-4 text-gray-800" />,
+  youtube: <Youtube className="w-4 h-4 text-red-500" />,
+}
+
+const STATUS_CFG: Record<string, { label: string; bg: string; text: string; dot: string; border: string }> = {
+  DRAFT:     { label: 'Draft',      bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-400', border: 'border-amber-200' },
+  ACTIVE:    { label: 'Activ',      bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500', border: 'border-green-200' },
+  PAUSED:    { label: 'Pauzat',     bg: 'bg-gray-100',  text: 'text-gray-500',   dot: 'bg-gray-400',  border: 'border-gray-200' },
+  COMPLETED: { label: 'Finalizat',  bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-400',  border: 'border-blue-200' },
+}
+
+const COLLAB_CFG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
+  INVITED:   { label: 'Invitat',   bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-500' },
+  PENDING:   { label: 'Aplicat',   bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-400' },
+  ACTIVE:    { label: 'Activ',     bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-500' },
+  COMPLETED: { label: 'Finalizat', bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500' },
+  REJECTED:  { label: 'Refuzat',   bg: 'bg-gray-100',  text: 'text-gray-400',   dot: 'bg-gray-300' },
+}
+
+type Tab = 'all' | 'pending' | 'invited' | 'active' | 'completed' | 'rejected'
+
+// ── Analytics Card ────────────────────────────────────────────────────────────
+function KpiCard({ label, value, sub, icon, color, bg }: any) {
+  return (
+    <div className={`${bg} rounded-2xl p-4`}>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-bold text-gray-400">{label}</p>
+        <span className={`w-7 h-7 rounded-xl ${bg} flex items-center justify-center`}>
+          {React.cloneElement(icon, { className: `w-4 h-4 ${color}` })}
+        </span>
+      </div>
+      <p className={`text-2xl font-black ${color}`}>{value}</p>
+      {sub && <p className="text-xs text-gray-400 mt-0.5 font-semibold">{sub}</p>}
+    </div>
+  )
+}
+
+function ImageSlider({ images }: { images: string[] }) {
+  const [idx, setIdx] = useState(0)
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const total = images.length
+
+  if (total === 0) return null
+
+  const goPrev = () => setIdx(prev => (prev === 0 ? total - 1 : prev - 1))
+  const goNext = () => setIdx(prev => (prev === total - 1 ? 0 : prev + 1))
+
+  const onTouchStart = (e: React.TouchEvent) => setTouchStart(e.targetTouches[0].clientX)
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return
+    const diff = touchStart - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 40) diff > 0 ? goNext() : goPrev()
+    setTouchStart(null)
+  }
+
+  return (
+    <div className="space-y-2">
+      <div
+        className="relative rounded-2xl overflow-hidden border border-gray-100 bg-gray-50"
+        style={{ aspectRatio: '16/11' }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <img src={images[idx]} alt="" className="w-full h-full object-cover" />
+
+        {total > 1 && (
+          <>
+            <div className="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm">
+              {idx + 1} / {total}
+            </div>
+
+            <button
+              onClick={goPrev}
+              className="absolute top-1/2 left-2 -translate-y-1/2 w-9 h-9 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition"
+              aria-label="Imaginea anterioară"
+            >
+              <span className="text-gray-900 text-lg leading-none">‹</span>
+            </button>
+            <button
+              onClick={goNext}
+              className="absolute top-1/2 right-2 -translate-y-1/2 w-9 h-9 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-md transition"
+              aria-label="Imaginea următoare"
+            >
+              <span className="text-gray-900 text-lg leading-none">›</span>
+            </button>
+
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 px-2.5 py-1.5 bg-black/30 backdrop-blur-sm rounded-full">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setIdx(i)}
+                  className={`rounded-full transition-all ${i === idx ? 'w-5 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50'}`}
+                  aria-label={`Sari la imaginea ${i + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {total > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          {images.map((url, i) => (
+            <button
+              key={i}
+              onClick={() => setIdx(i)}
+              className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition ${i === idx ? 'border-orange-500' : 'border-transparent opacity-60 hover:opacity-100'}`}
+            >
+              <img src={url} alt="" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function CampaignDetailPage() {
+  const params = useParams()
+  const router = useRouter()
+  const campaignId = params.id as string
+
+  const [campaign, setCampaign] = useState<any>(null)
+  const [collabs, setCollabs] = useState<any[]>([])
+  const [influencerData, setInfluencerData] = useState<Record<string, any>>({})
+  const [reviews, setReviews] = useState<any[]>([])
+  const [agencyCosts, setAgencyCosts] = useState({ setup_cost: 800, selection_cost: 1200, management_cost: 1500, reporting_cost: 350, hours_saved: 40, eng_rate_addfame: 3.8, eng_rate_industry: 1.9, setup_time_addfame: '15 minute', setup_time_agency: '5–7 zile', selection_addfame: 'Automată', selection_agency: '3 zile manual', reporting_addfame: 'Real-time', reporting_agency: 'La final campaniei' })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [collabLoading, setCollabLoading] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>('all')
+  const [sortBy, setSortBy] = useState<'date' | 'followers' | 'rating'>('date')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState<any>({})
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
+  const [showPauseModal, setShowPauseModal] = useState(false)
+  const [showDraftModal, setShowDraftModal] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  // Bulk invite
+  const [bulkMode, setBulkMode] = useState(false)
+  const [selectedInfs, setSelectedInfs] = useState<string[]>([])
+  const [bulkInviting, setBulkInviting] = useState(false)
+  // Bulk reject
+  const [bulkRejectMode, setBulkRejectMode] = useState(false)
+  const [selectedRejectIds, setSelectedRejectIds] = useState<string[]>([])
+  const [bulkRejecting, setBulkRejecting] = useState(false)
+  const STANDARD_REJECT_MSG = 'Ne pare rău, am finalizat lista de influenceri pentru această campanie. Nu îți face griji — lansăm campanii noi des și șansele să fii selectat(ă) sunt mari! Te ținem la curent. 🙌'
+  // Reject with message
+  const [rejectModal, setRejectModal] = useState<{ collabId: string; name: string } | null>(null)
+  const [profileModal, setProfileModal] = useState<any | null>(null)
+  // Datele complete (preturi, stats, portofoliu) vin deja in profileModal,
+  // incarcate din /api/admin/influencer-details (extins cu price_*, portfolio_urls, _stats)
+  const profileFull = profileModal
+  const profileFullLoading = false
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejecting, setRejecting] = useState(false)
+
+  const notify = useCallback((msg: string, ok = true) => {
+    setToast({ msg, ok })
+    setTimeout(() => setToast(null), 3500)
+  }, [])
+
+  const fetchAll = useCallback(async () => {
+    try {
+      const sb = createClient()
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) { router.replace('/auth/login'); return }
+
+      const { data: brand } = await sb.from('brands').select('id').eq('user_id', user.id).single()
+      if (!brand) { router.replace('/brand/dashboard'); return }
+
+      const { data: camp, error: campErr } = await sb
+        .from('campaigns').select('*')
+        .eq('id', campaignId).eq('brand_id', brand.id).single()
+      if (campErr || !camp) { router.replace('/brand/campaigns'); return }
+      setCampaign(camp)
+      setEditForm(camp)
+
+      // Fetch collaborations cu date extinse
+      const { data: collabData } = await sb
+        .from('collaborations')
+        .select('*, reserved_amount, payment_amount, platform_fee, deliverable_url, deliverable_note, deliverable_submitted_at, deliverable_approved_at, deliverable_rejected_at, deliverable_rejection_reason, completed_at, delivery_name, delivery_phone, delivery_address, delivery_city, delivery_county, delivery_postal_code, checked_in_at')
+        .eq('campaign_id', campaignId)
+        .order('created_at', { ascending: false })
+
+      const rows = collabData || []
+      setCollabs(rows)
+
+      // Fetch influencer data via API route (bypass RLS)
+      const infIds = [...new Set(rows.map((c: any) => c.influencer_id).filter(Boolean))]
+      if (infIds.length > 0) {
+        const res = await fetch('/api/admin/influencer-details', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: infIds }),
+        })
+        if (res.ok) {
+          const infs = await res.json()
+          const infMap = Object.fromEntries((infs || []).map((i: any) => [i.id, i]))
+          setInfluencerData(infMap)
+        }
+      }
+
+      // Fetch reviews pentru această campanie
+      const collabIds = rows.map((c: any) => c.id)
+      if (collabIds.length > 0) {
+        const { data: revData } = await sb
+          .from('reviews')
+          .select('rating, comment, reviewer_role, created_at, collaboration_id')
+          .in('collaboration_id', collabIds)
+          .eq('reviewer_role', 'influencer')
+        setReviews(revData || [])
+      }
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
+  }, [campaignId, router])
+
+  useEffect(() => {
+    fetchAll()
+    // Fetch agency costs din platform settings
+    getPlatformSettings('agency_comparison').then((res: any) => {
+      if (res?.success && res.data?.value) {
+        const v = res.data.value
+        setAgencyCosts(prev => ({
+          setup_cost: v.setup_cost ?? prev.setup_cost,
+          selection_cost: v.selection_cost ?? prev.selection_cost,
+          management_cost: v.management_cost ?? prev.management_cost,
+          reporting_cost: v.reporting_cost ?? prev.reporting_cost,
+          hours_saved: v.hours_saved ?? prev.hours_saved,
+          eng_rate_addfame: v.eng_rate_addfame ?? prev.eng_rate_addfame,
+          eng_rate_industry: v.eng_rate_industry ?? prev.eng_rate_industry,
+          setup_time_addfame: v.setup_time_addfame ?? prev.setup_time_addfame,
+          setup_time_agency: v.setup_time_agency ?? prev.setup_time_agency,
+          selection_addfame: v.selection_addfame ?? prev.selection_addfame,
+          selection_agency: v.selection_agency ?? prev.selection_agency,
+          reporting_addfame: v.reporting_addfame ?? prev.reporting_addfame,
+          reporting_agency: v.reporting_agency ?? prev.reporting_agency,
+        }))
+      }
+    }).catch(() => {})
+    const sb = createClient()
+    const ch = sb.channel(`campaign-${campaignId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collaborations', filter: `campaign_id=eq.${campaignId}` }, () => fetchAll())
+      .subscribe()
+    const onOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onOutside)
+    return () => { sb.removeChannel(ch); document.removeEventListener('mousedown', onOutside) }
+  }, [fetchAll, campaignId])
+
+  async function changeStatus(s: 'ACTIVE' | 'DRAFT' | 'PAUSED' | 'COMPLETED') {
+    setStatusLoading(true); setMenuOpen(false)
+    try {
+      const res = await updateCampaignStatus(campaignId, s)
+      if (!res.success) throw new Error(res.error)
+      setCampaign((p: any) => p ? { ...p, status: s } : null)
+      notify({ ACTIVE: '🚀 Publicat! Influencerii pot aplica acum.', DRAFT: 'Mutat în draft.', PAUSED: 'Campanie pauzată.', COMPLETED: 'Marcată ca finalizată.' }[s] ?? 'Actualizat.')
+
+      // La lansare → notifică toți influencerii eligibili
+      if (s === 'ACTIVE') {
+        fetch('/api/notify/campaign-launched', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campaignId }),
+        }).catch(console.error) // fire & forget
+      }
+    } catch (e: any) { notify(e.message || 'Eroare la actualizare.', false) }
+    finally { setStatusLoading(false) }
+  }
+
+  async function saveEdit() {
+    if (!campaign) return
+    setSaving(true)
+    try {
+      const sb = createClient()
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) throw new Error('Neautentificat')
+      const { data: brand } = await sb.from('brands').select('id').eq('user_id', user.id).single()
+      if (!brand) throw new Error('Brand negăsit')
+      const patch = {
+        title: editForm.title, description: editForm.description,
+        budget: Number(editForm.budget), deliverables: editForm.deliverables,
+        deadline: editForm.deadline, platforms: editForm.platforms,
+        niches: editForm.niches, countries: editForm.countries,
+      }
+      const { error } = await sb.from('campaigns').update(patch).eq('id', campaignId).eq('brand_id', brand.id)
+      if (error) throw error
+      setCampaign((p: any) => p ? { ...p, ...patch } : null)
+      setEditing(false)
+      notify('✅ Campanie actualizată!')
+    } catch (e: any) { notify(e.message || 'Eroare la salvare.', false) }
+    finally { setSaving(false) }
+  }
+
+  async function collabAction(collabId: string, newStatus: 'ACTIVE' | 'REJECTED' | 'COMPLETED') {
+    if (newStatus === 'REJECTED') {
+      const collab = collabs.find(c => c.id === collabId)
+      const inf = influencerData[collab?.influencer_id]
+      setRejectModal({ collabId, name: inf?.name || 'Influencer' })
+      return
+    }
+    setCollabLoading(collabId)
+    try {
+      const sb = createClient()
+      const update: any = { status: newStatus }
+      if (newStatus === 'COMPLETED') update.completed_at = new Date().toISOString()
+      const { error } = await sb.from('collaborations').update(update).eq('id', collabId)
+      if (error) throw error
+      setCollabs((prev: any[]) => prev.map(c => c.id === collabId ? { ...c, ...update } : c))
+
+      // Actualizează current_influencers pe campanie când acceptăm (ACTIVE)
+      if (newStatus === 'ACTIVE') {
+        const newCount = collabs.filter(c => c.id === collabId ? true : ['ACTIVE', 'COMPLETED'].includes(c.status)).length
+        await sb.from('campaigns').update({ current_influencers: newCount }).eq('id', campaign.id)
+        setCampaign((prev: any) => ({ ...prev, current_influencers: newCount }))
+        // Închide înscrierile automat dacă s-au ocupat toate locurile
+        if (campaign.max_influencers && newCount >= campaign.max_influencers) {
+          await sb.from('campaigns').update({ registrations_open: false }).eq('id', campaign.id)
+          setCampaign((prev: any) => ({ ...prev, registrations_open: false }))
+          notify('✅ Influencer aprobat! Toate locurile sunt ocupate — înscrierile au fost închise automat.')
+        } else {
+          notify(`✅ Influencer aprobat! Mai sunt ${(campaign.max_influencers || 0) - newCount} locuri disponibile.`)
+        }
+      } else {
+        notify({ COMPLETED: '🎉 Finalizat!' }[newStatus] ?? 'Actualizat.', true)
+      }
+    } catch (e: any) { notify(e.message || 'Acțiune eșuată.', false) }
+    finally { setCollabLoading(null) }
+  }
+
+  async function rejectWithMessage() {
+    if (!rejectModal) return
+    setRejecting(true)
+    try {
+      const sb = createClient()
+      await sb.from('collaborations').update({
+        status: 'REJECTED',
+        rejection_reason: rejectReason || null,
+      }).eq('id', rejectModal.collabId)
+      // Notificare + email influencer
+      const collab = collabs.find(c => c.id === rejectModal.collabId)
+      if (collab) {
+        const { data: inf } = await sb.from('influencers').select('user_id, name, email').eq('id', collab.influencer_id).single()
+        if (inf?.user_id) {
+          await sb.from('notifications').insert({
+            user_id: inf.user_id,
+            title: '❌ Aplicație refuzată',
+            body: rejectReason
+              ? `${campaign?.brand_name || 'Brandul'} a refuzat aplicația ta: "${rejectReason}"`
+              : `${campaign?.brand_name || 'Brandul'} a refuzat aplicația ta la campania "${campaign?.title}".`,
+            link: '/influencer/collaborations',
+            read: false,
+          })
+        }
+        if (inf?.email) {
+          await fetch('/api/email/rejection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: inf.email,
+              name: inf.name || 'Influencer',
+              campaignTitle: campaign?.title || '',
+              brandName: campaign?.brand_name || '',
+              reason: rejectReason || null,
+            })
+          })
+        }
+      }
+      setCollabs(prev => prev.map(c => c.id === rejectModal.collabId ? { ...c, status: 'REJECTED', rejection_reason: rejectReason } : c))
+
+      // Dacă influencerul era deja ACTIVE, scade contorul
+      const rejectedCollab = collabs.find(c => c.id === rejectModal.collabId)
+      if (rejectedCollab?.status === 'ACTIVE') {
+        const sb2 = createClient()
+        const newCount = collabs.filter(c => c.id !== rejectModal.collabId && ['ACTIVE', 'COMPLETED'].includes(c.status)).length
+        await sb2.from('campaigns').update({ current_influencers: newCount }).eq('id', campaign.id)
+        setCampaign((prev: any) => ({ ...prev, current_influencers: newCount }))
+      }
+
+      notify('Aplicație refuzată.')
+      setRejectModal(null)
+      setRejectReason('')
+    } catch (e: any) { notify(e.message || 'Eroare.', false) }
+    finally { setRejecting(false) }
+  }
+
+  async function bulkReject() {
+    if (selectedRejectIds.length === 0) return
+    setBulkRejecting(true)
+    try {
+      const sb = createClient()
+      for (const collabId of selectedRejectIds) {
+        const collab = collabs.find(c => c.id === collabId)
+        // Update status
+        await sb.from('collaborations').update({
+          status: 'REJECTED',
+          rejection_reason: STANDARD_REJECT_MSG,
+        }).eq('id', collabId)
+        // Notificare in-app
+        if (collab?.influencers?.user_id) {
+          await sb.from('notifications').insert({
+            user_id: collab.influencers.user_id,
+            title: '😔 Aplicație refuzată',
+            body: STANDARD_REJECT_MSG,
+            link: '/influencer/campaigns',
+            read: false,
+          })
+        }
+      }
+      setCollabs(prev => prev.map(c =>
+        selectedRejectIds.includes(c.id)
+          ? { ...c, status: 'REJECTED', rejection_reason: STANDARD_REJECT_MSG }
+          : c
+      ))
+      notify(`✅ ${selectedRejectIds.length} aplicații refuzate cu mesaj standard.`)
+      setSelectedRejectIds([])
+      setBulkRejectMode(false)
+    } catch (e: any) {
+      notify(e.message || 'Eroare', false)
+    } finally {
+      setBulkRejecting(false)
+    }
+  }
+
+  async function bulkInvite() {
+    if (selectedInfs.length === 0) return
+    setBulkInviting(true)
+    try {
+      const sb = createClient()
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) throw new Error('Neautentificat')
+      const { data: brand } = await sb.from('brands').select('id').eq('user_id', user.id).single()
+      if (!brand) throw new Error('Brand negăsit')
+      const toInsert = selectedInfs.map(infId => ({
+        campaign_id: campaignId,
+        influencer_id: infId,
+        brand_id: brand.id,
+        status: 'INVITED',
+        message: 'Ai fost invitat să colaborezi la această campanie.',
+      }))
+      const { error } = await sb.from('collaborations').upsert(toInsert, { onConflict: 'campaign_id,influencer_id' })
+      if (error) throw error
+      // Notificări
+      for (const infId of selectedInfs) {
+        const inf = influencerData[infId]
+        if (inf?.user_id) {
+          await sb.from('notifications').insert({
+            user_id: inf.user_id,
+            title: '🎉 Invitație nouă!',
+            body: `${campaign?.brand_name || 'Un brand'} te-a invitat la campania "${campaign?.title}". Verifică detaliile!`,
+            link: '/influencer/collaborations',
+            read: false,
+          })
+        }
+      }
+      notify(`✅ ${selectedInfs.length} influencer${selectedInfs.length > 1 ? 'i invitați' : ' invitat'}!`)
+      setSelectedInfs([])
+      setBulkMode(false)
+      await fetchAll()
+    } catch (e: any) { notify(e.message || 'Eroare la invitație.', false) }
+    finally { setBulkInviting(false) }
+  }
+
+  // ── Analytics computations ────────────────────────────────────────────────
+  const activeAndCompleted = collabs.filter(c => ['ACTIVE', 'COMPLETED'].includes(c.status))
+  const completedCollabs = collabs.filter(c => c.status === 'COMPLETED')
+
+  // Helper: extrage followeri totali pentru un influencer
+  const getFollowers = (inf: any) => {
+    if (!inf) return 0
+    // Coloanele reale din DB sunt ig_followers, tt_followers
+    let followers = 0
+    followers += inf.ig_followers || inf.instagram_followers || 0
+    followers += inf.tt_followers || inf.tiktok_followers || 0
+    followers += inf.youtube_subscribers || inf.yt_subscribers || 0
+    // Fallback la platforms array (stochează ca string ex: "79K", "2.2K")
+    if (followers === 0 && inf.platforms?.length > 0) {
+      followers = inf.platforms.reduce((s: number, p: any) => {
+        const raw = String(p.followers || p.follower_count || '0').toUpperCase().trim()
+        let n = 0
+        if (raw.endsWith('K')) n = parseFloat(raw) * 1000
+        else if (raw.endsWith('M')) n = parseFloat(raw) * 1000000
+        else n = parseInt(raw.replace(/\D/g, '')) || 0
+        return s + n
+      }, 0)
+    }
+    return followers
+  }
+
+  // Reach real: DOAR influencerii activi + finalizați
+  const totalReach = activeAndCompleted.reduce((sum, c) => sum + getFollowers(influencerData[c.influencer_id]), 0)
+
+  // Reach potențial: toți aplicanții acceptați sau în curs
+  const potentialReach = collabs
+    .filter(c => ['PENDING', 'INVITED', 'ACTIVE', 'COMPLETED'].includes(c.status))
+    .reduce((sum, c) => sum + getFollowers(influencerData[c.influencer_id]), 0)
+
+  // Total cheltuit
+  const totalSpent = completedCollabs.reduce((s, c) => s + (c.payment_amount || 0) + (c.platform_fee || 0), 0)
+
+  // Completion rate
+  const completionRate = collabs.length > 0
+    ? Math.round((completedCollabs.length / collabs.length) * 100)
+    : 0
+
+  // Rating mediu al campaniei (din review-uri influenceri)
+  const avgRating = reviews.length > 0
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : null
+
+  // Cost per influencer finalizat
+  const costPerCompleted = completedCollabs.length > 0
+    ? Math.round(totalSpent / completedCollabs.length)
+    : null
+
+  // Estimated impressions (reach × 3% engagement estimat)
+  const estimatedImpressions = Math.round(totalReach * 0.03)
+
+  const tabFilter: Record<Tab, string[]> = {
+    all: ['INVITED', 'PENDING', 'ACTIVE', 'COMPLETED', 'REJECTED'],
+    pending: ['PENDING'], invited: ['INVITED'], active: ['ACTIVE'],
+    completed: ['COMPLETED'], rejected: ['REJECTED'],
+  }
+
+  const visible = collabs
+    .filter(c => tabFilter[tab].includes(c.status))
+    .sort((a, b) => {
+      const infA = influencerData[a.influencer_id]
+      const infB = influencerData[b.influencer_id]
+      if (sortBy === 'followers') {
+        const followersA = (infA?.ig_followers || 0) + (infA?.tt_followers || 0) + (infA?.instagram_followers || 0)
+        const followersB = (infB?.ig_followers || 0) + (infB?.tt_followers || 0) + (infB?.instagram_followers || 0)
+        if (followersB !== followersA) return followersB - followersA
+        // Fallback: rata de engagement sau rating
+        return (infB?.avg_rating || 0) - (infA?.avg_rating || 0)
+      }
+      if (sortBy === 'rating') {
+        return (infB?.avg_rating || 0) - (infA?.avg_rating || 0)
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+
+  const counts = {
+    all: collabs.length,
+    pending: collabs.filter(c => c.status === 'PENDING').length,
+    invited: collabs.filter(c => c.status === 'INVITED').length,
+    active: collabs.filter(c => c.status === 'ACTIVE').length,
+    completed: completedCollabs.length,
+    rejected: collabs.filter(c => c.status === 'REJECTED').length,
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 rounded-full border-t-orange-500 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+        <p className="text-sm text-gray-400 font-semibold">Se încarcă campania…</p>
+      </div>
+    </div>
+  )
+
+  if (!campaign) return null
+
+  const cfg = STATUS_CFG[campaign.status] ?? STATUS_CFG.DRAFT
+  const days = daysLeft(campaign.deadline)
+  const expired = days < 0
+  const urgent = !expired && days <= 3
+  const budgetUsedPct = campaign.budget > 0 ? Math.min(100, Math.round((totalSpent / campaign.budget) * 100)) : 0
+
+  return (
+    <div className="p-5 lg:p-8 max-w-5xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <style>{`
+        .brand-grad { background: linear-gradient(135deg,#f97316,#ec4899); }
+        .card { background:white; border:1.5px solid #f0f0f0; border-radius:20px; }
+        .tab-btn { padding:7px 14px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;font-family:inherit; }
+        .tab-btn.on { background:linear-gradient(135deg,#f97316,#ec4899);color:white;box-shadow:0 3px 10px rgba(249,115,22,.28); }
+        .tab-btn:not(.on) { background:#f3f4f6;color:#6b7280; }
+        .tab-btn:not(.on):hover { background:#fff7ed;color:#f97316; }
+        .btn-pub { display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:12px;font-size:14px;font-weight:800;background:linear-gradient(135deg,#f97316,#ec4899);color:white;border:none;cursor:pointer;transition:all .18s;font-family:inherit; }
+        .btn-pub:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 6px 18px rgba(249,115,22,.38); }
+        .btn-pub:disabled { opacity:.6;cursor:not-allowed;transform:none; }
+        .btn-sec { display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:12px;font-size:14px;font-weight:700;background:white;color:#374151;border:2px solid #e5e7eb;cursor:pointer;transition:all .18s;font-family:inherit; }
+        .btn-sec:hover:not(:disabled) { border-color:#d1d5db;background:#f9fafb; }
+        .btn-approve { display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:10px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;cursor:pointer;transition:all .18s;font-family:inherit; }
+        .btn-approve:hover:not(:disabled) { transform:translateY(-1px);box-shadow:0 4px 12px rgba(34,197,94,.35); }
+        .btn-decline { display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:10px;font-size:13px;font-weight:700;background:white;color:#6b7280;border:2px solid #e5e7eb;cursor:pointer;transition:all .18s;font-family:inherit; }
+        .btn-decline:hover:not(:disabled) { border-color:#fca5a5;color:#ef4444;background:#fff5f5; }
+        .btn-approve:disabled,.btn-decline:disabled { opacity:.6;cursor:not-allowed;transform:none; }
+        .badge { display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700; }
+        .field { width:100%;padding:10px 14px;border:2px solid #e5e7eb;border-radius:12px;font-size:14px;font-weight:500;outline:none;transition:border-color .2s;font-family:inherit;color:#111; }
+        .field:focus { border-color:#f97316;box-shadow:0 0 0 4px rgba(249,115,22,.08); }
+        .dropdown { position:absolute;right:0;top:calc(100%+6px);background:white;border:1.5px solid #f0f0f0;border-radius:14px;padding:6px;z-index:50;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.12); }
+        .d-item { display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:inherit;color:#374151;transition:background .1s; }
+        .d-item:hover { background:#f9fafb; }
+        .d-item.red { color:#ef4444; } .d-item.red:hover { background:#fef2f2; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideD { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+        .toast-anim { animation:slideD .3s ease; }
+        .dd-anim { animation:slideD .18s ease; }
+        .card-anim { animation:fadeUp .35s ease both; }
+        .line-clamp-1 { display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden; }
+        .line-clamp-2 { display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+      `}</style>
+
+      {/* ── Modal confirmare Draft ──────────────────────────────────────── */}
+      {showDraftModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6" style={{ animation: 'fadeUp .3s ease' }}>
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <EyeOff className="w-7 h-7 text-amber-500" />
+            </div>
+            <h2 className="text-xl font-black text-gray-900 text-center mb-2">Muți campania în Draft?</h2>
+            <p className="text-sm text-gray-500 text-center mb-5 leading-relaxed">
+              Mutarea în Draft oprește campania. <span className="font-black text-red-600">35% din buget</span> va fi reținut ca penalitate.
+            </p>
+
+            {campaign && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-5 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Buget campanie</span>
+                  <span className="font-black text-gray-700">{(campaign.budget || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-red-600 font-bold">Penalitate reținută (35%)</span>
+                  <span className="font-black text-red-600">- {(Math.round((campaign.budget || 0) * 0.35 * 100) / 100).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
+                </div>
+                <div className="border-t border-red-200 pt-2 flex items-center justify-between text-sm">
+                  <span className="text-green-600 font-bold">Credite returnate (65%)</span>
+                  <span className="font-black text-green-600">{(Math.round((campaign.budget || 0) * 0.65 * 100) / 100).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5">
+              <p className="text-xs text-amber-700 font-semibold text-center">
+                ⚠️ Dacă ai colaborări active, campania nu poate fi mutată în Draft. Trebuie să aștepți finalizarea lor.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setShowDraftModal(false)}
+                className="flex-1 py-3 rounded-2xl font-black text-sm text-gray-600 border-2 border-gray-200 hover:bg-gray-50 transition">
+                Anulează
+              </button>
+              <button
+                onClick={() => { setShowDraftModal(false); changeStatus('PAUSED') }}
+                disabled={statusLoading}
+                className="flex-1 py-3 rounded-2xl font-black text-sm text-white bg-amber-500 hover:bg-amber-600 disabled:opacity-50 transition flex items-center justify-center gap-2">
+                {statusLoading
+                  ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  : <EyeOff className="w-4 h-4" />}
+                Confirmă mutarea
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal confirmare pauză ──────────────────────────────────────── */}
+      {showPauseModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6" style={{ animation: 'fadeUp .3s ease' }}>
+            <div className="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center mx-auto mb-4">
+              <Pause className="w-7 h-7 text-orange-500" />
+            </div>
+            <h2 className="text-xl font-black text-gray-900 text-center mb-2">Ești sigur că vrei să pui pauză?</h2>
+            <p className="text-sm text-gray-500 text-center mb-5 leading-relaxed">
+              Dacă pui campania pe pauză, <span className="font-black text-red-600">35% din bugetul campaniei</span> va fi reținut ca penalitate.
+            </p>
+
+            {/* Calcul penalitate */}
+            {campaign && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-5 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Buget campanie</span>
+                  <span className="font-black text-gray-700">{(campaign.budget || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-red-600 font-bold">Penalitate reținută (35%)</span>
+                  <span className="font-black text-red-600">- {(Math.round((campaign.budget || 0) * 0.35 * 100) / 100).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
+                </div>
+                <div className="border-t border-red-200 pt-2 flex items-center justify-between text-sm">
+                  <span className="text-green-600 font-bold">Credite returnate (65%)</span>
+                  <span className="font-black text-green-600">{(Math.round((campaign.budget || 0) * 0.65 * 100) / 100).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5">
+              <p className="text-xs text-amber-700 font-semibold text-center">
+                ⚠️ Dacă ai colaborări active, campania nu poate fi pauzată. Trebuie să aștepți finalizarea lor.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPauseModal(false)}
+                className="flex-1 py-3 rounded-2xl font-black text-sm text-gray-600 border-2 border-gray-200 hover:bg-gray-50 transition">
+                Anulează
+              </button>
+              <button
+                onClick={() => { setShowPauseModal(false); changeStatus('PAUSED') }}
+                disabled={statusLoading}
+                className="flex-1 py-3 rounded-2xl font-black text-sm text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 transition flex items-center justify-center gap-2">
+                {statusLoading
+                  ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  : <Pause className="w-4 h-4" />}
+                Confirmă pauza
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Profil Influencer — preview rapid + social media */}
+      {profileModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setProfileModal(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="relative h-24 bg-gradient-to-br from-orange-400 to-pink-400">
+              <button onClick={() => setProfileModal(null)}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 pb-6 overflow-y-auto text-center">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-100 to-pink-100 border-4 border-white shadow-md overflow-hidden flex items-center justify-center -mt-12 mx-auto mb-3 relative">
+                {profileModal.avatar
+                  ? <img src={profileModal.avatar} alt={profileModal.name} className="w-full h-full object-cover" />
+                  : <span className="font-black text-orange-500 text-2xl">{profileModal.name?.[0]?.toUpperCase() ?? '?'}</span>
+                }
+              </div>
+              <h3 className="font-black text-lg text-gray-900">{profileModal.name ?? 'Influencer necunoscut'}</h3>
+              {profileModal.avg_rating > 0 && (
+                <p className="text-xs font-bold text-amber-500 mt-0.5">⭐ {profileModal.avg_rating.toFixed(1)} {profileModal.review_count ? `(${profileModal.review_count} review-uri)` : ''}</p>
+              )}
+              {profileModal.bio && (
+                <p className="text-sm text-gray-500 mt-3 leading-relaxed">{profileModal.bio}</p>
+              )}
+              {profileModal.niches?.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-1.5 mt-3">
+                  {profileModal.niches.map((n: string) => (
+                    <span key={n} className="text-[11px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded-full">{n}</span>
+                  ))}
+                </div>
+              )}
+
+              {/* Social media stats — click deschide profilul in tab nou */}
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                {(() => {
+                  const igHandle = (profileModal.instagram_handle || profileModal.ig_handle || '').replace(/^@/, '').trim()
+                  const igUrl = igHandle ? `https://instagram.com/${igHandle}` : null
+                  const ttHandle = (profileModal.tiktok_handle || profileModal.tt_handle || '').replace(/^@/, '').trim()
+                  const ttUrl = ttHandle ? `https://tiktok.com/@${ttHandle}` : null
+
+                  const Card = ({ href, children }: { href: string | null; children: React.ReactNode }) =>
+                    href ? (
+                      <a href={href} target="_blank" rel="noopener noreferrer"
+                        className="rounded-2xl border border-gray-100 p-3 flex items-center gap-2.5 hover:border-orange-200 hover:bg-orange-50/30 transition cursor-pointer">
+                        {children}
+                      </a>
+                    ) : (
+                      <div className="rounded-2xl border border-gray-100 p-3 flex items-center gap-2.5">
+                        {children}
+                      </div>
+                    )
+
+                  return (
+                    <>
+                      <Card href={igUrl}>
+                        <Instagram className="w-5 h-5 text-pink-500 flex-shrink-0" />
+                        <div>
+                          <p className="font-black text-sm text-gray-900">{fmtNum(profileModal.ig_followers || profileModal.instagram_followers || 0)}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase">Instagram{igUrl ? ' ↗' : ''}</p>
+                        </div>
+                      </Card>
+                      <Card href={ttUrl}>
+                        <TikTokIcon className="w-5 h-5 text-gray-800 flex-shrink-0" />
+                        <div>
+                          <p className="font-black text-sm text-gray-900">{fmtNum(profileModal.tt_followers || 0)}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase">TikTok{ttUrl ? ' ↗' : ''}</p>
+                        </div>
+                      </Card>
+                    </>
+                  )
+                })()}
+              </div>
+
+              {/* Loading state pentru date complete */}
+              {profileFullLoading && (
+                <div className="flex items-center justify-center gap-2 py-6 text-gray-400 text-sm">
+                  <div className="w-4 h-4 border-2 border-gray-200 border-t-orange-400 rounded-full animate-spin" />
+                  Se încarcă profilul complet...
+                </div>
+              )}
+
+              {/* Preturi */}
+              {profileFull && (profileFull.price_min || profileFull.price_reel || profileFull.price_story || profileFull.price_post || profileFull.price_youtube) && (
+                <div className="mt-4">
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2">Tarife</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {profileFull.price_min && (
+                      <span className="text-xs font-bold bg-orange-50 text-orange-600 border border-orange-100 px-2.5 py-1.5 rounded-xl">🎯 Min. {profileFull.price_min}/campanie</span>
+                    )}
+                    {profileFull.price_story && (
+                      <span className="text-xs font-bold bg-pink-50 text-pink-600 border border-pink-100 px-2.5 py-1.5 rounded-xl">Story {profileFull.price_story}</span>
+                    )}
+                    {profileFull.price_reel && (
+                      <span className="text-xs font-bold bg-purple-50 text-purple-600 border border-purple-100 px-2.5 py-1.5 rounded-xl">Reel {profileFull.price_reel}</span>
+                    )}
+                    {profileFull.price_post && (
+                      <span className="text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100 px-2.5 py-1.5 rounded-xl">Post {profileFull.price_post}</span>
+                    )}
+                    {profileFull.price_youtube && (
+                      <span className="text-xs font-bold bg-red-50 text-red-600 border border-red-100 px-2.5 py-1.5 rounded-xl">YouTube {profileFull.price_youtube}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Stats colaborari */}
+              {profileFull?._stats && profileFull._stats.total > 0 && (
+                <div className="mt-4 grid grid-cols-4 gap-2 rounded-2xl border border-gray-100 p-3">
+                  <div className="text-center">
+                    <p className="font-black text-blue-600 text-lg">{profileFull._stats.total}</p>
+                    <p className="text-[10px] text-gray-400 font-bold">Aplicate</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-black text-green-600 text-lg">{profileFull._stats.completed}</p>
+                    <p className="text-[10px] text-gray-400 font-bold">Completate</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-black text-amber-500 text-lg">{profileFull._stats.successRate}%</p>
+                    <p className="text-[10px] text-gray-400 font-bold">Succes</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-black text-purple-600 text-lg">{(profileFull._stats.earned || 0).toFixed(0)}</p>
+                    <p className="text-[10px] text-gray-400 font-bold">Câștigat</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Portofoliu / postari recente */}
+              {profileFull && ((profileFull.portfolio_urls?.length > 0) || (profileFull.recent_posts_urls?.length > 0)) && (
+                <div className="mt-4">
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2">Portofoliu</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[...(profileFull.recent_posts_urls || []), ...(profileFull.portfolio_urls || [])].slice(0, 6).map((url: string, i: number) => (
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                        className="text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-2.5 py-1.5 rounded-xl transition">
+                        🔗 Link {i + 1}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Refuz cu mesaj */}
+      {rejectModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+            <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <X className="w-6 h-6 text-red-500" />
+            </div>
+            <h2 className="text-lg font-black text-gray-900 text-center mb-1">Refuzi colaborarea?</h2>
+            <p className="text-sm text-gray-500 text-center mb-5">{rejectModal.name} va primi o notificare cu motivul refuzului.</p>
+
+            {/* Mesaje predefinite */}
+            <div className="mb-3">
+              <p className="text-xs font-bold text-gray-500 mb-2">Motive rapide:</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  'Ne pare rău, am finalizat lista de influenceri pentru această campanie. Nu îți face griji — lansăm campanii noi des și șansele să fii selectat(ă) sunt mari! Te ținem la curent. 🙌',
+                  'Profilul nu se potrivește cu brandul nostru',
+                  'Număr insuficient de followeri',
+                  'Nișa nu se potrivește cu campania',
+                  'Am atins numărul maxim de colaboratori',
+                  'Conținutul anterior nu se aliniază cu valorile noastre',
+                ].map(msg => (
+                  <button key={msg} type="button"
+                    onClick={() => setRejectReason(msg)}
+                    className={`text-xs px-3 py-1.5 rounded-full border font-medium transition ${rejectReason === msg ? 'bg-red-50 border-red-300 text-red-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-red-200 hover:text-red-600'}`}>
+                    {msg}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mesaj custom */}
+            <div className="mb-5">
+              <label className="text-xs font-bold text-gray-500 block mb-1.5">Sau scrie un mesaj custom <span className="text-gray-400">(opțional)</span></label>
+              <textarea
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                placeholder="ex. Mulțumim pentru aplicație, dar în acest moment căutăm un profil diferit..."
+                rows={3}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm outline-none focus:border-red-300 transition resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => { setRejectModal(null); setRejectReason('') }}
+                className="flex-1 py-3 rounded-2xl font-black text-sm text-gray-600 border-2 border-gray-200 hover:bg-gray-50 transition">
+                Anulează
+              </button>
+              <button onClick={rejectWithMessage} disabled={rejecting}
+                className="flex-1 py-3 rounded-2xl font-black text-sm text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 transition flex items-center justify-center gap-2">
+                {rejecting ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <X className="w-4 h-4" />}
+                Confirmă refuzul
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className={`toast-anim fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold max-w-sm ${toast.ok ? 'bg-white border-2 border-green-200 text-green-700' : 'bg-white border-2 border-red-200 text-red-600'}`}>
+          {toast.ok ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Back */}
+      <Link href="/brand/campaigns" className="inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-700 transition mb-6">
+        <ArrowLeft className="w-4 h-4" /> Înapoi la campanii
+      </Link>
+
+      {/* ── Hero card ─────────────────────────────────────────────────────── */}
+      <div className="card p-6 mb-5 card-anim">
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <span className={`badge ${cfg.bg} ${cfg.text} border ${cfg.border}`}>
+                <span className={`w-2 h-2 rounded-full ${cfg.dot}`} /> {cfg.label}
+              </span>
+              {campaign.status === 'ACTIVE' && (
+                <span className="text-xs font-black text-green-600 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">✓ Vizibil influencerilor</span>
+              )}
+              {campaign.status === 'DRAFT' && (
+                <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">⚠ Nevizibil influencerilor</span>
+              )}
+            </div>
+
+            {editing ? (
+              <input className="field text-xl font-black mb-1 w-full" value={editForm.title || ''} onChange={e => setEditForm((p: any) => ({ ...p, title: e.target.value }))} placeholder="Titlu campanie" />
+            ) : (
+              <h1 className="text-xl font-black text-gray-900 mb-0.5 leading-snug">{campaign.title}</h1>
+            )}
+            <p className="text-gray-500 font-medium text-sm">{campaign.brand_name}</p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={fetchAll} className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition">
+              <RefreshCw className="w-4 h-4 text-gray-500" />
+            </button>
+
+            {editing ? (
+              <>
+                <button className="btn-sec" onClick={() => { setEditing(false); setEditForm(campaign) }} disabled={saving}>
+                  <X className="w-4 h-4" /> Anulează
+                </button>
+                <button className="btn-pub" onClick={saveEdit} disabled={saving}>
+                  {saving ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                  Salvează
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="btn-sec" onClick={() => setEditing(true)}>
+                  <Edit2 className="w-4 h-4" /> Editează
+                </button>
+                {campaign.status === 'DRAFT' && (
+                  <button className="btn-pub" onClick={() => changeStatus('ACTIVE')} disabled={statusLoading} style={{ boxShadow: '0 4px 14px rgba(249,115,22,.35)' }}>
+                    {statusLoading ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Eye className="w-4 h-4" />}
+                    Publică
+                  </button>
+                )}
+                {campaign.status === 'ACTIVE' && (
+                  <button className="btn-sec" onClick={() => setShowPauseModal(true)} disabled={statusLoading}>
+                    {statusLoading ? <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <Pause className="w-4 h-4" />}
+                    Pauză
+                  </button>
+                )}
+                {campaign.status === 'PAUSED' && (
+                  <button className="btn-pub" onClick={() => changeStatus('ACTIVE')} disabled={statusLoading}>
+                    {statusLoading ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Play className="w-4 h-4" />}
+                    Reia
+                  </button>
+                )}
+                <div className="relative" ref={menuRef}>
+                  <button className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition" onClick={() => setMenuOpen((o: boolean) => !o)}>
+                    <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                  </button>
+                  {menuOpen && (
+                    <div className="dropdown dd-anim">
+                      {campaign.status !== 'ACTIVE' && <button className="d-item" onClick={() => changeStatus('ACTIVE')}><Play className="w-4 h-4 text-green-500" /> Publică</button>}
+                      {campaign.status !== 'DRAFT' && <button className="d-item" onClick={() => campaign.status === 'ACTIVE' ? setShowDraftModal(true) : changeStatus('DRAFT')}><EyeOff className="w-4 h-4 text-amber-500" /> Mută în Draft</button>}
+                      {campaign.status !== 'PAUSED' && campaign.status !== 'COMPLETED' && <button className="d-item" onClick={() => setShowPauseModal(true)}><Pause className="w-4 h-4 text-gray-500" /> Pauză</button>}
+                      {campaign.status !== 'COMPLETED' && <button className="d-item red" onClick={() => changeStatus('COMPLETED')}><Archive className="w-4 h-4" /> Marchează Finalizat</button>}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {[
+            {
+              icon: DollarSign,
+              label: campaign.campaign_type === 'BARTER' ? 'Valoare ofertă' : 'Buget total',
+              color: 'text-green-600', bg: 'bg-green-50',
+              value: editing ? null : campaign.campaign_type === 'BARTER'
+                ? `${(campaign.offer_value || 0).toLocaleString('ro-RO')} RON`
+                : fmt(campaign.budget),
+              edit: <input type="number" className="field" value={editForm.budget ?? ''} onChange={e => setEditForm((p: any) => ({ ...p, budget: Number(e.target.value) }))} placeholder="Buget" />
+            },
+            {
+              icon: Calendar, label: expired ? 'Expirat' : 'Deadline', color: expired ? 'text-red-500' : urgent ? 'text-orange-500' : 'text-gray-700', bg: expired ? 'bg-red-50' : urgent ? 'bg-orange-50' : 'bg-gray-50',
+              value: editing ? null : fmtDate(campaign.deadline),
+              edit: <input type="date" className="field" value={editForm.deadline?.slice(0, 10) ?? ''} onChange={e => setEditForm((p: any) => ({ ...p, deadline: e.target.value }))} />,
+              sub: !expired ? (days === 0 ? 'Ultima zi!' : `${days} ${days === 1 ? 'zi rămasă' : 'zile rămase'}`) : undefined, subColor: urgent ? 'text-orange-500' : 'text-gray-400'
+            },
+            { icon: Users, label: 'Aplicanți', color: 'text-purple-600', bg: 'bg-purple-50', value: `${collabs.length}`, edit: null },
+            { icon: TrendingUp, label: 'Activi', color: 'text-blue-600', bg: 'bg-blue-50', value: `${counts.active}`, edit: null },
+          ].map((s, i) => (
+            <div key={i} className={`${s.bg} rounded-2xl p-4`}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <s.icon className={`w-4 h-4 ${s.color}`} />
+                <p className="text-xs font-bold text-gray-400">{s.label}</p>
+              </div>
+              {editing && s.edit ? s.edit : <p className={`text-lg font-black ${s.color}`}>{s.value}</p>}
+              {s.sub && !editing && <p className={`text-xs font-bold mt-0.5 ${s.subColor}`}>{s.sub}</p>}
+            </div>
+          ))}
+        </div>
+
+        {/* Detalii */}
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Descriere</p>
+            {editing
+              ? <textarea className="field" rows={3} value={editForm.description || ''} onChange={e => setEditForm((p: any) => ({ ...p, description: e.target.value }))} placeholder="Descriere campanie…" style={{ resize: 'none' }} />
+              : <p className="text-sm text-gray-600 leading-relaxed">{campaign.description || <span className="text-gray-300 italic">Nicio descriere</span>}</p>
+            }
+          </div>
+          <div>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Livrabile</p>
+            {editing
+              ? <textarea className="field" rows={3} value={editForm.deliverables || ''} onChange={e => setEditForm((p: any) => ({ ...p, deliverables: e.target.value }))} placeholder="Ce trebuie să livreze influencerul?" style={{ resize: 'none' }} />
+              : campaign.deliverables
+                ? <div className="bg-gray-50 rounded-2xl p-4 text-sm text-gray-600 leading-relaxed">{campaign.deliverables}</div>
+                : <p className="text-sm text-gray-300 italic">Nespecificate</p>
+            }
+          </div>
+
+          {/* Imagini ofertă */}
+          {(() => {
+            const imgs = (Array.isArray(campaign.offer_image_urls) && campaign.offer_image_urls.length > 0)
+              ? campaign.offer_image_urls.filter(Boolean)
+              : (campaign.offer_image_url ? [campaign.offer_image_url] : [])
+            if (imgs.length === 0) return null
+            return (
+              <div>
+                <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">📷 Imagini ofertă ({imgs.length})</p>
+                <ImageSlider images={imgs} />
+              </div>
+            )
+          })()}
+
+          {/* Ofertă barter detaliată */}
+          {(campaign.offer_name || campaign.offer_description) && (
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+              <p className="text-xs font-black text-amber-700 uppercase tracking-wider mb-2">🎁 Detalii ofertă</p>
+              {campaign.offer_name && <p className="text-sm font-bold text-gray-900 mb-1">{campaign.offer_name}</p>}
+              {campaign.offer_description && <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{campaign.offer_description}</p>}
+              <div className="flex gap-4 mt-3 text-xs">
+                {campaign.offer_value > 0 && <p className="font-bold text-amber-700">Valoare: {campaign.offer_value} RON</p>}
+                {campaign.offer_count > 0 && <p className="font-bold text-amber-700">Bucăți: {campaign.offer_count}</p>}
+                {campaign.delivery_method && <p className="font-bold text-amber-700">{campaign.delivery_method === 'pickup' ? '📍 Pickup' : '📦 Livrare'}</p>}
+              </div>
+
+              {/* Cod check-in — doar pentru pickup */}
+              {campaign.delivery_method === 'pickup' && (
+                <div className="mt-4 pt-4 border-t border-amber-100">
+                  <p className="text-xs font-black text-amber-700 uppercase tracking-wider mb-3">🔑 Cod check-in influenceri</p>
+
+                  {campaign.checkin_code ? (
+                    <div className="space-y-3">
+                      {/* Codul mare, copiabil */}
+                      <div className="bg-white border-2 border-amber-300 rounded-2xl p-5 text-center"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => navigator.clipboard?.writeText(campaign.checkin_code).then(() => alert('Cod copiat! ✅'))}>
+                        <p className="text-xs font-bold text-amber-500 mb-2 uppercase tracking-wider">Codul tău unic</p>
+                        <p className="text-4xl font-black tracking-[.45em] text-amber-700 select-all" style={{ fontFamily: 'monospace' }}>{campaign.checkin_code}</p>
+                        <div className="flex items-center justify-center gap-1.5 mt-2">
+                          <span className="text-xs text-amber-400 font-semibold">📋 Click pentru a copia</span>
+                        </div>
+                      </div>
+
+                      {/* Ghid pas cu pas */}
+                      <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+                        <p className="text-xs font-black text-amber-700 uppercase tracking-wider mb-3">Cum folosești codul</p>
+                        <div className="space-y-2.5">
+                          {[
+                            { step: '1', text: 'Copiază codul de mai sus apăsând pe el' },
+                            { step: '2', text: 'Trimite-l influencerului pe WhatsApp / SMS / email înainte de vizită' },
+                            { step: '3', text: 'Când influencerul ajunge la locație, confirmă identitatea lui' },
+                            { step: '4', text: 'El introduce codul în aplicația AddFame → colaborarea se marchează automat ca vizitat' },
+                          ].map(({ step, text }) => (
+                            <div key={step} className="flex items-start gap-3">
+                              <div className="w-5 h-5 rounded-full bg-amber-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-[10px] font-black text-amber-800">{step}</span>
+                              </div>
+                              <p className="text-xs text-amber-700 leading-relaxed">{text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Avertisment securitate */}
+                      <div className="bg-white border border-amber-100 rounded-xl px-3 py-2.5 flex items-start gap-2">
+                        <span className="text-sm flex-shrink-0 mt-0.5">⚠️</span>
+                        <p className="text-xs text-amber-600 leading-relaxed">
+                          <strong>Important:</strong> Nu da codul înainte ca influencerul să ajungă fizic la locație. Codul confirmă prezența reală, nu programarea.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white border-2 border-dashed border-amber-200 rounded-2xl p-5 text-center">
+                      <span className="text-2xl block mb-2">🔐</span>
+                      <p className="text-sm font-bold text-amber-600 mb-1">Niciun cod generat încă</p>
+                      <p className="text-xs text-amber-400">Administratorul platformei va genera codul. Revino aici înainte de prima vizită a unui influencer.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Instrucțiuni postare */}
+          {campaign.story_instructions && (
+            <div className="bg-pink-50 border border-pink-100 rounded-2xl p-4">
+              <p className="text-xs font-black text-pink-700 uppercase tracking-wider mb-2">📱 Instrucțiuni postare</p>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{campaign.story_instructions}</p>
+            </div>
+          )}
+
+          {/* Link promovare */}
+          {campaign.promotion_link && (
+            <div className="bg-green-50 border border-green-100 rounded-2xl p-4">
+              <p className="text-xs font-black text-green-700 uppercase tracking-wider mb-2">🔗 Link produs / promovare</p>
+              <a href={campaign.promotion_link} target="_blank" rel="noopener noreferrer"
+                className="text-sm font-bold text-green-700 hover:text-green-900 underline break-all block bg-white rounded-xl p-2.5 border border-green-100">
+                {campaign.promotion_link}
+              </a>
+              {Array.isArray(campaign.promotion_link_placement) && campaign.promotion_link_placement.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {campaign.promotion_link_placement.map((p: string) => (
+                    <span key={p} className="text-[10px] font-bold bg-white border border-green-200 text-green-700 px-2 py-0.5 rounded-full">{p}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Caption obligatoriu */}
+          {campaign.required_caption && (
+            <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
+              <p className="text-xs font-black text-purple-700 uppercase tracking-wider mb-2">📝 Caption obligatoriu</p>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap bg-white rounded-xl p-3 border border-purple-100 italic">{campaign.required_caption}</p>
+            </div>
+          )}
+
+          {/* Hashtag-uri obligatorii */}
+          {Array.isArray(campaign.required_hashtags) && campaign.required_hashtags.length > 0 && (
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+              <p className="text-xs font-black text-blue-700 uppercase tracking-wider mb-2"># Hashtag-uri obligatorii</p>
+              <div className="flex flex-wrap gap-1.5">
+                {campaign.required_hashtags.map((t: string) => (
+                  <span key={t} className="text-xs font-bold bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full">
+                    #{t.replace(/^#/, '')}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Forbidden */}
+          {(campaign.forbidden_content || (Array.isArray(campaign.forbidden_mentions) && campaign.forbidden_mentions.length > 0)) && (
+            <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
+              <p className="text-xs font-black text-red-700 uppercase tracking-wider mb-2">🚫 Ce să eviți</p>
+              {campaign.forbidden_content && (
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap mb-2">{campaign.forbidden_content}</p>
+              )}
+              {Array.isArray(campaign.forbidden_mentions) && campaign.forbidden_mentions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {campaign.forbidden_mentions.map((m: string) => (
+                    <span key={m} className="text-[10px] font-bold bg-white border border-red-200 text-red-700 px-2 py-0.5 rounded-full">{m}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Cerințe influenceri */}
+          {(campaign.min_followers_target > 0 || campaign.min_days_online > 0) && (
+            <div>
+              <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Cerințe influenceri</p>
+              <div className="flex flex-wrap gap-2">
+                {campaign.min_followers_target > 0 && (
+                  <span className="text-xs font-bold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full">
+                    Min. {campaign.min_followers_target.toLocaleString('ro-RO')} followers
+                  </span>
+                )}
+                {campaign.min_days_online > 0 && (
+                  <span className="text-xs font-bold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full">
+                    Postare online min. {campaign.min_days_online} zile
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Platforme</p>
+              <div className="flex flex-wrap gap-1.5">
+                {campaign.platforms?.map((p: string) => (
+                  <span key={p} className="inline-flex items-center gap-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full capitalize">
+                    {PLATFORM_ICON[p.toLowerCase()] || <Star className="w-3 h-3" />} {p.toLowerCase()}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Nișe țintă</p>
+              <div className="flex flex-wrap gap-1.5">
+                {campaign.niches?.map((n: string) => (
+                  <span key={n} className="text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200 px-2.5 py-1 rounded-full">{n}</span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Țări</p>
+              <div className="flex flex-wrap gap-1.5">
+                {campaign.countries?.map((c: string) => (
+                  <span key={c} className="inline-flex items-center gap-1 text-xs font-bold bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">
+                    <Globe className="w-3 h-3" /> {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-gray-300 pt-1">Creat: {fmtDate(campaign.created_at)}</p>
+        </div>
+      </div>
+
+      {/* ── Analytics ─────────────────────────────────────────────────────── */}
+      <div className="card p-5 mb-5 card-anim" style={{ animationDelay: '.04s' }}>
+        <h2 className="font-black text-gray-900 text-lg mb-4 flex items-center gap-2">
+          <span className="w-7 h-7 rounded-xl bg-orange-50 flex items-center justify-center">
+            <BarChart2 className="w-4 h-4 text-orange-500" />
+          </span>
+          Analytics campanie
+        </h2>
+
+        {/* KPI grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+          <KpiCard
+            label="Reach total"
+            value={fmtNum(totalReach)}
+            sub={`${activeAndCompleted.length} influenceri activi`}
+            icon={<Users />} color="text-purple-600" bg="bg-purple-50"
+          />
+          <KpiCard
+            label="Impresii estimate"
+            value={fmtNum(Math.round(totalReach * 0.08))}
+            sub="~8% reach mediu"
+            icon={<Eye />} color="text-blue-600" bg="bg-blue-50"
+          />
+          <KpiCard
+            label="Total cheltuit"
+            value={fmt(totalSpent)}
+            sub={campaign.budget > 0 ? `${budgetUsedPct}% din buget` : undefined}
+            icon={<Wallet />} color="text-green-600" bg="bg-green-50"
+          />
+          <KpiCard
+            label="Rată finalizare"
+            value={`${completionRate}%`}
+            sub={`${completedCollabs.length} din ${collabs.length} colaborări`}
+            icon={<Target />} color="text-orange-600" bg="bg-orange-50"
+          />
+        </div>
+
+        {/* Rând 2 de KPIs */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+          <KpiCard
+            label="Rating mediu"
+            value={avgRating ? `⭐ ${avgRating.toFixed(1)}` : '—'}
+            sub={reviews.length > 0 ? `${reviews.length} review${reviews.length !== 1 ? 'uri' : ''} primite` : 'Fără review-uri încă'}
+            icon={<Star />} color="text-amber-500" bg="bg-amber-50"
+          />
+          <KpiCard
+            label="Cost per colaborare"
+            value={costPerCompleted ? fmt(costPerCompleted) : '—'}
+            sub="per influencer finalizat"
+            icon={<DollarSign />} color="text-teal-600" bg="bg-teal-50"
+          />
+          <KpiCard
+            label="Rată aprobare"
+            value={collabs.length > 0 ? `${Math.round((counts.active + counts.completed) / collabs.length * 100)}%` : '—'}
+            sub="din total aplicanți"
+            icon={<CheckCircle />} color="text-green-600" bg="bg-green-50"
+          />
+          <KpiCard
+            label="Aplicanți noi"
+            value={counts.pending}
+            sub="în așteptare aprobare"
+            icon={<Zap />} color="text-pink-600" bg="bg-pink-50"
+          />
+        </div>
+
+        {/* Bară buget */}
+        {campaign.campaign_type !== 'BARTER' && campaign.budget > 0 && (
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-black text-gray-400 uppercase tracking-wider">Utilizare buget</p>
+              <p className="text-xs font-bold text-gray-600">{fmt(totalSpent)} / {fmt(campaign.budget)}</p>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-3">
+              <div
+                className="h-3 rounded-full transition-all"
+                style={{
+                  width: `${budgetUsedPct}%`,
+                  background: budgetUsedPct > 90 ? 'linear-gradient(90deg,#ef4444,#dc2626)' : budgetUsedPct > 60 ? 'linear-gradient(90deg,#f97316,#ea580c)' : 'linear-gradient(90deg,#22c55e,#16a34a)'
+                }}
+              />
+            </div>
+            <div className="flex justify-between mt-1">
+              <span className="text-xs text-gray-400">{budgetUsedPct}% utilizat</span>
+              <span className="text-xs text-gray-400">{fmt(Math.max(0, campaign.budget - totalSpent))} rămas</span>
+            </div>
+          </div>
+        )}
+
+        {/* Breakdown status */}
+        {collabs.length > 0 && (
+          <div>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Distribuție colaborări</p>
+            <div className="space-y-2">
+              {[
+                { label: 'Aplicat', count: counts.pending, color: 'bg-amber-400' },
+                { label: 'Invitat', count: counts.invited, color: 'bg-blue-400' },
+                { label: 'Activ', count: counts.active, color: 'bg-purple-400' },
+                { label: 'Finalizat', count: counts.completed, color: 'bg-green-400' },
+                { label: 'Refuzat', count: counts.rejected, color: 'bg-gray-300' },
+              ].filter(r => r.count > 0).map(row => (
+                <div key={row.label} className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-gray-500 w-20 flex-shrink-0">{row.label}</span>
+                  <div className="flex-1 bg-gray-100 rounded-full h-2.5">
+                    <div className={`${row.color} h-2.5 rounded-full transition-all`} style={{ width: `${Math.round((row.count / collabs.length) * 100)}%` }} />
+                  </div>
+                  <span className="text-xs font-black text-gray-600 w-6 text-right">{row.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Reviews preview */}
+        {reviews.length > 0 && (
+          <div className="mt-5 pt-5 border-t border-gray-100">
+            <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Review-uri recente de la influenceri</p>
+            <div className="space-y-2">
+              {reviews.slice(0, 3).map((r, i) => (
+                <div key={i} className="bg-amber-50 rounded-xl p-3">
+                  <div className="flex items-center gap-1 mb-1">
+                    {[1,2,3,4,5].map(s => (
+                      <Star key={s} className={`w-3 h-3 ${s <= r.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
+                    ))}
+                    <span className="text-xs text-gray-400 ml-1">
+                      {new Date(r.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+                  {r.comment && <p className="text-xs text-gray-600 italic">"{r.comment}"</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Economii AddFame ───────────────────────────────────────────────── */}
+      {(() => {
+        const totalAgencyCost = agencyCosts.setup_cost + agencyCosts.selection_cost + agencyCosts.management_cost + agencyCosts.reporting_cost
+        const moneySaved = totalAgencyCost
+        const hoursSaved = agencyCosts.hours_saved
+        const influencersFiltered = collabs.length
+        const engRateBoost = agencyCosts.eng_rate_addfame
+        const engRateIndustry = agencyCosts.eng_rate_industry
+        return (
+          <div className="card p-5 mb-5 card-anim" style={{ animationDelay: '.06s' }}>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-sm shadow-green-200">
+                  <span className="text-white text-sm font-black">₿</span>
+                </div>
+                <div>
+                  <h2 className="font-black text-gray-900 text-base leading-tight">Economii generate cu AddFame</h2>
+                  <p className="text-xs text-gray-400">față de o agenție tradițională de influencer marketing</p>
+                </div>
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 bg-green-50 border border-green-100 rounded-xl px-3 py-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                <span className="text-xs font-black text-green-700">Economii active</span>
+              </div>
+            </div>
+
+            {/* Main savings grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+              {/* Bani */}
+              <div className="col-span-2 sm:col-span-1 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl p-4">
+                <p className="text-xs font-bold text-green-600 mb-1">💰 Bani economisiți</p>
+                <p className="text-2xl font-black text-green-700">{moneySaved.toLocaleString("ro-RO")} RON</p>
+                <p className="text-xs text-green-600 mt-1 font-medium">costuri agenție evitate</p>
+              </div>
+              {/* Timp */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4">
+                <p className="text-xs font-bold text-blue-600 mb-1">⏱ Timp economisit</p>
+                <p className="text-2xl font-black text-blue-700">{hoursSaved}h</p>
+                <p className="text-xs text-blue-500 mt-1 font-medium">economisite față de agenție</p>
+              </div>
+              {/* Influenceri */}
+              <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-100 rounded-2xl p-4">
+                <p className="text-xs font-bold text-purple-600 mb-1">👥 Influenceri verificați</p>
+                <p className="text-2xl font-black text-purple-700">{influencersFiltered}</p>
+                <p className="text-xs text-purple-500 mt-1 font-medium">procesați automat</p>
+              </div>
+              {/* Engagement */}
+              <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 rounded-2xl p-4">
+                <p className="text-xs font-bold text-orange-600 mb-1">📈 Eng. rate mediu</p>
+                <p className="text-2xl font-black text-orange-600">{engRateBoost}%</p>
+                <p className="text-xs text-orange-500 mt-1 font-medium">vs {engRateIndustry}% industrie</p>
+              </div>
+            </div>
+
+            {/* Breakdown costuri agenție */}
+            <div className="bg-gray-50 rounded-2xl p-4 mb-4">
+              <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Ce ai fi plătit la o agenție tradițională</p>
+              <div className="space-y-2.5">
+                {[
+                  { label: "Setup campanie", cost: agencyCosts.setup_cost, icon: "⚙️", desc: "brief, strategie, planificare" },
+                  { label: "Selecție influenceri", cost: agencyCosts.selection_cost, icon: "🔍", desc: "research + negociere manuală" },
+                  { label: "Management campanie", cost: agencyCosts.management_cost, icon: "📋", desc: "coordonare + comunicare" },
+                  { label: "Raportare & analytics", cost: agencyCosts.reporting_cost, icon: "📊", desc: "raport final livrat" },
+                ].map(row => {
+                  const pct = Math.round((row.cost / totalAgencyCost) * 100)
+                  return (
+                    <div key={row.label}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">{row.icon}</span>
+                          <span className="text-xs font-bold text-gray-700">{row.label}</span>
+                          <span className="text-xs text-gray-400 hidden sm:inline">· {row.desc}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-red-500 line-through">{row.cost.toLocaleString("ro-RO")} RON</span>
+                          <span className="text-xs font-black text-green-600 bg-green-100 px-1.5 py-0.5 rounded-md">0 RON ✓</span>
+                        </div>
+                      </div>
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t-2 border-dashed border-gray-200">
+                <span className="text-sm font-black text-gray-700">Total economisit</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-red-400 line-through font-bold">{totalAgencyCost.toLocaleString("ro-RO")} RON</span>
+                  <span className="text-base font-black text-green-600">0 RON 🎉</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Comparații rapide */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Setup timp", addfame: agencyCosts.setup_time_addfame, agency: agencyCosts.setup_time_agency, icon: "🚀" },
+                { label: "Selecție influenceri", addfame: agencyCosts.selection_addfame, agency: agencyCosts.selection_agency, icon: "🤖" },
+                { label: "Raportare", addfame: agencyCosts.reporting_addfame, agency: agencyCosts.reporting_agency, icon: "📡" },
+              ].map(c => (
+                <div key={c.label} className="bg-white border border-gray-100 rounded-xl p-3 text-center">
+                  <p className="text-lg mb-1">{c.icon}</p>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wide mb-2">{c.label}</p>
+                  <p className="text-xs font-black text-green-600 bg-green-50 rounded-lg px-2 py-1 mb-1">{c.addfame}</p>
+                  <p className="text-[10px] text-red-400 line-through">{c.agency}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── Collaborations ────────────────────────────────────────────────── */}
+      <div className="card p-5 card-anim" style={{ animationDelay: '.08s' }}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="font-black text-gray-900 text-lg">Aplicanți & Colaborări</h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {counts.pending > 0 && <span className="text-amber-600 font-bold">{counts.pending} aplicate · </span>}
+              {counts.invited > 0 && <span className="text-blue-600 font-bold">{counts.invited} invitați · </span>}
+              {counts.active > 0 && <span className="text-purple-600 font-bold">{counts.active} activi · </span>}
+              {collabs.length} total
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {bulkRejectMode ? (
+              <>
+                <button onClick={() => { setBulkRejectMode(false); setSelectedRejectIds([]) }}
+                  className="text-xs font-bold text-gray-500 border border-gray-200 px-3 py-2 rounded-xl hover:bg-gray-50 transition">
+                  Anulează
+                </button>
+                <button onClick={() => {
+                  const pendingIds = collabs.filter(c => c.status === 'PENDING').map(c => c.id)
+                  setSelectedRejectIds(selectedRejectIds.length === pendingIds.length ? [] : pendingIds)
+                }}
+                  className="text-xs font-bold text-red-600 border border-red-200 px-3 py-2 rounded-xl hover:bg-red-50 transition">
+                  {selectedRejectIds.length === collabs.filter(c => c.status === 'PENDING').length ? 'Deselectează tot' : 'Selectează tot'}
+                </button>
+                <button onClick={bulkReject} disabled={selectedRejectIds.length === 0 || bulkRejecting}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3.5 py-2 rounded-xl transition disabled:opacity-50">
+                  {bulkRejecting ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : '✕'}
+                  Refuză {selectedRejectIds.length > 0 ? `(${selectedRejectIds.length})` : 'selectați'}
+                </button>
+              </>
+            ) : (
+              <>
+                {tab === 'pending' && counts.pending > 0 && (
+                  <button onClick={() => { setBulkRejectMode(true); setBulkMode(false) }}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-3.5 py-2 rounded-xl hover:bg-red-100 transition">
+                    ✕ Refuză bulk
+                  </button>
+                )}
+                {bulkMode ? (
+                  <>
+                    <button onClick={() => { setBulkMode(false); setSelectedInfs([]) }}
+                      className="text-xs font-bold text-gray-500 border border-gray-200 px-3 py-2 rounded-xl hover:bg-gray-50 transition">
+                      Anulează
+                    </button>
+                    <button onClick={bulkInvite} disabled={selectedInfs.length === 0 || bulkInviting}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 px-3.5 py-2 rounded-xl transition disabled:opacity-50">
+                      {bulkInviting ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      Invită {selectedInfs.length > 0 ? `(${selectedInfs.length})` : 'selectați'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => setBulkMode(true)}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-3.5 py-2 rounded-xl hover:bg-orange-100 transition">
+                      <Users className="w-3.5 h-3.5" /> Invită bulk
+                    </button>
+                    <Link href="/brand/influencers"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-3.5 py-2 rounded-xl hover:bg-orange-100 transition">
+                      + Invită influencer
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4 border-b border-gray-100 pb-3">
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {([
+            { key: 'all', label: 'Toți' },
+            { key: 'pending', label: 'Aplicate' },
+            { key: 'invited', label: 'Invitați' },
+            { key: 'active', label: 'Activi' },
+            { key: 'completed', label: 'Finalizați' },
+            { key: 'rejected', label: 'Refuzați' },
+          ] as const).map(t => (
+            <button key={t.key} className={`tab-btn flex-shrink-0 ${tab === t.key ? 'on' : ''}`} onClick={() => setTab(t.key)}>
+              {t.label}
+              {counts[t.key] > 0 && (
+                <span className={`ml-1.5 text-[11px] font-black px-1.5 py-0.5 rounded-full ${tab === t.key ? 'bg-white/25' : 'bg-gray-200 text-gray-500'}`}>
+                  {counts[t.key]}
+                </span>
+              )}
+            </button>
+          ))}
+          </div>
+          {/* Sort */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 flex-shrink-0">
+            <button onClick={() => setSortBy('date')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${sortBy === 'date' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              ↓ Dată
+            </button>
+            <button onClick={() => setSortBy('followers')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${sortBy === 'followers' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              ↓ Followeri
+            </button>
+            <button onClick={() => setSortBy('rating')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${sortBy === 'rating' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              ↓ Rating
+            </button>
+          </div>
+        </div>
+
+        {/* List */}
+        {visible.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-3">
+              <Users className="w-7 h-7 text-orange-200" />
+            </div>
+            <p className="font-black text-gray-500 mb-1">
+              {tab === 'all' ? 'Nicio colaborare încă' : `Nicio colaborare ${tab}`}
+            </p>
+            <p className="text-sm text-gray-400 mb-4 max-w-xs mx-auto">
+              {campaign.status === 'DRAFT'
+                ? 'Publică campania pentru ca influencerii să poată aplica.'
+                : tab === 'all' ? 'Influencerii vor apărea aici odată ce aplică sau sunt invitați.' : ''}
+            </p>
+            {campaign.status === 'DRAFT' && (
+              <button className="btn-pub" onClick={() => changeStatus('ACTIVE')} disabled={statusLoading}>
+                <Eye className="w-4 h-4" /> Publică campania
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {visible.map(collab => {
+              const inf = influencerData[collab.influencer_id]
+              const cst = COLLAB_CFG[collab.status] ?? COLLAB_CFG.PENDING
+              const isPending = collab.status === 'PENDING'
+              const isInvited = collab.status === 'INVITED'
+              const isActive = collab.status === 'ACTIVE'
+              const isBusy = collabLoading === collab.id
+              const hasPendingDeliverable = collab.status === 'ACTIVE' && !!collab.deliverable_submitted_at && !collab.deliverable_approved_at
+              const packageSent = isActive && !!collab.package_sent_at && !collab.package_received_at
+              const packageReceived = isActive && !!collab.package_received_at
+              const noPackage = isActive && !collab.package_sent_at
+              const infSlug = inf?.slug || collab.influencer_id
+
+              const cardBorder = hasPendingDeliverable ? 'border-orange-200 bg-orange-50/30'
+                : packageReceived ? 'border-green-200 bg-green-50/20'
+                : packageSent ? 'border-blue-200 bg-blue-50/20'
+                : noPackage && isActive ? 'border-gray-200 bg-gray-50/30'
+                : 'border-gray-100 hover:border-orange-100 hover:bg-orange-50/20'
+
+              return (
+                <div key={collab.id} className={`flex items-start gap-4 p-4 rounded-2xl border transition ${cardBorder}`}>
+                  {/* Bulk select checkbox — invite */}
+                  {bulkMode && collab.status === 'INVITED' && (
+                    <div className="flex items-center pt-1">
+                      <input type="checkbox" checked={selectedInfs.includes(collab.influencer_id)}
+                        onChange={e => setSelectedInfs(prev => e.target.checked ? [...prev, collab.influencer_id] : prev.filter(id => id !== collab.influencer_id))}
+                        className="w-4 h-4 accent-orange-500 cursor-pointer" />
+                    </div>
+                  )}
+                  {/* Bulk reject checkbox */}
+                  {bulkRejectMode && collab.status === 'PENDING' && (
+                    <div className="flex items-center pt-1">
+                      <input type="checkbox" checked={selectedRejectIds.includes(collab.id)}
+                        onChange={e => setSelectedRejectIds(prev => e.target.checked ? [...prev, collab.id] : prev.filter(id => id !== collab.id))}
+                        className="w-4 h-4 accent-red-500 cursor-pointer" />
+                    </div>
+                  )}
+                  {/* Avatar — click deschide modal cu profilul si social media */}
+                  <button type="button" onClick={() => setProfileModal({ ...inf, _slug: infSlug })}
+                    className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center flex-shrink-0 overflow-hidden hover:ring-2 hover:ring-orange-300 transition cursor-pointer">
+                    {inf?.avatar
+                      ? <img src={inf.avatar} alt={inf.name} className="w-full h-full object-cover" />
+                      : <span className="font-black text-orange-500 text-lg">{inf?.name?.[0]?.toUpperCase() ?? '?'}</span>
+                    }
+                  </button>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setProfileModal({ ...inf, _slug: infSlug })}
+                            className="font-black text-gray-900 hover:text-orange-500 transition text-left">
+                            {inf?.name ?? 'Influencer necunoscut'}
+                          </button>
+                          {inf?.avg_rating > 0 && (
+                            <span className="text-xs font-bold text-amber-500">⭐ {inf.avg_rating.toFixed(1)}</span>
+                          )}
+                          {hasPendingDeliverable && (
+                            <span className="text-[10px] font-black text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">Post trimis</span>
+                          )}
+                        </div>
+                        {inf?.niches && inf.niches.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {inf.niches.slice(0, 3).map((n: string) => (
+                              <span key={n} className="text-[11px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{n}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`badge ${cst.bg} ${cst.text}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${cst.dot}`} /> {cst.label}
+                          </span>
+                          {/* Package status badge */}
+                          {packageSent && <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">📦 Trimis</span>}
+                          {packageReceived && <span className="text-[10px] font-black text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">✅ Primit</span>}
+                          {noPackage && isActive && <span className="text-[10px] font-black text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">⏳ Netrimis</span>}
+                          {/* Check-in badge — doar pentru pickup */}
+                          {campaign?.delivery_method === 'pickup' && isActive && (
+                            collab.checked_in_at
+                              ? <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">📍 La locație {new Date(collab.checked_in_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}</span>
+                              : <span className="text-[10px] font-black text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">📍 Neconfirmat</span>
+                          )}
+                          {/* Buton vezi profil */}
+                          <a href={`/influencer/${infSlug}`} target="_blank" rel="noopener noreferrer"
+                            className="text-[11px] font-bold text-gray-400 hover:text-orange-500 border border-gray-200 hover:border-orange-200 px-2 py-1 rounded-lg transition flex items-center gap-1">
+                            <ArrowUpRight className="w-3 h-3" /> Profil
+                          </a>
+                        </div>
+
+                        {(isPending || isInvited) && (
+                          <div className="flex items-center gap-1.5">
+                            <button className="btn-decline" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>
+                              {isBusy ? <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                              Refuză
+                            </button>
+                            <button className="btn-approve" onClick={() => collabAction(collab.id, 'ACTIVE')} disabled={isBusy}>
+                              {isBusy ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                              {isPending ? 'Aprobă' : 'Confirmă'}
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Refuză și din ACTIVE */}
+                        {isActive && (
+                          <button className="btn-decline" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>
+                            {isBusy ? <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                            Refuză
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Adresă livrare - barter */}
+                    {collab.delivery_name && (
+                      <div className="mt-3 p-3 rounded-xl border border-orange-200 bg-orange-50">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-black text-orange-700">📦 Adresă livrare produs</p>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(`${collab.delivery_name}\n${collab.delivery_phone}\n${collab.delivery_address}\n${collab.delivery_city}, ${collab.delivery_county} ${collab.delivery_postal_code || ''}`)}
+                            className="text-[10px] font-black text-orange-600 hover:text-orange-800 transition">
+                            📋 Copiază
+                          </button>
+                        </div>
+                        <p className="text-xs font-black text-gray-800">{collab.delivery_name}</p>
+                        <p className="text-xs text-gray-600">📞 {collab.delivery_phone}</p>
+                        <p className="text-xs text-gray-600">🏠 {collab.delivery_address}</p>
+                        <p className="text-xs text-gray-600">📍 {collab.delivery_city}, {collab.delivery_county}{collab.delivery_postal_code ? `, ${collab.delivery_postal_code}` : ''}</p>
+                      </div>
+                    )}
+
+                    {/* Deliverable */}
+                    {collab.deliverable_url && (
+                      <div className="mt-3 p-3 rounded-xl border-2 border-orange-200 bg-orange-50">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <p className="text-xs font-black text-orange-700">📦 Dovadă post trimisă</p>
+                          {collab.status === 'ACTIVE' && !collab.deliverable_approved_at && (
+                            <button onClick={() => collabAction(collab.id, 'COMPLETED')} disabled={isBusy}
+                              className="text-xs font-black text-white bg-green-500 hover:bg-green-600 px-3 py-1 rounded-lg transition disabled:opacity-50">
+                              {isBusy ? '…' : '✓ Aprobă & eliberează plata'}
+                            </button>
+                          )}
+                        </div>
+                        <a href={collab.deliverable_url} target="_blank" rel="noreferrer"
+                          className="text-xs font-bold text-orange-600 underline hover:text-orange-800 break-all">
+                          {collab.deliverable_url}
+                        </a>
+                        {collab.deliverable_note && (
+                          <p className="text-xs text-orange-600 mt-1.5 italic">"{collab.deliverable_note}"</p>
+                        )}
+                        {collab.status === 'COMPLETED' && (
+                          <div className="mt-2">
+                            <p className="text-xs font-black text-green-600 mb-2">
+                              ✅ Finalizat {collab.completed_at ? new Date(collab.completed_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }) : ''}
+                              {collab.payment_amount && ` · ${fmt(collab.payment_amount)} plătiți`}
+                            </p>
+                            <LeaveReview
+                              collaborationId={collab.id}
+                              reviewerRole="brand"
+                              targetName={inf?.name || 'Influencer'}
+                              onSaved={() => {}}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Mesaj */}
+                    {collab.message && collab.message !== 'You have been invited to collaborate on a campaign.' && (
+                      <div className="flex items-start gap-2 mt-2 bg-gray-50 rounded-xl p-3">
+                        <MessageSquare className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-gray-500 italic">"{collab.message}"</p>
+                      </div>
+                    )}
+
+                    {/* Social + dată */}
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                      {inf?.platforms && inf.platforms.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          {inf.platforms.slice(0, 3).map((p: any) => (
+                            <div key={p.platform} className="flex items-center gap-1 bg-gray-50 rounded-full px-2 py-0.5">
+                              {PLATFORM_ICON[p.platform?.toLowerCase()] ?? <Star className="w-3.5 h-3.5 text-gray-300" />}
+                              {p.followers && (
+                                <span className="text-xs font-black text-gray-700">
+                                  {p.followers}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Reach total influencer */}
+                      {(() => {
+                        const reach = getFollowers(inf)
+                        if (reach > 0) return (
+                          <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                            ~{fmtNum(Math.round(reach * 0.08))} impresii est.
+                          </span>
+                        )
+                      })()}
+                      <span className="text-xs text-gray-300">·</span>
+                      <span className="text-xs text-gray-400">
+                        {collab.status === 'INVITED' ? 'Invitat' : 'Aplicat'} {new Date(collab.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
