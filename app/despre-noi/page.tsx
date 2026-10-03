@@ -45,8 +45,8 @@ const TEAM = [
 ]
 
 const VALUES = [
-  { icon: '🤝', title: 'Transparență totală', desc: 'Fără surprize. Comisioanele, plățile și procesele sunt clare de la început — atât pentru branduri, cât și pentru influenceri.' },
-  { icon: '💳', title: 'Prețuri transparente', desc: 'O taxă fixă per influencer, afișată înainte de publicare. Fără comisioane procentuale, fără abonamente, fără costuri ascunse.' },
+  { icon: '🤝', title: 'Transparență totală', desc: 'Fără surprize. Costurile, plățile și procesele sunt clare de la început — atât pentru branduri, cât și pentru influenceri.' },
+  { icon: '💳', title: 'Prețuri transparente', desc: 'Costul campaniei e afișat înainte de publicare. Fără abonamente, fără costuri ascunse.' },
   { icon: '🇷🇴', title: 'Făcut pentru România', desc: 'Înțelegem piața locală. Suntem construiți pentru branduri și influenceri din România, cu suport în română.' },
   { icon: '⚡', title: 'Simplitate radicală', desc: 'De la brief la plată în câteva click-uri. Platformele complexe pierd timp. Noi câștigăm timp.' },
 ]

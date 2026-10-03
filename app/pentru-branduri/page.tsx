@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Pentru Branduri — AddFame | Influencer Marketing România',
-  description: 'Lansează campanii cu micro-influenceri români verificați. Fără echipă de marketing, fără abonamente — preț fix per influencer, fără comisioane procentuale.',
+  description: 'Lansează campanii cu micro-influenceri români verificați. Fără echipă de marketing, fără abonamente — costul campaniei afișat înainte să publici.',
 }
 
 export default function PentruBranduri() {
@@ -110,7 +110,7 @@ export default function PentruBranduri() {
       {/* CTA */}
       <section style={{ padding: '72px 24px', background: 'linear-gradient(135deg,#fff7ed,#fce7f3)', textAlign: 'center' }}>
         <div className="container">
-          <h2 style={{ fontSize: 'clamp(24px,4vw,36px)', fontWeight: 900, margin: '0 0 12px' }}>Preț simplu, fără comisioane</h2>
+          <h2 style={{ fontSize: 'clamp(24px,4vw,36px)', fontWeight: 900, margin: '0 0 12px' }}>Preț simplu, fără surprize</h2>
           <p style={{ fontSize: 16, color: '#6b7280', margin: '0 0 32px' }}>Înregistrarea e gratuită. Plătești doar o taxă fixă pentru fiecare influencer din campanie. Pentru campanii mari, cere-ne o ofertă personalizată.</p>
           <Link href="/auth/register?type=brand" className="btn-orange">Înregistrează-te gratuit →</Link>
           <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 16 }}>Fără card de credit. Fără angajament.</p>

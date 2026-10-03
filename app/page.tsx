@@ -1,154 +1,162 @@
 'use client'
 
 import Link from 'next/link'
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useLang } from '@/lib/i18n/context'
-import {
-  ArrowRight, CheckCircle, Star, Users , Zap,
-  Play, ChevronDown, Instagram, Youtube, Menu, X,
-  MessageCircle, Shield, Clock, Award, BarChart3,
-} from 'lucide-react'
+import { ArrowRight, Check, Star, Instagram, Youtube } from 'lucide-react'
 
-function TikTokIcon({ className }: { className?: string }) {
+// ─── Tipuri pentru datele publice ────────────────────────────────────────────
+type Clip = {
+  id: string
+  approved_at: string | null
+  display_name: string
+  influencer: { name: string; avatar: string | null }
+  campaign: { title: string; brand_name: string }
+  platform: 'TikTok' | 'Instagram'
+}
+type Stats = { influencers: number; campaigns: number; brands: number; completedCampaigns: number }
+type Review = { rating: number; comment: string; influencer: { name: string; avatar: string | null; niches?: string[] } | null }
+
+const FEED_SIZE = 5
+const FEED_INTERVAL_MS = 3800
+
+// Culori pentru avatarele fără poză (inițiale)
+const AVATAR_TINTS = [
+  ['#ffe0cc', '#9a3d06'], ['#d6eefe', '#075985'], ['#fde0ea', '#9d174d'],
+  ['#ebe4ff', '#4c1d95'], ['#dcf5ec', '#14532d'], ['#fff1c2', '#854d0e'],
+]
+
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p.charAt(0).toUpperCase()).join('') || 'AF'
+}
+
+function timeAgo(iso: string | null, now: number) {
+  if (!iso) return ''
+  const diff = Math.max(0, now - new Date(iso).getTime())
+  const min = Math.floor(diff / 60000)
+  if (min < 1) return 'acum'
+  if (min < 60) return `acum ${min} min`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `acum ${h} h`
+  const d = Math.floor(h / 24)
+  if (d === 1) return 'ieri'
+  if (d < 30) return `acum ${d} zile`
+  return new Date(iso).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })
+}
+
+function fmt(n: number) {
+  return n.toLocaleString('ro-RO')
+}
+
+function TikTokIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.3 6.3 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.22 8.22 0 004.81 1.54V6.79a4.85 4.85 0 01-1.04-.1z" />
     </svg>
   )
 }
 
-function Counter({ end, suffix = '', duration = 2000 }: { end: number; suffix?: string; duration?: number }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-  const started = useRef(false)
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !started.current) {
-        started.current = true
-        const start = performance.now()
-        const step = (now: number) => {
-          const progress = Math.min((now - start) / duration, 1)
-          const eased = 1 - Math.pow(1 - progress, 3)
-          setCount(Math.floor(eased * end))
-          if (progress < 1) requestAnimationFrame(step)
-        }
-        requestAnimationFrame(step)
-      }
-    }, { threshold: 0.3 })
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [end, duration])
-  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>
+function Avatar({ name, src, index, size = 48 }: { name: string; src: string | null; index: number; size?: number }) {
+  const [bg, fg] = AVATAR_TINTS[index % AVATAR_TINTS.length]
+  return (
+    <span className="af-avatar" style={{ width: size, height: size }}>
+      <span className="af-ring af-grad" />
+      {src ? (
+        <img src={src} alt="" className="af-avatar-img" />
+      ) : (
+        <span className="af-avatar-img" style={{ background: bg, color: fg }}>{initials(name)}</span>
+      )}
+    </span>
+  )
 }
 
-const BRANDS = ['Nike', 'Zara', 'H&M', 'Sephora', 'Samsung', 'Adidas', "L'Oréal", 'Spotify', 'Booking', 'Uber', 'Bolt', 'eMAG']
+// ─── Fluxul „Live pe AddFame” ────────────────────────────────────────────────
+function LiveFeed({ clips }: { clips: Clip[] }) {
+  const [tick, setTick] = useState(0)
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (clips.length <= 1) return
+    const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce) return
+    const id = setInterval(() => { setTick(t => t + 1); setNow(Date.now()) }, FEED_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [clips.length])
+
+  const n = clips.length
+  const visible = Math.min(FEED_SIZE, n)
+  const rows = Array.from({ length: visible }, (_, i) => {
+    const idx = ((tick - i) % n + n) % n
+    return { clip: clips[idx], idx, pos: i }
+  })
+
+  return (
+    <ol aria-live="polite" className="af-feed">
+      {rows.map(({ clip, idx, pos }) => {
+        const anim = tick === 0 ? '' : pos === 0 ? 'af-new' : 'af-old'
+        const ago = timeAgo(clip.approved_at, now)
+        return (
+          <li key={`${tick}-${pos}`} className={`af-feed-row ${anim}`}>
+            <Avatar name={clip.display_name} src={clip.influencer?.avatar} index={idx} />
+            <div className="af-feed-text">
+              <span className="af-feed-main">
+                <strong>{clip.display_name}</strong> a postat pe {clip.platform}
+                {clip.campaign?.brand_name ? <> pentru <strong>{clip.campaign.brand_name}</strong></> : null}
+              </span>
+              <span className="af-feed-sub">
+                {clip.campaign?.title}
+                {ago && <span className="af-meta-time"> · {ago}</span>}
+              </span>
+            </div>
+            {ago && <span className="af-time">{ago}</span>}
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
 
 export default function HomePage() {
   const router = useRouter()
-  const { lang, setLang, t } = useLang()
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [scrolled, setScrolled] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [inflReviews, setInflReviews] = useState<any[]>([])
-  const [realBrands, setRealBrands] = useState<string[]>([])
+  const [authChecked, setAuthChecked] = useState(false)
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [clips, setClips] = useState<Clip[]>([])
+  const [brands, setBrands] = useState<string[]>([])
+  const [reviews, setReviews] = useState<Review[]>([])
 
+  // Date publice (prin rute API — fără RLS pentru vizitatori)
   useEffect(() => {
-    fetch('/api/public/influencer-reviews')
-      .then(r => r.json())
-      .then(d => { if (d.reviews?.length) setInflReviews(d.reviews) })
-  }, [])
-
-  useEffect(() => {
-    const sb = createClient()
-    sb.from('brands')
-      .select('name')
-      .not('name', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(20)
+    fetch('/api/public/stats', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => d && setStats(d)).catch(() => {})
+    fetch('/api/public/clips').then(r => r.ok ? r.json() : null).then(d => setClips(d?.clips || [])).catch(() => {})
+    fetch('/api/public/influencer-reviews').then(r => r.json()).then(d => setReviews(d.reviews || [])).catch(() => {})
+    createClient().from('brands').select('name').not('name', 'is', null)
+      .order('created_at', { ascending: false }).limit(24)
       .then(({ data }) => {
-        if (data && data.length >= 1) {
-          setRealBrands(data.map((b: any) => b.name).filter(Boolean))
-        }
+        const names = Array.from(new Set((data || []).map((b: any) => (b.name || '').trim()).filter(Boolean)))
+        setBrands(names)
       })
   }, [])
-  const [authChecked, setAuthChecked] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [liveCampaigns, setLiveCampaigns] = useState<any[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [featuredInfluencers, setFeaturedInfluencers] = useState<any[]>([])
-  const [recentClips, setRecentClips] = useState<any[]>([])
-  const [liveStats, setLiveStats] = useState({ influencers: 0, campaigns: 0, collabs: 0, brands: 0, completedCampaigns: 0, completedCollabs: 0 })
 
-  // Fetch live data via API routes (bypass RLS pentru vizitatori neautentificati)
-  useEffect(() => {
-    const fetchLiveData = async () => {
-      try {
-        const [statsRes, teaserRes, clipsRes] = await Promise.all([
-          fetch('/api/public/stats', { cache: 'no-store' }),
-          fetch('/api/public/teaser'),
-          fetch('/api/public/clips'),
-        ])
-        if (statsRes.ok) {
-          const stats = await statsRes.json()
-          setLiveStats(stats)
-        }
-        if (teaserRes.ok) {
-          const teaser = await teaserRes.json()
-          setLiveCampaigns(teaser.campaigns || [])
-          setFeaturedInfluencers(teaser.influencers || [])
-        }
-        if (clipsRes.ok) {
-          const { clips } = await clipsRes.json()
-          setRecentClips(clips || [])
-        }
-      } catch {
-        // silently fail
-      }
-    }
-    fetchLiveData()
-  }, [])
-
+  // Utilizatorii logați merg direct în dashboard
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const supabase = createClient()
-
-        // Ascultă evenimentul PASSWORD_RECOVERY de la Supabase SDK
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
           if (event === 'PASSWORD_RECOVERY') {
             subscription.unsubscribe()
             router.replace('/auth/reset-password')
           }
         })
-
-        // Verificare rapidă din sesiunea locală (fără request la server)
         const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) { setAuthChecked(true); return }
 
-        if (!session?.user) {
-          // Nu e logat — arată landing page imediat
-          setAuthChecked(true)
-          return
-        }
-
-        // E logat — redirecționează rapid
         const user = session.user
-        // Folosim metadata din token ca să evităm query-uri inutile
         const role = user.user_metadata?.role
-        if (role === 'influencer') {
-          router.replace('/influencer/dashboard'); return
-        }
-        if (role === 'brand') {
-          router.replace('/brand/dashboard'); return
-        }
-        if (role === 'admin') {
-          router.replace('/admin'); return
-        }
-        // Fallback — verificăm în DB
+        if (role === 'influencer') { router.replace('/influencer/dashboard'); return }
+        if (role === 'brand') { router.replace('/brand/dashboard'); return }
+        if (role === 'admin') { router.replace('/admin'); return }
         try {
           const { data: brand } = await supabase.from('brands').select('id').eq('user_id', user.id).maybeSingle()
           if (brand) { router.replace('/brand/dashboard'); return }
@@ -157,7 +165,6 @@ export default function HomePage() {
           const { data: influencer } = await supabase.from('influencers').select('id').eq('user_id', user.id).maybeSingle()
           if (influencer) { router.replace('/influencer/dashboard'); return }
         } catch {}
-
         setAuthChecked(true)
       } catch {
         setAuthChecked(true)
@@ -166,404 +173,249 @@ export default function HomePage() {
     checkAuth()
   }, [router])
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
   if (!authChecked) return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-screen" style={{ background: '#f6f6fc' }}>
       <div className="w-8 h-8 rounded-full animate-spin"
-        style={{ borderWidth: '3px', borderStyle: 'solid', borderTopColor: '#f97316', borderColor: '#fed7aa' }} />
+        style={{ borderWidth: 3, borderStyle: 'solid', borderColor: '#e2dcff', borderTopColor: '#7040f0' }} />
     </div>
   )
 
-  const FAQS = [
-    { q: t('faq_q1'), a: t('faq_a1') },
-    { q: t('faq_q2'), a: t('faq_a2') },
-    { q: t('faq_q3'), a: t('faq_a3') },
-    { q: t('faq_q4'), a: t('faq_a4') },
-    { q: t('faq_q5'), a: t('faq_a5') },
-    { q: t('faq_q6'), a: t('faq_a6') },
-  ]
-
-  const HOW_IT_WORKS = [
-    { number: '01', title: t('how_1_title'), desc: t('how_1_desc'), icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-    { number: '02', title: t('how_2_title'), desc: t('how_2_desc'), icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    { number: '03', title: t('how_3_title'), desc: t('how_3_desc'), icon: Shield, color: 'text-green-500', bg: 'bg-green-500/10' },
-    { number: '04', title: t('how_4_title'), desc: t('how_4_desc'), icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-  ]
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const WHY_US = [
-    { icon: MessageCircle, title: t('why_1_title'), items: [t('why_1_a'), t('why_1_b'), t('why_1_c')], color: 'from-blue-500 to-cyan-500' },
-    { icon: Zap, title: t('why_2_title'), items: [t('why_2_a'), t('why_2_b'), t('why_2_c')], color: 'from-purple-500 to-pink-500' },
-    { icon: BarChart3, title: t('why_3_title'), items: [t('why_3_a'), t('why_3_b'), t('why_3_c')], color: 'from-orange-500 to-yellow-500' },
-  ]
-
-  const TESTIMONIALS = [
-    { name: 'Alex M.', role: 'Administrator, Tiki Bistro', text: 'Primim videoclipuri autentice cu oameni reali filmați la terasa noastră. Asta a creat o conexiune pe care nicio reclamă clasică nu o poate atinge.', rating: 5, avatar: 'AM', color: 'from-orange-400 to-pink-500' },
-    { name: 'Andrei U.', role: 'CEO, Stailer', text: 'Clipurile create pentru noi arată mult mai bine decât orice material făcut de o agenție. Le-am refolosit în campanii plătite și am obținut rezultate mai bune.', rating: 5, avatar: 'AU', color: 'from-purple-400 to-indigo-500' },
-    { name: 'Vlad P.', role: 'Administrator, Pizza Di Napo', text: 'Autenticitatea a adus mai mulți clienți decât orice reclamă plătită. Clienți reali, reacții reale — asta funcționează.', rating: 5, avatar: 'VP', color: 'from-green-400 to-teal-500' },
-    { name: 'Cristina D.', role: 'Administrator, Flower Shop', text: 'Au filmat direct în magazinul nostru și aranjamentele au ieșit incredibil. Videoclipurile au circulat și pe Facebook, nu doar pe TikTok.', rating: 5, avatar: 'CD', color: 'from-pink-400 to-rose-500' },
-    { name: 'Adrian B.', role: 'Administrator, Body Line', text: 'Am trimis suplimentele noastre prin AddFame și creatorii au făcut videoclipuri naturale care au prins imediat. Rezultatele au fost uimitoare.', rating: 5, avatar: 'AB', color: 'from-blue-400 to-cyan-500' },
-  ]
+  const s = (v: number | undefined, suffix = '') => (stats ? `${fmt(v || 0)}${suffix}` : '—')
+  const brandBand = brands.length >= 3 ? brands : []
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#080808' }} className="min-h-screen text-white overflow-x-hidden">
-      <style>{`
-        @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:translateY(0) } }
-        .marquee-track { animation: marquee 35s linear infinite; }
-        .fade-up { animation: fadeUp 0.6s ease both; }
-        .d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}.d4{animation-delay:.4s}
-        .brand-grad { background: linear-gradient(135deg, #f97316, #ec4899); }
-        .infl-grad { background: linear-gradient(135deg, #8b5cf6, #06b6d4); }
-        .nav-link { font-size:13px; font-weight:700; color:#666; transition:color .15s; text-decoration:none; }
-        .nav-link:hover { color:#fff; }
-        .step-card { background:#111; border:1px solid #1e1e1e; border-radius:16px; padding:28px; transition:border-color .2s; }
-        .step-card:hover { border-color:#333; }
-        .faq-item { background:#111; border:1px solid #1e1e1e; border-radius:14px; overflow:hidden; transition:border-color .2s; }
-        .faq-item.open { border-color:#f97316; }
-        .testimonial-card { background:#111; border:1px solid #1e1e1e; border-radius:16px; padding:24px; }
-        @media(max-width:768px) {
-          .hide-mobile { display:none !important; }
-          .hero-btns { flex-direction:column !important; align-items:stretch !important; }
-          .hero-btns a { text-align:center; justify-content:center; }
-          .brands-grid { grid-template-columns:1fr !important; gap:32px !important; }
-          .footer-bottom { flex-direction:column !important; align-items:flex-start !important; gap:16px !important; }
-        }
-        .pill { display:inline-flex; align-items:center; gap:6px; background:#151515; border:1px solid #222; border-radius:999px; padding:5px 14px; }
-      `}</style>
+    <div className="af-page">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      {/* React 19 mută stylesheet-ul în <head> */}
+      <link rel="stylesheet" precedence="default" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" />
+      <style>{CSS}</style>
 
       {/* NAV */}
-      <nav style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, borderBottom:'1px solid #111', background:'rgba(8,8,8,0.9)', backdropFilter:'blur(12px)' }}>
-        <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 24px', height:64, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <Link href="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none' }}>
-            <div style={{ width:32, height:32, background: '#fff', border: '1px solid #ede9fe', boxShadow: '0 2px 8px rgba(124,58,237,0.12)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <img src="/logo.png" alt="AddFame" style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
-            </div>
-            <span style={{ fontWeight:900, fontSize:18, color:'white' }}>Add<span style={{ color:'#f97316' }}>Fame</span></span>
+      <header className="af-header">
+        <nav className="af-wrap af-nav">
+          <Link href="/" className="af-logo">
+            <span className="af-logo-mark"><img src="/logo.png" alt="" /></span>
+            <span className="af-logo-text">Add<span className="af-grad-text">Fame</span></span>
           </Link>
-          <div style={{ display:'flex', gap:28 }} className="hide-mobile hidden md:flex">
-            {[['Cum funcționează', '#how-it-works'], ['Pentru branduri', '#brands'], ['Influenceri', '#influencers'], ['FAQ', '#faq']].map(([label, href]) => (
-              <a key={label} href={href} className="nav-link">{label}</a>
-            ))}
+          <div className="af-nav-links">
+            <a href="#cum">Cum funcționează</a>
+            <a href="#branduri">Pentru branduri</a>
+            <a href="#influenceri">Influenceri</a>
+            <a href="#faq">Întrebări</a>
           </div>
-          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-            <Link href="/auth/login" style={{ fontSize:13, fontWeight:700, color:'#666', textDecoration:'none' }}>Autentificare</Link>
-            <Link href="/auth/register" style={{ background:'#f97316', color:'white', fontSize:13, fontWeight:800, padding:'9px 20px', borderRadius:10, textDecoration:'none' }}>
-              Înregistrare →
-            </Link>
+          <div className="af-nav-cta">
+            <Link href="/auth/login" className="af-nav-login">Autentificare</Link>
+            <Link href="/auth/register" className="af-btn af-btn-violet af-btn-sm">Creează cont</Link>
           </div>
-        </div>
-      </nav>
+        </nav>
+      </header>
 
       {/* HERO */}
-      <section style={{ paddingTop:140, paddingBottom:80, paddingLeft:24, paddingRight:24, textAlign:'center', position:'relative' }}>
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(249,115,22,0.08) 0%, transparent 60%)', pointerEvents:'none' }} />
-        <div style={{ maxWidth:800, margin:'0 auto', position:'relative' }}>
-          <div className="pill fade-up" style={{ marginBottom:28 }}>
-            <div style={{ width:6, height:6, borderRadius:'50%', background:'#22c55e' }} />
-            <span style={{ fontSize:11, fontWeight:800, color:'#666', textTransform:'uppercase', letterSpacing:'0.08em' }}>
-              {liveStats.influencers > 0 ? `${liveStats.influencers}+` : '700+'} influenceri · {liveStats.brands > 0 ? liveStats.brands : '28'} branduri active
-            </span>
+      <section className="af-wrap af-hero">
+        <div className="af-hero-copy">
+          <span className="af-pill">
+            <span className="af-dot" />
+            {s(stats?.influencers, '+')} influenceri · {s(stats?.brands)} branduri
+          </span>
+          <h1 className="af-h1">Oameni reali care îți recomandă <span className="af-grad-text">produsul.</span></h1>
+          <p className="af-lead">Alegi creatorii potriviți pentru brandul tău, iar ei îți prezintă produsul în postări naturale, direct din conturile lor. Fără agenție, fără abonament.</p>
+          <div className="af-row">
+            <Link href="/auth/register?type=brand" className="af-btn af-btn-ink">Lansează o campanie <ArrowRight size={18} /></Link>
+            <Link href="/auth/register?type=influencer" className="af-btn af-btn-ghost">Sunt influencer</Link>
           </div>
-          <h1 className="fade-up d1" style={{ fontSize:'clamp(40px,7vw,72px)', fontWeight:900, lineHeight:1.05, letterSpacing:'-0.02em', margin:'0 0 16px', color:'white' }}>
-            Influencer marketing<br />
-            <span style={{ background:'linear-gradient(135deg,#f97316,#ec4899)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-              fără risc, doar rezultate.
-            </span>
-          </h1>
-          <p className="fade-up d2" style={{ fontSize:18, color:'#888', maxWidth:520, margin:'0 auto 40px', lineHeight:1.7, fontWeight:500 }}>
-            Plătești <strong style={{ color:'#fff' }}>0 RON</strong> până când postul e aprobat. Fără comisioane ascunse, doar rezultate.
-          </p>
-          <div className="hero-btns fade-up d3" style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap', marginBottom:64 }}>
-            <Link href="/auth/register?type=brand" style={{ background:'#f97316', color:'white', fontSize:15, fontWeight:800, padding:'16px 32px', borderRadius:12, textDecoration:'none', display:'inline-flex', alignItems:'center', gap:8 }}>
-              Lansează o campanie <ArrowRight style={{ width:18, height:18 }} />
-            </Link>
-            <Link href="/auth/register?type=influencer" style={{ background:'#151515', border:'1px solid #2a2a2a', color:'white', fontSize:15, fontWeight:700, padding:'16px 32px', borderRadius:12, textDecoration:'none' }}>
-              Sunt influencer
-            </Link>
+          <div className="af-checks">
+            <span><Check size={16} strokeWidth={2.6} /> Înregistrare gratuită</span>
+            <span><Check size={16} strokeWidth={2.6} /> Tu alegi fiecare creator</span>
           </div>
+        </div>
 
-          {/* STATS GRID */}
-          <div className="fade-up d4" style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:1, background:'#1a1a1a', border:'1px solid #1a1a1a', borderRadius:16, overflow:'hidden' }}>
-            {[
-              { label:'Influenceri', value: liveStats.influencers > 0 ? `${liveStats.influencers}+` : '710+', color:'#fff' },
-              { label:'Branduri', value: liveStats.brands > 0 ? String(liveStats.brands) : '28', color:'#fff' },
-              { label:'Campanii active', value: liveStats.campaigns > 0 ? String(liveStats.campaigns) : '12+', color:'#a78bfa' },
-              { label:'Satisfacție garantată', value:'100%', color:'#22c55e' },
-            ].map((s) => (
-              <div key={s.label} style={{ background:'#0d0d0d', padding:'24px 16px', textAlign:'center' }}>
-                <p style={{ fontSize:28, fontWeight:900, color:s.color, margin:'0 0 4px' }}>{s.value}</p>
-                <p style={{ fontSize:11, color:'#555', fontWeight:700, margin:0, textTransform:'uppercase', letterSpacing:'0.05em' }}>{s.label}</p>
+        <div className="af-hero-card-wrap" aria-hidden="true">
+          <div className="af-card af-hero-card">
+            <div className="af-between">
+              <div className="af-col-2">
+                <span className="af-eyebrow">Exemplu de campanie</span>
+                <span className="af-card-title">Lansare colecție de toamnă</span>
               </div>
-            ))}
+              <span className="af-tag-cyan">Activă</span>
+            </div>
+            <div className="af-mini-grid">
+              <div><b>10</b><span>locuri</span></div>
+              <div><b>30</b><span>aplicări</span></div>
+              <div><b>10</b><span>selectați</span></div>
+            </div>
+            <div className="af-col-10">
+              <div className="af-person"><Avatar name="Ioana M" src={null} index={0} size={40} /><div className="af-person-text"><b>Ioana M.</b><span>Fashion · TikTok · 18k</span></div><span className="af-tag-violet">Selectată</span></div>
+              <div className="af-person"><Avatar name="Radu A" src={null} index={1} size={40} /><div className="af-person-text"><b>Radu A.</b><span>Fitness · Instagram · 9k</span></div><span className="af-tag-violet">Selectat</span></div>
+            </div>
+            <div className="af-progress">
+              <div className="af-between"><span>Postări aprobate</span><b>6 din 10</b></div>
+              <div className="af-bar"><div className="af-grad" style={{ width: '60%' }} /></div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* BRANDS MARQUEE */}
-      <section style={{ padding:'32px 0', borderTop:'1px solid #111', borderBottom:'1px solid #111', overflow:'hidden' }}>
-        <p style={{ textAlign:'center', fontSize:11, fontWeight:800, color:'#444', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:20 }}>Branduri care cresc cu AddFame</p>
-        <div style={{ display:'flex', overflow:'hidden' }}>
-          <div className="marquee-track" style={{ display:'flex', gap:48, whiteSpace:'nowrap', paddingRight:48 }}>
-            {[...(realBrands.length > 0 ? realBrands : ['CashClub', 'Plantica Biolabs', 'Parfum Misterios', 'Tiki Bistro', 'Stailer', 'Pizza Di Napo', 'Body Line', 'Flower Shop']),
-              ...(realBrands.length > 0 ? realBrands : ['CashClub', 'Plantica Biolabs', 'Parfum Misterios', 'Tiki Bistro', 'Stailer', 'Pizza Di Napo', 'Body Line', 'Flower Shop'])
-            ].map((b, i) => (
-              <span key={i} style={{ fontSize:15, fontWeight:800, color:'#333' }}>{b}</span>
-            ))}
+      {/* BANDA CU BRANDURI */}
+      {brandBand.length > 0 && (
+        <section className="af-band" aria-label="Branduri care lucrează cu AddFame">
+          <span className="af-eyebrow af-center">Branduri care cresc cu AddFame</span>
+          <div className="af-band-mask">
+            <div className="af-track">
+              {[...brandBand, ...brandBand].map((b, i) => (
+                <span key={i} className="af-band-item" aria-hidden={i >= brandBand.length}>{b}<span className="af-band-dot af-grad" /></span>
+              ))}
+            </div>
           </div>
+        </section>
+      )}
+
+      {/* CIFRE */}
+      <section className="af-stats">
+        <div className="af-wrap af-stats-grid">
+          {[
+            [s(stats?.influencers, '+'), 'influenceri înscriși'],
+            [s(stats?.brands), 'branduri'],
+            [s(stats?.campaigns), 'campanii active'],
+            [s(stats?.completedCampaigns), 'campanii finalizate'],
+          ].map(([v, l]) => (
+            <div key={l} className="af-stat"><span className="af-stat-line af-grad" /><b>{v}</b><span>{l}</span></div>
+          ))}
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section style={{ padding:'96px 24px', maxWidth:1100, margin:'0 auto' }} id="how-it-works">
-        <p style={{ textAlign:'center', fontSize:11, fontWeight:800, color:'#f97316', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:12 }}>Proces simplu</p>
-        <h2 style={{ textAlign:'center', fontSize:'clamp(28px,4vw,44px)', fontWeight:900, color:'white', margin:'0 0 64px', lineHeight:1.2 }}>
-          De la idee la rezultat<br /><span style={{ color:'#555' }}>în 4 pași</span>
-        </h2>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:16 }}>
-          {HOW_IT_WORKS.map((s, i) => (
-            <div key={i} className="step-card">
-              <div style={{ fontSize:11, fontWeight:900, color:'#333', letterSpacing:'0.1em', marginBottom:16 }}>{s.number}</div>
-              <s.icon style={{ width:28, height:28, marginBottom:16, color:'#f97316' }} />
-              <h3 style={{ fontSize:16, fontWeight:900, color:'white', margin:'0 0 8px' }}>{s.title}</h3>
-              <p style={{ fontSize:13, color:'#666', lineHeight:1.7, margin:0 }}>{s.desc}</p>
+      {/* LIVE */}
+      {clips.length > 0 && (
+        <section className="af-wrap af-live">
+          <div className="af-live-copy">
+            <span className="af-live-label"><span className="af-dot" />Live pe AddFame</span>
+            <h2 className="af-h2">Creatorii noștri postează <span className="af-grad-text">chiar acum.</span></h2>
+            <p className="af-muted">Fiecare rând e o postare făcută de un creator AddFame pentru o campanie de pe platformă. Oameni reali, branduri reale.</p>
+          </div>
+          <div className="af-live-box">
+            <div className="af-live-glow af-grad" aria-hidden="true" />
+            <div className="af-card af-live-card">
+              <div className="af-live-head">
+                <span>Activitate recentă</span>
+                <span className="af-tag-cyan"><span className="af-dot af-dot-sm" />live</span>
+              </div>
+              <LiveFeed clips={clips} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* CUM FUNCȚIONEAZĂ */}
+      <section id="cum" className="af-wrap af-section">
+        <div className="af-section-head">
+          <h2 className="af-h2" style={{ maxWidth: '14em' }}>De la idee la postări, în patru pași.</h2>
+          <p className="af-muted" style={{ maxWidth: '26em' }}>Locurile pe care nu le folosești până la final se întorc automat în wallet.</p>
+        </div>
+        <div className="af-steps">
+          {[
+            ['01', 'Creezi campania', 'Descrii produsul și alegi câți influenceri vrei. Durează sub 5 minute.'],
+            ['02', 'O trimiți spre aprobare', 'Echipa AddFame verifică brief-ul. Dacă nu e aprobată, banii se întorc în wallet.'],
+            ['03', 'Alegi creatorii', 'Influencerii aplică, tu vezi profilurile și îi selectezi pe cei potriviți.'],
+            ['04', 'Primești conținutul', 'Creatorii postează din conturile lor. Aprobi fiecare postare înainte să fie gata.'],
+          ].map(([n, t, d]) => (
+            <div key={n} className="af-card af-step">
+              <span className="af-grad-text af-step-n">{n}</span>
+              <h3>{t}</h3>
+              <p>{d}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* PENTRU BRANDURI */}
-      <section style={{ background:'#080808', borderTop:'1px solid #111', borderBottom:'1px solid #111', padding:'96px 24px' }} id="brands">
-        <div className="brands-grid" style={{ maxWidth:1100, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:40, alignItems:'start' }}>
-          <div>
-            <p style={{ fontSize:11, fontWeight:800, color:'#f97316', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:16 }}>Pentru branduri</p>
-            <h2 style={{ fontSize:'clamp(28px,4vw,44px)', fontWeight:900, color:'white', margin:'0 0 20px', lineHeight:1.2 }}>
-              Campanii cu ROI<br />măsurabil
-            </h2>
-            <p style={{ fontSize:15, color:'#666', lineHeight:1.8, marginBottom:32 }}>
-              Alegi câți influenceri vrei, selectezi profilurile potrivite, aprobi conținutul. Preț fix per influencer, afișat înainte să publici — fără surprize.
-            </p>
-            <div style={{ display:'flex', flexDirection:'column', gap:14, marginBottom:36 }}>
-              {[
-                'Brief → aplicări → selecție → livrare → aprobare',
-                'Contracte digitale automate cu semnătură electronică',
-                'Rapoarte de performanță detaliate per influencer',
-                'Control total asupra conținutului înainte de publicare',
-              ].map((item, i) => (
-                <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
-                  <div style={{ width:20, height:20, borderRadius:'50%', background:'#1a2e1a', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
-                    <CheckCircle style={{ width:12, height:12, color:'#22c55e' }} />
-                  </div>
-                  <span style={{ fontSize:14, color:'#aaa', lineHeight:1.6 }}>{item}</span>
-                </div>
-              ))}
-            </div>
-            <Link href="/auth/register?type=brand" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#f97316', color:'white', fontWeight:800, fontSize:14, padding:'14px 28px', borderRadius:12, textDecoration:'none' }}>
-              Lansează prima campanie <ArrowRight style={{ width:16, height:16 }} />
-            </Link>
-          </div>
-          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-            {[
-
-              { label:'Comisioane ascunse', value:'0', sub:'taxă fixă per influencer, știi costul de la început', color:'#22c55e' },
-              { label:'Timp mediu lansare campanie', value:'< 24h', sub:'de la înregistrare la primele aplicări', color:'#888' },
-            ].map((card, i) => (
-              <div key={i} style={{ background:'#111', border:'1px solid #1e1e1e', borderRadius:14, padding:'20px 24px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div>
-                  <p style={{ fontSize:11, fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:'0.05em', margin:'0 0 4px' }}>{card.label}</p>
-                  <p style={{ fontSize:11, color:'#444', margin:0 }}>{card.sub}</p>
-                </div>
-                <span style={{ fontSize:28, fontWeight:900, color:card.color }}>{card.value}</span>
-              </div>
-            ))}
-          </div>
+      {/* BRANDURI / INFLUENCERI */}
+      <section className="af-wrap af-split">
+        <div id="branduri" className="af-split-brand">
+          <span className="af-eyebrow" style={{ color: '#fff' }}>Pentru branduri</span>
+          <h3>Crește cu conținut autentic.</h3>
+          <ul>
+            <li>— Nu ai nevoie de experiență în marketing</li>
+            <li>— Refolosești videoclipurile în reclame plătite</li>
+            <li>— O singură factură, plăți gestionate de noi</li>
+          </ul>
+          <Link href="/auth/register?type=brand" className="af-btn af-btn-white">Începe ca brand</Link>
+        </div>
+        <div id="influenceri" className="af-card af-split-infl">
+          <span className="af-eyebrow">Pentru influenceri</span>
+          <h3>Câștigă din audiența ta.</h3>
+          <ul>
+            <li>— Aplici direct, fără verificări lungi</li>
+            <li>— Lucrezi cu branduri din nișa ta</li>
+            <li>— Libertate creativă, postezi din contul tău</li>
+          </ul>
+          <Link href="/auth/register?type=influencer" className="af-btn af-btn-ink">Intră ca influencer</Link>
         </div>
       </section>
 
-      {/* TESTIMONIALE REALE */}
-      <section style={{ padding:'96px 24px' }}>
-        <div style={{ maxWidth:1100, margin:'0 auto' }}>
-          <p style={{ textAlign:'center', fontSize:11, fontWeight:800, color:'#f97316', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:12 }}>Ce spun utilizatorii</p>
-          <h2 style={{ textAlign:'center', fontSize:'clamp(28px,4vw,44px)', fontWeight:900, color:'white', margin:'0 0 16px', lineHeight:1.2 }}>
-            Recenzii reale,<br /><span style={{ color:'#555' }}>de la utilizatori verificați</span>
-          </h2>
-          <p style={{ textAlign:'center', fontSize:14, color:'#555', marginBottom:48 }}>
-            Recenziile sunt lăsate direct în platformă de branduri și influenceri după colaborări finalizate.
-          </p>
-          {inflReviews.length > 0 ? (
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:16, marginBottom:48 }}>
-              {inflReviews.map((r: any, i: number) => (
-                <div key={i} className="testimonial-card">
-                  <div style={{ display:'flex', gap:3, marginBottom:14 }}>
-                    {Array.from({length: r.rating || 5}).map((_, j) => (
-                      <Star key={j} style={{ width:14, height:14, color:'#f97316', fill:'#f97316' }} />
-                    ))}
+      {/* RECENZII REALE */}
+      {reviews.length > 0 && (
+        <section className="af-reviews">
+          <div className="af-wrap af-section">
+            <h2 className="af-h2">Ce spun creatorii</h2>
+            <div className="af-review-grid">
+              {reviews.slice(0, 3).map((r, i) => (
+                <figure key={i} className="af-review" style={{ borderTopColor: ['#3090f0', '#7040f0', '#22c8f0'][i % 3] }}>
+                  <div className="af-stars" aria-label={`${r.rating} din 5 stele`}>
+                    {Array.from({ length: r.rating || 5 }).map((_, j) => <Star key={j} size={14} fill="#7040f0" color="#7040f0" />)}
                   </div>
-                  <p style={{ fontSize:14, color:'#aaa', lineHeight:1.7, margin:'0 0 20px', fontStyle:'italic' }}>
-                    "{r.comment}"
-                  </p>
-                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    {r.influencer?.avatar ? (
-                      <img src={r.influencer.avatar} alt="" style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover', flexShrink:0 }} />
-                    ) : (
-                      <div style={{ width:36, height:36, borderRadius:'50%', background:'#1e1e1e', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:900, color:'#666', flexShrink:0 }}>
-                        {(r.influencer?.name || 'U').charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <p style={{ fontSize:13, fontWeight:800, color:'white', margin:0 }}>{r.influencer?.name || 'Utilizator verificat'}</p>
-                      <p style={{ fontSize:11, color:'#555', margin:0 }}>✓ Utilizator verificat AddFame</p>
-                    </div>
-                  </div>
-                </div>
+                  <blockquote>„{r.comment}”</blockquote>
+                  <figcaption>
+                    <Avatar name={r.influencer?.name || 'Creator'} src={r.influencer?.avatar || null} index={i} size={36} />
+                    <span><b>{r.influencer?.name || 'Creator AddFame'}</b><br />Creator verificat AddFame</span>
+                  </figcaption>
+                </figure>
               ))}
             </div>
-          ) : (
-            <div style={{ background:'#111', border:'1px solid #1e1e1e', borderRadius:16, padding:'48px 24px', textAlign:'center', marginBottom:48 }}>
-              <div style={{ fontSize:40, marginBottom:16 }}>⭐</div>
-              <p style={{ fontSize:16, fontWeight:800, color:'white', margin:'0 0 8px' }}>Fii primul care lasă o recenzie!</p>
-              <p style={{ fontSize:14, color:'#555', margin:'0 0 24px', lineHeight:1.7 }}>
-                Recenziile de la utilizatori reali apar aici după finalizarea colaborărilor.<br />
-                Nu publicăm testimoniale false — doar feedback autentic.
-              </p>
-              <Link href="/auth/register" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#f97316', color:'white', fontWeight:800, fontSize:14, padding:'12px 24px', borderRadius:10, textDecoration:'none' }}>
-                Înregistrează-te și lasă o recenzie →
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* INFLUENCERI */}
-      <section style={{ background:'#080808', borderTop:'1px solid #111', borderBottom:'1px solid #111', padding:'96px 24px' }} id="influencers">
-        <div style={{ maxWidth:1100, margin:'0 auto' }}>
-          <p style={{ textAlign:'center', fontSize:11, fontWeight:800, color:'#8b5cf6', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:12 }}>Pentru influenceri</p>
-          <h2 style={{ textAlign:'center', fontSize:'clamp(28px,4vw,44px)', fontWeight:900, color:'white', margin:'0 0 16px', lineHeight:1.2 }}>
-            Colaborări cu branduri verificate
-          </h2>
-          <p style={{ textAlign:'center', fontSize:16, color:'#666', maxWidth:520, margin:'0 auto 48px', lineHeight:1.7 }}>
-            Aplici la campanii care ți se potrivesc, primești produsul și ești plătit rapid — fără negocieri, fără bătăi de cap.
-          </p>
-
-          {/* Influencer clips/cards */}
-          {/* Clips cu thumbnail real */}
-          {recentClips.filter((c: any) => c.thumbnail_url).length > 0 && (
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:12, marginBottom:40 }}>
-              {recentClips.filter((c: any) => c.thumbnail_url).slice(0, 6).map((clip: any, i: number) => (
-                <div key={i} style={{ background:'#111', border:'1px solid #1e1e1e', borderRadius:14, overflow:'hidden', aspectRatio:'9/16', position:'relative' }}>
-                  <img src={clip.thumbnail_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                  {clip.influencer_name && (
-                    <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'20px 12px 12px', background:'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }}>
-                      <p style={{ fontSize:12, fontWeight:800, color:'white', margin:0 }}>@{clip.influencer_name}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          {/* Feature cards — mereu vizibile */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:16, marginBottom:40 }}>
-            {[
-              { label:'Creator Score', desc:'Sistem de reputație și badge-uri pentru influenceri activi', icon:Award, color:'#f97316' },
-              { label:'Plăți rapide', desc:'Retrageri procesate în 3-5 zile lucrătoare', icon:Zap, color:'#22c55e' },
-              { label:'Contracte digitale', desc:'Totul semnat electronic, simplu și legal', icon:Shield, color:'#8b5cf6' },
-            ].map((item, i) => (
-              <div key={i} style={{ background:'#111', border:'1px solid #1e1e1e', borderRadius:14, padding:24 }}>
-                <item.icon style={{ width:28, height:28, color:item.color, marginBottom:12 }} />
-                <h3 style={{ fontSize:15, fontWeight:900, color:'white', margin:'0 0 6px' }}>{item.label}</h3>
-                <p style={{ fontSize:13, color:'#666', margin:0, lineHeight:1.6 }}>{item.desc}</p>
-              </div>
-            ))}
           </div>
-
-          <div style={{ textAlign:'center' }}>
-            <Link href="/auth/register?type=influencer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'linear-gradient(135deg,#8b5cf6,#06b6d4)', color:'white', fontWeight:800, fontSize:15, padding:'16px 32px', borderRadius:12, textDecoration:'none' }}>
-              Înregistrează-te ca influencer <ArrowRight style={{ width:18, height:18 }} />
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* FAQ */}
-      <section style={{ padding:'96px 24px' }} id="faq">
-        <div style={{ maxWidth:720, margin:'0 auto' }}>
-          <p style={{ textAlign:'center', fontSize:11, fontWeight:800, color:'#f97316', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:12 }}>{t('faq_label')}</p>
-          <h2 style={{ textAlign:'center', fontSize:'clamp(28px,4vw,44px)', fontWeight:900, color:'white', margin:'0 0 48px', lineHeight:1.2 }}>Întrebări frecvente</h2>
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {FAQS.map((faq, i) => (
-              <div key={i} className={`faq-item ${openFaq === i ? 'open' : ''}`}>
-                <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 24px', textAlign:'left', background:'none', border:'none', cursor:'pointer', color:'white' }}>
-                  <span style={{ fontSize:14, fontWeight:800, paddingRight:16 }}>{faq.q}</span>
-                  <ChevronDown style={{ width:16, height:16, color:'#555', flexShrink:0, transform: openFaq === i ? 'rotate(180deg)' : 'none', transition:'transform .2s' }} />
-                </button>
-                {openFaq === i && (
-                  <div style={{ padding:'0 24px 20px', fontSize:14, color:'#888', lineHeight:1.8, borderTop:'1px solid #1e1e1e', paddingTop:16 }}>
-                    {faq.a}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+      <section id="faq" className="af-wrap af-section af-faq">
+        <h2 className="af-h2">Întrebări frecvente</h2>
+        <div className="af-faq-list">
+          {[
+            ['Pot alege eu influencerii?', 'Da. Creatorii aplică la campanie, iar tu îi selectezi pe cei care se potrivesc brandului.'],
+            ['Ce se întâmplă dacă nu folosesc toate locurile?', 'La final, locurile nefolosite se întorc automat în wallet.'],
+            ['Pot folosi videoclipurile în reclame?', 'Da, conținutul primit îl poți refolosi în campaniile tale plătite.'],
+            ['Influencerii plătesc ceva?', 'Nu. Înregistrarea și aplicarea la campanii sunt gratuite.'],
+          ].map(([q, a]) => (
+            <details key={q} className="af-faq-item">
+              <summary>{q}<span className="af-faq-plus" aria-hidden="true">+</span></summary>
+              <p>{a}</p>
+            </details>
+          ))}
+          <Link href="/intrebari-frecvente" className="af-link">Toate întrebările <ArrowRight size={16} /></Link>
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section style={{ padding:'96px 24px', textAlign:'center', position:'relative', borderTop:'1px solid #111' }}>
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 50% 60% at 50% 50%, rgba(249,115,22,0.06) 0%, transparent 70%)', pointerEvents:'none' }} />
-        <div style={{ maxWidth:640, margin:'0 auto', position:'relative' }}>
-          <div style={{ width:64, height:64, background:'linear-gradient(135deg,#f97316,#ec4899)', borderRadius:20, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 32px' }}>
-            <Award style={{ width:32, height:32, color:'white' }} />
-          </div>
-          <h2 style={{ fontSize:'clamp(32px,5vw,56px)', fontWeight:900, color:'white', margin:'0 0 20px', lineHeight:1.1, letterSpacing:'-0.02em' }}>
-            Gata să începi?<br />
-            <span style={{ background:'linear-gradient(135deg,#f97316,#ec4899)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-              Este gratuit.
-            </span>
-          </h2>
-          <p style={{ fontSize:16, color:'#666', marginBottom:40, lineHeight:1.7 }}>
-            Alătură-te la {liveStats.influencers > 0 ? `${liveStats.influencers}+` : '700+'} branduri care folosesc deja AddFame pentru a crește cu oameni reali.
-          </p>
-          <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
-            <Link href="/auth/register?type=brand" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#f97316', color:'white', fontWeight:800, fontSize:15, padding:'16px 32px', borderRadius:12, textDecoration:'none' }}>
-              Lansează o campanie <ArrowRight style={{ width:18, height:18 }} />
-            </Link>
-            <Link href="/auth/register?type=influencer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#151515', border:'1px solid #2a2a2a', color:'white', fontWeight:800, fontSize:15, padding:'16px 32px', borderRadius:12, textDecoration:'none' }}>
-              Sunt influencer <ArrowRight style={{ width:18, height:18 }} />
-            </Link>
-          </div>
-          <p style={{ fontSize:13, color:'#444', marginTop:20 }}>Înregistrare gratuită · Fără abonament · Preț fix per influencer</p>
+      {/* CTA */}
+      <section className="af-wrap" style={{ paddingBottom: 96 }}>
+        <div className="af-cta">
+          <div className="af-cta-glow af-grad" aria-hidden="true" />
+          <h2>Prima ta campanie e la 5 minute distanță.</h2>
+          <Link href="/auth/register" className="af-btn af-btn-white af-btn-lg">Creează cont gratuit <ArrowRight size={18} /></Link>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer style={{ borderTop:'1px solid #111', background:'#080808', padding:'64px 24px 40px' }}>
-        <div style={{ maxWidth:1100, margin:'0 auto' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:32, marginBottom:48 }}>
+      <footer className="af-footer">
+        <div className="af-wrap">
+          <div className="af-footer-grid">
             <div>
-              <Link href="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none', marginBottom:16 }}>
-                <div style={{ width:32, height:32, background: '#fff', border: '1px solid #ede9fe', boxShadow: '0 2px 8px rgba(124,58,237,0.12)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <img src="/logo.png" alt="AddFame" style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
-                </div>
-                <span style={{ fontWeight:900, fontSize:17, color:'white' }}>Add<span style={{ color:'#f97316' }}>Fame</span></span>
+              <Link href="/" className="af-logo">
+                <span className="af-logo-mark"><img src="/logo.png" alt="" /></span>
+                <span className="af-logo-text">Add<span className="af-grad-text">Fame</span></span>
               </Link>
-              <p style={{ fontSize:13, color:'#555', lineHeight:1.8, maxWidth:260, marginBottom:20 }}>Conectăm branduri românești cu influenceri autentici. Preț fix per influencer, fără comisioane procentuale.</p>
-              <div style={{ display:'flex', gap:10 }}>
-                {([
-                  { Icon: Instagram, href: 'https://www.instagram.com/addfame.ro', label: 'Instagram' },
-                  { Icon: TikTokIcon, href: 'https://www.tiktok.com/@addfame', label: 'TikTok' },
-                  { Icon: Youtube, href: 'https://www.youtube.com/@addfame', label: 'YouTube' },
-                ] as { Icon: React.ElementType; href: string; label: string }[]).map(({ Icon, href, label }, i) => (
-                  <a key={i} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                    style={{ width:36, height:36, background:'#111', border:'1px solid #1e1e1e', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', color:'#555', transition:'color .15s' }}>
-                    <Icon style={{ width:16, height:16 }} />
-                  </a>
-                ))}
+              <p className="af-footer-about">Conectăm branduri românești cu influenceri autentici.</p>
+              <div className="af-socials">
+                <a href="https://www.instagram.com/addfame.ro" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram size={16} /></a>
+                <a href="https://www.tiktok.com/@addfame" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TikTokIcon style={{ width: 16, height: 16 }} /></a>
+                <a href="https://www.youtube.com/@addfame" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><Youtube size={16} /></a>
               </div>
             </div>
             {[
@@ -572,28 +424,22 @@ export default function HomePage() {
               { title: 'Legal', links: [['Termeni', '/termeni'], ['Confidențialitate', '/politica-de-confidentialitate'], ['Politica Cookies', '/politica-cookies']] },
             ].map(col => (
               <div key={col.title}>
-                <p style={{ fontSize:11, fontWeight:800, color:'#444', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:16 }}>{col.title}</p>
-                <ul style={{ listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:10 }}>
-                  {col.links.map(([label, href]) => (
-                    <li key={label}><Link href={href} style={{ fontSize:13, color:'#555', textDecoration:'none', transition:'color .15s' }}>{label}</Link></li>
-                  ))}
+                <p className="af-eyebrow">{col.title}</p>
+                <ul className="af-footer-links">
+                  {col.links.map(([label, href]) => <li key={label}><Link href={href}>{label}</Link></li>)}
                 </ul>
               </div>
             ))}
           </div>
-          <div className="footer-bottom" style={{ borderTop:'1px solid #111', paddingTop:24, display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+          <div className="af-footer-bottom">
             <div>
-              <p style={{ fontSize:13, color:'#444', margin:'0 0 4px' }}>© 2026 AddFame. Toate drepturile rezervate.</p>
-              <p style={{ fontSize:11, color:'#333', margin:0 }}>ADD FAME DIGITAL S.R.L. · CUI: 54992560 · Reg. Com.: J2026040984009 · Argeș, România</p>
+              <p>© 2026 AddFame. Toate drepturile rezervate.</p>
+              <p className="af-small">ADD FAME DIGITAL S.R.L. · CUI: 54992560 · Reg. Com.: J2026040984009 · Argeș, România</p>
             </div>
-            <div style={{ display:'flex', gap:16, alignItems:'center', flexWrap:'wrap' }}>
-              <a href="https://anpc.ro" target="_blank" rel="noopener noreferrer"
-                style={{ fontSize:12, color:'#444', textDecoration:'none', border:'1px solid #1e1e1e', borderRadius:8, padding:'6px 12px', display:'flex', alignItems:'center', gap:6 }}>
-                🛡️ ANPC
-              </a>
-              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer"
-                style={{ fontSize:12, color:'#444', textDecoration:'none' }}>SOL Online</a>
-              <span style={{ fontSize:12, color:'#333' }}>contact@addfame.ro</span>
+            <div className="af-footer-legal">
+              <a href="https://anpc.ro" target="_blank" rel="noopener noreferrer">ANPC</a>
+              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">SOL Online</a>
+              <span>contact@addfame.ro</span>
             </div>
           </div>
         </div>
@@ -601,3 +447,205 @@ export default function HomePage() {
     </div>
   )
 }
+
+// ─── Stiluri ─────────────────────────────────────────────────────────────────
+// Culori din logo: cyan #22c8f0 → albastru #3090f0 → violet #7040f0 → mov #9030f0
+const CSS = `
+.af-page{--ink:#14123a;--muted:#4a4770;--soft:#6a6690;--faint:#8783a8;--line:#e5e3f3;--line2:#eeecf7;--bg:#f6f6fc;--violet:#5a35e6;
+  background:var(--bg);color:var(--ink);font-family:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;min-height:100vh;overflow-x:hidden}
+.af-page *{box-sizing:border-box}
+.af-page h1,.af-page h2,.af-page h3,.af-logo-text,.af-card-title,.af-stat b,.af-mini-grid b,.af-step-n,.af-band-item{font-family:'Bricolage Grotesque','Figtree',system-ui,sans-serif}
+.af-wrap{max-width:1200px;margin:0 auto;padding-inline:clamp(16px,4vw,40px)}
+.af-grad{background:linear-gradient(135deg,#22c8f0 0%,#3090f0 38%,#7040f0 72%,#9030f0 100%)}
+.af-grad-text{background:linear-gradient(100deg,#22c8f0 0%,#3090f0 38%,#7040f0 72%,#9030f0 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.af-row{display:flex;flex-wrap:wrap;gap:12px}
+.af-between{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.af-col-2{display:flex;flex-direction:column;gap:4px}
+.af-col-10{display:flex;flex-direction:column;gap:10px}
+.af-center{text-align:center}
+.af-muted{margin:0;color:var(--muted)}
+.af-eyebrow{display:block;font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin:0}
+.af-card{background:#fff;border:1px solid var(--line);border-radius:16px}
+
+/* Butoane */
+.af-btn{white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:16px;padding:16px 26px;border-radius:12px;text-decoration:none;transition:transform .15s,box-shadow .15s,background .15s;min-height:48px}
+.af-btn:hover{transform:translateY(-1px)}
+.af-btn-ink{background:var(--ink);color:#fff}
+.af-btn-ink:hover{box-shadow:0 10px 24px -10px rgba(20,18,58,.6);color:#fff}
+.af-btn-ghost{background:#fff;color:var(--ink);border:1px solid #d8d5ec}
+.af-btn-violet{background:var(--violet);color:#fff}
+.af-btn-violet:hover{background:#4423c4;color:#fff}
+.af-btn-white{background:#fff;color:var(--ink);align-self:flex-start}
+.af-btn-sm{font-size:14px;padding:11px 18px;min-height:44px}
+.af-btn-lg{font-size:17px;padding:18px 28px}
+
+/* Nav */
+.af-header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
+.af-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:12px}
+.af-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.af-logo-mark{width:36px;height:36px;border-radius:10px;background:#fff;border:1px solid #ede9fe;box-shadow:0 2px 8px rgba(112,64,240,.15);display:flex;align-items:center;justify-content:center}
+.af-logo-mark img{width:78%;height:78%;object-fit:contain}
+.af-logo-text{font-weight:800;font-size:21px;letter-spacing:-.02em}
+.af-nav-links{display:flex;gap:28px;font-size:14px;font-weight:600}
+.af-nav-links a{color:var(--muted);text-decoration:none}
+.af-nav-links a:hover{color:var(--ink)}
+.af-nav-cta{display:flex;align-items:center;gap:8px}
+.af-nav-login{font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;padding:12px 8px}
+@media(max-width:860px){.af-nav-links{display:none}}
+@media(max-width:420px){.af-logo-text{font-size:17px}.af-logo-mark{width:32px;height:32px}.af-nav{gap:8px}.af-nav-login{font-size:13px;padding:12px 2px;white-space:nowrap}.af-btn-sm{font-size:13px;padding:10px 14px}}
+@media(max-width:340px){.af-logo-text{display:none}}
+
+/* Hero */
+.af-hero{display:flex;flex-wrap:wrap;align-items:center;gap:56px;padding-top:clamp(40px,7vw,96px);padding-bottom:72px}
+.af-hero-copy{flex:1 1 460px;min-width:0;display:flex;flex-direction:column;gap:26px}
+.af-pill{display:inline-flex;align-self:flex-start;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.af-dot{width:8px;height:8px;border-radius:50%;background:#22c8f0;flex:none;animation:af-pulse 2s infinite}
+.af-dot-sm{width:6px;height:6px}
+.af-h1{margin:0;font-weight:800;font-size:clamp(40px,6.4vw,84px);line-height:.98;letter-spacing:-.035em;text-wrap:balance}
+.af-h2{margin:0;font-weight:800;font-size:clamp(30px,4vw,52px);line-height:1.04;letter-spacing:-.03em;text-wrap:balance}
+.af-lead{margin:0;font-size:clamp(17px,1.6vw,19px);color:var(--muted);max-width:34em}
+.af-checks{display:flex;flex-wrap:wrap;gap:20px;font-size:14px;font-weight:600;color:var(--muted)}
+.af-checks span{display:flex;align-items:center;gap:8px}
+.af-checks svg{color:#3090f0}
+.af-hero-card-wrap{flex:1 1 380px;min-width:0}
+.af-hero-card{padding:clamp(20px,3vw,28px);border-radius:20px;box-shadow:0 28px 56px -28px rgba(80,50,200,.35);display:flex;flex-direction:column;gap:20px}
+.af-card-title{font-weight:700;font-size:22px;letter-spacing:-.01em}
+.af-tag-cyan{display:inline-flex;align-items:center;gap:6px;background:#e3f6fd;color:#075f7d;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.af-tag-violet{font-size:12px;font-weight:700;color:#4423c4;background:#efeaff;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.af-mini-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.af-mini-grid div{background:var(--bg);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column}
+.af-mini-grid b{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.af-mini-grid span{font-size:12px;color:var(--soft);font-weight:600}
+.af-person{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line2);border-radius:12px}
+.af-person-text{flex:1;min-width:0;display:flex;flex-direction:column;font-size:14px}
+.af-person-text span{font-size:12px;color:var(--soft)}
+.af-progress{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line2);padding-top:16px;font-size:14px;font-weight:600}
+.af-progress span{color:var(--muted)}
+.af-bar{height:8px;border-radius:999px;background:var(--line2);overflow:hidden}
+.af-bar div{height:100%;border-radius:999px}
+
+/* Avatar */
+.af-avatar{position:relative;flex:none;display:inline-block}
+.af-ring{position:absolute;inset:0;border-radius:50%}
+.af-avatar-img{position:absolute;inset:2px;border-radius:50%;border:2px solid #fff;object-fit:cover;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;width:calc(100% - 4px);height:calc(100% - 4px)}
+
+/* Banda branduri */
+.af-band{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;padding:22px 0;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.af-band-mask{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.af-track{display:flex;width:max-content;gap:48px;align-items:center;animation:af-marquee 42s linear infinite}
+.af-band:hover .af-track{animation-play-state:paused}
+.af-band-item{display:flex;align-items:center;gap:48px;font-weight:700;font-size:clamp(19px,2.4vw,26px);letter-spacing:-.02em;color:#2b2852;white-space:nowrap}
+.af-band-dot{width:7px;height:7px;border-radius:50%}
+
+/* Cifre */
+.af-stats{background:var(--ink);color:#fff}
+.af-stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px;padding-block:44px}
+.af-stat{display:flex;flex-direction:column;gap:6px}
+.af-stat-line{width:28px;height:3px;border-radius:3px}
+.af-stat b{font-weight:800;font-size:clamp(32px,4vw,46px);letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+.af-stat span:last-child{font-size:14px;color:#b9b5dc}
+@media(max-width:720px){.af-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Live */
+.af-live{display:flex;flex-wrap:wrap;gap:48px;align-items:center;padding-block:clamp(64px,8vw,96px)}
+.af-live-copy{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:18px}
+.af-live-label{display:inline-flex;align-self:flex-start;align-items:center;gap:10px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1b7fae}
+.af-live-box{flex:1.3 1 440px;min-width:0;position:relative}
+.af-live-glow{position:absolute;inset:24px -8px -16px 24px;border-radius:26px;opacity:.18;filter:blur(28px)}
+.af-live-card{position:relative;border-radius:22px;box-shadow:0 28px 56px -30px rgba(80,50,200,.35);overflow:hidden}
+.af-live-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line2);font-weight:700;font-size:15px}
+.af-feed{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;overflow:hidden}
+.af-feed-row{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid #f1f0f8;background:#fff}
+.af-feed-row:last-child{border-bottom:0}
+.af-feed-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.af-feed-main{font-size:15px;line-height:1.4}
+.af-feed-sub{font-size:13px;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.af-time{flex:none;font-size:12px;color:var(--faint);font-weight:600;font-variant-numeric:tabular-nums}
+.af-meta-time{display:none}
+.af-new{animation:af-pop .7s cubic-bezier(.2,.9,.3,1.2) both,af-glow 2.4s ease-out both}
+.af-old{animation:af-shift .55s cubic-bezier(.2,.8,.2,1) both}
+.af-new .af-ring{animation:af-spin .9s cubic-bezier(.2,.8,.2,1) both}
+@media(max-width:560px){
+  .af-time{display:none}.af-meta-time{display:inline}
+  .af-feed-row{padding:12px 14px;gap:12px}
+  .af-feed-main{font-size:14px}
+  .af-live-glow{inset:16px 0 -12px 16px}
+}
+
+/* Pași */
+.af-section{padding-block:clamp(64px,8vw,96px);display:flex;flex-direction:column;gap:44px}
+.af-section-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:20px}
+.af-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.af-step{padding:28px;display:flex;flex-direction:column;gap:12px;transition:transform .2s,box-shadow .2s}
+.af-step:hover{transform:translateY(-3px);box-shadow:0 18px 36px -24px rgba(80,50,200,.4)}
+.af-step-n{font-weight:800;font-size:28px}
+.af-step h3{margin:0;font-weight:700;font-size:22px;letter-spacing:-.01em}
+.af-step p{margin:0;color:var(--muted);font-size:15px}
+
+/* Split */
+.af-split{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;padding-bottom:clamp(64px,8vw,96px)}
+.af-split-brand,.af-split-infl{border-radius:24px;padding:clamp(28px,4vw,48px);display:flex;flex-direction:column;gap:18px}
+.af-split-brand{background:linear-gradient(135deg,#2867d4 0%,#5a35e6 55%,#7a22d0 100%);color:#fff}
+.af-split-brand h3,.af-split-infl h3{margin:0;font-weight:800;font-size:clamp(28px,3vw,36px);letter-spacing:-.025em;line-height:1.05}
+.af-split-brand ul,.af-split-infl ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;font-size:16px}
+.af-split-brand ul{font-weight:600}
+.af-split-infl ul{color:var(--muted)}
+.af-split-brand .af-btn,.af-split-infl .af-btn{align-self:flex-start;margin-top:8px}
+
+/* Recenzii */
+.af-reviews{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.af-review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:32px}
+.af-review{margin:0;display:flex;flex-direction:column;gap:16px;padding-top:20px;border-top:3px solid #3090f0}
+.af-review blockquote{margin:0;font-size:18px;line-height:1.5}
+.af-review figcaption{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--soft)}
+.af-review figcaption b{color:var(--ink)}
+.af-stars{display:flex;gap:3px}
+
+/* FAQ */
+.af-faq{flex-direction:row;flex-wrap:wrap;gap:48px}
+.af-faq>.af-h2{flex:1 1 260px;font-size:clamp(30px,3.5vw,44px)}
+.af-faq-list{flex:2 1 460px;min-width:0;display:flex;flex-direction:column}
+.af-faq-item{border-top:1px solid #d8d5ec}
+.af-faq-item:last-of-type{border-bottom:1px solid #d8d5ec}
+.af-faq-item summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;font-size:18px;font-weight:700;min-height:44px}
+.af-faq-item summary::-webkit-details-marker{display:none}
+.af-faq-plus{font-size:24px;font-weight:500;color:#7040f0;transition:transform .2s;flex:none}
+.af-faq-item[open] .af-faq-plus{transform:rotate(45deg)}
+.af-faq-item p{margin:0 0 20px;color:var(--muted)}
+.af-link{display:inline-flex;align-items:center;gap:6px;margin-top:20px;font-weight:700;color:var(--violet);text-decoration:none}
+
+/* CTA */
+.af-cta{position:relative;overflow:hidden;background:var(--ink);color:#fff;border-radius:28px;padding:clamp(32px,6vw,72px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:28px}
+.af-cta h2{position:relative;margin:0;font-weight:800;font-size:clamp(30px,4vw,52px);letter-spacing:-.03em;line-height:1.04;max-width:12em;text-wrap:balance}
+.af-cta .af-btn{position:relative}
+.af-cta-glow{position:absolute;width:420px;height:420px;right:-120px;top:-180px;border-radius:50%;opacity:.35;filter:blur(60px)}
+
+/* Footer */
+.af-footer{border-top:1px solid var(--line);background:#fff;padding:56px 0 32px}
+.af-footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:32px;margin-bottom:40px}
+.af-footer-about{font-size:14px;color:var(--soft);max-width:260px;margin:14px 0 16px}
+.af-socials{display:flex;gap:10px}
+.af-socials a{width:40px;height:40px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.af-socials a:hover{color:#7040f0;border-color:#cfc4ff}
+.af-footer-links{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:10px}
+.af-footer-links a{font-size:14px;color:var(--muted);text-decoration:none}
+.af-footer-links a:hover{color:var(--ink)}
+.af-footer-bottom{border-top:1px solid var(--line);padding-top:24px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;font-size:13px;color:var(--soft)}
+.af-footer-bottom p{margin:0 0 4px}
+.af-small{font-size:12px}
+.af-footer-legal{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.af-footer-legal a{color:var(--soft);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+
+/* Animații */
+@keyframes af-marquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+@keyframes af-pulse{0%{box-shadow:0 0 0 0 rgba(34,200,240,.6)}70%{box-shadow:0 0 0 11px rgba(34,200,240,0)}100%{box-shadow:0 0 0 0 rgba(34,200,240,0)}}
+@keyframes af-pop{0%{opacity:0;transform:translateY(-28px) scale(.94);filter:blur(6px)}60%{opacity:1;transform:translateY(3px) scale(1.01);filter:blur(0)}100%{transform:translateY(0) scale(1)}}
+@keyframes af-shift{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+@keyframes af-glow{0%{background:#f1ecff}100%{background:#fff}}
+@keyframes af-spin{from{transform:rotate(-180deg)}to{transform:rotate(0)}}
+@media(prefers-reduced-motion:reduce){
+  .af-track,.af-dot,.af-new,.af-old,.af-ring,.af-btn,.af-step{animation:none!important;transition:none!important}
+  .af-track{flex-wrap:wrap;width:auto;justify-content:center;padding-inline:16px;row-gap:12px}
+  .af-band-item[aria-hidden="true"]{display:none}
+}
+`

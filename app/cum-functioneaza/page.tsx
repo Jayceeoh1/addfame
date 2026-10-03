@@ -109,7 +109,7 @@ export default function CumFunctioneaza() {
           <h2 style={{ fontSize: 'clamp(22px,3vw,32px)', fontWeight: 900, margin: '0 0 36px', textAlign: 'center' }}>Întrebări frecvente</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 660, margin: '0 auto' }}>
             {[
-              { q: 'Cât costă AddFame?', a: 'O taxă fixă pentru fiecare influencer din campanie, plătită de brand la publicare. Fără comisioane procentuale și fără abonamente. Locurile neocupate se returnează la final.' },
+              { q: 'Cât costă AddFame?', a: 'Costul depinde de câți influenceri alegi și îl vezi înainte să publici campania. Fără abonamente. Locurile neocupate se returnează la final.' },
               { q: 'Cum primesc banii ca influencer?', a: 'După ce brandul confirmă livrarea, echipa AddFame se ocupă de plata ta. Înscrierea e gratuită pentru creatori.' },
               { q: 'De câți urmăritori am nevoie?', a: 'Minimum 1.000 urmăritori pe orice platformă (Instagram, TikTok, YouTube etc.).' },
               { q: 'Ce se întâmplă dacă influencerul nu livrează?', a: 'Echipa AddFame intervine: influencerul primește un avertisment sau este suspendat, iar brandul poate selecta alt influencer în locul lui.' },

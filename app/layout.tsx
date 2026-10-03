@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'AddFame',
   },
-  description: 'Conectăm branduri cu influenceri români verificați. Preț fix per influencer, fără comisioane procentuale și fără abonamente.',
+  description: 'Conectăm branduri cu influenceri români verificați. Campanii cu micro-influenceri reali, fără agenție și fără abonamente.',
   keywords: [
     'influencer marketing', 'marketing influenceri', 'campanii influenceri',
     'influencer marketing Romania', 'platform influenceri Romania',
@@ -40,13 +40,13 @@ export const metadata: Metadata = {
     url: 'https://addfame.ro',
     siteName: 'AddFame',
     title: 'AddFame — Influencer Marketing fără abonamente',
-    description: 'Conectăm branduri cu influenceri români verificați. Preț fix per influencer, fără abonamente.',
+    description: 'Conectăm branduri cu influenceri români verificați. Campanii cu micro-influenceri reali, fără agenție și fără abonamente.',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'AddFame — Influencer Marketing Platform' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'AddFame — Influencer Marketing fără abonamente',
-    description: 'Conectăm branduri cu influenceri români verificați. Preț fix per influencer, fără abonamente.',
+    description: 'Conectăm branduri cu influenceri români verificați. Campanii cu micro-influenceri reali, fără agenție și fără abonamente.',
     images: ['/og-image.png'],
   },
   robots: {

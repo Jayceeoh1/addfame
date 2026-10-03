@@ -246,7 +246,7 @@ export async function emailWelcomeBrand(to: string, brandName: string) {
       <p style="margin:0 0 8px;font-weight:700;font-size:14px">📊 De ce AddFame?</p>
       <p style="margin:0 0 6px;font-size:13px;color:#6b7280">✅ Preț fix per influencer — vezi costul total înainte să publici</p>
       <p style="margin:0 0 6px;font-size:13px;color:#6b7280">✅ Influenceri verificați din România și Europa</p>
-      <p style="margin:0;font-size:13px;color:#6b7280">✅ Fără comisioane procentuale și fără abonamente</p>
+      <p style="margin:0;font-size:13px;color:#6b7280">✅ Fără agenție și fără abonamente</p>
     </div>
 
     <p style="font-size:13px;color:#9ca3af">Ai întrebări? Răspunde la acest email sau scrie-ne la <a href="mailto:contact@addfame.ro" style="color:#f97316">contact@addfame.ro</a></p>
