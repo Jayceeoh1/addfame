@@ -1,66 +1,62 @@
 import Link from 'next/link'
-import { Mail, ArrowRight, RefreshCw } from 'lucide-react'
+import { Mail, ArrowLeft } from 'lucide-react'
+import AuthShell from '@/components/auth/AuthShell'
 
 export const metadata = { title: 'Verifică emailul — AddFame' }
 
-export default function VerifyEmailPage({
+// Next.js 15+/16: searchParams vine ca Promise — trebuie așteptat,
+// altfel emailul nu apare pe pagină.
+export default async function VerifyEmailPage({
   searchParams,
 }: {
-  searchParams: { email?: string; type?: string }
+  searchParams: Promise<{ email?: string; type?: string }>
 }) {
-  const email = searchParams.email ?? ''
-  const isBrand = searchParams.type === 'brand'
+  const sp = await searchParams
+  const email = sp.email ?? ''
+  const isBrand = sp.type === 'brand'
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
-
-      <div className="w-full max-w-md text-center">
-        {/* Icon */}
-        <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-7"
-          style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 12px 32px rgba(139,92,246,0.35)' }}>
-          <Mail className="w-9 h-9 text-white" />
+    <AuthShell variant="verify">
+      <div className="au-stack au-enter">
+        <div>
+          <span style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg,#22c8f0,#3090f0,#7040f0)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18, boxShadow: '0 12px 28px -12px rgba(90,53,230,.6)' }}>
+            <Mail size={26} />
+          </span>
+          <h1 className="au-h1">Verifică-ți emailul</h1>
+          <p className="au-sub" style={{ marginBottom: 0 }}>
+            Am trimis un link de confirmare la{email ? <> <b style={{ color: 'var(--ink)', wordBreak: 'break-all' }}>{email}</b></> : ' adresa ta de email'}.
+          </p>
         </div>
 
-        <h1 className="text-3xl font-black text-gray-900 mb-3">Verifică-ți emailul</h1>
-        <p className="text-gray-500 mb-2 leading-relaxed">
-          Am trimis un link de confirmare la
-        </p>
-        {email && (
-          <p className="font-black text-gray-900 text-lg mb-6">{email}</p>
-        )}
-        <p className="text-gray-400 text-sm mb-10 leading-relaxed">
+        <p className="au-hint" style={{ margin: 0, fontSize: 15 }}>
           Deschide emailul și apasă pe link pentru a-ți activa contul.
-          Dacă nu îl găsești, verifică și folderul <strong>Spam</strong>.
+          Dacă nu îl găsești, verifică și folderul <b>Spam</b>.
         </p>
 
-        {/* Steps */}
-        <div className="bg-gray-50 rounded-2xl p-6 mb-8 text-left space-y-4">
+        <ol className="au-terms" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
           {[
-            { n: '1', text: 'Deschide emailul de la AddFame' },
-            { n: '2', text: 'Apasă "Confirmă contul"' },
-            { n: '3', text: isBrand ? 'Ești redirecționat în dashboard-ul brandului' : 'Ești redirecționat direct în dashboard-ul tău' },
-          ].map(s => (
-            <div key={s.n} className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-full bg-purple-100 text-purple-600 font-black text-sm flex items-center justify-center flex-shrink-0">{s.n}</div>
-              <p className="text-sm text-gray-600 font-semibold">{s.text}</p>
-            </div>
+            'Deschide emailul de la AddFame',
+            'Apasă „Confirmă contul”',
+            isBrand ? 'Ești redirecționat în dashboard-ul brandului' : 'Ești redirecționat direct în dashboard-ul tău',
+          ].map((text, i) => (
+            <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '14px 16px', borderBottom: i < 2 ? '1px solid #ecebf5' : 0, background: '#fafafd', fontSize: 15, fontWeight: 600, color: 'var(--muted)' }}>
+              <span className="au-step-n on" style={{ width: 28, height: 28, fontSize: 13 }}>{i + 1}</span>
+              {text}
+            </li>
           ))}
-        </div>
+        </ol>
 
-        <p className="text-sm text-gray-400 mb-6">
+        <p className="au-hint" style={{ margin: 0, fontSize: 15 }}>
           Nu ai primit emailul?{' '}
-          <Link href={`/auth/register${isBrand ? '?type=brand' : '?type=influencer'}`}
-            className="font-black text-purple-600 hover:underline">
+          <Link href={`/auth/register${isBrand ? '?type=brand' : '?type=influencer'}`} className="au-link">
             Încearcă din nou
           </Link>
         </p>
 
-        <Link href="/auth/login"
-          className="inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-700 transition">
-          <ArrowRight className="w-4 h-4 rotate-180" /> Înapoi la login
+        <Link href="/auth/login" className="au-btn-ghost" style={{ textDecoration: 'none' }}>
+          <ArrowLeft size={16} /> Înapoi la login
         </Link>
       </div>
-    </div>
+    </AuthShell>
   )
 }

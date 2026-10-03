@@ -2,7 +2,8 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Lock, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react'
+import AuthShell from '@/components/auth/AuthShell'
 
 function ResetPasswordContent() {
   const router = useRouter()
@@ -73,109 +74,102 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-pink-50 p-4"
-      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-
-        {/* Header */}
-        <div style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', padding: '28px 28px 24px' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
-              <Lock className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-white font-black text-xl">Parolă nouă</p>
-              <p className="text-white/80 text-sm">AddFame.ro</p>
-            </div>
+    <AuthShell variant="reset">
+      {success ? (
+        <div className="au-stack au-enter" role="status">
+          <span style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,#22c8f0,#7040f0)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CheckCircle size={26} />
+          </span>
+          <div>
+            <h1 className="au-h1">Parola a fost schimbată!</h1>
+            <p className="au-sub" style={{ marginBottom: 0 }}>Te redirecționăm la login...</p>
           </div>
         </div>
 
-        <div className="p-8">
-          {success ? (
-            <div className="text-center py-4">
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <p className="font-black text-gray-900 text-lg">Parola a fost schimbată!</p>
-              <p className="text-sm text-gray-500 mt-2">Te redirecționăm la login...</p>
-            </div>
-
-          ) : checking ? (
-            <div className="text-center py-8">
-              <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-500 text-sm">Se verifică sesiunea...</p>
-            </div>
-
-          ) : error && !ready ? (
-            <div className="text-center py-4">
-              <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-              <p className="font-black text-gray-900 mb-2">Link invalid</p>
-              <p className="text-sm text-gray-500 mb-6">{error}</p>
-              <button onClick={() => router.push('/auth/forgot-password')}
-                className="w-full py-3 rounded-2xl font-black text-white"
-                style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
-                Solicită un link nou
-              </button>
-            </div>
-
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <p className="text-gray-900 font-black text-lg mb-1">Setează parola nouă</p>
-                <p className="text-gray-500 text-sm">Minim 8 caractere.</p>
-              </div>
-
-              {error && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
-
-              <div className="relative">
-                <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-2">Parolă nouă</label>
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Minim 8 caractere"
-                  required
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 transition pr-10"
-                />
-                <button type="button" onClick={() => setShowPass(p => !p)}
-                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600">
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-2">Confirmă parola</label>
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  value={confirm}
-                  onChange={e => setConfirm(e.target.value)}
-                  placeholder="Repetă parola"
-                  required
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 transition"
-                />
-              </div>
-
-              <button type="submit" disabled={loading}
-                className="w-full py-3.5 rounded-2xl font-black text-white text-sm transition disabled:opacity-50"
-                style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
-                {loading ? 'Se salvează...' : 'Salvează parola nouă →'}
-              </button>
-            </form>
-          )}
+      ) : checking ? (
+        <div className="au-stack au-enter" style={{ alignItems: 'center', textAlign: 'center', paddingBlock: 24 }} role="status">
+          <span className="au-spin" style={{ width: 36, height: 36, borderWidth: 3, borderColor: '#e2dcff', borderTopColor: '#7040f0' }} />
+          <p className="au-sub" style={{ margin: 0 }}>Se verifică sesiunea...</p>
         </div>
-      </div>
-    </div>
+
+      ) : error && !ready ? (
+        <div className="au-stack au-enter">
+          <span style={{ width: 52, height: 52, borderRadius: 14, background: '#fef2f2', color: '#b91c1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AlertCircle size={26} />
+          </span>
+          <div>
+            <h1 className="au-h1">Link invalid</h1>
+            <p className="au-sub" style={{ marginBottom: 0 }}>{error}</p>
+          </div>
+          <button type="button" onClick={() => router.push('/auth/forgot-password')} className="au-btn">
+            Solicită un link nou
+          </button>
+        </div>
+
+      ) : (
+        <form onSubmit={handleSubmit} className="au-stack au-enter">
+          <div>
+            <span style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,#22c8f0,#7040f0)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <Lock size={24} />
+            </span>
+            <h1 className="au-h1">Setează parola nouă</h1>
+            <p className="au-sub" style={{ marginBottom: 0 }}>Minim 8 caractere.</p>
+          </div>
+
+          {error && (
+            <div className="au-alert au-alert-err" role="alert" style={{ marginBottom: 0 }}>
+              <AlertCircle size={18} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="au-field">
+            <label htmlFor="rp-pass" className="au-label">Parolă nouă</label>
+            <div className="au-pw">
+              <input
+                id="rp-pass"
+                type={showPass ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Minim 8 caractere"
+                autoComplete="new-password"
+                required
+                className="au-input"
+              />
+              <button type="button" onClick={() => setShowPass(p => !p)} className="au-eye" aria-label={showPass ? 'Ascunde parola' : 'Arată parola'}>
+                {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="rp-confirm" className="au-label">Confirmă parola</label>
+            <input
+              id="rp-confirm"
+              type={showPass ? 'text' : 'password'}
+              value={confirm}
+              onChange={e => setConfirm(e.target.value)}
+              placeholder="Repetă parola"
+              autoComplete="new-password"
+              required
+              className="au-input"
+            />
+          </div>
+
+          <button type="submit" disabled={loading} className="au-btn">
+            {loading ? <><span className="au-spin" /> Se salvează...</> : <>Salvează parola nouă <ArrowRight size={18} /></>}
+          </button>
+        </form>
+      )}
+    </AuthShell>
   )
 }
 
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f6f6fc' }}>
+        <div className="w-8 h-8 rounded-full animate-spin" style={{ borderWidth: 3, borderStyle: 'solid', borderColor: '#e2dcff', borderTopColor: '#7040f0' }} />
       </div>
     }>
       <ResetPasswordContent />

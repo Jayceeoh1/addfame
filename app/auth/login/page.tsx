@@ -19,6 +19,7 @@ function LoginContent() {
   const searchParams = useSearchParams()
   const sessionExpired = searchParams.get('expired') === '1'
   const emailConfirmed = searchParams.get('confirmed') === '1'
+  const passwordReset = searchParams.get('reset') === 'success'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,6 +73,12 @@ function LoginContent() {
         <div className="au-alert au-alert-ok au-enter" role="status">
           <CheckCircle size={18} />
           <div><b>Email confirmat cu succes!</b><br />Contul tău e activ. Loghează-te pentru a continua.</div>
+        </div>
+      )}
+      {passwordReset && !error && (
+        <div className="au-alert au-alert-ok au-enter" role="status">
+          <CheckCircle size={18} />
+          <div><b>Parola a fost schimbată.</b><br />Intră în cont cu parola nouă.</div>
         </div>
       )}
       {sessionExpired && !error && (

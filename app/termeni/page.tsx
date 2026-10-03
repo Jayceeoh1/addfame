@@ -1,36 +1,61 @@
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import SitePage, { PageHero } from '@/components/site/SiteShell'
 
 export const metadata = { title: 'Termeni și Condiții — AddFame', description: 'Termenii și condițiile de utilizare a platformei AddFame.' }
 
+const slug = (title: string) => 's-' + title.split('.')[0]
+
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="mb-8">
-    <h2 className="text-xl font-black text-gray-900 mb-3">{title}</h2>
-    <div className="text-gray-600 text-sm leading-relaxed space-y-2">{children}</div>
+  <section className="lg-sec">
+    <h2 id={slug(title)}>{title}</h2>
+    {children}
   </section>
 )
+
+const TOC = [
+  '1. Acceptarea termenilor',
+  '2. Descrierea serviciului',
+  '3. Conturi și înregistrare',
+  '4. Plăți și comisioane',
+  '5. Conținut și proprietate intelectuală',
+  '6. Obligațiile utilizatorilor',
+  '7. Limitarea răspunderii',
+  '8. Modificarea termenilor',
+  '9. Contact',
+]
+
+const LEGAL_CSS = `
+.lg-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:start}
+.lg-toc{position:sticky;top:88px;padding:20px}
+.lg-toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.lg-toc a{display:flex;align-items:center;min-height:40px;padding:6px 10px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:600;line-height:1.3}
+.lg-toc a:hover{background:#f3f0ff;color:var(--violet)}
+.lg-sec h2{scroll-margin-top:88px}
+.lg-sec:first-child h2{margin-top:0}
+.lg-foot{max-width:760px;border-top:1px solid var(--line);margin-top:40px;padding-top:28px;display:flex;flex-wrap:wrap;gap:12px}
+@media(max-width:960px){.lg-layout{grid-template-columns:minmax(0,1fr)}.lg-toc{position:static}}
+`
 
 export default function TermsPage() {
   const updated = '24 Iunie 2026'
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
-      <nav className="border-b border-gray-100 px-6 py-4 max-w-4xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#fff', border: '1px solid #ede9fe', boxShadow: '0 2px 8px rgba(124,58,237,0.12)' }}>
-            <img src="/logo.png" alt="AddFame" style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
-          </div>
-          <span className="font-black text-gray-900">Add<span className="text-orange-500">Fame</span></span>
-        </Link>
-        <Link href="/" className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition">
-          <ArrowLeft className="w-4 h-4" /> Înapoi
-        </Link>
-      </nav>
+    <SitePage>
+      <style>{LEGAL_CSS}</style>
+      <PageHero eyebrow="Legal" title="Termeni și Condiții">
+        <p className="sp-meta" style={{ margin: 0 }}>Ultima actualizare: {updated}</p>
+      </PageHero>
 
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-black text-gray-900 mb-2">Termeni și Condiții</h1>
-        <p className="text-sm text-gray-400 mb-10">Ultima actualizare: {updated}</p>
+      <div className="af-wrap sp-section">
+        <div className="lg-layout">
+          <nav className="sp-card lg-toc" aria-label="Cuprins">
+            <p className="af-eyebrow">Cuprins</p>
+            <ol>
+              {TOC.map(t => <li key={t}><a href={`#${slug(t)}`}>{t}</a></li>)}
+            </ol>
+          </nav>
 
+          <div>
+            <div className="sp-prose">
         <Section title="1. Acceptarea termenilor">
           <p>Prin accesarea și utilizarea platformei AddFame (addfame.ro), ești de acord cu acești termeni și condiții. Dacă nu ești de acord, te rugăm să nu utilizezi platforma.</p>
           <p>AddFame este operată de <strong>ADD FAME DIGITAL S.R.L.</strong>, societate comercială înregistrată în România, CUI <strong>54992560</strong>, Nr. Reg. Com. <strong>J2026040984009</strong>, cu sediul în județul Argeș.</p>
@@ -74,19 +99,22 @@ export default function TermsPage() {
         </Section>
 
         <Section title="9. Contact">
-          <p>Pentru întrebări: <a href="mailto:legal@addfame.ro" className="text-purple-600 font-bold hover:underline">legal@addfame.ro</a></p>
+          <p>Pentru întrebări: <a href="mailto:legal@addfame.ro">legal@addfame.ro</a></p>
           <p><strong>ADD FAME DIGITAL S.R.L.</strong><br />
           CUI: 54992560 · Reg. Com.: J2026040984009<br />
           Județul Argeș, România<br />
-          Email: <a href="mailto:contact@addfame.ro" className="text-purple-600 font-bold hover:underline">contact@addfame.ro</a>
+          Email: <a href="mailto:contact@addfame.ro">contact@addfame.ro</a>
           </p>
         </Section>
+            </div>
 
-        <div className="border-t border-gray-100 pt-8 flex gap-6">
-          <Link href="/privacy" className="text-sm font-bold text-purple-600 hover:underline">Politica de Confidențialitate</Link>
-          <Link href="/" className="text-sm text-gray-400 hover:text-gray-700">Înapoi la platformă</Link>
+            <div className="lg-foot">
+              <Link href="/privacy" className="af-btn af-btn-ghost af-btn-sm">Politica de Confidențialitate</Link>
+              <Link href="/" className="af-btn af-btn-ghost af-btn-sm">Înapoi la platformă</Link>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </SitePage>
   )
 }

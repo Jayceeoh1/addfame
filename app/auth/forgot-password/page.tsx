@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { Mail, ArrowLeft, CheckCircle, AlertCircle, ExternalLink, RefreshCw, Inbox } from 'lucide-react'
+import AuthShell from '@/components/auth/AuthShell'
 
 // Detectare client email după domeniu
 function getEmailProvider(email: string) {
@@ -37,7 +38,7 @@ function getEmailProvider(email: string) {
 
 export default function ForgotPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{ background: '#f6f6fc' }}><div className="w-8 h-8 rounded-full animate-spin" style={{ borderWidth: 3, borderStyle: 'solid', borderColor: '#e2dcff', borderTopColor: '#7040f0' }} /></div>}>
       <ForgotPasswordContent />
     </Suspense>
   )
@@ -86,133 +87,93 @@ function ForgotPasswordContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl p-8" style={{ border: '1.5px solid #f0f0f0', boxShadow: '0 20px 60px rgba(0,0,0,0.06)' }}>
-          {/* Logo */}
-          <div className="flex items-center gap-2.5 mb-8">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#fff', border: '1px solid #ede9fe', boxShadow: '0 2px 8px rgba(124,58,237,0.12)' }}>
-              <img src="/logo.png" alt="AddFame" style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
-            </div>
-            <span className="font-black text-gray-900">AddFame</span>
+    <AuthShell variant="reset">
+      {sent ? (
+        /* ── Email trimis, cu deschidere directă a aplicației de email ── */
+        <div className="au-stack au-enter">
+          <div>
+            <span className="au-role-icon" style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,#22c8f0,#7040f0)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <CheckCircle size={26} />
+            </span>
+            <h1 className="au-h1">Email trimis!</h1>
+            <p className="au-sub" style={{ marginBottom: 0 }}>
+              Am trimis un link de resetare la <b style={{ color: 'var(--ink)', wordBreak: 'break-all' }}>{email}</b>
+            </p>
           </div>
 
-          {sent ? (
-            /* ── MODAL SUCCESS cu deschidere email direct ── */
-            <div className="text-center">
-              {/* Icon animat */}
-              <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ animation: 'bounceIn .4s ease' }}>
-                <CheckCircle className="w-8 h-8 text-green-500" />
-              </div>
-              <h1 className="text-xl font-black text-gray-900 mb-1">Email trimis!</h1>
-              <p className="text-sm text-gray-500 mb-5 leading-relaxed">
-                Am trimis un link de resetare la<br />
-                <span className="font-black text-gray-800">{email}</span>
-              </p>
-
-              {/* Buton deschide email — dacă știm providerul */}
-              {provider ? (
-                <a
-                  href={provider.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl font-black text-sm mb-3 transition hover:opacity-90 active:scale-95"
-                  style={{ background: provider.bg, color: provider.color, border: `2px solid ${provider.border}` }}
-                >
-                  <span className="text-lg">{provider.icon}</span>
-                  Deschide {provider.name}
-                  <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-                </a>
-              ) : (
-                <a
-                  href={`mailto:${email}`}
-                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl font-black text-sm mb-3 transition hover:opacity-90"
-                  style={{ background: '#fff7ed', color: '#f97316', border: '2px solid #fed7aa' }}
-                >
-                  <Inbox className="w-4 h-4" />
-                  Deschide aplicația de email
-                </a>
-              )}
-
-              {/* Avertizare spam */}
-              <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-left">
-                <span className="text-base flex-shrink-0">⚠️</span>
-                <div>
-                  <p className="text-xs font-black text-amber-800">Nu găsești emailul?</p>
-                  <p className="text-xs text-amber-700 mt-0.5">Verifică folderul <strong>Spam / Junk</strong> — uneori emailurile de resetare ajung acolo.</p>
-                </div>
-              </div>
-
-              {/* Re-trimitere */}
-              <div className="border-t border-gray-100 pt-4 mt-2">
-                <p className="text-xs text-gray-400 mb-2">Nu ai primit nimic după 2 minute?</p>
-                {resent ? (
-                  <p className="text-xs font-black text-green-600">✓ Email retrimis!</p>
-                ) : (
-                  <button
-                    onClick={handleResend}
-                    disabled={resending}
-                    className="flex items-center gap-1.5 text-xs font-black text-orange-500 hover:text-orange-700 transition mx-auto"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
-                    {resending ? 'Se retrimite…' : 'Retrimite emailul'}
-                  </button>
-                )}
-              </div>
-
-              <Link href="/auth/login" className="text-xs font-bold text-gray-400 hover:text-gray-600 flex items-center justify-center gap-1 mt-4">
-                <ArrowLeft className="w-3.5 h-3.5" /> Înapoi la login
-              </Link>
-            </div>
+          {provider ? (
+            <a href={provider.url} target="_blank" rel="noopener noreferrer" className="au-btn">
+              <Mail size={18} /> Deschide {provider.name} <ExternalLink size={15} style={{ opacity: 0.75 }} />
+            </a>
           ) : (
-            /* ── FORM ── */
-            <>
-              <h1 className="text-2xl font-black text-gray-900 mb-2">Resetează parola</h1>
-              <p className="text-sm text-gray-400 mb-7">Introdu emailul și îți trimitem un link de resetare</p>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Adresă de email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="email" value={email} onChange={e => setEmail(e.target.value)}
-                      placeholder="tu@companie.com" disabled={loading}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-100 text-sm font-medium outline-none transition focus:border-orange-400 disabled:opacity-60"
-                      style={{ fontFamily: 'inherit' }}
-                    />
-                  </div>
-                  {/* Preview provider detectat */}
-                  {provider && (
-                    <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
-                      <span>{provider.icon}</span> Vom trimite la {provider.name}
-                    </p>
-                  )}
-                </div>
-
-                {error && (
-                  <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm font-bold">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
-                  </div>
-                )}
-
-                <button type="submit" disabled={loading}
-                  className="w-full py-3.5 rounded-xl text-sm font-black text-white transition disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 4px 14px rgba(249,115,22,.3)' }}>
-                  {loading ? 'Se trimite…' : 'Trimite link de resetare'}
-                </button>
-              </form>
-
-              <div className="text-center mt-6">
-                <Link href="/auth/login" className="text-sm font-bold text-gray-400 hover:text-gray-700 flex items-center justify-center gap-1.5">
-                  <ArrowLeft className="w-4 h-4" /> Înapoi la login
-                </Link>
-              </div>
-            </>
+            <a href={`mailto:${email}`} className="au-btn">
+              <Inbox size={18} /> Deschide aplicația de email
+            </a>
           )}
+
+          <div className="au-alert au-alert-warn" style={{ marginBottom: 0 }}>
+            <AlertCircle size={18} />
+            <div><b>Nu găsești emailul?</b><br />Verifică folderul <b>Spam / Junk</b> — uneori emailurile de resetare ajung acolo.</div>
+          </div>
+
+          <div style={{ borderTop: '1px solid #ecebf5', paddingTop: 16, textAlign: 'center' }}>
+            <p className="au-hint" style={{ margin: '0 0 8px' }}>Nu ai primit nimic după 2 minute?</p>
+            {resent ? (
+              <p style={{ margin: 0, fontWeight: 800, color: '#047857', display: 'inline-flex', alignItems: 'center', gap: 6 }}><CheckCircle size={16} /> Email retrimis!</p>
+            ) : (
+              <button type="button" onClick={handleResend} disabled={resending} className="au-btn-ghost" style={{ color: 'var(--ac)' }}>
+                <RefreshCw size={16} className={resending ? 'animate-spin' : ''} />
+                {resending ? 'Se retrimite…' : 'Retrimite emailul'}
+              </button>
+            )}
+          </div>
+
+          <Link href="/auth/login" className="au-btn-ghost" style={{ textDecoration: 'none' }}>
+            <ArrowLeft size={16} /> Înapoi la login
+          </Link>
         </div>
-      </div>
-    </div>
+      ) : (
+        /* ── Formular ── */
+        <div className="au-enter">
+          <h1 className="au-h1">Resetează parola</h1>
+          <p className="au-sub">Introdu emailul și îți trimitem un link de resetare.</p>
+
+          <form onSubmit={handleSubmit} className="au-stack">
+            <div className="au-field">
+              <label htmlFor="fp-email" className="au-label">Adresă de email</label>
+              <div className="au-city">
+                <Mail size={18} className="au-city-icon" />
+                <input
+                  id="fp-email"
+                  type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="tu@companie.com" disabled={loading}
+                  autoComplete="email" inputMode="email"
+                  className="au-input" style={{ paddingRight: 16 }}
+                />
+              </div>
+              {provider && (
+                <p className="au-hint" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Mail size={13} /> Vom trimite la {provider.name}
+                </p>
+              )}
+            </div>
+
+            {error && (
+              <div className="au-alert au-alert-err" role="alert" style={{ marginBottom: 0 }}>
+                <AlertCircle size={18} /> <span>{error}</span>
+              </div>
+            )}
+
+            <button type="submit" disabled={loading} className="au-btn">
+              {loading ? <><span className="au-spin" /> Se trimite…</> : 'Trimite link de resetare'}
+            </button>
+          </form>
+
+          <Link href="/auth/login" className="au-btn-ghost" style={{ textDecoration: 'none', marginTop: 12 }}>
+            <ArrowLeft size={16} /> Înapoi la login
+          </Link>
+        </div>
+      )}
+    </AuthShell>
   )
 }

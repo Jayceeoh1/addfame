@@ -1,34 +1,62 @@
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import SitePage, { PageHero } from '@/components/site/SiteShell'
 
 export const metadata = { title: 'Politica de Confidențialitate — AddFame', description: 'Politica de confidențialitate și prelucrare a datelor personale pe platforma AddFame.' }
 
+const slug = (title: string) => 's-' + title.split('.')[0]
+
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="mb-8">
-    <h2 className="text-xl font-black text-gray-900 mb-3">{title}</h2>
-    <div className="text-gray-600 text-sm leading-relaxed space-y-2">{children}</div>
+  <section className="lg-sec">
+    <h2 id={slug(title)}>{title}</h2>
+    {children}
   </section>
 )
 
+const TOC = [
+  '1. Cine suntem',
+  '2. Ce date colectăm',
+  '3. De ce colectăm datele',
+  '4. Cât timp păstrăm datele',
+  '5. Cu cine împărtășim datele',
+  '6. Drepturile tale',
+  '7. Cookie-uri',
+  '8. Securitate',
+  '9. Reclamații',
+]
+
+const LEGAL_CSS = `
+.lg-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:start}
+.lg-toc{position:sticky;top:88px;padding:20px}
+.lg-toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.lg-toc a{display:flex;align-items:center;min-height:40px;padding:6px 10px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:600;line-height:1.3}
+.lg-toc a:hover{background:#f3f0ff;color:var(--violet)}
+.lg-sec h2{scroll-margin-top:88px}
+.lg-sec:first-child h2{margin-top:0}
+.lg-foot{max-width:760px;border-top:1px solid var(--line);margin-top:40px;padding-top:28px;display:flex;flex-wrap:wrap;gap:12px}
+@media(max-width:960px){.lg-layout{grid-template-columns:minmax(0,1fr)}.lg-toc{position:static}}
+`
+
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
-      <nav className="border-b border-gray-100 px-6 py-4 max-w-4xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <img src="/logo.png" alt="AddFame" className="w-8 h-8 rounded-xl object-contain" />
-          <span className="font-black text-gray-900">Add<span className="text-orange-500">Fame</span></span>
-        </Link>
-        <Link href="/" className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition">
-          <ArrowLeft className="w-4 h-4" /> Înapoi
-        </Link>
-      </nav>
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-black text-gray-900 mb-2">Politica de Confidențialitate</h1>
-        <p className="text-sm text-gray-400 mb-10">Ultima actualizare: 24 Iunie 2026</p>
+    <SitePage>
+      <style>{LEGAL_CSS}</style>
+      <PageHero eyebrow="Legal" title="Politica de Confidențialitate">
+        <p className="sp-meta" style={{ margin: 0 }}>Ultima actualizare: 24 Iunie 2026</p>
+      </PageHero>
 
+      <div className="af-wrap sp-section">
+        <div className="lg-layout">
+          <nav className="sp-card lg-toc" aria-label="Cuprins">
+            <p className="af-eyebrow">Cuprins</p>
+            <ol>
+              {TOC.map(t => <li key={t}><a href={`#${slug(t)}`}>{t}</a></li>)}
+            </ol>
+          </nav>
+
+          <div>
+            <div className="sp-prose">
         <Section title="1. Cine suntem">
-          <p><strong>ADD FAME DIGITAL S.R.L.</strong> este operatorul de date personale responsabil pentru platforma addfame.ro.</p><p>CUI: <strong>54992560</strong> · Reg. Com.: <strong>J2026040984009</strong> · Sediu: Județul Argeș, România</p><p>Contact GDPR: <a href="mailto:privacy@addfame.ro" className="text-orange-500 font-bold hover:underline">privacy@addfame.ro</a></p>
+          <p><strong>ADD FAME DIGITAL S.R.L.</strong> este operatorul de date personale responsabil pentru platforma addfame.ro.</p><p>CUI: <strong>54992560</strong> · Reg. Com.: <strong>J2026040984009</strong> · Sediu: Județul Argeș, România</p><p>Contact GDPR: <a href="mailto:privacy@addfame.ro">privacy@addfame.ro</a></p>
         </Section>
 
         <Section title="2. Ce date colectăm">
@@ -52,7 +80,7 @@ export default function PrivacyPage() {
 
         <Section title="6. Drepturile tale">
           <p>Conform GDPR, ai dreptul la: <strong>acces</strong> (să știi ce date deținem), <strong>rectificare</strong> (să corectezi date incorecte), <strong>ștergere</strong> (să ceri ștergerea datelor), <strong>portabilitate</strong> (să primești datele în format structurat), <strong>opoziție</strong> (față de prelucrarea bazată pe interes legitim).</p>
-          <p>Exercitați aceste drepturi scriind la <a href="mailto:privacy@addfame.ro" className="text-orange-500 font-bold hover:underline">privacy@addfame.ro</a>. Răspundem în maxim 30 de zile.</p>
+          <p>Exercitați aceste drepturi scriind la <a href="mailto:privacy@addfame.ro">privacy@addfame.ro</a>. Răspundem în maxim 30 de zile.</p>
         </Section>
 
         <Section title="7. Cookie-uri">
@@ -64,14 +92,17 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="9. Reclamații">
-          <p>Dacă crezi că datele tale nu sunt prelucrate corect, poți depune o plângere la Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP): <a href="https://www.dataprotection.ro" target="_blank" className="text-orange-500 font-bold hover:underline">dataprotection.ro</a>.</p>
+          <p>Dacă crezi că datele tale nu sunt prelucrate corect, poți depune o plângere la Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP): <a href="https://www.dataprotection.ro" target="_blank" rel="noopener noreferrer">dataprotection.ro</a>.</p>
         </Section>
+            </div>
 
-        <div className="border-t border-gray-100 pt-8 flex gap-6">
-          <Link href="/terms" className="text-sm font-bold text-orange-500 hover:underline">Termeni și Condiții</Link>
-          <Link href="/" className="text-sm text-gray-400 hover:text-gray-700">Înapoi la platformă</Link>
+            <div className="lg-foot">
+              <Link href="/terms" className="af-btn af-btn-ghost af-btn-sm">Termeni și Condiții</Link>
+              <Link href="/" className="af-btn af-btn-ghost af-btn-sm">Înapoi la platformă</Link>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </SitePage>
   )
 }

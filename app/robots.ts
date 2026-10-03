@@ -20,7 +20,6 @@ export default function robots(): MetadataRoute.Robots {
           '/pentru-influenceri',
           '/termeni',
           '/politica-de-confidentialitate',
-          '/politica-cookies',
           '/blog',
         ],
         disallow: [

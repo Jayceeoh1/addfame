@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ArrowLeft, Mail, MessageSquare, Building2, User, Send, CheckCircle } from 'lucide-react'
+import { Mail, MessageSquare, Building2, Send, CheckCircle, Zap, MessageCircle, Clapperboard, CreditCard, Bug, Handshake, Landmark } from 'lucide-react'
+import SitePage, { PageHero } from '@/components/site/SiteShell'
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '', type: 'general' })
@@ -28,99 +29,59 @@ export default function ContactPage() {
   }
 
   const TOPICS = [
-    { value: 'general', label: 'Întrebare generală', icon: '💬' },
-    { value: 'brand', label: 'Sunt brand', icon: '🏢' },
-    { value: 'influencer', label: 'Sunt influencer', icon: '🎬' },
-    { value: 'payment', label: 'Problemă plată', icon: '💳' },
-    { value: 'bug', label: 'Raportez un bug', icon: '🐛' },
-    { value: 'partnership', label: 'Parteneriat', icon: '🤝' },
+    { value: 'general', label: 'Întrebare generală', icon: MessageCircle },
+    { value: 'brand', label: 'Sunt brand', icon: Building2 },
+    { value: 'influencer', label: 'Sunt influencer', icon: Clapperboard },
+    { value: 'payment', label: 'Problemă plată', icon: CreditCard },
+    { value: 'bug', label: 'Raportez un bug', icon: Bug },
+    { value: 'partnership', label: 'Parteneriat', icon: Handshake },
   ]
 
   return (
-    <div className="min-h-screen bg-white text-gray-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap');
-        .brand-grad { background: linear-gradient(135deg, #f97316, #ec4899); }
-        .brand-grad-text { background: linear-gradient(135deg, #f97316, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .input-field { width: 100%; padding: 12px 16px; border: 2px solid #f0f0f0; border-radius: 12px; font-size: 14px; font-family: inherit; font-weight: 500; outline: none; transition: border-color 0.2s; background: white; }
-        .input-field:focus { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.08); }
-        .topic-chip { padding: 8px 16px; border-radius: 10px; border: 2px solid #f0f0f0; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; background: white; }
-        .topic-chip:hover { border-color: #f97316; background: #fff7ed; }
-        .topic-chip.active { border-color: #f97316; background: #fff7ed; color: #ea580c; }
-      `}</style>
+    <SitePage>
+      <style>{CT_CSS}</style>
 
-      {/* Nav */}
-      <nav className="border-b border-gray-100 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="AddFame" className="w-8 h-8 rounded-xl object-contain" />
-            <span className="font-black text-lg">AddFame</span>
-          </Link>
-          <Link href="/" className="flex items-center gap-1.5 text-sm font-semibold text-gray-400 hover:text-gray-700 transition">
-            <ArrowLeft className="w-4 h-4" /> Înapoi
-          </Link>
-        </div>
-      </nav>
+      <PageHero
+        eyebrow="Suntem aici pentru tine"
+        title="Hai să"
+        accent="vorbim"
+        lead="Ai o întrebare, o problemă sau vrei să colaborăm? Scrie-ne și îți răspundem în maxim 24 de ore."
+      />
 
-      <div className="max-w-5xl mx-auto px-6 py-16">
-        {/* Header */}
-        <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-full px-4 py-1.5 mb-5">
-            <span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />
-            <span className="text-sm font-bold text-orange-700">Suntem aici pentru tine</span>
-          </div>
-          <h1 className="text-5xl font-black mb-4 leading-tight">
-            Hai să <span className="brand-grad-text" style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic' }}>vorbim</span>
-          </h1>
-          <p className="text-gray-500 text-lg max-w-xl mx-auto">
-            Ai o întrebare, o problemă sau vrei să colaborăm? Scrie-ne și îți răspundem în maxim 24 de ore.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <section className="sp-section">
+        <div className="af-wrap ct-layout">
           {/* Contact info */}
-          <div className="space-y-5">
-            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-              <div className="w-10 h-10 brand-grad rounded-xl flex items-center justify-center mb-4">
-                <Mail className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="font-black text-gray-900 mb-1">Email</h3>
-              <p className="text-sm text-gray-500 mb-2">Pentru orice întrebare generală</p>
-              <a href="mailto:contact@addfame.ro" className="text-sm font-bold text-orange-500 hover:underline">
-                contact@addfame.ro
-              </a>
+          <div className="ct-side" role="complementary" aria-label="Date de contact">
+            <div className="sp-card">
+              <span className="sp-icon sp-icon-brand"><Mail size={20} aria-hidden="true" /></span>
+              <h3 className="sp-h3">Email</h3>
+              <p>Pentru orice întrebare generală</p>
+              <a href="mailto:contact@addfame.ro" className="ct-mail">contact@addfame.ro</a>
             </div>
 
-            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-              <div className="w-10 h-10 brand-grad rounded-xl flex items-center justify-center mb-4">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="font-black text-gray-900 mb-1">Plăți & Facturare</h3>
-              <p className="text-sm text-gray-500 mb-2">Probleme cu credite sau retrageri</p>
-              <a href="mailto:payments@addfame.ro" className="text-sm font-bold text-orange-500 hover:underline">
-                payments@addfame.ro
-              </a>
+            <div className="sp-card">
+              <span className="sp-icon sp-icon-brand"><Building2 size={20} aria-hidden="true" /></span>
+              <h3 className="sp-h3">Plăți & Facturare</h3>
+              <p>Probleme cu credite sau retrageri</p>
+              <a href="mailto:payments@addfame.ro" className="ct-mail">payments@addfame.ro</a>
             </div>
 
-            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-              <div className="w-10 h-10 brand-grad rounded-xl flex items-center justify-center mb-4">
-                <MessageSquare className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="font-black text-gray-900 mb-1">Support</h3>
-              <p className="text-sm text-gray-500 mb-2">Timp de răspuns: max 24h</p>
-              <a href="mailto:support@addfame.ro" className="text-sm font-bold text-orange-500 hover:underline">
-                support@addfame.ro
-              </a>
+            <div className="sp-card">
+              <span className="sp-icon sp-icon-infl"><MessageSquare size={20} aria-hidden="true" /></span>
+              <h3 className="sp-h3">Support</h3>
+              <p>Timp de răspuns: max 24h</p>
+              <a href="mailto:support@addfame.ro" className="ct-mail">support@addfame.ro</a>
             </div>
 
-            <div className="rounded-2xl p-6 border-2 border-dashed border-orange-200 bg-orange-50/50">
-              <p className="text-sm font-bold text-orange-700 mb-1">⚡ Răspuns rapid</p>
-              <p className="text-xs text-orange-600">Luni–Vineri, 9:00–18:00 (EET) răspundem de obicei în câteva ore.</p>
+            <div className="ct-fast">
+              <p className="ct-fast-title"><Zap size={16} aria-hidden="true" /> Răspuns rapid</p>
+              <p className="ct-fast-text">Luni–Vineri, 9:00–18:00 (EET) răspundem de obicei în câteva ore.</p>
             </div>
 
-            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-              <h3 className="font-black text-gray-900 mb-3">Date firmă</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+            <div className="sp-card">
+              <span className="sp-icon sp-icon-soft"><Landmark size={20} aria-hidden="true" /></span>
+              <h3 className="sp-h3">Date firmă</h3>
+              <p className="ct-company">
                 <strong>ADD FAME DIGITAL S.R.L.</strong><br />
                 CUI: 54992560<br />
                 Reg. Com.: J2026040984009<br />
@@ -130,101 +91,108 @@ export default function ContactPage() {
           </div>
 
           {/* Form */}
-          <div className="lg:col-span-2">
+          <div className="ct-main">
             {sent ? (
-              <div className="h-full flex flex-col items-center justify-center text-center py-20 bg-gray-50 rounded-3xl border border-gray-100">
-                <div className="w-16 h-16 brand-grad rounded-2xl flex items-center justify-center mb-5 shadow-lg" style={{ boxShadow: '0 8px 30px rgba(249,115,22,0.3)' }}>
-                  <CheckCircle className="w-8 h-8 text-white" />
-                </div>
-                <h2 className="text-2xl font-black text-gray-900 mb-2">Mesaj trimis! 🎉</h2>
-                <p className="text-gray-500 max-w-sm">Îți vom răspunde la <strong>{form.email}</strong> în maxim 24 de ore.</p>
+              <div className="ct-panel ct-sent">
+                <span className="ct-sent-icon af-grad"><CheckCircle size={32} aria-hidden="true" /></span>
+                <h2 className="sp-h2">Mesaj trimis!</h2>
+                <p className="sp-muted">Îți vom răspunde la <strong>{form.email}</strong> în maxim 24 de ore.</p>
                 <button onClick={() => { setSent(false); setForm({ name: '', email: '', subject: '', message: '', type: 'general' }) }}
-                  className="mt-8 text-sm font-bold text-orange-500 hover:underline">
+                  className="af-btn af-btn-ghost">
                   Trimite alt mesaj
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm space-y-6">
+              <form onSubmit={handleSubmit} className="ct-panel sp-form">
                 {/* Topic chips */}
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-3">Subiect</label>
-                  <div className="flex flex-wrap gap-2">
-                    {TOPICS.map(t => (
-                      <button key={t.value} type="button"
-                        onClick={() => setForm(f => ({ ...f, type: t.value }))}
-                        className={`topic-chip ${form.type === t.value ? 'active' : ''}`}>
-                        {t.icon} {t.label}
-                      </button>
-                    ))}
+                <div role="group" aria-labelledby="ct-topic-label">
+                  <span id="ct-topic-label" className="sp-label">Subiect</span>
+                  <div className="ct-chips">
+                    {TOPICS.map(t => {
+                      const Icon = t.icon
+                      return (
+                        <button key={t.value} type="button"
+                          aria-pressed={form.type === t.value}
+                          onClick={() => setForm(f => ({ ...f, type: t.value }))}
+                          className={`ct-chip ${form.type === t.value ? 'active' : ''}`}>
+                          <Icon size={16} aria-hidden="true" /> {t.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
                 {/* Name + Email */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="ct-two">
                   <div>
-                    <label className="block text-sm font-black text-gray-700 mb-1.5">Numele tău *</label>
-                    <input className="input-field" placeholder="Marius Ciprian" required
+                    <label htmlFor="ct-name" className="sp-label">Numele tău *</label>
+                    <input id="ct-name" className="sp-input" placeholder="Marius Ciprian" required autoComplete="name"
                       value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="block text-sm font-black text-gray-700 mb-1.5">Email *</label>
-                    <input className="input-field" type="email" placeholder="tu@exemplu.ro" required
+                    <label htmlFor="ct-email" className="sp-label">Email *</label>
+                    <input id="ct-email" className="sp-input" type="email" placeholder="tu@exemplu.ro" required autoComplete="email"
                       value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
                   </div>
                 </div>
 
                 {/* Subject */}
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-1.5">Titlu mesaj *</label>
-                  <input className="input-field" placeholder="Ex: Nu pot retrage banii din wallet" required
+                  <label htmlFor="ct-subject" className="sp-label">Titlu mesaj *</label>
+                  <input id="ct-subject" className="sp-input" placeholder="Ex: Nu pot retrage banii din wallet" required
                     value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} />
                 </div>
 
                 {/* Message */}
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-1.5">Mesajul tău *</label>
-                  <textarea className="input-field resize-none" rows={5}
+                  <label htmlFor="ct-message" className="sp-label">Mesajul tău *</label>
+                  <textarea id="ct-message" className="sp-input" rows={5}
                     placeholder="Descrie problema sau întrebarea ta cât mai detaliat..." required
                     value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} />
                 </div>
 
-                <button type="submit" disabled={loading}
-                  className="w-full brand-grad text-white font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2 hover:opacity-90 transition disabled:opacity-60"
-                  style={{ boxShadow: '0 8px 30px rgba(249,115,22,0.3)' }}>
+                <button type="submit" disabled={loading} className="af-btn af-btn-violet ct-submit">
                   {loading
-                    ? <><div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Se trimite...</>
-                    : <><Send className="w-4 h-4" /> Trimite mesajul</>
+                    ? <><span className="ct-spin" aria-hidden="true" /> Se trimite...</>
+                    : <><Send size={16} aria-hidden="true" /> Trimite mesajul</>
                   }
                 </button>
 
-                <p className="text-xs text-gray-400 text-center">
+                <p className="ct-note">
                   Prin trimiterea acestui formular ești de acord cu{' '}
-                  <Link href="/privacy" className="text-orange-500 font-bold hover:underline">Politica de confidențialitate</Link>.
+                  <Link href="/politica-de-confidentialitate">Politica de confidențialitate</Link>.
                 </p>
               </form>
             )}
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-100 py-8 px-6 mt-8">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="AddFame" className="w-7 h-7 rounded-lg object-contain" />
-            <span className="font-black text-gray-900">AddFame</span>
-          </div>
-          <div className="flex gap-6 text-sm text-gray-400">
-            <Link href="/terms" className="hover:text-gray-700 transition">Termeni</Link>
-            <Link href="/privacy" className="hover:text-gray-700 transition">Confidențialitate</Link>
-            <Link href="/about" className="hover:text-gray-700 transition">Despre noi</Link>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-400">© {new Date().getFullYear()} AddFame.</p>
-            <p className="text-xs text-gray-400">ADD FAME DIGITAL S.R.L. · CUI: 54992560 · Reg. Com.: J2026040984009</p>
-          </div>
-        </div>
-      </footer>
-    </div>
+      </section>
+    </SitePage>
   )
 }
+
+const CT_CSS = `
+.ct-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:24px;align-items:start}
+.ct-side{display:flex;flex-direction:column;gap:14px}
+.ct-mail{color:#5a35e6;font-weight:700;font-size:15px;text-decoration:none;word-break:break-word;min-height:44px;display:inline-flex;align-items:center}
+.ct-mail:hover{text-decoration:underline}
+.ct-company{font-size:14px!important;line-height:1.7}
+.ct-company strong{color:#14123a}
+.ct-fast{border:1.5px dashed #cfc4ff;background:#f5f2ff;border-radius:18px;padding:20px 22px}
+.ct-fast-title{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-weight:700;color:#4423c4;font-size:15px}
+.ct-fast-text{margin:0;font-size:14px;color:#4a4770}
+.ct-panel{background:#fff;border:1px solid #e5e3f3;border-radius:24px;padding:clamp(20px,4vw,36px);box-shadow:0 24px 48px -32px rgba(20,18,58,.25)}
+.ct-sent{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding-block:clamp(48px,8vw,80px)}
+.ct-sent-icon{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 12px 30px -10px rgba(112,64,240,.5)}
+.ct-chips{display:flex;flex-wrap:wrap;gap:8px}
+.ct-chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:12px;border:1.5px solid #dcd9ee;background:#fff;color:#14123a;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.ct-chip:hover{border-color:#7040f0}
+.ct-chip.active{border-color:#5a35e6;background:#efeaff;color:#4423c4}
+.ct-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:16px}
+.ct-submit{width:100%}
+.ct-spin{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:ct-rot .8s linear infinite}
+@keyframes ct-rot{to{transform:rotate(360deg)}}
+.ct-note{margin:0;font-size:13px;color:#6a6690;text-align:center}
+.ct-note a{color:#5a35e6;font-weight:700}
+@media(max-width:900px){.ct-layout{grid-template-columns:1fr}.ct-main{order:-1}}
+`

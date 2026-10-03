@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
-import Link from 'next/link'
+import { Building2, Clapperboard, ChevronDown, HelpCircle, ArrowRight } from 'lucide-react'
+import SitePage, { PageHero } from '@/components/site/SiteShell'
 
 export default function IntrebariFrecvente() {
 
@@ -45,100 +46,91 @@ export default function IntrebariFrecvente() {
     : faqs.influenceri.map(f => ({ ...f, cat: 'influenceri' }))
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: 'white', minHeight: '100vh' }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-        .container { max-width: 760px; margin: 0 auto; padding: 0 24px; }
-        .tab { padding: 8px 20px; border-radius: 99px; font-size: 13px; font-weight: 800; border: 2px solid #f0f0f0; cursor: pointer; background: white; font-family: inherit; transition: all .15s; }
-        .tab.active-all { background: #111; color: white; border-color: #111; }
-        .tab.active-brand { background: #fff7ed; color: #ea580c; border-color: #fed7aa; }
-        .tab.active-infl { background: #faf5ff; color: #7c3aed; border-color: #ddd6fe; }
-        .faq-item { border: 1.5px solid #f0f0f0; border-radius: 14px; overflow: hidden; transition: border-color .15s; }
-        .faq-item:hover { border-color: #ddd6fe; }
-        .faq-item.open { border-color: #8b5cf6; }
-        .faq-q { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; background: white; }
-        .faq-a { padding: 0 20px 18px; font-size: 14px; color: #6b7280; line-height: 1.7; }
-        .chevron { width: 20px; height: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; transition: all .2s; }
-      `}</style>
-
-      {/* Nav */}
-      <nav style={{ borderBottom: '1px solid #f0f0f0', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontSize: 20, fontWeight: 900, color: '#f97316' }}>Add</span>
-          <span style={{ fontSize: 20, fontWeight: 900, color: '#ec4899' }}>Fame</span>
-        </Link>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <Link href="/auth/login" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none', fontWeight: 600, padding: '8px 14px' }}>Autentificare</Link>
-          <Link href="/auth/register" style={{ fontSize: 13, fontWeight: 800, color: 'white', background: 'linear-gradient(135deg,#f97316,#ec4899)', padding: '8px 16px', borderRadius: 10, textDecoration: 'none' }}>Înregistrare</Link>
-        </div>
-      </nav>
+    <SitePage>
+      <style>{FQ_CSS}</style>
 
       {/* Hero */}
-      <section style={{ padding: '56px 24px 48px', textAlign: 'center' }}>
-        <div className="container">
-          <span style={{ display: 'inline-block', background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '4px 14px', borderRadius: 99, fontSize: 12, fontWeight: 800, marginBottom: 16 }}>Suport</span>
-          <h1 style={{ fontSize: 'clamp(28px,5vw,44px)', fontWeight: 900, color: '#111', margin: '0 0 12px' }}>Întrebări frecvente</h1>
-          <p style={{ fontSize: 16, color: '#6b7280', margin: '0 0 32px' }}>Tot ce trebuie să știi despre AddFame — pentru branduri și influenceri.</p>
-
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button className={`tab ${tab === 'toate' ? 'active-all' : ''}`} onClick={() => setTab('toate')}>
-              Toate ({allFaqs.length})
-            </button>
-            <button className={`tab ${tab === 'branduri' ? 'active-brand' : ''}`} onClick={() => setTab('branduri')}>
-              🏢 Branduri ({faqs.branduri.length})
-            </button>
-            <button className={`tab ${tab === 'influenceri' ? 'active-infl' : ''}`} onClick={() => setTab('influenceri')}>
-              🎬 Influenceri ({faqs.influenceri.length})
-            </button>
-          </div>
+      <PageHero
+        eyebrow="Suport"
+        title="Întrebări"
+        accent="frecvente"
+        lead="Tot ce trebuie să știi despre AddFame — pentru branduri și influenceri."
+      >
+        {/* Tabs */}
+        <div className="fq-tabs" role="group" aria-label="Filtrează întrebările">
+          <button type="button" aria-pressed={tab === 'toate'} className={`fq-tab ${tab === 'toate' ? 'active-all' : ''}`} onClick={() => setTab('toate')}>
+            Toate ({allFaqs.length})
+          </button>
+          <button type="button" aria-pressed={tab === 'branduri'} className={`fq-tab ${tab === 'branduri' ? 'active-brand' : ''}`} onClick={() => setTab('branduri')}>
+            <Building2 size={16} aria-hidden="true" /> Branduri ({faqs.branduri.length})
+          </button>
+          <button type="button" aria-pressed={tab === 'influenceri'} className={`fq-tab ${tab === 'influenceri' ? 'active-infl' : ''}`} onClick={() => setTab('influenceri')}>
+            <Clapperboard size={16} aria-hidden="true" /> Influenceri ({faqs.influenceri.length})
+          </button>
         </div>
-      </section>
+      </PageHero>
 
       {/* FAQ List */}
-      <section style={{ padding: '0 24px 72px' }}>
-        <div className="container">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <section className="sp-section">
+        <div className="af-wrap">
+          <div className="fq-list">
             {displayed.map((faq) => (
-              <div key={faq.id} className={`faq-item ${open === faq.id ? 'open' : ''}`}>
-                <div className="faq-q" onClick={() => toggle(faq.id)}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div key={faq.id} className={`fq-item ${open === faq.id ? 'open' : ''}`}>
+                <button type="button" className="fq-q" aria-expanded={open === faq.id} aria-controls={`fq-a-${faq.id}`} onClick={() => toggle(faq.id)}>
+                  <span className="fq-q-main">
                     {faq.cat === 'branduri'
-                      ? <span style={{ background: '#fff7ed', color: '#ea580c', fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 99, whiteSpace: 'nowrap' }}>Brand</span>
-                      : <span style={{ background: '#faf5ff', color: '#7c3aed', fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 99, whiteSpace: 'nowrap' }}>Creator</span>
+                      ? <span className="sp-tag sp-tag-brand fq-tag">Brand</span>
+                      : <span className="sp-tag sp-tag-infl fq-tag">Creator</span>
                     }
-                    <p style={{ fontSize: 14, fontWeight: 800, color: '#111', margin: 0 }}>{faq.q}</p>
-                  </div>
-                  <div className="chevron" style={{ background: open === faq.id ? '#ede9fe' : '#f3f4f6', color: open === faq.id ? '#7c3aed' : '#9ca3af', transform: open === faq.id ? 'rotate(180deg)' : 'none' }}>
-                    ▾
-                  </div>
-                </div>
+                    <span className="fq-q-text">{faq.q}</span>
+                  </span>
+                  <span className="fq-chev" aria-hidden="true"><ChevronDown size={18} /></span>
+                </button>
                 {open === faq.id && (
-                  <p className="faq-a">{faq.a}</p>
+                  <p className="fq-a" id={`fq-a-${faq.id}`}>{faq.a}</p>
                 )}
               </div>
             ))}
           </div>
 
           {/* Contact CTA */}
-          <div style={{ marginTop: 48, background: '#f9fafb', borderRadius: 20, padding: 32, textAlign: 'center' }}>
-            <p style={{ fontSize: 20, margin: '0 0 8px' }}>🤔</p>
-            <h3 style={{ fontSize: 16, fontWeight: 900, color: '#111', margin: '0 0 6px' }}>Nu ai găsit răspunsul?</h3>
-            <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 20px' }}>Scrie-ne direct și îți răspundem în maxim 24 de ore.</p>
-            <a href="mailto:contact@addfame.ro" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', color: 'white', borderRadius: 12, fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>
-              contact@addfame.ro →
-            </a>
+          <div className="sp-cta fq-cta">
+            <div className="sp-cta-glow af-grad" aria-hidden="true" />
+            <div>
+              <span className="sp-icon sp-icon-soft fq-cta-icon"><HelpCircle size={22} aria-hidden="true" /></span>
+              <h2>Nu ai găsit răspunsul?</h2>
+              <p>Scrie-ne direct și îți răspundem în maxim 24 de ore.</p>
+            </div>
+            <div className="af-row">
+              <a href="mailto:contact@addfame.ro" className="af-btn af-btn-white">
+                contact@addfame.ro <ArrowRight size={18} aria-hidden="true" />
+              </a>
+            </div>
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer style={{ padding: '28px 24px', borderTop: '1px solid #f0f0f0', display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
-        <Link href="/" style={{ fontSize: 13, color: '#9ca3af', textDecoration: 'none' }}>← Înapoi la AddFame</Link>
-        <Link href="/pentru-branduri" style={{ fontSize: 13, color: '#9ca3af', textDecoration: 'none' }}>Pentru Branduri</Link>
-        <Link href="/pentru-influenceri" style={{ fontSize: 13, color: '#9ca3af', textDecoration: 'none' }}>Pentru Influenceri</Link>
-        <Link href="/contact" style={{ fontSize: 13, color: '#9ca3af', textDecoration: 'none' }}>Contact</Link>
-      </footer>
-    </div>
+    </SitePage>
   )
 }
+
+const FQ_CSS = `
+.fq-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.fq-tab{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 18px;border-radius:999px;border:1.5px solid #dcd9ee;background:#fff;color:#14123a;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.fq-tab:hover{border-color:#7040f0}
+.fq-tab.active-all{background:#14123a;color:#fff;border-color:#14123a}
+.fq-tab.active-brand{background:#e6f0ff;color:#1d4fb8;border-color:#a9c6f5}
+.fq-tab.active-infl{background:#efeaff;color:#4423c4;border-color:#cfc4ff}
+.fq-list{display:flex;flex-direction:column;gap:10px;max-width:860px}
+.fq-item{background:#fff;border:1.5px solid #e5e3f3;border-radius:16px;overflow:hidden;transition:border-color .15s}
+.fq-item:hover{border-color:#cfc4ff}
+.fq-item.open{border-color:#7040f0}
+.fq-q{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;min-height:56px;background:transparent;border:0;cursor:pointer;text-align:left;font-family:inherit;color:#14123a}
+.fq-q-main{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;min-width:0}
+.fq-tag{font-size:10px;padding:3px 9px;margin-top:2px}
+.fq-q-text{font-size:16px;font-weight:700;line-height:1.4;flex:1 1 220px;min-width:0}
+.fq-chev{flex:none;width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#f6f6fc;color:#8783a8;transition:transform .2s,background .2s,color .2s}
+.fq-item.open .fq-chev{transform:rotate(180deg);background:#efeaff;color:#5a35e6}
+.fq-a{margin:0;padding:0 20px 20px;font-size:15px;color:#4a4770;line-height:1.7;max-width:60em}
+.fq-cta{margin-top:clamp(40px,6vw,64px)}
+.fq-cta-icon{position:relative;margin-bottom:16px}
+`

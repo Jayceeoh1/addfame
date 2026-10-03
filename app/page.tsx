@@ -4,9 +4,10 @@ import Link from 'next/link'
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowRight, Check, Star, Instagram, Youtube } from 'lucide-react'
+import { ArrowRight, Check, Star } from 'lucide-react'
 import { fontVars } from '@/lib/fonts'
 import HeroCampaignCard from '@/components/home/HeroCampaignCard'
+import { SiteHeader, SiteFooter, SITE_CSS } from '@/components/site/SiteShell'
 
 // ─── Tipuri pentru datele publice ────────────────────────────────────────────
 type Clip = {
@@ -49,14 +50,6 @@ function timeAgo(iso: string | null, now: number) {
 
 function fmt(n: unknown) {
   return (Number(n) || 0).toLocaleString('ro-RO')
-}
-
-function TikTokIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg className={className} style={style} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.3 6.3 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.22 8.22 0 004.81 1.54V6.79a4.85 4.85 0 01-1.04-.1z" />
-    </svg>
-  )
 }
 
 function Avatar({ name, src, index, size = 48 }: { name: string; src: string | null; index: number; size?: number }) {
@@ -187,27 +180,10 @@ export default function HomePage() {
 
   return (
     <div className={`af-page ${fontVars}`}>
+      <style>{SITE_CSS}</style>
       <style>{CSS}</style>
 
-      {/* NAV */}
-      <header className="af-header">
-        <nav className="af-wrap af-nav">
-          <Link href="/" className="af-logo">
-            <span className="af-logo-mark"><img src="/logo.png" alt="" /></span>
-            <span className="af-logo-text">Add<span className="af-grad-text">Fame</span></span>
-          </Link>
-          <div className="af-nav-links">
-            <a href="#cum">Cum funcționează</a>
-            <a href="#branduri">Pentru branduri</a>
-            <a href="#influenceri">Influenceri</a>
-            <a href="#faq">Întrebări</a>
-          </div>
-          <div className="af-nav-cta">
-            <Link href="/auth/login" className="af-nav-login">Autentificare</Link>
-            <Link href="/auth/register" className="af-btn af-btn-violet af-btn-sm">Creează cont</Link>
-          </div>
-        </nav>
-      </header>
+      <SiteHeader />
 
       {/* HERO */}
       <section className="af-wrap af-hero">
@@ -377,48 +353,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="af-footer">
-        <div className="af-wrap">
-          <div className="af-footer-grid">
-            <div>
-              <Link href="/" className="af-logo">
-                <span className="af-logo-mark"><img src="/logo.png" alt="" /></span>
-                <span className="af-logo-text">Add<span className="af-grad-text">Fame</span></span>
-              </Link>
-              <p className="af-footer-about">Conectăm branduri românești cu influenceri autentici.</p>
-              <div className="af-socials">
-                <a href="https://www.instagram.com/addfame.ro" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram size={16} /></a>
-                <a href="https://www.tiktok.com/@addfame" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TikTokIcon style={{ width: 16, height: 16 }} /></a>
-                <a href="https://www.youtube.com/@addfame" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><Youtube size={16} /></a>
-              </div>
-            </div>
-            {[
-              { title: 'Platformă', links: [['Pentru Branduri', '/pentru-branduri'], ['Pentru Influenceri', '/pentru-influenceri'], ['Cum Funcționează', '/cum-functioneaza'], ['Prețuri', '/preturi']] },
-              { title: 'Companie', links: [['Despre noi', '/despre-noi'], ['Contact', '/contact'], ['Înregistrare', '/auth/register']] },
-              { title: 'Legal', links: [['Termeni', '/termeni'], ['Confidențialitate', '/politica-de-confidentialitate'], ['Politica Cookies', '/politica-cookies']] },
-            ].map(col => (
-              <div key={col.title}>
-                <p className="af-eyebrow">{col.title}</p>
-                <ul className="af-footer-links">
-                  {col.links.map(([label, href]) => <li key={label}><Link href={href}>{label}</Link></li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="af-footer-bottom">
-            <div>
-              <p>© 2026 AddFame. Toate drepturile rezervate.</p>
-              <p className="af-small">ADD FAME DIGITAL S.R.L. · CUI: 54992560 · Reg. Com.: J2026040984009 · Argeș, România</p>
-            </div>
-            <div className="af-footer-legal">
-              <a href="https://anpc.ro" target="_blank" rel="noopener noreferrer">ANPC</a>
-              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">SOL Online</a>
-              <span>contact@addfame.ro</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }
@@ -453,22 +388,6 @@ const CSS = `
 .af-btn-white{background:#fff;color:var(--ink);align-self:flex-start}
 .af-btn-sm{font-size:14px;padding:11px 18px;min-height:44px}
 .af-btn-lg{font-size:17px;padding:18px 28px}
-
-/* Nav */
-.af-header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
-.af-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:12px}
-.af-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
-.af-logo-mark{width:36px;height:36px;border-radius:10px;background:#fff;border:1px solid #ede9fe;box-shadow:0 2px 8px rgba(112,64,240,.15);display:flex;align-items:center;justify-content:center}
-.af-logo-mark img{width:78%;height:78%;object-fit:contain}
-.af-logo-text{font-weight:800;font-size:21px;letter-spacing:-.02em}
-.af-nav-links{display:flex;gap:28px;font-size:14px;font-weight:600}
-.af-nav-links a{color:var(--muted);text-decoration:none}
-.af-nav-links a:hover{color:var(--ink)}
-.af-nav-cta{display:flex;align-items:center;gap:8px}
-.af-nav-login{font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;padding:12px 8px}
-@media(max-width:860px){.af-nav-links{display:none}}
-@media(max-width:420px){.af-logo-text{font-size:17px}.af-logo-mark{width:32px;height:32px}.af-nav{gap:8px}.af-nav-login{font-size:13px;padding:12px 2px;white-space:nowrap}.af-btn-sm{font-size:13px;padding:10px 14px}}
-@media(max-width:340px){.af-logo-text{display:none}}
 
 /* Hero */
 .af-hero{display:flex;flex-wrap:wrap;align-items:center;gap:56px;padding-top:clamp(40px,7vw,96px);padding-bottom:72px}
@@ -594,22 +513,6 @@ const CSS = `
 .af-cta h2{position:relative;margin:0;font-weight:800;font-size:clamp(30px,4vw,52px);letter-spacing:-.03em;line-height:1.04;max-width:12em;text-wrap:balance}
 .af-cta .af-btn{position:relative}
 .af-cta-glow{position:absolute;width:420px;height:420px;right:-120px;top:-180px;border-radius:50%;opacity:.35;filter:blur(60px)}
-
-/* Footer */
-.af-footer{border-top:1px solid var(--line);background:#fff;padding:56px 0 32px}
-.af-footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:32px;margin-bottom:40px}
-.af-footer-about{font-size:14px;color:var(--soft);max-width:260px;margin:14px 0 16px}
-.af-socials{display:flex;gap:10px}
-.af-socials a{width:40px;height:40px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.af-socials a:hover{color:#7040f0;border-color:#cfc4ff}
-.af-footer-links{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:10px}
-.af-footer-links a{font-size:14px;color:var(--muted);text-decoration:none}
-.af-footer-links a:hover{color:var(--ink)}
-.af-footer-bottom{border-top:1px solid var(--line);padding-top:24px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;font-size:13px;color:var(--soft)}
-.af-footer-bottom p{margin:0 0 4px}
-.af-small{font-size:12px}
-.af-footer-legal{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
-.af-footer-legal a{color:var(--soft);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px}
 
 /* Animații */
 @keyframes af-marquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}

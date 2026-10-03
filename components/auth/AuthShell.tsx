@@ -12,7 +12,7 @@ import { fontVars } from '@/lib/fonts'
 type Stats = { influencers: number; brands: number; campaigns: number; completedCampaigns: number }
 type Clip = { id: string; display_name: string; influencer: { avatar: string | null }; campaign: { brand_name: string; title: string }; platform: string }
 
-export type AuthVariant = 'login' | 'choose' | 'brand' | 'influencer'
+export type AuthVariant = 'login' | 'choose' | 'brand' | 'influencer' | 'reset' | 'verify'
 
 const COPY: Record<AuthVariant, { tag: string; title: string; accent: string; lead: string }> = {
   login: {
@@ -32,6 +32,18 @@ const COPY: Record<AuthVariant, { tag: string; title: string; accent: string; le
     title: 'Oameni reali care îți',
     accent: 'recomandă produsul.',
     lead: 'Lansezi o campanie în câteva minute, alegi creatorii din aplicări și aprobi fiecare postare.',
+  },
+  reset: {
+    tag: 'Cont',
+    title: 'Îți recuperezi contul',
+    accent: 'în 2 minute.',
+    lead: 'Îți trimitem un link pe email. Îl deschizi, alegi o parolă nouă și ești înapoi în cont.',
+  },
+  verify: {
+    tag: 'Ultimul pas',
+    title: 'Confirmă emailul și',
+    accent: 'ești gata.',
+    lead: 'Am trimis un link de confirmare. După ce îl deschizi, contul tău devine activ.',
   },
   influencer: {
     tag: 'Pentru creatori',
