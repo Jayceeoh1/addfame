@@ -8,7 +8,9 @@ import { createClient } from '@/lib/supabase/client'
 import {
   AlertCircle, ArrowRight, ArrowLeft, Eye, EyeOff,
   TrendingUp, Users, CheckCircle, Clock, MapPin, X, Loader2,
+  Check, FileText, Lock, Gift, ShieldCheck,
 } from 'lucide-react'
+import AuthShell from '@/components/auth/AuthShell'
 import {
   BRAND_INDUSTRIES, COMPANY_SIZES, INFLUENCER_NICHES,
   COUNTRIES, validatePassword,
@@ -197,687 +199,406 @@ function RegisterForm() {
   const toggleNiche = (n: string) =>
     setNiches(prev => prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n])
 
-  const accentColor = isBrand || role === null ? '#f97316' : '#8b5cf6'
-  const accentLight = isBrand || role === null ? 'rgba(249,115,22,0.10)' : 'rgba(139,92,246,0.10)'
+  const variant = role === 'BRAND' ? 'brand' : role === 'INFLUENCER' ? 'influencer' : 'choose'
+  const spinner = <><span className="au-spin" /> Se creează contul…</>
 
   return (
-    <div className="min-h-screen bg-white flex" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap');
-        @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes floatBadge { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-        @keyframes slideIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
-        .fade-up{animation:fadeUp .55s ease both}
-        .slide-in{animation:slideIn .4s ease both}
-        .float-1{animation:floatBadge 4s ease-in-out infinite}
-        .float-2{animation:floatBadge 5s ease-in-out infinite;animation-delay:1.5s}
-        .float-3{animation:floatBadge 4.5s ease-in-out infinite;animation-delay:0.8s}
-        .d1{animation-delay:.06s}.d2{animation-delay:.12s}.d3{animation-delay:.18s}.d4{animation-delay:.24s}.d5{animation-delay:.30s}
-        .brand-grad{background:linear-gradient(135deg,#f97316,#ec4899)}
-        .infl-grad{background:linear-gradient(135deg,#8b5cf6,#06b6d4)}
-        .f{width:100%;padding:11px 16px;border:2px solid #e5e7eb;border-radius:12px;font-size:14px;font-weight:500;outline:none;transition:border-color .2s,box-shadow .2s;font-family:inherit;color:#111;background:white}
-        .f:focus{border-color:var(--ac);box-shadow:0 0 0 4px var(--acl)}
-        .f::placeholder{color:#9ca3af;font-weight:400}
-        .f:disabled{background:#f9fafb;color:#9ca3af}
-        .sel{width:100%;padding:11px 16px;border:2px solid #e5e7eb;border-radius:12px;font-size:14px;font-weight:500;outline:none;transition:border-color .2s;font-family:inherit;color:#111;background:white;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:16px;padding-right:44px}
-        .sel:focus{border-color:var(--ac);box-shadow:0 0 0 4px var(--acl)}
-        .btn{width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:800;color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .18s,box-shadow .18s;font-family:inherit}
-        .btn:hover:not(:disabled){transform:translateY(-2px)}
-        .btn:disabled{opacity:.6;cursor:not-allowed}
-        .niche-btn{padding:8px 14px;border-radius:10px;font-size:13px;font-weight:700;border:2px solid #e5e7eb;cursor:pointer;transition:all .18s;font-family:inherit;background:white;color:#374151}
-        .niche-btn.active{color:white;border-color:transparent}
-        .niche-btn:hover:not(.active){border-color:var(--ac);color:var(--ac);background:var(--acl)}
-      `}</style>
-
-      {/* ── Left panel ── */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-[45%] relative overflow-hidden flex-col justify-between p-12"
-        style={{ background: isBrand ? 'linear-gradient(145deg,#fff7ed,#fce7f3,#ede9fe)' : 'linear-gradient(145deg,#ede9fe,#dbeafe,#ecfdf5)' }}>
-
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-12 right-8 w-80 h-80 rounded-full blur-3xl opacity-40"
-            style={{ background: `radial-gradient(circle, ${isBrand ? 'rgba(249,115,22,0.22)' : 'rgba(139,92,246,0.22)'}, transparent 70%)` }} />
-          <div className="absolute bottom-16 left-4 w-64 h-64 rounded-full blur-3xl opacity-30"
-            style={{ background: `radial-gradient(circle, ${isBrand ? 'rgba(236,72,153,0.18)' : 'rgba(6,182,212,0.18)'}, transparent 70%)` }} />
-        </div>
-
-        <Link href="/" className="relative z-10 flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: '#fff', border: '1px solid #ede9fe', boxShadow: '0 2px 8px rgba(124,58,237,0.12)' }}>
-            <img src="/logo.png" alt="AddFame" style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
-          </div>
-          <span className="font-black text-xl tracking-tight text-gray-900">
-            Add<span style={{ color: accentColor }}>Fame</span>
-          </span>
-        </Link>
-
-        <div className="relative z-10 flex-1 flex flex-col justify-center">
-          <div className="mb-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border"
-            style={{ background: accentLight, borderColor: `${accentColor}33`, color: accentColor }}>
-            {isBrand ? '🏢 Pentru Branduri' : role === 'INFLUENCER' ? '✨ Pentru Influenceri' : '🚀 Alătură-te AddFame'}
-          </div>
-          <h2 className="text-4xl font-black text-gray-900 leading-tight mt-3 mb-4">
-            {isBrand ? 'Crește-ți brandul' : role === 'INFLUENCER' ? 'Monetizează-ți' : 'Începe călătoria'}
-            <br />
-            <span style={{ fontFamily: "'Instrument Serif',serif", fontStyle: 'italic', fontWeight: 400, color: accentColor }}>
-              {isBrand ? 'cu oameni reali' : role === 'INFLUENCER' ? 'influența' : 'cu AddFame'}
+    <AuthShell variant={variant}>
+      {/* Progres */}
+      <div className="au-steps" aria-label={`Pasul ${stepIndex + 1} din ${steps.length}`}>
+        {steps.map((s, i) => (
+          <div key={i} className="au-step">
+            <span className={`au-step-n ${i <= stepIndex ? 'on' : ''}`}>
+              {i < stepIndex ? <CheckCircle size={16} /> : i + 1}
             </span>
-          </h2>
-          <p className="text-gray-500 text-sm leading-relaxed mb-10 max-w-xs">
-            {isBrand
-              ? 'Lansează campanii în minute și primește videoclipuri autentice de la micro-influenceri care convertesc.'
-              : role === 'INFLUENCER'
-                ? 'Conectează-te cu branduri pe care le iubești, creează conținut autentic și fii plătit rapid — în termenii tăi.'
-                : 'Cea mai simplă platformă pentru a conecta brandurile cu micro-influencerii pentru conținut care chiar funcționează.'}
-          </p>
-
-          {/* Floating feature cards */}
-          <div className="space-y-3 max-w-[280px]">
-            {(isBrand ? [
-              { icon: '⚡', title: 'Lansezi în 5 minute', sub: 'Fără experiență de marketing', delay: 'float-1' },
-              { icon: '🎬', title: 'Videoclipuri în 3 zile', sub: 'Gata de postat sau folosit ca reclame', delay: 'float-2' },
-              { icon: '💯', title: 'Bani înapoi 100%', sub: 'Dacă nu găsim influencerii tăi', delay: 'float-3' },
-            ] : role === 'INFLUENCER' ? [
-              { icon: '💸', title: 'Plătit rapid', sub: 'Direct în contul tău', delay: 'float-1' },
-              { icon: '🎯', title: 'Branduri potrivite', sub: 'Doar branduri care se potrivesc nișei tale', delay: 'float-2' },
-              { icon: '🕐', title: 'Programul tău', sub: 'Lucrează când vrei', delay: 'float-3' },
-            ] : [
-              { icon: '🏢', title: '1.200+ branduri', sub: 'cresc deja cu AddFame', delay: 'float-1' },
-              { icon: '✨', title: '15.000+ creatori', sub: 'gata pentru campania ta', delay: 'float-2' },
-              { icon: '🚀', title: '98.000+ videoclipuri', sub: 'livrate și tot mai multe', delay: 'float-3' },
-            ]).map((c, i) => (
-              <div key={i} className={`${c.delay} bg-white/75 backdrop-blur-sm rounded-2xl p-3.5 border border-white/60 flex items-center gap-3`}
-                style={{ boxShadow: '0 6px 20px rgba(0,0,0,0.07)', marginLeft: i === 1 ? '20px' : '0' }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                  style={{ background: accentLight }}>
-                  {c.icon}
-                </div>
-                <div>
-                  <p className="text-xs font-black text-gray-900">{c.title}</p>
-                  <p className="text-xs text-gray-400">{c.sub}</p>
-                </div>
-              </div>
-            ))}
+            <span className={`au-step-label ${i === stepIndex ? 'on' : ''}`}>{s}</span>
+            {i < steps.length - 1 && <span className={`au-step-bar ${i < stepIndex ? 'on' : ''}`} />}
           </div>
-        </div>
-
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex -space-x-2">
-            {['🧑', '👩', '👨', '👩'].map((e, i) => (
-              <div key={i} className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-xs"
-                style={{ background: 'linear-gradient(135deg,#fed7aa,#fce7f3)' }}>{e}</div>
-            ))}
-          </div>
-          <p className="text-sm text-gray-500"><span className="font-black text-gray-900">22+</span> branduri au încredere în AddFame</p>
-        </div>
+        ))}
       </div>
 
-      {/* ── Right panel — form ── */}
-      <div className="w-full lg:w-7/12 xl:w-[55%] flex items-start justify-center px-6 py-10 overflow-y-auto">
-        <div className="w-full max-w-lg" style={{ '--ac': accentColor, '--acl': accentLight } as React.CSSProperties}>
+      {error && !rateLimited && (
+        <div className="au-alert au-alert-err au-enter" role="alert">
+          <AlertCircle size={18} />
+          <span>{error}</span>
+        </div>
+      )}
 
-          {/* Mobile logo */}
-          <Link href="/" className="lg:hidden flex items-center gap-2.5 mb-8 justify-center fade-up">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: '#fff', border: '1px solid #ede9fe', boxShadow: '0 2px 8px rgba(124,58,237,0.12)' }}>
-              <img src="/logo.png" alt="AddFame" style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
+      {rateLimited && (
+        <div className="au-alert au-alert-warn au-enter" role="alert">
+          <Clock size={18} />
+          <div>
+            <b>Limită email atinsă</b><br />
+            Verifică inbox-ul pentru un email de confirmare existent, sau așteaptă câteva minute și încearcă din nou.<br />
+            Ai deja un cont? <Link href="/auth/login" className="au-link">Autentifică-te</Link>
+          </div>
+        </div>
+      )}
+
+      {/* ── PAS 1: Rol ── */}
+      {step === 'role' && (
+        <div className="au-enter" key="role">
+          <h1 className="au-h1">Creează-ți contul</h1>
+          <p className="au-sub">Ai deja un cont? <Link href="/auth/login" className="au-link">Autentifică-te</Link></p>
+
+          <div className="au-roles">
+            {[
+              { type: 'BRAND' as const, cls: 'au-role-brand', icon: TrendingUp, label: 'Sunt brand', desc: 'Lansează campanii și alege influencerii potriviți pentru afacerea ta.', features: ['Creezi campanii', 'Alegi creatorii', 'Urmărești rezultatele'] },
+              { type: 'INFLUENCER' as const, cls: 'au-role-infl', icon: Users, label: 'Sunt influencer', desc: 'Descoperă colaborări cu branduri și câștigă din audiența ta.', features: ['Aplici la campanii', 'Îți construiești portofoliul', 'Câștigi bani și produse'] },
+            ].map(opt => (
+              <button key={opt.type} type="button" className={`au-role ${opt.cls}`}
+                onClick={() => { setRole(opt.type); setStep('account') }}>
+                <span className="au-role-icon"><opt.icon size={20} /></span>
+                <span className="au-role-text" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <b>{opt.label}</b>
+                  <p>{opt.desc}</p>
+                </span>
+                <ul>
+                  {opt.features.map(f => <li key={f}><CheckCircle size={14} /> {f}</li>)}
+                </ul>
+                <span className="au-role-go">Începe <ArrowRight size={14} /></span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── PAS 2: Cont ── */}
+      {step === 'account' && (
+        <form onSubmit={handleAccountSubmit} className="au-stack au-enter" key="account">
+          <div>
+            <h1 className="au-h1">{isBrand ? 'Cont de brand' : 'Cont de creator'}</h1>
+            <p className="au-sub" style={{ marginBottom: 0 }}>
+              Datele cu care vei intra în cont. Ai deja cont? <Link href="/auth/login" className="au-link">Autentifică-te</Link>
+            </p>
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="reg-email" className="au-label">Adresă de email</label>
+            <input id="reg-email" className="au-input" type="email" placeholder="tu@exemplu.com" autoComplete="email" inputMode="email"
+              value={email} onChange={e => setEmail(e.target.value)} disabled={loading} required />
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="reg-pw" className="au-label">Parolă</label>
+            <div className="au-pw">
+              <input id="reg-pw" className="au-input" type={showPassword ? 'text' : 'password'} placeholder="Minim 8 caractere" autoComplete="new-password"
+                value={password}
+                onChange={e => { setPassword(e.target.value); if (e.target.value) validatePwd(e.target.value) }}
+                disabled={loading} required />
+              <button type="button" className="au-eye" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ascunde parola' : 'Arată parola'}>
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-            <span className="font-black text-xl tracking-tight text-gray-900">Add<span style={{ color: accentColor }}>Fame</span></span>
-          </Link>
+            {passwordErrors.length > 0 && (
+              <ul style={{ margin: '8px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {passwordErrors.map(e => (
+                  <li key={e} style={{ fontSize: 13, color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <AlertCircle size={13} /> {e}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-          {/* Step progress */}
-          <div className="fade-up mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              {steps.map((s, i) => (
-                <div key={i} className="flex items-center gap-2 flex-1 last:flex-none">
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all ${i < stepIndex ? 'text-white' : i === stepIndex ? 'text-white' : 'bg-gray-100 text-gray-400'
-                      }`} style={i <= stepIndex ? { background: accentColor } : {}}>
-                      {i < stepIndex ? <CheckCircle className="w-4 h-4" /> : i + 1}
-                    </div>
-                    <span className={`text-xs font-bold hidden sm:block ${i === stepIndex ? 'text-gray-900' : 'text-gray-400'}`}>{s}</span>
-                  </div>
-                  {i < steps.length - 1 && (
-                    <div className="flex-1 h-0.5 rounded-full" style={{ background: i < stepIndex ? accentColor : '#e5e7eb' }} />
-                  )}
-                </div>
+          <div className="au-field">
+            <label htmlFor="reg-pw2" className="au-label">Confirmă parola</label>
+            <div className="au-pw">
+              <input id="reg-pw2" className="au-input" type={showConfirm ? 'text' : 'password'} placeholder="••••••••" autoComplete="new-password"
+                value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} disabled={loading} required />
+              <button type="button" className="au-eye" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? 'Ascunde parola' : 'Arată parola'}>
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {confirmPassword && password !== confirmPassword && (
+              <p className="au-hint" style={{ color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 6 }}><AlertCircle size={13} /> Parolele nu se potrivesc</p>
+            )}
+            {confirmPassword && password === confirmPassword && passwordErrors.length === 0 && (
+              <p className="au-hint" style={{ color: '#047857', display: 'flex', alignItems: 'center', gap: 6 }}><CheckCircle size={14} /> Parolele se potrivesc</p>
+            )}
+          </div>
+
+          <button type="submit" disabled={loading || passwordErrors.length > 0} className="au-btn">
+            Continuă <ArrowRight size={18} />
+          </button>
+          <button type="button" onClick={() => setStep('role')} className="au-btn-ghost">
+            <ArrowLeft size={16} /> Înapoi
+          </button>
+        </form>
+      )}
+
+      {/* ── PAS 3: Brand ── */}
+      {step === 'profile' && role === 'BRAND' && (
+        <form onSubmit={handleBrandSubmit} className="au-stack au-enter" key="brand">
+          <div>
+            <h1 className="au-h1">Informații brand</h1>
+            <p className="au-sub" style={{ marginBottom: 0 }}>Spune-ne despre brandul tău și firma care îl deține.</p>
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="b-name" className="au-label">Numele brandului *</label>
+            <input id="b-name" className="au-input" placeholder="Numele brandului tău" autoComplete="organization"
+              value={brandName} onChange={e => setBrandName(e.target.value)} disabled={loading} required />
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="b-ind" className="au-label">Industrie *</label>
+            <select id="b-ind" className="au-input au-select" value={industry} onChange={e => setIndustry(e.target.value)} disabled={loading} required>
+              <option value="">Selectează o industrie</option>
+              {BRAND_INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+            </select>
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="b-size" className="au-label">Mărimea companiei</label>
+            <select id="b-size" className="au-input au-select" value={companySize} onChange={e => setCompanySize(e.target.value)} disabled={loading}>
+              <option value="">Selectează mărimea companiei</option>
+              {COMPANY_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="b-web" className="au-label">Website</label>
+            <input id="b-web" className="au-input" type="url" inputMode="url" placeholder="https://siteultau.ro" autoComplete="url"
+              value={website} onChange={e => setWebsite(e.target.value)} disabled={loading} />
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="b-cui" className="au-label">CUI / CIF firmă *</label>
+            <input id="b-cui" className="au-input" placeholder="ex. RO12345678 sau 12345678"
+              value={cui} onChange={e => setCui(e.target.value)} disabled={loading} required />
+            {cui.trim().length > 0 && !/^(RO)?[0-9]{2,10}$/i.test(cui.trim()) ? (
+              <p className="au-hint" style={{ color: '#b91c1c', fontWeight: 700 }}>CUI invalid — trebuie să conțină doar cifre (opțional cu prefix RO).</p>
+            ) : (
+              <p className="au-hint">Necesar pentru verificarea contului de brand.</p>
+            )}
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="b-legal" className="au-label">Denumire legală firmă *</label>
+            <input id="b-legal" className="au-input" placeholder="ex. SC Exemplu Marketing SRL"
+              value={companyLegalName} onChange={e => setCompanyLegalName(e.target.value)} disabled={loading} required />
+            <p className="au-hint">Așa cum apare la Registrul Comerțului.</p>
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="b-addr" className="au-label">Sediu social / Adresă firmă *</label>
+            <input id="b-addr" className="au-input" placeholder="ex. Str. Exemplu nr. 1, București" autoComplete="street-address"
+              value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} disabled={loading} required />
+          </div>
+
+          {brandRefCode && (
+            <div className="au-alert au-alert-warn" style={{ marginBottom: 0, flexDirection: 'column', gap: 10 }}>
+              <b>Ești invitat printr-un link de recomandare</b>
+              <span>Pentru a activa bonusul influencerului care te-a invitat, brandul tău trebuie să fie verificat de echipa noastră (CUI valid, email firmă, număr de telefon, website real). Conturile sau datele false duc la penalizarea ambelor conturi.</span>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontWeight: 700 }}>
+                <input type="checkbox" checked={brandReferralAcknowledged}
+                  onChange={e => setBrandReferralAcknowledged(e.target.checked)}
+                  style={{ marginTop: 2, width: 20, height: 20, accentColor: '#ca8a04', flexShrink: 0 }} />
+                Confirm că datele companiei mele sunt reale și sunt de acord cu verificarea manuală a contului
+              </label>
+            </div>
+          )}
+
+          <button type="submit" className="au-btn"
+            disabled={loading || !brandName || !industry || !/^(RO)?[0-9]{2,10}$/i.test(cui.trim()) || companyLegalName.trim().length < 5 || companyAddress.trim().length < 8 || (!!brandRefCode && !brandReferralAcknowledged)}>
+            {loading ? spinner : <>Creează contul <ArrowRight size={18} /></>}
+          </button>
+          <button type="button" onClick={() => setStep('account')} className="au-btn-ghost">
+            <ArrowLeft size={16} /> Înapoi
+          </button>
+        </form>
+      )}
+
+      {/* ── PAS 3: Influencer ── */}
+      {step === 'profile' && role === 'INFLUENCER' && (
+        <form onSubmit={handleInfluencerSubmit} className="au-stack au-enter" key="infl">
+          <div>
+            <h1 className="au-h1">Profilul tău de creator</h1>
+            <p className="au-sub" style={{ marginBottom: 0 }}>Așa te vor vedea brandurile când aplici la campanii.</p>
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="i-name" className="au-label">Nume complet *</label>
+            <input id="i-name" className="au-input" placeholder="Numele tău" autoComplete="name"
+              value={influencerName} onChange={e => setInfluencerName(e.target.value)} disabled={loading} required />
+          </div>
+
+          <div className="au-field">
+            <label htmlFor="i-bio" className="au-label">Bio *</label>
+            <textarea id="i-bio" className="au-input" rows={3} maxLength={500} placeholder="Spune brandurilor despre tine și stilul tău de conținut…"
+              value={bio} onChange={e => setBio(e.target.value)} disabled={loading} required />
+            <p className="au-hint" style={{ textAlign: 'right' }}>{bio.length}/500</p>
+          </div>
+
+          <div className="au-field">
+            <span className="au-label">Nișele tale * <span style={{ fontWeight: 500, color: '#8783a8' }}>(alege toate care se aplică)</span></span>
+            <div className="au-chips">
+              {INFLUENCER_NICHES.map(n => (
+                <button key={n} type="button" onClick={() => toggleNiche(n)} aria-pressed={niches.includes(n)}
+                  className={`au-chip ${niches.includes(n) ? 'on' : ''}`}>
+                  {n}
+                </button>
               ))}
             </div>
+            {niches.length > 0 && (
+              <p className="au-hint" style={{ color: 'var(--ac)', fontWeight: 700 }}>{niches.length} {niches.length === 1 ? 'nișă selectată' : 'nișe selectate'}</p>
+            )}
           </div>
 
-          {/* Error */}
-          {error && !rateLimited && (
-            <div className="fade-up mb-5 flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl p-4">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
+          <div className="au-field">
+            <label htmlFor="i-country" className="au-label">Țară</label>
+            <select id="i-country" className="au-input au-select" value={country} onChange={e => setCountry(e.target.value)} disabled={loading}>
+              <option value="">Selectează țara ta</option>
+              {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
 
-          {rateLimited && (
-            <div className="fade-up mb-5 flex items-start gap-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-2xl p-4">
-              <Clock className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-500" />
-              <div>
-                <p className="font-black mb-1">Limită email atinsă</p>
-                <p className="text-amber-700">Verifică inbox-ul pentru un email de confirmare existent, sau așteaptă câteva minute și încearcă din nou.</p>
-                <p className="mt-2">Ai deja un cont? <Link href="/auth/login" className="font-black underline hover:text-amber-900">Autentifică-te</Link></p>
-              </div>
-            </div>
-          )}
-
-          {/* ── STEP 1: Role ── */}
-          {step === 'role' && (
-            <div className="slide-in">
-              <h1 className="text-3xl font-black text-gray-900 mb-1">Creează-ți contul</h1>
-              <p className="text-gray-500 text-sm mb-7">
-                Ai deja un cont?{' '}
-                <Link href="/auth/login" className="font-bold hover:text-gray-800 transition" style={{ color: accentColor }}>Autentifică-te</Link>
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[
-                  {
-                    type: 'BRAND' as const,
-                    icon: TrendingUp,
-                    grad: 'brand-grad',
-                    label: 'Sunt Brand',
-                    desc: 'Lansează campanii și găsește influencerii potriviți pentru afacerea ta.',
-                    features: ['Creează campanii', 'Găsește influenceri', 'Urmărește rezultatele'],
-                    border: 'border-orange-200',
-                    activeBorder: 'border-orange-400',
-                    activeBg: 'bg-orange-50',
-                    checkColor: 'text-orange-500',
-                  },
-                  {
-                    type: 'INFLUENCER' as const,
-                    icon: Users,
-                    grad: 'infl-grad',
-                    label: 'Sunt Influencer',
-                    desc: 'Descoperă deal-uri cu branduri și câștigă bani din audiența ta.',
-                    features: ['Răsfoiește campanii', 'Construiește portofoliu', 'Câștigă bani'],
-                    border: 'border-purple-200',
-                    activeBorder: 'border-purple-400',
-                    activeBg: 'bg-purple-50',
-                    checkColor: 'text-purple-500',
-                  },
-                ].map(opt => (
-                  <button key={opt.type} type="button"
-                    onClick={() => { setRole(opt.type); setStep('account') }}
-                    className={`relative p-6 rounded-2xl border-2 text-left transition-all hover:-translate-y-1 ${opt.border} hover:${opt.activeBorder} bg-white`}
-                    style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)', transition: 'all .2s ease' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = accentColor; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 28px ${accentColor}22` }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.05)' }}
-                  >
-                    <div className={`w-11 h-11 rounded-xl ${opt.grad} flex items-center justify-center mb-4`}
-                      style={{ boxShadow: opt.type === 'BRAND' ? '0 4px 12px rgba(249,115,22,0.3)' : '0 4px 12px rgba(139,92,246,0.3)' }}>
-                      <opt.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <p className="font-black text-base text-gray-900 mb-1.5">{opt.label}</p>
-                    <p className="text-xs text-gray-500 leading-relaxed mb-4">{opt.desc}</p>
-                    <ul className="space-y-1.5">
-                      {opt.features.map(f => (
-                        <li key={f} className="flex items-center gap-2 text-xs font-semibold text-gray-600">
-                          <CheckCircle className={`w-3.5 h-3.5 flex-shrink-0 ${opt.checkColor}`} /> {f}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="absolute top-4 right-4 flex items-center gap-1 text-xs font-bold" style={{ color: accentColor }}>
-                      Începe <ArrowRight className="w-3.5 h-3.5" />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── STEP 2: Account ── */}
-          {step === 'account' && (
-            <form onSubmit={handleAccountSubmit} className="slide-in space-y-5">
-              <div>
-                <h1 className="text-3xl font-black text-gray-900 mb-1">
-                  {isBrand ? 'Cont Brand' : 'Cont Creator'}
-                </h1>
-                <p className="text-gray-500 text-sm">Configurează datele de autentificare</p>
-              </div>
-
-              <div className="d1 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Adresă de email</label>
-                <input className="f" type="email" placeholder="tu@exemplu.com"
-                  value={email} onChange={e => setEmail(e.target.value)} disabled={loading} required />
-              </div>
-
-              <div className="d2 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Parolă</label>
-                <div className="relative">
-                  <input className="f pr-12" type={showPassword ? 'text' : 'password'} placeholder="Min. 8 caractere"
-                    value={password}
-                    onChange={e => { setPassword(e.target.value); if (e.target.value) validatePwd(e.target.value) }}
-                    disabled={loading} required />
-                  <button type="button" tabIndex={-1} onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {passwordErrors.length > 0 && (
-                  <ul className="mt-2 space-y-1">
-                    {passwordErrors.map(e => (
-                      <li key={e} className="text-xs text-red-500 flex items-center gap-1.5">
-                        <span className="w-1 h-1 rounded-full bg-red-400 flex-shrink-0" /> {e}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="d3 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Confirmă parola</label>
-                <div className="relative">
-                  <input className="f pr-12" type={showConfirm ? 'text' : 'password'} placeholder="••••••••"
-                    value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} disabled={loading} required />
-                  <button type="button" tabIndex={-1} onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
-                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {confirmPassword && password !== confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1.5">
-                    <span className="w-1 h-1 rounded-full bg-red-400 flex-shrink-0" /> Parolele nu se potrivesc
-                  </p>
-                )}
-                {confirmPassword && password === confirmPassword && passwordErrors.length === 0 && (
-                  <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5" /> Parolele se potrivesc
-                  </p>
-                )}
-              </div>
-
-              <div className="d4 fade-up pt-1">
-                <button type="submit" disabled={loading || passwordErrors.length > 0} className="btn"
-                  style={{ background: `linear-gradient(135deg,${isBrand ? '#f97316,#ec4899' : '#8b5cf6,#06b6d4'})`, boxShadow: `0 6px 20px ${accentColor}44` }}>
-                  Continuă <ArrowRight className="w-4 h-4" />
+          <div className="au-field">
+            <label htmlFor="i-city" className="au-label">Oraș / Comună *</label>
+            <div className="au-city" ref={cityWrapperRef}>
+              <MapPin size={18} className="au-city-icon" />
+              <input id="i-city" className="au-input" placeholder="ex. Iași, Cluj-Napoca, București…" autoComplete="address-level2"
+                value={city}
+                onChange={e => handleCityChange(e.target.value)}
+                onFocus={() => cityResults.length > 0 && setShowCityResults(true)}
+                disabled={loading} required />
+              {citySearching && (
+                <span className="au-city-clear" aria-hidden="true"><Loader2 size={18} className="animate-spin" /></span>
+              )}
+              {city && !citySearching && (
+                <button type="button" className="au-city-clear" aria-label="Șterge orașul"
+                  onClick={() => { setCity(''); setCityLat(undefined); setCityLon(undefined); setCityResults([]) }}>
+                  <X size={18} />
                 </button>
-              </div>
-
-              <button type="button" onClick={() => setStep('role')}
-                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-700 transition pt-1">
-                <ArrowLeft className="w-4 h-4" /> Înapoi
-              </button>
-            </form>
-          )}
-
-          {/* ── STEP 3: Brand profile ── */}
-          {step === 'profile' && role === 'BRAND' && (
-            <form onSubmit={handleBrandSubmit} className="slide-in space-y-5">
-              <div>
-                <h1 className="text-3xl font-black text-gray-900 mb-1">Informații Brand</h1>
-                <p className="text-gray-500 text-sm">Spune-ne despre brandul tău</p>
-              </div>
-
-              <div className="d1 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Numele brandului *</label>
-                <input className="f" placeholder="Numele brandului tău" value={brandName}
-                  onChange={e => setBrandName(e.target.value)} disabled={loading} required />
-              </div>
-
-              <div className="d2 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Industrie *</label>
-                <select className="sel" value={industry} onChange={e => setIndustry(e.target.value)} disabled={loading} required>
-                  <option value="">Selectează o industrie</option>
-                  {BRAND_INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
-                </select>
-              </div>
-
-              <div className="d3 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Mărimea companiei</label>
-                <select className="sel" value={companySize} onChange={e => setCompanySize(e.target.value)} disabled={loading}>
-                  <option value="">Selectează mărimea companiei</option>
-                  {COMPANY_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-
-              <div className="d4 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Website</label>
-                <input className="f" type="url" placeholder="https://siteultau.ro" value={website}
-                  onChange={e => setWebsite(e.target.value)} disabled={loading} />
-              </div>
-
-              <div className="d4b fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">CUI / CIF firmă *</label>
-                <input className="f" placeholder="ex. RO12345678 sau 12345678" value={cui}
-                  onChange={e => setCui(e.target.value)} disabled={loading} required />
-                {cui.trim().length > 0 && !/^(RO)?[0-9]{2,10}$/i.test(cui.trim()) ? (
-                  <p className="text-xs text-red-500 mt-1.5 font-bold">CUI invalid — trebuie să conțină doar cifre (opțional cu prefix RO).</p>
-                ) : (
-                  <p className="text-xs text-gray-400 mt-1.5">Necesar pentru verificarea contului de brand. Codul Unic de Înregistrare al firmei tale.</p>
-                )}
-              </div>
-
-              <div className="d4c fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Denumire legală firmă *</label>
-                <input className="f" placeholder="ex. SC Exemplu Marketing SRL" value={companyLegalName}
-                  onChange={e => setCompanyLegalName(e.target.value)} disabled={loading} required />
-                <p className="text-xs text-gray-400 mt-1.5">Așa cum apare la Registrul Comerțului.</p>
-              </div>
-
-              <div className="d4d fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Sediu social / Adresă firmă *</label>
-                <input className="f" placeholder="ex. Str. Exemplu nr. 1, București" value={companyAddress}
-                  onChange={e => setCompanyAddress(e.target.value)} disabled={loading} required />
-              </div>
-
-              {/* Checkbox condiții referral brand */}
-              {brandRefCode && (
-                <div className="fade-up" style={{
-                  background: 'linear-gradient(120deg,#fefce8,#fef9c3)',
-                  border: '1.5px solid #fde047',
-                  borderRadius: 14,
-                  padding: '14px 16px',
-                }}>
-                  <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 800, color: '#854d0e' }}>
-                    ⚠️ Ești invitat printr-un link de referral
-                  </p>
-                  <p style={{ margin: '0 0 10px', fontSize: 12, color: '#713f12', lineHeight: 1.5 }}>
-                    Pentru a activa bonusul influencerului care te-a invitat, brandul tău trebuie să fie verificat de echipa noastră (CUI valid, email firmă, număr de telefon, website real). Conturile false sau datele false duc la penalizarea ambelor conturi.
-                  </p>
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={brandReferralAcknowledged}
-                      onChange={e => setBrandReferralAcknowledged(e.target.checked)}
-                      style={{ marginTop: 2, width: 16, height: 16, accentColor: '#ca8a04', flexShrink: 0 }}
-                    />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#854d0e', lineHeight: 1.4 }}>
-                      Confirm că datele companiei mele sunt reale și sunt de acord cu verificarea manuală a contului
-                    </span>
-                  </label>
+              )}
+              {showCityResults && cityResults.length > 0 && (
+                <div className="au-city-list">
+                  {cityResults.map((r: any) => {
+                    const a = r.address
+                    const cityName = a.city || a.town || a.village || a.county || r.name
+                    const region = a.county || a.state || ''
+                    return (
+                      <button key={r.place_id} type="button" onMouseDown={e => { e.preventDefault(); selectCity(r) }}>
+                        <MapPin size={15} style={{ color: 'var(--ac)', flex: 'none' }} />
+                        <span>
+                          <span style={{ display: 'block', fontSize: 15, fontWeight: 700 }}>{cityName}</span>
+                          {region && <span style={{ display: 'block', fontSize: 13, color: '#8783a8' }}>{region}</span>}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
+            </div>
+            {cityLat ? (
+              <p className="au-hint" style={{ color: '#047857', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><CheckCircle size={14} /> Locație confirmată</p>
+            ) : (
+              <p className="au-hint">Folosit pentru oferte barter locale din zona ta.</p>
+            )}
+          </div>
 
-              <div className="d5 fade-up pt-1">
-                <button type="submit" disabled={loading || !brandName || !industry || !/^(RO)?[0-9]{2,10}$/i.test(cui.trim()) || companyLegalName.trim().length < 5 || companyAddress.trim().length < 8 || (!!brandRefCode && !brandReferralAcknowledged)} className="btn"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 6px 20px rgba(249,115,22,0.38)' }}>
-                  {loading
-                    ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Se creează contul…</>
-                    : <>Creează Cont <ArrowRight className="w-4 h-4" /></>}
-                </button>
-              </div>
-
-              <button type="button" onClick={() => setStep('account')}
-                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-700 transition">
-                <ArrowLeft className="w-4 h-4" /> Înapoi
-              </button>
-            </form>
-          )}
-
-          {/* ── STEP 3: Influencer profile ── */}
-          {step === 'profile' && role === 'INFLUENCER' && (
-            <form onSubmit={handleInfluencerSubmit} className="slide-in space-y-5">
+          <div className="au-field">
+            <span className="au-label">Conturi social media <span style={{ fontWeight: 500, color: '#8783a8' }}>(opțional, recomandat)</span></span>
+            <p className="au-hint" style={{ margin: '0 0 10px' }}>Acceptăm @username, link complet sau doar numele.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
-                <h1 className="text-3xl font-black text-gray-900 mb-1">Profilul tău de creator</h1>
-                <p className="text-gray-500 text-sm">Spune brandurilor cine ești</p>
-              </div>
-
-              <div className="d1 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Nume complet *</label>
-                <input className="f" placeholder="Numele tău" value={influencerName}
-                  onChange={e => setInfluencerName(e.target.value)} disabled={loading} required />
-              </div>
-
-              <div className="d2 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Bio *</label>
-                <textarea className="f" rows={3} placeholder="Spune brandurilor despre tine și stilul tău de conținut…"
-                  value={bio} onChange={e => setBio(e.target.value)} disabled={loading} required
-                  style={{ resize: 'none', height: 'auto' }} />
-                <p className="text-xs text-gray-400 mt-1.5 text-right">{bio.length}/500</p>
-              </div>
-
-              <div className="d3 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-3">
-                  Nișele tale * <span className="text-gray-400 font-normal">(alege toate care se aplică)</span>
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {INFLUENCER_NICHES.map(n => (
-                    <button key={n} type="button" onClick={() => toggleNiche(n)}
-                      className={`niche-btn ${niches.includes(n) ? 'active' : ''}`}
-                      style={niches.includes(n) ? { background: `linear-gradient(135deg,#8b5cf6,#06b6d4)` } : {}}>
-                      {n}
-                    </button>
-                  ))}
-                </div>
-                {niches.length > 0 && (
-                  <p className="text-xs text-purple-600 font-bold mt-2">{niches.length} {niches.length} {niches.length === 1 ? 'nișă selectată' : 'nișe selectate'}</p>
-                )}
-              </div>
-
-              <div className="d4 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2">Țară</label>
-                <select className="sel" value={country} onChange={e => setCountry(e.target.value)} disabled={loading}>
-                  <option value="">Selectează țara ta</option>
-                  {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-
-              {/* ── Oraș obligatoriu ── */}
-              <div className="d4 fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-2 flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-purple-500" />
-                  Oraș / Comună *
-                </label>
-                <p className="text-xs text-gray-400 mb-2">Folosit pentru oferte barter locale din zona ta</p>
-                <div className="relative" ref={cityWrapperRef}>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      className="f pl-9"
-                      placeholder="ex. Iași, Cluj-Napoca, București..."
-                      value={city}
-                      onChange={e => handleCityChange(e.target.value)}
-                      onFocus={() => cityResults.length > 0 && setShowCityResults(true)}
-                      disabled={loading}
-                      required
-                    />
-                    {citySearching && (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
-                    )}
-                    {city && !citySearching && (
-                      <button type="button" onClick={() => { setCity(''); setCityLat(undefined); setCityLon(undefined); setCityResults([]) }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                  {showCityResults && cityResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-2xl mt-1" style={{ zIndex: 9999 }}>
-                      {cityResults.map((r: any) => {
-                        const a = r.address
-                        const cityName = a.city || a.town || a.village || a.county || r.name
-                        const region = a.county || a.state || ''
-                        return (
-                          <button key={r.place_id} type="button"
-                            onMouseDown={e => { e.preventDefault(); selectCity(r) }}
-                            className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-purple-50 transition text-left border-b border-gray-100 last:border-0">
-                            <MapPin className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm font-bold text-gray-900">{cityName}</p>
-                              {region && <p className="text-xs text-gray-400">{region}</p>}
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-                {cityLat && (
-                  <p className="text-xs text-green-600 font-semibold mt-1.5 flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" /> Locație confirmată
-                  </p>
-                )}
-              </div>
-
-              {/* ── Social Media ── */}
-              <div className="fade-up">
-                <label className="block text-sm font-black text-gray-700 mb-1">
-                  Conturi social media
-                  <span className="ml-2 text-xs font-normal text-gray-400">(opțional, recomandat)</span>
-                </label>
-                <p className="text-xs text-gray-400 mb-3">Acceptăm orice format: @username, link complet sau doar numele</p>
-
-                {/* Instagram */}
-                <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden mb-2 focus-within:border-purple-400 transition-colors">
-                  <div className="flex items-center gap-2 px-3 py-3 border-r border-gray-200 bg-gray-50 flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <defs><linearGradient id="ig-reg" x1="0" y1="24" x2="24" y2="0" gradientUnits="userSpaceOnUse"><stop stopColor="#f09433"/><stop offset="0.25" stopColor="#e6683c"/><stop offset="0.5" stopColor="#dc2743"/><stop offset="0.75" stopColor="#cc2366"/><stop offset="1" stopColor="#bc1888"/></linearGradient></defs>
-                      <rect x="2" y="2" width="20" height="20" rx="5.5" fill="url(#ig-reg)"/>
-                      <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8" fill="none"/>
-                      <circle cx="17.2" cy="6.8" r="1.1" fill="white"/>
-                    </svg>
-                    <span className="text-sm font-bold text-gray-400">@</span>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="username sau link Instagram"
-                    value={instagramHandle}
-                    onChange={e => setInstagramHandle(e.target.value)}
-                    disabled={loading}
-                    className="flex-1 px-3 py-3 text-sm font-medium outline-none bg-transparent"
-                    style={{ fontFamily: 'inherit' }}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
+                <div className="au-social">
+                  <span className="au-social-pre">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <defs><linearGradient id="ig-reg" x1="0" y1="24" x2="24" y2="0" gradientUnits="userSpaceOnUse"><stop stopColor="#f09433" /><stop offset="0.25" stopColor="#e6683c" /><stop offset="0.5" stopColor="#dc2743" /><stop offset="0.75" stopColor="#cc2366" /><stop offset="1" stopColor="#bc1888" /></linearGradient></defs>
+                      <rect x="2" y="2" width="20" height="20" rx="5.5" fill="url(#ig-reg)" />
+                      <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8" fill="none" />
+                      <circle cx="17.2" cy="6.8" r="1.1" fill="white" />
+                    </svg>@
+                  </span>
+                  <input type="text" aria-label="Instagram" placeholder="username sau link Instagram"
+                    value={instagramHandle} onChange={e => setInstagramHandle(e.target.value)}
+                    disabled={loading} autoComplete="off" autoCapitalize="none" spellCheck={false} />
                 </div>
                 {instagramHandle && normalizeHandle(instagramHandle, 'instagram') && (
-                  <p className="text-xs text-purple-500 font-semibold mb-2 flex items-center gap-1 px-1">
-                    <CheckCircle className="w-3 h-3" /> instagram.com/{normalizeHandle(instagramHandle, 'instagram')}
+                  <p className="au-hint" style={{ color: 'var(--ac)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <CheckCircle size={13} /> instagram.com/{normalizeHandle(instagramHandle, 'instagram')}
                   </p>
                 )}
-
-                {/* TikTok */}
-                <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden mb-2 focus-within:border-purple-400 transition-colors">
-                  <div className="flex items-center gap-2 px-3 py-3 border-r border-gray-200 bg-gray-50 flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style={{ background: '#000', borderRadius: 5, padding: 2 }}>
-                      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.3 6.3 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.22 8.22 0 004.81 1.54V6.79a4.85 4.85 0 01-1.04-.1z"/>
-                    </svg>
-                    <span className="text-sm font-bold text-gray-400">@</span>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="username sau link TikTok"
-                    value={tiktokHandle}
-                    onChange={e => setTiktokHandle(e.target.value)}
-                    disabled={loading}
-                    className="flex-1 px-3 py-3 text-sm font-medium outline-none bg-transparent"
-                    style={{ fontFamily: 'inherit' }}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
+              </div>
+              <div>
+                <div className="au-social">
+                  <span className="au-social-pre">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" style={{ background: '#000', borderRadius: 5, padding: 2 }} aria-hidden="true">
+                      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.3 6.3 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.22 8.22 0 004.81 1.54V6.79a4.85 4.85 0 01-1.04-.1z" />
+                    </svg>@
+                  </span>
+                  <input type="text" aria-label="TikTok" placeholder="username sau link TikTok"
+                    value={tiktokHandle} onChange={e => setTiktokHandle(e.target.value)}
+                    disabled={loading} autoComplete="off" autoCapitalize="none" spellCheck={false} />
                 </div>
                 {tiktokHandle && normalizeHandle(tiktokHandle, 'tiktok') && (
-                  <p className="text-xs text-purple-500 font-semibold mb-1 flex items-center gap-1 px-1">
-                    <CheckCircle className="w-3 h-3" /> tiktok.com/@{normalizeHandle(tiktokHandle, 'tiktok')}
+                  <p className="au-hint" style={{ color: 'var(--ac)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <CheckCircle size={13} /> tiktok.com/@{normalizeHandle(tiktokHandle, 'tiktok')}
                   </p>
                 )}
               </div>
-
-              <div className="d5 fade-up pt-1">
-                <button type="submit" disabled={loading || !influencerName || !bio || niches.length === 0 || !city.trim()} className="btn"
-                  style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 6px 20px rgba(139,92,246,0.38)' }}>
-                  {loading
-                    ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Se creează contul…</>
-                    : <>Creează Cont <ArrowRight className="w-4 h-4" /></>}
-                </button>
-              </div>
-
-              <button type="button" onClick={() => setStep('account')}
-                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-700 transition">
-                <ArrowLeft className="w-4 h-4" /> Înapoi
-              </button>
-            </form>
-          )}
-
-          {/* ── STEP 4: Terms (influencer only) ── */}
-          {step === 'terms' && role === 'INFLUENCER' && (
-            <div className="slide-in space-y-5">
-              <div>
-                <h1 className="text-3xl font-black text-gray-900 mb-1">Aproape gata!</h1>
-                <p className="text-gray-500 text-sm">Confirmă acordul înainte să intri în platformă.</p>
-              </div>
-
-              <div className="rounded-2xl border-2 border-gray-100 overflow-hidden">
-                {[
-                  { icon: '📄', text: <><a href="/termeni" target="_blank" className="font-black underline" style={{ color: accentColor }}>Termeni și Condiții</a> — regulile de utilizare a platformei AddFame</> },
-                  { icon: '🔒', text: <><a href="/politica-de-confidentialitate" target="_blank" className="font-black underline" style={{ color: accentColor }}>Politica de confidențialitate</a> — cum procesăm datele tale (GDPR)</> },
-                  { icon: '💸', text: <>Înscrierea și aplicarea la campanii sunt <span className="font-black">gratuite</span> — taxa platformei este plătită de brand</> },
-                  { icon: '✅', text: <>Confirm că am cel puțin <span className="font-black">18 ani</span> sau dețin acordul unui tutore legal</> },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 px-4 py-3.5 border-b border-gray-100 last:border-0 bg-gray-50">
-                    <span className="text-base flex-shrink-0">{item.icon}</span>
-                    <p className="text-sm text-gray-600 leading-relaxed">{item.text}</p>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setTermsAccepted(!termsAccepted)}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all"
-                style={{
-                  borderColor: termsAccepted ? accentColor : '#e5e7eb',
-                  background: termsAccepted ? 'rgba(139,92,246,0.06)' : 'white',
-                }}
-              >
-                <div className="w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                  style={{
-                    borderColor: termsAccepted ? accentColor : '#d1d5db',
-                    background: termsAccepted ? accentColor : 'white',
-                  }}>
-                  {termsAccepted && <CheckCircle className="w-4 h-4 text-white" />}
-                </div>
-                <p className="text-sm font-black text-gray-900">Am citit și sunt de acord cu toate cele de mai sus</p>
-              </button>
-
-              <div className="flex items-start gap-2.5 px-3 py-2.5 bg-gray-50 rounded-xl">
-                <span className="text-sm flex-shrink-0">🛡️</span>
-                <p className="text-xs text-gray-400 leading-relaxed">Acordul va fi înregistrat cu data, ora și versiunea documentelor în vigoare la momentul semnării.</p>
-              </div>
-
-              <button
-                type="button"
-                disabled={!termsAccepted || loading}
-                onClick={handleTermsSubmit}
-                className="btn"
-                style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 6px 20px rgba(139,92,246,0.38)', opacity: (!termsAccepted || loading) ? 0.5 : 1 }}
-              >
-                {loading
-                  ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Se creează contul…</>
-                  : <>Intră în AddFame <ArrowRight className="w-4 h-4" /></>}
-              </button>
-
-              <button type="button" onClick={() => setStep('profile')}
-                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-700 transition">
-                <ArrowLeft className="w-4 h-4" /> Înapoi
-              </button>
             </div>
-          )}
+          </div>
 
-          <p className="text-xs text-gray-400 text-center mt-8 leading-relaxed">
-            Creând un cont ești de acord cu{' '}
-            <a href="/termeni" className="underline hover:text-gray-600 transition">Termeni și Condiții</a>
-            {' '}și{' '}
-            <a href="/politica-de-confidentialitate" className="underline hover:text-gray-600 transition">Politică de Confidențialitate</a>
-          </p>
+          <button type="submit" className="au-btn" disabled={loading || !influencerName || !bio || niches.length === 0 || !city.trim()}>
+            {loading ? spinner : <>Continuă <ArrowRight size={18} /></>}
+          </button>
+          <button type="button" onClick={() => setStep('account')} className="au-btn-ghost">
+            <ArrowLeft size={16} /> Înapoi
+          </button>
+        </form>
+      )}
+
+      {/* ── PAS 4: Acord (influencer) ── */}
+      {step === 'terms' && role === 'INFLUENCER' && (
+        <div className="au-stack au-enter" key="terms">
+          <div>
+            <h1 className="au-h1">Aproape gata!</h1>
+            <p className="au-sub" style={{ marginBottom: 0 }}>Confirmă acordul înainte să intri în platformă.</p>
+          </div>
+
+          <div className="au-terms">
+            <div><FileText size={18} /><span><a href="/termeni" target="_blank" className="au-link">Termeni și Condiții</a> — regulile de utilizare a platformei AddFame</span></div>
+            <div><Lock size={18} /><span><a href="/politica-de-confidentialitate" target="_blank" className="au-link">Politica de confidențialitate</a> — cum procesăm datele tale (GDPR)</span></div>
+            <div><Gift size={18} /><span>Înscrierea și aplicarea la campanii sunt <b>gratuite</b> pentru creatori</span></div>
+            <div><ShieldCheck size={18} /><span>Confirm că am cel puțin <b>18 ani</b> sau dețin acordul unui tutore legal</span></div>
+          </div>
+
+          <button type="button" onClick={() => setTermsAccepted(!termsAccepted)} aria-pressed={termsAccepted}
+            className={`au-check ${termsAccepted ? 'on' : ''}`}>
+            <span className="au-check-box">{termsAccepted && <Check size={16} strokeWidth={3} />}</span>
+            Am citit și sunt de acord cu toate cele de mai sus
+          </button>
+
+          <p className="au-hint" style={{ margin: 0 }}>Acordul va fi înregistrat cu data, ora și versiunea documentelor în vigoare la momentul semnării.</p>
+
+          <button type="button" disabled={!termsAccepted || loading} onClick={handleTermsSubmit} className="au-btn">
+            {loading ? spinner : <>Intră în AddFame <ArrowRight size={18} /></>}
+          </button>
+          <button type="button" onClick={() => setStep('profile')} className="au-btn-ghost">
+            <ArrowLeft size={16} /> Înapoi
+          </button>
         </div>
-      </div>
-    </div>
+      )}
+
+      <p className="au-legal">
+        Creând un cont ești de acord cu <a href="/termeni">Termeni și Condiții</a> și{' '}
+        <a href="/politica-de-confidentialitate">Politica de Confidențialitate</a>
+      </p>
+    </AuthShell>
   )
 }
 
 export default function RegisterPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-8 h-8 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f6f6fc' }}>
+        <div className="w-8 h-8 rounded-full animate-spin" style={{ borderWidth: 3, borderStyle: 'solid', borderColor: '#e2dcff', borderTopColor: '#7040f0' }} />
       </div>
     }>
       <RegisterForm />
     </Suspense>
   )
 }
-

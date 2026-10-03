@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowRight, Check, Star, Instagram, Youtube } from 'lucide-react'
+import { fontVars } from '@/lib/fonts'
 
 // ─── Tipuri pentru datele publice ────────────────────────────────────────────
 type Clip = {
@@ -45,8 +46,8 @@ function timeAgo(iso: string | null, now: number) {
   return new Date(iso).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })
 }
 
-function fmt(n: number) {
-  return n.toLocaleString('ro-RO')
+function fmt(n: unknown) {
+  return (Number(n) || 0).toLocaleString('ro-RO')
 }
 
 function TikTokIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
@@ -127,9 +128,9 @@ export default function HomePage() {
 
   // Date publice (prin rute API — fără RLS pentru vizitatori)
   useEffect(() => {
-    fetch('/api/public/stats', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => d && setStats(d)).catch(() => {})
-    fetch('/api/public/clips').then(r => r.ok ? r.json() : null).then(d => setClips(d?.clips || [])).catch(() => {})
-    fetch('/api/public/influencer-reviews').then(r => r.json()).then(d => setReviews(d.reviews || [])).catch(() => {})
+    fetch('/api/public/stats', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => { if (d && typeof d.influencers === 'number') setStats(d) }).catch(() => {})
+    fetch('/api/public/clips').then(r => r.ok ? r.json() : null).then(d => setClips((Array.isArray(d?.clips) ? d.clips : []).filter((c: any) => c && c.id && c.display_name))).catch(() => {})
+    fetch('/api/public/influencer-reviews').then(r => r.ok ? r.json() : null).then(d => setReviews((Array.isArray(d?.reviews) ? d.reviews : []).filter((r: any) => r && r.comment))).catch(() => {})
     createClient().from('brands').select('name').not('name', 'is', null)
       .order('created_at', { ascending: false }).limit(24)
       .then(({ data }) => {
@@ -184,11 +185,7 @@ export default function HomePage() {
   const brandBand = brands.length >= 3 ? brands : []
 
   return (
-    <div className="af-page">
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      {/* React 19 mută stylesheet-ul în <head> */}
-      <link rel="stylesheet" precedence="default" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" />
+    <div className={`af-page ${fontVars}`}>
       <style>{CSS}</style>
 
       {/* NAV */}
@@ -452,9 +449,9 @@ export default function HomePage() {
 // Culori din logo: cyan #22c8f0 → albastru #3090f0 → violet #7040f0 → mov #9030f0
 const CSS = `
 .af-page{--ink:#14123a;--muted:#4a4770;--soft:#6a6690;--faint:#8783a8;--line:#e5e3f3;--line2:#eeecf7;--bg:#f6f6fc;--violet:#5a35e6;
-  background:var(--bg);color:var(--ink);font-family:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;min-height:100vh;overflow-x:hidden}
+  background:var(--bg);color:var(--ink);font-family:var(--font-body),system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;min-height:100vh;overflow-x:hidden}
 .af-page *{box-sizing:border-box}
-.af-page h1,.af-page h2,.af-page h3,.af-logo-text,.af-card-title,.af-stat b,.af-mini-grid b,.af-step-n,.af-band-item{font-family:'Bricolage Grotesque','Figtree',system-ui,sans-serif}
+.af-page h1,.af-page h2,.af-page h3,.af-logo-text,.af-card-title,.af-stat b,.af-mini-grid b,.af-step-n,.af-band-item{font-family:var(--font-display),var(--font-body),system-ui,sans-serif}
 .af-wrap{max-width:1200px;margin:0 auto;padding-inline:clamp(16px,4vw,40px)}
 .af-grad{background:linear-gradient(135deg,#22c8f0 0%,#3090f0 38%,#7040f0 72%,#9030f0 100%)}
 .af-grad-text{background:linear-gradient(100deg,#22c8f0 0%,#3090f0 38%,#7040f0 72%,#9030f0 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}

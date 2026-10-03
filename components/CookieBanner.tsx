@@ -36,7 +36,7 @@ export default function CookieBanner() {
           <p className="text-xs text-gray-500 leading-relaxed">
             Folosim cookie-uri pentru a îmbunătăți experiența ta pe AddFame și pentru analize interne.
             Vezi{' '}
-            <Link href="/privacy" className="text-orange-500 font-semibold hover:underline">
+            <Link href="/privacy" className="font-semibold hover:underline" style={{ color: '#5a35e6' }}>
               Politica de confidențialitate
             </Link>
             .
@@ -53,7 +53,7 @@ export default function CookieBanner() {
         <button
           onClick={accept}
           className="flex-1 py-2.5 rounded-xl text-sm font-black text-white transition"
-          style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}
+          style={{ background: 'linear-gradient(135deg,#2f6fe0 0%,#5a35e6 55%,#7a22d0 100%)' }}
         >
           Accept toate
         </button>
