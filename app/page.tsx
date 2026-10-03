@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowRight, Check, Star, Instagram, Youtube } from 'lucide-react'
 import { fontVars } from '@/lib/fonts'
+import HeroCampaignCard from '@/components/home/HeroCampaignCard'
 
 // ─── Tipuri pentru datele publice ────────────────────────────────────────────
 type Clip = {
@@ -227,30 +228,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="af-hero-card-wrap" aria-hidden="true">
-          <div className="af-card af-hero-card">
-            <div className="af-between">
-              <div className="af-col-2">
-                <span className="af-eyebrow">Exemplu de campanie</span>
-                <span className="af-card-title">Lansare colecție de toamnă</span>
-              </div>
-              <span className="af-tag-cyan">Activă</span>
-            </div>
-            <div className="af-mini-grid">
-              <div><b>10</b><span>locuri</span></div>
-              <div><b>30</b><span>aplicări</span></div>
-              <div><b>10</b><span>selectați</span></div>
-            </div>
-            <div className="af-col-10">
-              <div className="af-person"><Avatar name="Ioana M" src={null} index={0} size={40} /><div className="af-person-text"><b>Ioana M.</b><span>Fashion · TikTok · 18k</span></div><span className="af-tag-violet">Selectată</span></div>
-              <div className="af-person"><Avatar name="Radu A" src={null} index={1} size={40} /><div className="af-person-text"><b>Radu A.</b><span>Fitness · Instagram · 9k</span></div><span className="af-tag-violet">Selectat</span></div>
-            </div>
-            <div className="af-progress">
-              <div className="af-between"><span>Postări aprobate</span><b>6 din 10</b></div>
-              <div className="af-bar"><div className="af-grad" style={{ width: '60%' }} /></div>
-            </div>
-          </div>
-        </div>
+        <HeroCampaignCard />
       </section>
 
       {/* BANDA CU BRANDURI */}
@@ -449,9 +427,9 @@ export default function HomePage() {
 // Culori din logo: cyan #22c8f0 → albastru #3090f0 → violet #7040f0 → mov #9030f0
 const CSS = `
 .af-page{--ink:#14123a;--muted:#4a4770;--soft:#6a6690;--faint:#8783a8;--line:#e5e3f3;--line2:#eeecf7;--bg:#f6f6fc;--violet:#5a35e6;
-  background:var(--bg);color:var(--ink);font-family:var(--font-body),system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;min-height:100vh;overflow-x:hidden}
+  background:var(--bg);color:var(--ink);font-family:var(--font-body,system-ui),system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;min-height:100vh;overflow-x:hidden}
 .af-page *{box-sizing:border-box}
-.af-page h1,.af-page h2,.af-page h3,.af-logo-text,.af-card-title,.af-stat b,.af-mini-grid b,.af-step-n,.af-band-item{font-family:var(--font-display),var(--font-body),system-ui,sans-serif}
+.af-page h1,.af-page h2,.af-page h3,.af-logo-text,.af-card-title,.af-stat b,.af-mini-grid b,.af-step-n,.af-band-item{font-family:var(--font-display,system-ui),system-ui,sans-serif}
 .af-wrap{max-width:1200px;margin:0 auto;padding-inline:clamp(16px,4vw,40px)}
 .af-grad{background:linear-gradient(135deg,#22c8f0 0%,#3090f0 38%,#7040f0 72%,#9030f0 100%)}
 .af-grad-text{background:linear-gradient(100deg,#22c8f0 0%,#3090f0 38%,#7040f0 72%,#9030f0 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}

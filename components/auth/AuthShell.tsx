@@ -134,11 +134,11 @@ export const AUTH_CSS = `
 .au-page{--ink:#14123a;--muted:#4a4770;--soft:#6a6690;--faint:#8783a8;--line:#dcd9ee;--bg:#f6f6fc;
   --ac:#5a35e6;--ac-soft:rgba(90,53,230,.12);--btn:linear-gradient(135deg,#2f6fe0 0%,#5a35e6 55%,#7a22d0 100%);
   min-height:100vh;min-height:100dvh;display:flex;background:#fff;color:var(--ink);
-  font-family:var(--font-body),system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.5}
+  font-family:var(--font-body,system-ui),system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.5}
 .au-page.au-brand{--ac:#2f6fe0;--ac-soft:rgba(47,111,224,.12);--btn:linear-gradient(135deg,#2a8ae6 0%,#2f6fe0 45%,#5a35e6 100%)}
 .au-page.au-infl{--ac:#6d3ae8;--ac-soft:rgba(109,58,232,.12);--btn:linear-gradient(135deg,#5a35e6 0%,#7040f0 50%,#8a26d6 100%)}
 .au-page *{box-sizing:border-box}
-.au-page h1,.au-page h2,.au-logo-text,.au-stats b{font-family:var(--font-display),var(--font-body),system-ui,sans-serif}
+.au-page h1,.au-page h2,.au-logo-text,.au-stats b{font-family:var(--font-display,system-ui),system-ui,sans-serif}
 .au-grad-text{background:linear-gradient(100deg,#22c8f0 0%,#3090f0 38%,#7040f0 72%,#9030f0 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
 
 /* Logo */
