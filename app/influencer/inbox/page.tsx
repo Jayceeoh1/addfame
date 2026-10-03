@@ -8,12 +8,12 @@ import { MessageSquare, Send, Search, AlertCircle, ArrowLeft, Sparkles, Loader2 
 // Generează o culoare consistentă per brand bazată pe numele lui
 function brandColor(name: string): string {
   const colors = [
-    'linear-gradient(135deg,#f97316,#ec4899)',
-    'linear-gradient(135deg,#8b5cf6,#06b6d4)',
+    'linear-gradient(135deg,#2f6fe0, #5a35e6)',
+    'linear-gradient(135deg,#7040f0, #9030f0)',
     'linear-gradient(135deg,#10b981,#3b82f6)',
     'linear-gradient(135deg,#f59e0b,#ef4444)',
     'linear-gradient(135deg,#6366f1,#8b5cf6)',
-    'linear-gradient(135deg,#ec4899,#f97316)',
+    'linear-gradient(135deg,#9030f0,#5a35e6)',
   ]
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
@@ -261,10 +261,10 @@ function InboxContent() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex h-[calc(100vh-64px)]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-        .infl-grad { background:linear-gradient(135deg,#8b5cf6,#06b6d4); }
+        
+        .infl-grad { background:linear-gradient(135deg,#7040f0, #9030f0); }
         .field { padding:9px 14px 9px 40px;border:2px solid #f0f0f0;border-radius:12px;font-size:14px;font-weight:500;outline:none;background:white;transition:border-color .2s;font-family:inherit;width:100%; }
         .field:focus { border-color:#8b5cf6; }
         .field::placeholder { color:#9ca3af;font-weight:400; }
@@ -274,7 +274,7 @@ function InboxContent() {
         ::-webkit-scrollbar { width:4px; }
         ::-webkit-scrollbar-thumb { background:#e5e7eb;border-radius:99px; }
         .msg-pending { opacity: 0.6; }
-        .brand-avatar { background: linear-gradient(135deg, #8b5cf6, #06b6d4); }
+        .brand-avatar { background: linear-gradient(135deg, #7040f0, #9030f0); }
       `}</style>
 
       {/* Sidebar */}
@@ -364,7 +364,7 @@ function InboxContent() {
                   ) : (
                   <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${m._pending ? 'msg-pending' : ''}`}>
                     <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm font-medium leading-relaxed ${isMe ? 'text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm'}`}
-                      style={isMe ? { background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' } : { border: '1.5px solid #f0f0f0' }}>
+                      style={isMe ? { background: 'linear-gradient(135deg,#7040f0, #9030f0)' } : { border: '1.5px solid #f0f0f0' }}>
                       <p style={{ whiteSpace: 'pre-wrap' }}>{m.content}</p>
                       <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70 text-right' : 'text-gray-400'}`}>
                         {m._pending ? 'Sending…' : fmtTime(m.created_at)}
@@ -419,7 +419,7 @@ function InboxContent() {
             </button>
             <button onClick={sendMessage} disabled={!text.trim() || sending}
               className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition text-white disabled:opacity-40"
-              style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 3px 10px rgba(139,92,246,.3)' }}>
+              style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 3px 10px rgba(139,92,246,.3)' }}>
               {sending
                 ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                 : <Send className="w-4 h-4" />}

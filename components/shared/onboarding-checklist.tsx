@@ -25,17 +25,17 @@ export function OnboardingChecklist({ role, steps }: Props) {
   const currentIndex = steps.findIndex(s => !s.done)
 
   const grad = role === 'brand'
-    ? 'linear-gradient(135deg,#f97316,#ec4899)'
-    : 'linear-gradient(135deg,#8b5cf6,#06b6d4)'
-  const light = role === 'brand' ? '#fff7ed' : '#f5f3ff'
-  const border = role === 'brand' ? '#fed7aa' : '#ddd6fe'
-  const accent = role === 'brand' ? '#f97316' : '#8b5cf6'
+    ? 'linear-gradient(135deg,#2f6fe0, #5a35e6)'
+    : 'linear-gradient(135deg,#7040f0, #9030f0)'
+  const light = role === 'brand' ? '#f5f3ff' : '#f5f3ff'
+  const border = role === 'brand' ? '#ddd6fe' : '#ddd6fe'
+  const accent = role === 'brand' ? '#5a35e6' : '#8b5cf6'
 
   if (done === total) return null
   if (!currentStep) return null
 
   return (
-    <div style={{ border: `1.5px solid ${border}`, background: light, borderRadius: 16, overflow: 'hidden', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ border: `1.5px solid ${border}`, background: light, borderRadius: 16, overflow: 'hidden', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
 
       {/* Progress header */}
       <div style={{ padding: '12px 16px', borderBottom: `1px solid ${border}` }}>

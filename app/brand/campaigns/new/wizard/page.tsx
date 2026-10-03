@@ -143,7 +143,7 @@ function LivePreview({ data }: { data: any }) {
 
         {/* CTA preview */}
         <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 10, display: 'flex', gap: 8 }}>
-          <div style={{ flex: 1, background: 'linear-gradient(135deg,#f97316,#ec4899)', borderRadius: 8, padding: '8px', textAlign: 'center' }}>
+          <div style={{ flex: 1, background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', borderRadius: 8, padding: '8px', textAlign: 'center' }}>
             <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: 'white' }}>Aplică acum</p>
           </div>
           <div style={{ flex: 1, background: '#f3f4f6', borderRadius: 8, padding: '8px', textAlign: 'center' }}>
@@ -283,13 +283,13 @@ export default function WizardPage() {
             { type: 'PAID', icon: '💰', title: 'Plătită — cash', desc: 'Plătești influencerii per postare livrată.' },
           ].map(opt => (
             <button key={opt.type} onClick={() => set('campaign_type', opt.type)}
-              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 12, border: data.campaign_type === opt.type ? '2px solid #f97316' : '1.5px solid #e5e7eb', background: data.campaign_type === opt.type ? '#fff7ed' : 'white', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: data.campaign_type === opt.type ? '#fed7aa' : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{opt.icon}</div>
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 12, border: data.campaign_type === opt.type ? '2px solid #5a35e6' : '1.5px solid #e5e7eb', background: data.campaign_type === opt.type ? '#f5f3ff' : 'white', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: data.campaign_type === opt.type ? '#ddd6fe' : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{opt.icon}</div>
               <div style={{ flex: 1 }}>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#111' }}>{opt.title}</p>
                 <p style={{ margin: '1px 0 0', fontSize: 12, color: '#6b7280' }}>{opt.desc}</p>
               </div>
-              {data.campaign_type === opt.type && <Check size={15} color="#f97316" />}
+              {data.campaign_type === opt.type && <Check size={15} color="#5a35e6" />}
             </button>
           ))}
         </div>
@@ -384,7 +384,7 @@ export default function WizardPage() {
             <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
               {['Instagram', 'TikTok', 'YouTube', 'Facebook'].map(p => (
                 <button key={p} onClick={() => togglePlatform(p)}
-                  style={{ padding: '6px 13px', borderRadius: 20, border: data.platforms.includes(p) ? '2px solid #f97316' : '1.5px solid #e5e7eb', background: data.platforms.includes(p) ? '#fff7ed' : 'white', fontSize: 12, fontWeight: 700, color: data.platforms.includes(p) ? '#f97316' : '#6b7280', cursor: 'pointer' }}>
+                  style={{ padding: '6px 13px', borderRadius: 20, border: data.platforms.includes(p) ? '2px solid #5a35e6' : '1.5px solid #e5e7eb', background: data.platforms.includes(p) ? '#f5f3ff' : 'white', fontSize: 12, fontWeight: 700, color: data.platforms.includes(p) ? '#5a35e6' : '#6b7280', cursor: 'pointer' }}>
                   {p}
                 </button>
               ))}
@@ -398,13 +398,13 @@ export default function WizardPage() {
                 { key: 'tasks_ig_post', label: '🖼️ Post feed Instagram' },
                 { key: 'tasks_tt_video', label: '🎵 Video TikTok' },
               ].map(t => (
-                <label key={t.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderRadius: 10, border: (data as any)[t.key] ? '2px solid #f97316' : '1.5px solid #e5e7eb', background: (data as any)[t.key] ? '#fff7ed' : 'white', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={(data as any)[t.key]} onChange={e => set(t.key, e.target.checked)} style={{ accentColor: '#f97316', width: 15, height: 15 }} />
+                <label key={t.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderRadius: 10, border: (data as any)[t.key] ? '2px solid #5a35e6' : '1.5px solid #e5e7eb', background: (data as any)[t.key] ? '#f5f3ff' : 'white', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={(data as any)[t.key]} onChange={e => set(t.key, e.target.checked)} style={{ accentColor: '#5a35e6', width: 15, height: 15 }} />
                   <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{t.label}</span>
                 </label>
               ))}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderRadius: 10, border: data.tasks_stories_count > 0 ? '2px solid #f97316' : '1.5px solid #e5e7eb', background: data.tasks_stories_count > 0 ? '#fff7ed' : 'white', cursor: 'pointer' }}>
-                <input type="checkbox" checked={data.tasks_stories_count > 0} onChange={e => set('tasks_stories_count', e.target.checked ? 2 : 0)} style={{ accentColor: '#f97316', width: 15, height: 15 }} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderRadius: 10, border: data.tasks_stories_count > 0 ? '2px solid #5a35e6' : '1.5px solid #e5e7eb', background: data.tasks_stories_count > 0 ? '#f5f3ff' : 'white', cursor: 'pointer' }}>
+                <input type="checkbox" checked={data.tasks_stories_count > 0} onChange={e => set('tasks_stories_count', e.target.checked ? 2 : 0)} style={{ accentColor: '#5a35e6', width: 15, height: 15 }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#111', flex: 1 }}>📱 Stories Instagram</span>
                 {data.tasks_stories_count > 0 && (
                   <input type="number" min={1} max={10} value={data.tasks_stories_count}
@@ -477,7 +477,7 @@ export default function WizardPage() {
           ))}
         </div>
         {feeInfo && !feeInfo.enough && (
-          <div style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
+          <div style={{ background: '#f5f3ff', border: '1.5px solid #ddd6fe', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
             <p style={{ margin: 0, fontSize: 12, color: '#9a3412', lineHeight: 1.5 }}>
               Sold insuficient pentru taxa de {((parseInt(data.max_influencers) || 1) * feeInfo.price).toLocaleString('ro-RO')} RON.
               Campania se va salva ca <strong>draft</strong> — o publici după ce <a href="/brand/wallet" style={{ color: '#c2410c', fontWeight: 800 }}>adaugi credite</a>.
@@ -510,16 +510,16 @@ export default function WizardPage() {
         {/* Toggle preview pe mobil */}
         <button onClick={() => setShowPreview(p => !p)}
           className="lg:hidden"
-          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 20, border: '1px solid #e5e7eb', background: showPreview ? '#fff7ed' : 'white', fontSize: 11, fontWeight: 700, color: showPreview ? '#f97316' : '#6b7280', cursor: 'pointer' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 20, border: '1px solid #e5e7eb', background: showPreview ? '#f5f3ff' : 'white', fontSize: 11, fontWeight: 700, color: showPreview ? '#5a35e6' : '#6b7280', cursor: 'pointer' }}>
           {showPreview ? <EyeOff size={13} /> : <Eye size={13} />}
           {showPreview ? 'Editare' : 'Preview'}
         </button>
-        <span style={{ fontSize: 12, fontWeight: 800, color: '#f97316' }}>{pct}%</span>
+        <span style={{ fontSize: 12, fontWeight: 800, color: '#5a35e6' }}>{pct}%</span>
       </div>
 
       {/* Progress */}
       <div style={{ height: 3, background: '#f0f0f0' }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg,#f97316,#ec4899)', transition: 'width 0.3s' }} />
+        <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg,#2f6fe0, #5a35e6)', transition: 'width 0.3s' }} />
       </div>
 
       {/* Step dots */}
@@ -528,12 +528,12 @@ export default function WizardPage() {
           {STEPS.map((s, i) => (
             <div key={s} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: i + 1 < step ? '#f97316' : i + 1 === step ? '#111' : '#e5e7eb', transition: 'background 0.2s' }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: i + 1 < step ? '#5a35e6' : i + 1 === step ? '#111' : '#e5e7eb', transition: 'background 0.2s' }}>
                   {i + 1 < step ? <Check size={11} color="white" strokeWidth={3} /> : <span style={{ fontSize: 10, fontWeight: 800, color: i + 1 === step ? 'white' : '#9ca3af' }}>{i + 1}</span>}
                 </div>
                 <span style={{ fontSize: 9, fontWeight: 700, color: i + 1 <= step ? '#111' : '#9ca3af', whiteSpace: 'nowrap' }}>{s}</span>
               </div>
-              {i < STEPS.length - 1 && <div style={{ flex: 1, height: 1.5, background: i + 1 < step ? '#f97316' : '#e5e7eb', margin: '0 3px', marginBottom: 14, transition: 'background 0.2s' }} />}
+              {i < STEPS.length - 1 && <div style={{ flex: 1, height: 1.5, background: i + 1 < step ? '#5a35e6' : '#e5e7eb', margin: '0 3px', marginBottom: 14, transition: 'background 0.2s' }} />}
             </div>
           ))}
         </div>
@@ -546,12 +546,12 @@ export default function WizardPage() {
           {/* Form — ascuns pe mobil când e preview activ */}
           <div style={{ display: showPreview ? 'none' : 'block' }} className="lg:!block">
             {draftNotice && (
-              <div style={{ background: '#fff7ed', border: '2px solid #fed7aa', borderRadius: 14, padding: '14px 16px', marginBottom: 12 }}>
+              <div style={{ background: '#f5f3ff', border: '2px solid #ddd6fe', borderRadius: 14, padding: '14px 16px', marginBottom: 12 }}>
                 <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 900, color: '#9a3412' }}>💾 Campania a fost salvată ca draft</p>
                 <p style={{ margin: '0 0 10px', fontSize: 12, color: '#9a3412', lineHeight: 1.5 }}>{draftNotice.message}</p>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <a href="/brand/wallet" style={{ padding: '8px 14px', borderRadius: 10, background: 'linear-gradient(135deg,#f97316,#ec4899)', color: 'white', fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>Adaugă credite</a>
-                  <a href={`/brand/campaigns/${draftNotice.campaignId}`} style={{ padding: '8px 14px', borderRadius: 10, border: '1.5px solid #fed7aa', background: 'white', color: '#9a3412', fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>Deschide draft-ul</a>
+                  <a href="/brand/wallet" style={{ padding: '8px 14px', borderRadius: 10, background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', color: 'white', fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>Adaugă credite</a>
+                  <a href={`/brand/campaigns/${draftNotice.campaignId}`} style={{ padding: '8px 14px', borderRadius: 10, border: '1.5px solid #ddd6fe', background: 'white', color: '#9a3412', fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>Deschide draft-ul</a>
                 </div>
               </div>
             )}
@@ -584,7 +584,7 @@ export default function WizardPage() {
           )}
           {step < 5 ? (
             <button onClick={() => setStep(s => s + 1)}
-              style={{ flex: 1, padding: '11px', borderRadius: 11, border: 'none', background: 'linear-gradient(135deg,#f97316,#ec4899)', color: 'white', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+              style={{ flex: 1, padding: '11px', borderRadius: 11, border: 'none', background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', color: 'white', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
               Continuă <ArrowRight size={16} />
             </button>
           ) : (

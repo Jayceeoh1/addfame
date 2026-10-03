@@ -189,7 +189,7 @@ export default function CastingDetailPage() {
 
       {/* Social proof banner animat */}
       {registrationCount > 0 && (
-        <div className="relative overflow-hidden rounded-2xl mb-4 bg-gradient-to-r from-orange-500 to-pink-500 p-4">
+        <div className="relative overflow-hidden rounded-2xl mb-4 bg-gradient-to-r from-blue-500 to-violet-500 p-4">
           {/* Shimmer animation */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
             style={{ animation: 'shimmer 2s infinite', transform: 'translateX(-100%)' }} />

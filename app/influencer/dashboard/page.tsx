@@ -39,7 +39,6 @@ function profileCompletion(p: any) {
     { done: !!p.avatar, label: 'Poză profil' },
     { done: p.niches?.length > 0, label: 'Nișe' },
     { done: Array.isArray(p.platforms) && p.platforms.length > 0, label: 'Platforme sociale' },
-    { done: !!p.identity_verified, label: 'Verificare identitate' },
   ]
   return {
     pct: Math.round(checks.filter(c => c.done).length / checks.length * 100),
@@ -86,7 +85,7 @@ function FeedbackButton({ userId }: { userId: string | null }) {
   }
 
   if (existing) return null
-  const colors = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#8b5cf6']
+  const colors = ['', '#ef4444', '#5a35e6', '#eab308', '#22c55e', '#8b5cf6']
   const labels = ['', 'Foarte slab', 'Slab', 'Ok', 'Bun', 'Excelent']
 
   return (
@@ -96,7 +95,7 @@ function FeedbackButton({ userId }: { userId: string | null }) {
         onClick={() => setOpen(true)}
         style={{
           position: 'fixed', bottom: 80, right: 16, zIndex: 40,
-          background: existing ? '#ede9fe' : 'linear-gradient(135deg,#7c3aed,#06b6d4)',
+          background: existing ? '#ede9fe' : 'linear-gradient(135deg,#7c3aed,#22c8f0)',
           color: existing ? '#7c3aed' : 'white',
           border: 'none', borderRadius: 99, padding: '8px 14px',
           fontSize: 12, fontWeight: 800, cursor: 'pointer',
@@ -168,7 +167,7 @@ function FeedbackButton({ userId }: { userId: string | null }) {
                   disabled={!rating || saving}
                   style={{
                     width: '100%', marginTop: 12, padding: '12px', borderRadius: 12, border: 'none',
-                    background: rating ? 'linear-gradient(135deg,#7c3aed,#06b6d4)' : '#e5e7eb',
+                    background: rating ? 'linear-gradient(135deg,#7c3aed,#22c8f0)' : '#e5e7eb',
                     color: rating ? 'white' : '#9ca3af', fontSize: 14, fontWeight: 800,
                     cursor: rating ? 'pointer' : 'not-allowed', transition: 'all .15s',
                   }}
@@ -382,18 +381,17 @@ export default function InfluencerDashboard() {
     { id: 'profile', label: 'Completează profilul', desc: 'Nume, bio și poză', href: '/influencer/profile', done: !!(profile?.name && profile?.bio && profile?.avatar) },
     { id: 'platforms', label: 'Adaugă platformele sociale', desc: 'Instagram, TikTok etc.', href: '/influencer/profile', done: Array.isArray(profile?.platforms) && profile.platforms.length > 0 },
     { id: 'niches', label: 'Selectează nișele', desc: 'Domenii de interes', href: '/influencer/profile', done: profile?.niches?.length > 0 },
-    { id: 'verify', label: 'Verifică identitatea', desc: 'Necesar pentru a retrage bani', href: '/influencer/verify', done: !!profile?.identity_verified },
     { id: 'campaign', label: 'Aplică la o campanie', desc: 'Prima colaborare', href: '/influencer/campaigns', done: collabs.length > 0 },
   ]
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div className="w-10 h-10 rounded-full animate-spin" style={{ border: '3px solid #ede9fe', borderTopColor: '#8b5cf6' }} />
     </div>
   )
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#f8f7ff', minHeight: '100vh' }}>
+    <div style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif", background: '#f8f7ff', minHeight: '100vh' }}>
       <style>{`
         @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideD { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
@@ -416,7 +414,7 @@ export default function InfluencerDashboard() {
       {/* ── HERO HEADER ── */}
       <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81,#0f3460)', padding: '24px 20px 28px' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(139,92,246,0.2)' }} />
-        <div style={{ position: 'absolute', bottom: -30, left: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(6,182,212,0.15)' }} />
+        <div style={{ position: 'absolute', bottom: -30, left: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(34,200,240,0.15)' }} />
 
         {/* Avatar + greeting — fără clopotel */}
         <div className="relative flex items-center gap-3 mb-5">
@@ -433,7 +431,7 @@ export default function InfluencerDashboard() {
             <p style={{ color: 'white', fontSize: 20, fontWeight: 900, margin: 0, letterSpacing: '-0.3px' }}>{firstName}</p>
           </div>
           {/* Buton Campanii noi in dreapta */}
-          <Link href="/influencer/campaigns" className="relative ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-xs text-white" style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 3px 10px rgba(139,92,246,0.4)' }}>
+          <Link href="/influencer/campaigns" className="relative ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-xs text-white" style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 3px 10px rgba(139,92,246,0.4)' }}>
             <Zap className="w-3.5 h-3.5" /> Campanii noi
           </Link>
         </div>
@@ -452,12 +450,6 @@ export default function InfluencerDashboard() {
                 </div>
               )
             })}
-            {!profile?.identity_verified && (
-              <Link href="/influencer/verify" style={{ marginLeft: 'auto', background: 'rgba(251,191,36,0.2)', border: '1px solid rgba(251,191,36,0.4)', borderRadius: 99, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <AlertCircle style={{ width: 11, height: 11, color: '#fbbf24' }} />
-                <span style={{ color: '#fbbf24', fontSize: 11, fontWeight: 800 }}>Verifică ID</span>
-              </Link>
-            )}
           </div>
         )}
 
@@ -514,14 +506,14 @@ export default function InfluencerDashboard() {
 
         {/* Banner strike (fără blacklist) */}
         {!profile?.blacklisted && (profile?.strikes || 0) > 0 && (
-          <div style={{ background: '#fff7ed', border: '2px solid #fed7aa', borderRadius: 16, padding: '14px 16px', marginBottom: 8 }}>
+          <div style={{ background: '#f5f3ff', border: '2px solid #ddd6fe', borderRadius: 16, padding: '14px 16px', marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <div style={{ fontSize: 24, flexShrink: 0 }}>⚠️</div>
               <div>
                 <p style={{ color: '#c2410c', fontWeight: 800, fontSize: 13, margin: '0 0 3px' }}>
                   Ai {profile.strikes} strike{profile.strikes > 1 ? '-uri' : ''} din 2
                 </p>
-                <p style={{ color: '#ea580c', fontSize: 12, margin: 0, lineHeight: 1.5 }}>
+                <p style={{ color: '#4423c4', fontSize: 12, margin: 0, lineHeight: 1.5 }}>
                   La 2 strike-uri contul tău va fi suspendat automat. Te rugăm să respecți termenele de postare pentru campaniile active.
                 </p>
               </div>
@@ -539,15 +531,15 @@ export default function InfluencerDashboard() {
         {/* Invitații de la branduri */}
         {pendingInvites.length > 0 && (
           <div className="fu" style={{ animationDelay: '.06s', marginBottom: 14 }}>
-            <div style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: 14, padding: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ background: '#f5f3ff', border: '1.5px solid #ddd6fe', borderRadius: 14, padding: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: '#5a35e6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Zap style={{ width: 16, height: 16, color: 'white' }} />
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 13, fontWeight: 900, color: '#9a3412', margin: 0 }}>{pendingInvites.length} invitații de la branduri</p>
                 <p style={{ fontSize: 11, color: '#c2410c', margin: '2px 0 0' }}>Acceptă sau refuză acum →</p>
               </div>
-              <Link href="/influencer/collaborations" style={{ background: '#f97316', color: 'white', fontSize: 11, fontWeight: 900, padding: '6px 12px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>
+              <Link href="/influencer/collaborations" style={{ background: '#5a35e6', color: 'white', fontSize: 11, fontWeight: 900, padding: '6px 12px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>
                 Vezi
               </Link>
             </div>
@@ -621,7 +613,7 @@ export default function InfluencerDashboard() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
               <span style={{ fontSize: 14 }}>📦</span>
               <p className="section-title" style={{ margin: 0 }}>Trebuie să postezi</p>
-              <span style={{ fontSize: 10, background: '#ffedd5', color: '#9a3412', padding: '2px 8px', borderRadius: 99, fontWeight: 900 }}>{awaitingPost.length}</span>
+              <span style={{ fontSize: 10, background: '#ede9fe', color: '#9a3412', padding: '2px 8px', borderRadius: 99, fontWeight: 900 }}>{awaitingPost.length}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {awaitingPost.map((c: any) => {
@@ -633,8 +625,8 @@ export default function InfluencerDashboard() {
                 return (
                   <Link key={c.id} href={`/influencer/collaborations`}
                     className="card card-hover fu"
-                    style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', border: isLate || isUrgent ? '1.5px solid #fecaca' : '1.5px solid #fed7aa' }}>
-                    <div style={{ width: 38, height: 38, borderRadius: 10, background: isLate ? '#fee2e2' : '#ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                    style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', border: isLate || isUrgent ? '1.5px solid #fecaca' : '1.5px solid #ddd6fe' }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 10, background: isLate ? '#fee2e2' : '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
                       {isLate ? '⏰' : '📦'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -643,7 +635,7 @@ export default function InfluencerDashboard() {
                     </div>
                     <div style={{ flexShrink: 0 }}>
                       {daysLeftToPost === null ? (
-                        <span style={{ fontSize: 11, fontWeight: 900, background: '#ffedd5', color: '#9a3412', padding: '5px 10px', borderRadius: 8 }}>Postează</span>
+                        <span style={{ fontSize: 11, fontWeight: 900, background: '#ede9fe', color: '#9a3412', padding: '5px 10px', borderRadius: 8 }}>Postează</span>
                       ) : isLate ? (
                         <span style={{ fontSize: 11, fontWeight: 900, background: '#fee2e2', color: '#dc2626', padding: '5px 10px', borderRadius: 8, border: '1px solid #fecaca' }}>⏰ Întârziat</span>
                       ) : isToday ? (
@@ -651,7 +643,7 @@ export default function InfluencerDashboard() {
                       ) : isUrgent ? (
                         <span style={{ fontSize: 11, fontWeight: 900, background: '#fee2e2', color: '#dc2626', padding: '5px 10px', borderRadius: 8, border: '1px solid #fecaca' }}>{daysLeftToPost}z rămas</span>
                       ) : (
-                        <span style={{ fontSize: 11, fontWeight: 900, background: '#ffedd5', color: '#9a3412', padding: '5px 10px', borderRadius: 8 }}>{daysLeftToPost}z rămase</span>
+                        <span style={{ fontSize: 11, fontWeight: 900, background: '#ede9fe', color: '#9a3412', padding: '5px 10px', borderRadius: 8 }}>{daysLeftToPost}z rămase</span>
                       )}
                     </div>
                   </Link>
@@ -977,7 +969,7 @@ export default function InfluencerDashboard() {
               .marquee-wrap::before { left:0;background:linear-gradient(to right,#faf5ff,transparent); }
               .marquee-wrap::after { right:0;background:linear-gradient(to left,#faf5ff,transparent); }
               .top-card { width:150px;flex-shrink:0;background:#1c1033;border-radius:14px;border:1.5px solid rgba(147,51,234,0.4);overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s; }
-              .top-card:hover { border-color:#ec4899;transform:translateY(-2px); }
+              .top-card:hover { border-color:#9030f0;transform:translateY(-2px); }
             `}</style>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <p className="section-title">🏆 Top Influenceri</p>
@@ -1003,23 +995,23 @@ export default function InfluencerDashboard() {
                           </defs>
                           <rect width="150" height="72" fill="url(#dots-inf)"/>
                           <line x1="0" y1="72" x2="150" y2="0" stroke="#9333ea" strokeWidth="0.5" opacity="0.3"/>
-                          <line x1="0" y1="36" x2="150" y2="36" stroke="#ec4899" strokeWidth="0.5" opacity="0.2"/>
+                          <line x1="0" y1="36" x2="150" y2="36" stroke="#9030f0" strokeWidth="0.5" opacity="0.2"/>
                           <circle cx="0" cy="72" r="60" fill="none" stroke="#9333ea" strokeWidth="0.5" opacity="0.25"/>
-                          <circle cx="150" cy="0" r="50" fill="none" stroke="#ec4899" strokeWidth="0.5" opacity="0.2"/>
+                          <circle cx="150" cy="0" r="50" fill="none" stroke="#9030f0" strokeWidth="0.5" opacity="0.2"/>
                         </svg>
-                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900, color: 'white', border: '2.5px solid #ec4899', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900, color: 'white', border: '2.5px solid #9030f0', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
                           {inf.avatar ? <img src={inf.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : inf.name?.[0]}
                         </div>
-                        <div style={{ position: 'absolute', top: 6, left: 6, background: '#ec4899', color: 'white', fontSize: 9, fontWeight: 900, padding: '1px 6px', borderRadius: 99, zIndex: 1 }}>#{i+1}</div>
+                        <div style={{ position: 'absolute', top: 6, left: 6, background: '#9030f0', color: 'white', fontSize: 9, fontWeight: 900, padding: '1px 6px', borderRadius: 99, zIndex: 1 }}>#{i+1}</div>
                         {i === 0 && <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 12, zIndex: 1 }}>⭐</div>}
                       </div>
                       <div style={{ padding: '8px 10px', background: '#1c1033' }}>
                         <p style={{ fontSize: 12, fontWeight: 800, color: '#fff', margin: '0 0 1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{inf.name}</p>
                         <p style={{ fontSize: 10, color: '#f0abfc', margin: '0 0 6px' }}>{inf.niches?.[0] || 'Creator'}</p>
                         <div style={{ display: 'flex', gap: 4 }}>
-                          <div style={{ flex: 1, background: 'rgba(236,72,153,0.2)', borderRadius: 7, padding: '3px 4px', textAlign: 'center' }}>
+                          <div style={{ flex: 1, background: 'rgba(144,48,240,0.2)', borderRadius: 7, padding: '3px 4px', textAlign: 'center' }}>
                             <p style={{ fontSize: 13, fontWeight: 900, color: '#f9a8d4', margin: 0 }}>{inf.completed_collabs}</p>
-                            <p style={{ fontSize: 9, color: '#ec4899', margin: 0 }}>deals</p>
+                            <p style={{ fontSize: 9, color: '#9030f0', margin: 0 }}>deals</p>
                           </div>
                           <div style={{ flex: 1, background: 'rgba(5,150,105,0.15)', borderRadius: 7, padding: '3px 4px', textAlign: 'center' }}>
                             <p style={{ fontSize: 10, fontWeight: 900, color: '#6ee7b7', margin: 0 }}>{(inf.total_earned || 0).toLocaleString('ro-RO', { maximumFractionDigits: 0 })}</p>
@@ -1049,23 +1041,23 @@ export default function InfluencerDashboard() {
                           </defs>
                           <rect width="150" height="72" fill="url(#dots-inf)"/>
                           <line x1="0" y1="72" x2="150" y2="0" stroke="#9333ea" strokeWidth="0.5" opacity="0.3"/>
-                          <line x1="0" y1="36" x2="150" y2="36" stroke="#ec4899" strokeWidth="0.5" opacity="0.2"/>
+                          <line x1="0" y1="36" x2="150" y2="36" stroke="#9030f0" strokeWidth="0.5" opacity="0.2"/>
                           <circle cx="0" cy="72" r="60" fill="none" stroke="#9333ea" strokeWidth="0.5" opacity="0.25"/>
-                          <circle cx="150" cy="0" r="50" fill="none" stroke="#ec4899" strokeWidth="0.5" opacity="0.2"/>
+                          <circle cx="150" cy="0" r="50" fill="none" stroke="#9030f0" strokeWidth="0.5" opacity="0.2"/>
                         </svg>
-                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900, color: 'white', border: '2.5px solid #ec4899', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900, color: 'white', border: '2.5px solid #9030f0', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
                           {inf.avatar ? <img src={inf.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : inf.name?.[0]}
                         </div>
-                        <div style={{ position: 'absolute', top: 6, left: 6, background: '#ec4899', color: 'white', fontSize: 9, fontWeight: 900, padding: '1px 6px', borderRadius: 99, zIndex: 1 }}>#{i+1}</div>
+                        <div style={{ position: 'absolute', top: 6, left: 6, background: '#9030f0', color: 'white', fontSize: 9, fontWeight: 900, padding: '1px 6px', borderRadius: 99, zIndex: 1 }}>#{i+1}</div>
                         {i === 0 && <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 12, zIndex: 1 }}>⭐</div>}
                       </div>
                       <div style={{ padding: '8px 10px', background: '#1c1033' }}>
                         <p style={{ fontSize: 12, fontWeight: 800, color: '#fff', margin: '0 0 1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{inf.name}</p>
                         <p style={{ fontSize: 10, color: '#f0abfc', margin: '0 0 6px' }}>{inf.niches?.[0] || 'Creator'}</p>
                         <div style={{ display: 'flex', gap: 4 }}>
-                          <div style={{ flex: 1, background: 'rgba(236,72,153,0.2)', borderRadius: 7, padding: '3px 4px', textAlign: 'center' }}>
+                          <div style={{ flex: 1, background: 'rgba(144,48,240,0.2)', borderRadius: 7, padding: '3px 4px', textAlign: 'center' }}>
                             <p style={{ fontSize: 13, fontWeight: 900, color: '#f9a8d4', margin: 0 }}>{inf.completed_collabs}</p>
-                            <p style={{ fontSize: 9, color: '#ec4899', margin: 0 }}>deals</p>
+                            <p style={{ fontSize: 9, color: '#9030f0', margin: 0 }}>deals</p>
                           </div>
                           <div style={{ flex: 1, background: 'rgba(5,150,105,0.15)', borderRadius: 7, padding: '3px 4px', textAlign: 'center' }}>
                             <p style={{ fontSize: 10, fontWeight: 900, color: '#6ee7b7', margin: 0 }}>{(inf.total_earned || 0).toLocaleString('ro-RO', { maximumFractionDigits: 0 })}</p>

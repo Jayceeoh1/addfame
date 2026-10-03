@@ -52,16 +52,16 @@ export default function InfluencerPendingPage() {
     : `${Math.floor(waitMinutes / 1440)} zile`
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #e0f2fe 100%)' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif", background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #e0f2fe 100%)' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
         @keyframes pulse-ring { 0%{transform:scale(1);opacity:.6} 70%{transform:scale(1.6);opacity:0} 100%{transform:scale(1.6);opacity:0} }
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         .fade-up { animation:fadeUp .5s ease both; }
         .float { animation:float 3s ease-in-out infinite; }
-        .infl-grad { background:linear-gradient(135deg,#8b5cf6,#06b6d4); }
+        .infl-grad { background:linear-gradient(135deg,#7040f0, #9030f0); }
         .pulse-ring::before { content:'';position:absolute;inset:-12px;border-radius:50%;border:2px solid rgba(139,92,246,.35);animation:pulse-ring 2.5s ease-out infinite; }
         .shimmer { background:linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:200% 100%;animation:shimmer 1.5s infinite; }
         .card { background:white;border-radius:24px;border:1.5px solid rgba(139,92,246,0.1);box-shadow:0 20px 60px rgba(139,92,246,0.1); }
@@ -85,7 +85,7 @@ export default function InfluencerPendingPage() {
 
               {/* Icon animat */}
               <div className="relative w-24 h-24 mx-auto mb-6 flex items-center justify-center float">
-                <div className="pulse-ring relative w-24 h-24 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg,rgba(139,92,246,0.15),rgba(6,182,212,0.15))' }}>
+                <div className="pulse-ring relative w-24 h-24 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg,rgba(139,92,246,0.15),rgba(34,200,240,0.15))' }}>
                   <div className="w-16 h-16 rounded-full infl-grad flex items-center justify-center" style={{ boxShadow: '0 8px 24px rgba(139,92,246,0.4)' }}>
                     <Clock className="w-8 h-8 text-white" />
                   </div>

@@ -61,9 +61,9 @@ function generateContractPDF(contractText: string, campaignTitle: string) {
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Georgia, serif; color: #1a1a1a; padding: 60px; background: white; font-size: 13px; line-height: 1.8; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; padding-bottom: 24px; border-bottom: 2px solid #f97316; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; padding-bottom: 24px; border-bottom: 2px solid #5a35e6; }
     .logo { font-size: 28px; font-weight: 900; font-family: Arial, sans-serif; }
-    .logo span { color: #f97316; }
+    .logo span { color: #5a35e6; }
     .badge { text-align: right; }
     .badge .label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; font-family: Arial, sans-serif; }
     .badge .title { font-size: 15px; font-weight: 700; color: #1a1a1a; font-family: Arial, sans-serif; margin-top: 2px; }
@@ -231,7 +231,7 @@ function DeliverableReview({ collab, onUpdated }: { collab: any; onUpdated: (id:
             </a>
           </div>
           <a href={collab.deliverable_url} target="_blank" rel="noopener noreferrer"
-            className="flex-shrink-0 flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3 py-2 rounded-xl transition">
+            className="flex-shrink-0 flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition">
             <Eye className="w-3.5 h-3.5" /> Verifică
           </a>
         </div>
@@ -629,16 +629,16 @@ export default function BrandCollaborations() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        
         .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
         .tab-btn { padding:6px 14px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:none;white-space:nowrap;font-family:inherit;transition:all .15s; }
-        .tab-btn.on { background:linear-gradient(135deg,#f97316,#ec4899);color:white;box-shadow:0 3px 10px rgba(249,115,22,.3); }
+        .tab-btn.on { background:linear-gradient(135deg,#2f6fe0, #5a35e6);color:white;box-shadow:0 3px 10px rgba(90,53,230,.3); }
         .tab-btn:not(.on) { background:#f3f4f6;color:#6b7280; }
-        .tab-btn:not(.on):hover { background:#fff7ed;color:#ea580c; }
+        .tab-btn:not(.on):hover { background:#f5f3ff;color:#4423c4; }
         .field { padding:9px 14px 9px 40px;border:2px solid #f0f0f0;border-radius:12px;font-size:14px;font-weight:500;outline:none;background:white;transition:border-color .2s;font-family:inherit;width:100%; }
-        .field:focus { border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.08); }
+        .field:focus { border-color:#5a35e6;box-shadow:0 0 0 3px rgba(90,53,230,.08); }
         .btn-approve { display:inline-flex;align-items:center;gap:4px;padding:7px 14px;border-radius:10px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;cursor:pointer;transition:all .15s;font-family:inherit; }
         .btn-approve:hover:not(:disabled) { transform:translateY(-1px);box-shadow:0 3px 10px rgba(34,197,94,.3); }
         .btn-red { display:inline-flex;align-items:center;gap:4px;padding:7px 14px;border-radius:10px;font-size:13px;font-weight:700;background:white;color:#ef4444;border:2px solid #fca5a5;cursor:pointer;transition:all .15s;font-family:inherit; }
@@ -654,7 +654,7 @@ export default function BrandCollaborations() {
       {/* ── Modal Problemă colet ── */}
       {problemModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h2 className="font-black text-gray-900">⚠️ Problemă cu coletul</h2>
@@ -717,7 +717,7 @@ export default function BrandCollaborations() {
       {/* ── Modal AWB eAWB ── */}
       {awbModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h2 className="font-black text-gray-900">📦 Generează AWB eAWB</h2>
@@ -919,7 +919,7 @@ export default function BrandCollaborations() {
       {/* Alert: posturi de revizuit */}
       {pendingReviews > 0 && (
         <div className="mb-5 bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 flex items-center gap-4 fade-up">
-          <div className="w-12 h-12 rounded-2xl bg-orange-500 flex items-center justify-center flex-shrink-0" style={{ boxShadow: '0 4px 12px rgba(249,115,22,.35)' }}>
+          <div className="w-12 h-12 rounded-2xl bg-violet-600 flex items-center justify-center flex-shrink-0" style={{ boxShadow: '0 4px 12px rgba(90,53,230,.35)' }}>
             <Eye className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
@@ -932,7 +932,7 @@ export default function BrandCollaborations() {
           </div>
           <button onClick={() => setTab('Pending Review')}
             className="px-4 py-2.5 rounded-xl font-black text-sm text-white flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+            style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
             Revizuiește →
           </button>
         </div>
@@ -1065,7 +1065,7 @@ export default function BrandCollaborations() {
       <div className={`space-y-3 fade-up ${viewMode !== 'list' ? 'hidden' : ''}`} style={{ animationDelay: '.1s' }}>
         {loading ? (
           <div className="card flex items-center justify-center py-16">
-            <div className="w-8 h-8 rounded-full border-t-orange-400 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+            <div className="w-8 h-8 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
           </div>
         ) : visible.length === 0 ? (
           <div className="card text-center py-16">

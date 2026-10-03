@@ -52,7 +52,7 @@ export function CampaignAnalytics({ campaign, collabs, counts, totalReach, total
           <div className="w-full bg-gray-100 rounded-full h-3">
             <div className="h-3 rounded-full transition-all" style={{
               width: `${budgetUsedPct}%`,
-              background: budgetUsedPct > 90 ? 'linear-gradient(90deg,#ef4444,#dc2626)' : budgetUsedPct > 60 ? 'linear-gradient(90deg,#f97316,#ea580c)' : 'linear-gradient(90deg,#22c55e,#16a34a)'
+              background: budgetUsedPct > 90 ? 'linear-gradient(90deg,#ef4444,#dc2626)' : budgetUsedPct > 60 ? 'linear-gradient(90deg,#5a35e6,#4423c4)' : 'linear-gradient(90deg,#22c55e,#16a34a)'
             }} />
           </div>
           <div className="flex justify-between mt-1">

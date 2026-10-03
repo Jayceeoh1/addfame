@@ -460,7 +460,7 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
           )}
           <button onClick={submit} disabled={saving || !licenseConsent || !thumbnailUrl}
             className="flex-1 py-2.5 rounded-xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+            style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }}>
             {saving
               ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Trimite…</>
               : <><Send className="w-3.5 h-3.5" /> {wasRejected ? 'Retrimite dovada' : 'Trimite dovada'}</>
@@ -762,7 +762,7 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
         </label>
         <button onClick={submit} disabled={saving || !licenseConsent || !thumbnailUrl}
           className="w-full py-3 rounded-xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-          style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 4px 14px rgba(139,92,246,0.3)' }}>
+          style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 14px rgba(139,92,246,0.3)' }}>
           {saving
             ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Trimite…</>
             : <><Send className="w-3.5 h-3.5" /> Trimite dovada postului</>
@@ -955,14 +955,14 @@ export default function CollaborationsPage() {
   )
 
   return (
-    <div className="p-5 lg:p-8 max-w-5xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-5 lg:p-8 max-w-5xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        .infl-grad { background: linear-gradient(135deg, #8b5cf6, #06b6d4); }
+        .infl-grad { background: linear-gradient(135deg, #7040f0, #9030f0); }
         .tab-btn { padding:7px 16px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .18s;white-space:nowrap; }
-        .tab-btn.on { background:linear-gradient(135deg,#8b5cf6,#06b6d4);color:white;box-shadow:0 4px 12px rgba(139,92,246,.3); }
+        .tab-btn.on { background:linear-gradient(135deg,#7040f0, #9030f0);color:white;box-shadow:0 4px 12px rgba(139,92,246,.3); }
         .tab-btn:not(.on) { background:#f3f4f6;color:#6b7280; }
         .tab-btn:not(.on):hover { background:#ede9fe;color:#7c3aed; }
-        .btn-accept { display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:12px;font-size:14px;font-weight:800;background:linear-gradient(135deg,#8b5cf6,#06b6d4);color:white;border:none;cursor:pointer;transition:all .18s;font-family:inherit; }
+        .btn-accept { display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:12px;font-size:14px;font-weight:800;background:linear-gradient(135deg,#7040f0, #9030f0);color:white;border:none;cursor:pointer;transition:all .18s;font-family:inherit; }
         .btn-accept:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 6px 18px rgba(139,92,246,.4); }
         .btn-decline { display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:12px;font-size:14px;font-weight:700;background:white;color:#6b7280;border:2px solid #e5e7eb;cursor:pointer;transition:all .18s;font-family:inherit; }
         .btn-decline:hover:not(:disabled) { border-color:#fca5a5;color:#ef4444;background:#fff5f5; }
@@ -1561,7 +1561,7 @@ export default function CollaborationsPage() {
                           <button
                             onClick={() => setAddressModal({ collabId: c.id })}
                             className="w-full py-2.5 rounded-xl font-black text-sm text-white transition"
-                            style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}
+                            style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}
                           >
                             Adaugă adresa de livrare →
                           </button>
@@ -1728,7 +1728,7 @@ export default function CollaborationsPage() {
       {addressModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl">
-            <div className="h-1 w-full" style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }} />
+            <div className="h-1 w-full" style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }} />
             <div className="p-6">
               <h3 className="font-black text-gray-900 text-lg mb-1">📦 Adresă de livrare</h3>
               <p className="text-sm text-gray-500 mb-5">Brandul va trimite produsul la această adresă după aprobare.</p>
@@ -1758,7 +1758,7 @@ export default function CollaborationsPage() {
                 </button>
                 <button onClick={handleAcceptWithAddress} disabled={!!actionLoading}
                   className="flex-1 py-3 rounded-2xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+                  style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }}>
                   {actionLoading ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
                   Accept invitația
                 </button>

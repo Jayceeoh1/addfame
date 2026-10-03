@@ -106,7 +106,7 @@ export default function CampaignBriefPage() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div className="w-10 h-10 rounded-full border-t-purple-500 border-purple-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
     </div>
   )
@@ -141,7 +141,7 @@ export default function CampaignBriefPage() {
   const hasFacebook = campaign.tasks_fb_post || campaign.tasks_fb_story || campaign.tasks_fb_reel || campaign.tasks_fb_share
 
   return (
-    <div className="pb-32" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="pb-32" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
         .card { background: white; border-radius: 16px; border: 1px solid #f0f0f0; }
         .section-label { font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
@@ -215,7 +215,7 @@ export default function CampaignBriefPage() {
           <div className="py-3 px-4 text-center" style={{ borderRight: '1px solid #f0f0f0' }}>
             {isBarter ? (
               <>
-                <p className="font-bold text-sm" style={{ color: '#ea580c', margin: 0 }}>{campaign.offer_name || 'Produs gratuit'}</p>
+                <p className="font-bold text-sm" style={{ color: '#4423c4', margin: 0 }}>{campaign.offer_name || 'Produs gratuit'}</p>
               </>
             ) : (
               <>
@@ -226,7 +226,7 @@ export default function CampaignBriefPage() {
             <p style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em' }}>{isBarter ? 'primești' : 'câștig'}</p>
           </div>
           <div className="py-3 px-4 text-center" style={{ borderRight: '1px solid #f0f0f0' }}>
-            <p className="font-bold text-lg" style={{ color: expired ? '#dc2626' : urgent ? '#ea580c' : '#111827', margin: 0 }}>
+            <p className="font-bold text-lg" style={{ color: expired ? '#dc2626' : urgent ? '#4423c4' : '#111827', margin: 0 }}>
               {expired ? 'Expirat' : `${days}z`}
             </p>
             <p style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em' }}>{fmtDate(campaign.deadline)}</p>
@@ -241,11 +241,11 @@ export default function CampaignBriefPage() {
 
         {/* ── REZERVARE ── */}
         {campaign.reservation_required && (
-          <div className="anim" style={{ animationDelay: '.05s', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="anim" style={{ animationDelay: '.05s', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 20 }}>📞</span>
             <div>
               <p style={{ fontSize: 13, fontWeight: 700, color: '#c2410c', margin: 0 }}>Rezervare necesară</p>
-              <p style={{ fontSize: 12, color: '#ea580c', margin: 0 }}>Trebuie să contactezi brandul înainte de vizită</p>
+              <p style={{ fontSize: 12, color: '#4423c4', margin: 0 }}>Trebuie să contactezi brandul înainte de vizită</p>
             </div>
           </div>
         )}
@@ -604,7 +604,7 @@ export default function CampaignBriefPage() {
                 <button onClick={() => setShowApplyForm(false)} className="flex-1 py-3 rounded-2xl font-black text-sm text-gray-600 border-2 border-gray-200 hover:bg-gray-50 transition">Anulează</button>
                 <button onClick={handleApply} disabled={applying}
                   className="flex-1 py-3 rounded-2xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 4px 14px rgba(139,92,246,0.35)' }}>
+                  style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 14px rgba(139,92,246,0.35)' }}>
                   {applying ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Se trimite…</> : <><Send className="w-4 h-4" />Trimite aplicația</>}
                 </button>
               </div>
@@ -620,7 +620,7 @@ export default function CampaignBriefPage() {
               <button onClick={() => setShowApplyForm(true)}
                 disabled={expired || campaign?.registrations_open === false || !!applyError}
                 className="flex-1 py-4 rounded-2xl font-black text-base text-white disabled:opacity-40 transition flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
+                style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
                 {expired ? 'Campanie expirată' : campaign?.registrations_open === false ? '🚫 Înscrieri închise' : needsAddress ? <><Zap className="w-5 h-5" />Aplică + adresă livrare</> : <><Zap className="w-5 h-5" />Aplică acum</>}
               </button>
             </div>

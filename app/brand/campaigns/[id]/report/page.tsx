@@ -72,8 +72,8 @@ export default function CampaignReportPage() {
   useEffect(() => { load() }, [load])
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div className="w-10 h-10 rounded-full border-t-orange-400 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+      <div className="w-10 h-10 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
     </div>
   )
   if (!campaign) return null
@@ -96,7 +96,7 @@ export default function CampaignReportPage() {
     .reduce((sum, c) => {
       const platforms: any[] = c.influencers?.platforms ?? []
       return sum + platforms.reduce((ps: number, p: any) => {
-        const f = parseInt((p.followers || '0').replace(/[^0-9]/g, '')) || 0
+        const f = parseInt(String(p.followers ?? '0').replace(/[^0-9]/g, '')) || 0
         return ps + f
       }, 0)
     }, 0)
@@ -140,7 +140,7 @@ export default function CampaignReportPage() {
       c.influencers?.name ?? 'Necunoscut',
       c.status,
       (c.influencers?.platforms ?? []).map((p: any) => p.platform).join(';'),
-      (c.influencers?.platforms ?? []).reduce((s: number, p: any) => s + (parseInt((p.followers || '0').replace(/\D/g, '')) || 0), 0),
+      (c.influencers?.platforms ?? []).reduce((s: number, p: any) => s + (parseInt(String(p.followers ?? '0').replace(/\D/g, '')) || 0), 0),
       c.deliverable_url ?? '',
       c.payment_amount ?? 0,
       c.deliverable_submitted_at ? fmtDate(c.deliverable_submitted_at) : '',
@@ -154,11 +154,11 @@ export default function CampaignReportPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-5xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@1&display=swap');
+        
         .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
-        .brand-grad { background:linear-gradient(135deg,#f97316,#ec4899); }
+        .brand-grad { background:linear-gradient(135deg,#2f6fe0, #5a35e6); }
         @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         .fu { animation:fadeUp .4s ease both; }
         .stat-card { background:white;border:1.5px solid #f0f0f0;border-radius:16px;padding:20px; }
@@ -173,7 +173,7 @@ export default function CampaignReportPage() {
           </Link>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-8 h-8 brand-grad rounded-xl flex items-center justify-center" style={{ boxShadow: '0 3px 10px rgba(249,115,22,.3)' }}>
+              <div className="w-8 h-8 brand-grad rounded-xl flex items-center justify-center" style={{ boxShadow: '0 3px 10px rgba(90,53,230,.3)' }}>
                 <BarChart2 className="w-4 h-4 text-white" />
               </div>
               <span className="text-xs font-black text-orange-500 uppercase tracking-wider">Performance Report</span>
@@ -188,7 +188,7 @@ export default function CampaignReportPage() {
         </div>
         <button onClick={downloadCSV}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm text-white brand-grad hover:opacity-90 transition"
-          style={{ boxShadow: '0 3px 12px rgba(249,115,22,.3)' }}>
+          style={{ boxShadow: '0 3px 12px rgba(90,53,230,.3)' }}>
           <Download className="w-4 h-4" /> Export CSV
         </button>
       </div>
@@ -255,7 +255,7 @@ export default function CampaignReportPage() {
                 <div className="relative w-16 h-16 flex-shrink-0">
                   <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
                     <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f0f0f0" strokeWidth="3" />
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f97316" strokeWidth="3"
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#5a35e6" strokeWidth="3"
                       strokeDasharray={`${(active + completed) > 0 ? Math.round((delivSubmit / (active + completed)) * 100) : 0} 100`}
                       strokeLinecap="round" />
                   </svg>
@@ -301,7 +301,7 @@ export default function CampaignReportPage() {
               {(campaign.budget || 0) > 0 && (
                 <div className="mt-2">
                   <div className="bg-gray-100 rounded-full h-2">
-                    <div className="bg-gradient-to-r from-orange-400 to-pink-400 h-2 rounded-full"
+                    <div className="bg-gradient-to-r from-blue-400 to-violet-400 h-2 rounded-full"
                       style={{ width: `${Math.min(100, Math.round((totalSpent / (campaign.budget || 1)) * 100))}%` }} />
                   </div>
                   <p className="text-[11px] text-gray-400 mt-1">{Math.min(100, Math.round((totalSpent / (campaign.budget || 1)) * 100))}% of budget used</p>
@@ -397,12 +397,12 @@ export default function CampaignReportPage() {
                     ACTIVE: 'bg-purple-50 text-purple-700', COMPLETED: 'bg-green-50 text-green-700',
                     PENDING: 'bg-amber-50 text-amber-700', INVITED: 'bg-blue-50 text-blue-700',
                   }
-                  const totalF = (inf?.platforms ?? []).reduce((s: number, p: any) => s + (parseInt((p.followers || '0').replace(/\D/g, '')) || 0), 0)
+                  const totalF = (inf?.platforms ?? []).reduce((s: number, p: any) => s + (parseInt(String(p.followers ?? '0').replace(/\D/g, '')) || 0), 0)
                   return (
                     <tr key={c.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center">
                             {inf?.avatar ? <img src={inf.avatar} className="w-full h-full object-cover" alt="" />
                               : <span className="font-black text-orange-500">{inf?.name?.[0]?.toUpperCase() ?? '?'}</span>}
                           </div>
@@ -453,7 +453,7 @@ export default function CampaignReportPage() {
               return (
                 <div key={r.id} className="bg-gray-50 rounded-2xl p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                       {collab?.influencers?.avatar
                         ? <img src={collab.influencers.avatar} className="w-full h-full object-cover" alt="" />
                         : <span className="font-black text-orange-500 text-xs">{collab?.influencers?.name?.[0]?.toUpperCase() ?? '?'}</span>}

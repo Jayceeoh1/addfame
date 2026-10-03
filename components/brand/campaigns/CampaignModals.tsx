@@ -19,7 +19,7 @@ export function PauseModal({ campaign, statusLoading, onConfirm, onClose }: any)
         </div>
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 rounded-2xl font-black text-sm text-gray-600 border-2 border-gray-200 hover:bg-gray-50 transition">Anulează</button>
-          <button onClick={onConfirm} disabled={statusLoading} className="flex-1 py-3 rounded-2xl font-black text-sm text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 transition flex items-center justify-center gap-2">
+          <button onClick={onConfirm} disabled={statusLoading} className="flex-1 py-3 rounded-2xl font-black text-sm text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 transition flex items-center justify-center gap-2">
             {statusLoading ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Pause className="w-4 h-4" />}
             Confirmă pauza
           </button>

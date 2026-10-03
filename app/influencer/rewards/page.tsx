@@ -62,7 +62,7 @@ export default function RewardsPage() {
   ]
 
   return (
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
 
       {/* Back */}
       <Link href="/influencer/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#7c3aed', fontWeight: 700, fontSize: 13, textDecoration: 'none', marginBottom: 20 }}>

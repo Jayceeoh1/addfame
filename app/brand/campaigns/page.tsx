@@ -199,27 +199,27 @@ export default function BrandCampaignsPage() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div className="w-10 h-10 rounded-full border-t-orange-500 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+      <div className="w-10 h-10 rounded-full border-t-violet-500 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
     </div>
   )
 
   return (
-    <div className="p-5 lg:p-8 max-w-6xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-5 lg:p-8 max-w-6xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        .brand-grad { background: linear-gradient(135deg, #f97316, #ec4899); }
+        .brand-grad { background: linear-gradient(135deg, #2f6fe0, #5a35e6); }
         .card { background: white; border: 1.5px solid #f0f0f0; border-radius: 20px; }
         .campaign-card { background: white; border: 1.5px solid #f0f0f0; border-radius: 20px; transition: all .2s ease; }
-        .campaign-card:hover { border-color: #fed7aa; box-shadow: 0 10px 28px rgba(249,115,22,0.08); }
+        .campaign-card:hover { border-color: #ddd6fe; box-shadow: 0 10px 28px rgba(90,53,230,0.08); }
         .tab-btn { padding:7px 16px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .18s;white-space:nowrap;font-family:inherit; }
-        .tab-btn.active { background:linear-gradient(135deg,#f97316,#ec4899);color:white;box-shadow:0 4px 12px rgba(249,115,22,0.3); }
+        .tab-btn.active { background:linear-gradient(135deg,#2f6fe0, #5a35e6);color:white;box-shadow:0 4px 12px rgba(90,53,230,0.3); }
         .tab-btn:not(.active) { background:#f3f4f6;color:#6b7280; }
-        .tab-btn:not(.active):hover { background:#fff7ed;color:#f97316; }
+        .tab-btn:not(.active):hover { background:#f5f3ff;color:#5a35e6; }
         .search-box { width:100%;padding:10px 16px 10px 42px;border:2px solid #e5e7eb;border-radius:12px;font-size:14px;font-weight:500;outline:none;transition:all .2s;font-family:inherit;background:white; }
-        .search-box:focus { border-color:#f97316;box-shadow:0 0 0 4px rgba(249,115,22,0.08); }
+        .search-box:focus { border-color:#5a35e6;box-shadow:0 0 0 4px rgba(90,53,230,0.08); }
         .search-box::placeholder { color:#9ca3af;font-weight:400; }
-        .btn-publish { display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:11px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#f97316,#ec4899);color:white;border:none;cursor:pointer;transition:all .18s;font-family:inherit; }
-        .btn-publish:hover:not(:disabled) { transform:translateY(-1px);box-shadow:0 5px 16px rgba(249,115,22,0.38); }
+        .btn-publish { display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:11px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#2f6fe0, #5a35e6);color:white;border:none;cursor:pointer;transition:all .18s;font-family:inherit; }
+        .btn-publish:hover:not(:disabled) { transform:translateY(-1px);box-shadow:0 5px 16px rgba(90,53,230,0.38); }
         .btn-publish:disabled { opacity:.6;cursor:not-allowed;transform:none; }
         .btn-unpublish { display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:11px;font-size:13px;font-weight:700;background:white;color:#6b7280;border:2px solid #e5e7eb;cursor:pointer;transition:all .18s;font-family:inherit; }
         .btn-unpublish:hover:not(:disabled) { border-color:#d1d5db;color:#374151;background:#f9fafb; }
@@ -260,7 +260,7 @@ export default function BrandCampaignsPage() {
           <button
             onClick={() => setShowSheet(true)}
             className="inline-flex items-center gap-2 brand-grad text-white font-bold text-sm px-5 py-2.5 rounded-xl hover:-translate-y-0.5 transition flex-shrink-0"
-            style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.35)' }}
+            style={{ boxShadow: '0 4px 14px rgba(90,53,230,0.35)' }}
           >
             <Plus className="w-4 h-4" /> New Campaign
           </button>
@@ -321,7 +321,7 @@ export default function BrandCampaignsPage() {
       {filtered.length === 0 ? (
         <div className="card p-16 text-center">
           <div className="w-16 h-16 rounded-2xl brand-grad flex items-center justify-center mx-auto mb-4"
-            style={{ boxShadow: '0 4px 16px rgba(249,115,22,0.25)' }}>
+            style={{ boxShadow: '0 4px 16px rgba(90,53,230,0.25)' }}>
             <Briefcase className="w-8 h-8 text-white" />
           </div>
           <p className="font-black text-gray-700 text-lg mb-2">No campaigns yet</p>
@@ -335,12 +335,12 @@ export default function BrandCampaignsPage() {
               <button
                 onClick={() => setShowSheet(true)}
                 className="inline-flex items-center gap-2 brand-grad text-white font-bold text-sm px-6 py-3 rounded-xl"
-                style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.3)' }}>
+                style={{ boxShadow: '0 4px 14px rgba(90,53,230,0.3)' }}>
                 <Plus className="w-4 h-4" /> Create Campaign
               </button>
             ) : (
               <div className="text-center">
-                <Link href="/brand/wallet" className="inline-flex items-center gap-2 bg-orange-500 text-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-orange-600 transition">
+                <Link href="/brand/wallet" className="inline-flex items-center gap-2 bg-violet-600 text-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-violet-700 transition">
                   <Lock className="w-4 h-4" /> Adaugă 250 RON pentru a crea campanii
                 </Link>
               </div>
@@ -361,8 +361,8 @@ export default function BrandCampaignsPage() {
               <div key={c.id} className="campaign-card card-enter p-5" style={{ animationDelay: `${Math.min(i, 6) * 0.05}s` }}>
                 <div className="flex items-start gap-4">
                   {/* Icon */}
-                  <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Briefcase className="w-5 h-5 text-orange-500" />
+                  <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Briefcase className="w-5 h-5 text-violet-600" />
                   </div>
 
                   {/* Content */}
@@ -464,7 +464,7 @@ export default function BrandCampaignsPage() {
                             className="btn-publish"
                             onClick={() => handleStatusChange(c.id, 'ACTIVE')}
                             disabled={isLoading}
-                            style={{ boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}
+                            style={{ boxShadow: '0 3px 10px rgba(90,53,230,0.3)' }}
                           >
                             {isLoading
                               ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
@@ -530,9 +530,9 @@ export default function BrandCampaignsPage() {
             {/* Free Offer / Barter */}
             <button
               onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/barter') }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-orange-200 hover:bg-orange-50/50 transition mb-3 text-left group"
+              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-violet-200 hover:bg-violet-50/50 transition mb-3 text-left group"
             >
-              <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0 text-3xl group-hover:scale-105 transition">
+              <div className="w-14 h-14 rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center flex-shrink-0 text-3xl group-hover:scale-105 transition">
                 🎁
               </div>
               <div className="min-w-0 flex-1">

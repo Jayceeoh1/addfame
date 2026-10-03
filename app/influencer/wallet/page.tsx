@@ -280,9 +280,9 @@ export default function WalletPage() {
   )
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#f8f7ff', minHeight: '100vh' }}>
+    <div style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif", background: '#f8f7ff', minHeight: '100vh' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         .fu { animation: fadeUp .3s ease both; }
         .wcard { background:white;border-radius:16px;border:1.5px solid #f0f0f0;transition:border-color .15s; }
@@ -295,7 +295,7 @@ export default function WalletPage() {
       {/* Dark Header */}
       <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81,#0f3460)', padding: '20px 20px 24px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(139,92,246,0.2)' }} />
-        <div style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(6,182,212,0.15)' }} />
+        <div style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(34,200,240,0.15)' }} />
         <div style={{ position: 'relative', marginBottom: 16 }}>
           <p style={{ color: '#a78bfa', fontSize: 11, fontWeight: 800, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💰 Wallet</p>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
@@ -308,7 +308,7 @@ export default function WalletPage() {
             <button
               onClick={() => setShowPayoutModal(true)}
               disabled={wallet.available_balance < WITHDRAWAL_MIN || paymentMethods.length === 0}
-              style={{ padding: '10px 18px', background: wallet.available_balance >= WITHDRAWAL_MIN && paymentMethods.length > 0 ? '#f97316' : 'rgba(255,255,255,0.15)', color: 'white', border: 'none', borderRadius: 12, fontSize: 12, fontWeight: 900, cursor: wallet.available_balance >= WITHDRAWAL_MIN && paymentMethods.length > 0 ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+              style={{ padding: '10px 18px', background: wallet.available_balance >= WITHDRAWAL_MIN && paymentMethods.length > 0 ? '#5a35e6' : 'rgba(255,255,255,0.15)', color: 'white', border: 'none', borderRadius: 12, fontSize: 12, fontWeight: 900, cursor: wallet.available_balance >= WITHDRAWAL_MIN && paymentMethods.length > 0 ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
               💸 Retrage fonduri
             </button>
           </div>

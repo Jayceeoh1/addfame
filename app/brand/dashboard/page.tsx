@@ -84,19 +84,19 @@ function AIAssistant() {
             bottom: 24,
             right: 24,
             zIndex: 50,
-            background: 'linear-gradient(135deg,#f97316,#ec4899)',
+            background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)',
             color: 'white',
             border: 'none',
             borderRadius: 100,
             padding: '12px 20px',
             fontSize: 14,
             fontWeight: 800,
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontFamily: "var(--font-body, system-ui), system-ui, sans-serif",
             display: 'flex',
             alignItems: 'center',
             gap: 8,
             cursor: 'pointer',
-            boxShadow: '0 8px 24px rgba(249,115,22,0.4)',
+            boxShadow: '0 8px 24px rgba(90,53,230,0.4)',
             whiteSpace: 'nowrap',
           }}
         >
@@ -113,7 +113,7 @@ function AIAssistant() {
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+            style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                 <Bot className="w-4 h-4 text-white" />
@@ -138,7 +138,7 @@ function AIAssistant() {
                       ? 'text-white rounded-br-sm'
                       : 'bg-gray-50 text-gray-800 rounded-bl-sm border border-gray-100'
                   }`}
-                  style={m.role === 'user' ? { background: 'linear-gradient(135deg,#f97316,#ec4899)' } : {}}
+                  style={m.role === 'user' ? { background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' } : {}}
                 >
                   <span dangerouslySetInnerHTML={{ __html: m.text
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -189,7 +189,7 @@ function AIAssistant() {
                 onClick={() => sendMessage(input)}
                 disabled={!input.trim() || loading}
                 className="w-7 h-7 rounded-full flex items-center justify-center text-white transition disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}
+                style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
@@ -241,8 +241,8 @@ export default function BrandDashboard() {
   useEffect(() => { load() }, [load])
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div className="w-10 h-10 rounded-full border-t-orange-400 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+      <div className="w-10 h-10 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
     </div>
   )
 
@@ -272,15 +272,15 @@ export default function BrandDashboard() {
   const onboardingDone = onboardingSteps.filter(s => s.done).length === onboardingSteps.length
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
         .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
-        .brand-grad { background:linear-gradient(135deg,#f97316,#ec4899); }
+        .brand-grad { background:linear-gradient(135deg,#2f6fe0, #5a35e6); }
         @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         .fade-up { animation:fadeUp .35s ease both; }
         .row-hover:hover { background:#fafbff; }
         .hero-bg { background: linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 50%, #4c1d3d 100%); }
-        .glow-orb { position: absolute; top: -80px; right: -40px; width: 280px; height: 280px; background: radial-gradient(circle, rgba(249,115,22,0.18) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+        .glow-orb { position: absolute; top: -80px; right: -40px; width: 280px; height: 280px; background: radial-gradient(circle, rgba(90,53,230,0.18) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
         .stat-mini { background:white;border:1.5px solid #f0f0f0;border-radius:16px;padding:16px 18px;transition:all .2s; }
         .stat-mini:hover { box-shadow:0 8px 24px rgba(0,0,0,0.05);transform:translateY(-1px); }
       `}</style>
@@ -289,7 +289,7 @@ export default function BrandDashboard() {
       <div className="flex items-center justify-between mb-5 fade-up flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black text-gray-900">
-            Welcome back, <span style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{profile?.name}</span> 👋
+            Welcome back, <span style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{profile?.name}</span> 👋
           </h1>
           <p className="text-sm text-gray-400 mt-0.5">Iată ce se întâmplă cu campaniile tale</p>
         </div>
@@ -308,7 +308,7 @@ export default function BrandDashboard() {
             <button
               onClick={() => setShowSheet(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black text-white brand-grad"
-              style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.3)' }}
+              style={{ boxShadow: '0 4px 14px rgba(90,53,230,0.3)' }}
             >
               <Plus className="w-4 h-4" /> New Campaign
             </button>
@@ -373,7 +373,7 @@ export default function BrandDashboard() {
                 </div>
               )}
             </div>
-            <Link href={`/brand/campaigns/${featuredCampaign.id}`} className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 transition px-5 py-3 rounded-xl font-black text-sm flex-shrink-0 self-end lg:self-center">
+            <Link href={`/brand/campaigns/${featuredCampaign.id}`} className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 transition px-5 py-3 rounded-xl font-black text-sm flex-shrink-0 self-end lg:self-center">
               Gestionează <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -386,7 +386,7 @@ export default function BrandDashboard() {
             <h2 className="text-2xl font-black mb-2">Lansează prima ta campanie</h2>
             <p className="text-sm opacity-70 mb-5 max-w-md mx-auto">Conectează-te cu influenceri reali, pe barter. Setezi campania în sub 5 minute.</p>
             {canCreateCampaign ? (
-              <button onClick={() => setShowSheet(true)} className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-black text-sm">
+              <button onClick={() => setShowSheet(true)} className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 transition px-6 py-3 rounded-xl font-black text-sm">
                 <Plus className="w-4 h-4" /> Creează campanie
               </button>
             ) : (
@@ -557,7 +557,7 @@ export default function BrandDashboard() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
                   <p className="font-black text-gray-900 text-base">Rapid — Wizard</p>
-                  <span className="text-[10px] font-black bg-orange-500 text-white px-2 py-0.5 rounded-full">RECOMANDAT</span>
+                  <span className="text-[10px] font-black bg-violet-600 text-white px-2 py-0.5 rounded-full">RECOMANDAT</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-0.5">Pas cu pas, gata în 5 minute</p>
               </div>

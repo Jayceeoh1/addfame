@@ -631,7 +631,6 @@ function SettingsPageInner() {
     { id: 'security', label: 'Securitate', icon: Lock },
     { id: 'telegram', label: 'Bot Telegram', icon: Send },
     { id: 'verified', label: 'Creator Verificat', icon: Star },
-    { id: 'identity', label: 'Verificare ID', icon: Shield },
     { id: 'danger', label: 'Ștergere cont', icon: Trash2 },
   ]
 
@@ -1304,7 +1303,7 @@ function SettingsPageInner() {
           )}
 
           {activeTab === 'danger' && (
-            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <div style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
               {/* Dezactivare temporară */}
               <div style={{ background: 'white', border: '1.5px solid #f0f0f0', borderRadius: 16, padding: '20px', marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
@@ -1657,7 +1656,7 @@ function SettingsPageInner() {
       {/* Modal ștergere cont */}
       {showDeleteModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 20, padding: 28, width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div style={{ background: 'white', borderRadius: 20, padding: 28, width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
             {/* Icon */}
             <div style={{ width: 52, height: 52, borderRadius: 16, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -1669,7 +1668,7 @@ function SettingsPageInner() {
             </p>
 
             {/* Warning momentum */}
-            <div style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: 12, padding: '12px 14px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ background: '#f5f3ff', border: '1.5px solid #ddd6fe', borderRadius: 12, padding: '12px 14px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <span style={{ fontSize: 18, flexShrink: 0 }}>⚡</span>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 800, color: '#92400e', margin: '0 0 3px' }}>Ești printre primii 150 de creatori din România pe AddFame!</p>

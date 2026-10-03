@@ -96,9 +96,9 @@ function PricingSection({ priceStory, setPriceStory, priceReel, setPriceReel, pr
   const setters: Record<string, (v: string) => void> = { story: setPriceStory, reel: setPriceReel, post: setPricePost, youtube: setPriceYoutube }
 
   return (
-    <div className="rounded-2xl border-2 border-gray-100 bg-white p-6" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+    <div className="rounded-2xl border-2 border-gray-100 bg-white p-6" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
           <span className="text-white font-black">RON</span>
         </div>
         <div>
@@ -110,7 +110,7 @@ function PricingSection({ priceStory, setPriceStory, priceReel, setPriceReel, pr
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         {PRICE_CONFIG.map(cfg => {
           const status = getPriceStatus(vals[cfg.key], cfg.warn, cfg.max, cfg.min)
-          const borderColor = !status ? '#e5e7eb' : status.level === 'ok' ? '#86efac' : status.level === 'warn' ? '#fcd34d' : status.level === 'high' ? '#fca5a5' : '#fdba74'
+          const borderColor = !status ? '#e5e7eb' : status.level === 'ok' ? '#86efac' : status.level === 'warn' ? '#fcd34d' : status.level === 'high' ? '#fca5a5' : '#c4b5fd'
           return (
             <div key={cfg.key}>
               <label className="block text-xs font-black text-gray-500 uppercase tracking-wide mb-1.5">{cfg.label}</label>
@@ -663,8 +663,8 @@ export default function ProfilePage() {
               const Icon = platform.icon
               const connected = socialLinks.find(s => s.platform === platform.id)
               return (
-                <div key={platform.id} className={`flex items-center justify-between p-4 rounded-xl border ${connected ? platform.border + ' bg-card' : 'border-border'}`}>
-                  <div className="flex items-center gap-3">
+                <div key={platform.id} className={`flex items-center justify-between flex-wrap gap-3 p-4 rounded-xl border ${connected ? platform.border + ' bg-card' : 'border-border'}`}>
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${connected ? platform.bg : 'bg-muted'}`}>
                       <Icon className={`w-5 h-5 ${connected ? platform.color : 'text-muted-foreground'}`} />
                     </div>
@@ -680,7 +680,7 @@ export default function ProfilePage() {
                           {igData?.lastSync && <span className="text-xs text-gray-400">Sync: {new Date(igData.lastSync).toLocaleDateString('ro-RO')}</span>}
                         </div>
                       ) : connected ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <p className="text-xs text-muted-foreground truncate max-w-[160px]">{connected.url}</p>
                           {connected.followers && (
                             <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{connected.followers} followers</span>
@@ -700,7 +700,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {connected && (
                       <>
                         <a href={connected.url} target="_blank" rel="noopener noreferrer"

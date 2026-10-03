@@ -48,7 +48,7 @@ export function CampaignHero({ campaign, collabs, counts, editing, editForm, set
             <>
               <button className="btn-sec" onClick={onStartEdit}><Edit2 className="w-4 h-4" /> Editează</button>
               {campaign.status === 'DRAFT' && (
-                <button className="btn-pub" onClick={() => onChangeStatus('ACTIVE')} disabled={statusLoading} style={{ boxShadow: '0 4px 14px rgba(249,115,22,.35)' }}>
+                <button className="btn-pub" onClick={() => onChangeStatus('ACTIVE')} disabled={statusLoading} style={{ boxShadow: '0 4px 14px rgba(90,53,230,.35)' }}>
                   {statusLoading ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Eye className="w-4 h-4" />}
                   Publică
                 </button>

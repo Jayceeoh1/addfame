@@ -72,8 +72,8 @@ export default function PWAInstallModal() {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-end justify-center p-4 pb-6"
-      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+      style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+      <style>{``}</style>
 
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={dismiss} />
@@ -89,7 +89,7 @@ export default function PWAInstallModal() {
         `}</style>
 
         {/* Header gradient */}
-        <div className="relative" style={{ background: 'linear-gradient(135deg,#f97316,#ec4899,#8b5cf6)', padding: '24px 24px 20px' }}>
+        <div className="relative" style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6,#8b5cf6)', padding: '24px 24px 20px' }}>
           <button onClick={dismiss}
             className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition">
             <X className="w-4 h-4" />
@@ -137,7 +137,7 @@ export default function PWAInstallModal() {
               {device === 'android' && step === 1 && (
                 <button onClick={installAndroid}
                   className="flex-1 py-3 rounded-2xl text-sm font-black text-white transition flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+                  style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
                   <Download className="w-4 h-4" />
                   Instalează
                 </button>
@@ -145,14 +145,14 @@ export default function PWAInstallModal() {
               {device === 'ios' && step < totalSteps && (
                 <button onClick={() => setStep(s => s + 1)}
                   className="flex-1 py-3 rounded-2xl text-sm font-black text-white transition"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+                  style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
                   Următorul pas →
                 </button>
               )}
               {device === 'ios' && step === totalSteps && (
                 <button onClick={dismiss}
                   className="flex-1 py-3 rounded-2xl text-sm font-black text-white transition"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+                  style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
                   Gata! ✓
                 </button>
               )}

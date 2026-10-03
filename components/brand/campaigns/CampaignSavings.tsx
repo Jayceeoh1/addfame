@@ -43,7 +43,7 @@ export function CampaignSavings({ agencyCosts, collabs }: any) {
           <p className="text-2xl font-black text-purple-700">{influencersFiltered}</p>
           <p className="text-xs text-purple-500 mt-1 font-medium">procesați automat</p>
         </div>
-        <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 rounded-2xl p-4">
+        <div className="bg-gradient-to-br from-blue-50 to-amber-50 border border-orange-100 rounded-2xl p-4">
           <p className="text-xs font-bold text-orange-600 mb-1">📈 Eng. rate mediu</p>
           <p className="text-2xl font-black text-orange-600">{engRateBoost}%</p>
           <p className="text-xs text-orange-500 mt-1 font-medium">vs {engRateIndustry}% industrie</p>

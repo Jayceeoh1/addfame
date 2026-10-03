@@ -33,16 +33,16 @@ export default function InfluencerOnboarding() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4"
-      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #e0f2fe 100%)' }}>
+      style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif", background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #e0f2fe 100%)' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pop { 0%{transform:scale(0.8);opacity:0} 70%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
         .fu { animation:fadeUp .45s ease both; }
         .pop { animation:pop .5s ease both; }
         .float { animation:float 3s ease-in-out infinite; }
-        .infl-grad { background:linear-gradient(135deg,#8b5cf6,#06b6d4); }
+        .infl-grad { background:linear-gradient(135deg,#7040f0, #9030f0); }
         .card { background:white;border-radius:24px;border:1.5px solid rgba(139,92,246,0.1);box-shadow:0 20px 60px rgba(139,92,246,0.1); }
         .step-btn { width:100%;padding:14px 20px;border-radius:16px;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;transition:all .15s;border:none;display:flex;align-items:center;gap:12px;text-align:left; }
         .step-btn:hover { transform:translateY(-2px); }
@@ -106,7 +106,7 @@ export default function InfluencerOnboarding() {
 
             <button onClick={() => setStep(1)}
               className="w-full py-4 rounded-2xl font-black text-white text-lg transition hover:-translate-y-1 flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 8px 24px rgba(139,92,246,0.4)' }}>
+              style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 8px 24px rgba(139,92,246,0.4)' }}>
               Hai să începem! <ArrowRight className="w-5 h-5" />
             </button>
           </div>
@@ -181,7 +181,7 @@ export default function InfluencerOnboarding() {
             <div className="flex gap-3">
               <Link href="/influencer/profile"
                 className="flex-1 py-4 rounded-2xl font-black text-white text-center transition hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 6px 20px rgba(139,92,246,0.35)' }}>
+                style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 6px 20px rgba(139,92,246,0.35)' }}>
                 Completează acum <ArrowRight className="w-4 h-4" />
               </Link>
               <button onClick={() => setStep(2)}
@@ -230,7 +230,7 @@ export default function InfluencerOnboarding() {
 
             <button onClick={markOnboardingDone}
               className="w-full py-4 rounded-2xl font-black text-white text-lg transition hover:-translate-y-1 flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 8px 24px rgba(139,92,246,0.4)' }}>
+              style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 8px 24px rgba(139,92,246,0.4)' }}>
               Intră în dashboard <ArrowRight className="w-5 h-5" />
             </button>
           </div>

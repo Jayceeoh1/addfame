@@ -474,7 +474,7 @@ export default function CampaignsPage() {
   if (barterSortBy === 'Locuri: Cele mai multe') filteredBarter = [...filteredBarter].sort((a, b) => ((b.max_influencers ?? 0) - (b.current_influencers ?? 0)) - ((a.max_influencers ?? 0) - (a.current_influencers ?? 0)))
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div className="flex flex-col items-center gap-3">
         <div className="w-10 h-10 rounded-full border-t-purple-500 border-purple-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
         <p className="text-sm text-gray-400 font-semibold">Loading campaigns…</p>
@@ -483,10 +483,10 @@ export default function CampaignsPage() {
   )
 
   return (
-    <div className="p-5 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-5 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-        .infl-grad { background: linear-gradient(135deg, #8b5cf6, #06b6d4); }
+        
+        .infl-grad { background: linear-gradient(135deg, #7040f0, #9030f0); }
         .card { background: white; border: 1.5px solid #f0f0f0; border-radius: 20px; }
         .camp-card { background: white; border: 1.5px solid #f0f0f0; border-radius: 18px; cursor: pointer; transition: all .2s ease; }
         .camp-card:hover { border-color: #ddd6fe; box-shadow: 0 8px 28px rgba(139,92,246,0.12); transform: translateY(-2px); }
@@ -498,9 +498,9 @@ export default function CampaignsPage() {
         .filter-select { padding:8px 32px 8px 12px;border:2px solid #e5e7eb;border-radius:12px;font-size:13px;font-weight:700;outline:none;cursor:pointer;font-family:inherit;color:#374151;background:white;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;background-size:14px; }
         .filter-select:focus { border-color:#8b5cf6; }
         .pill-btn { padding:6px 14px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid #e5e7eb;background:white;transition:all .15s;font-family:inherit;color:#6b7280;white-space:nowrap; }
-        .pill-btn.on { background:linear-gradient(135deg,#8b5cf6,#06b6d4);color:white;border-color:transparent;box-shadow:0 3px 10px rgba(139,92,246,0.3); }
+        .pill-btn.on { background:linear-gradient(135deg,#7040f0, #9030f0);color:white;border-color:transparent;box-shadow:0 3px 10px rgba(139,92,246,0.3); }
         .pill-btn:not(.on):hover { border-color:#c4b5fd;color:#7c3aed; }
-        .btn-apply { width:100%;padding:14px;border-radius:14px;font-size:15px;font-weight:800;color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);transition:all .18s;font-family:inherit; }
+        .btn-apply { width:100%;padding:14px;border-radius:14px;font-size:15px;font-weight:800;color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#7040f0, #9030f0);transition:all .18s;font-family:inherit; }
         .btn-apply:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 8px 24px rgba(139,92,246,0.4); }
         .btn-apply:disabled { opacity:.6;cursor:not-allowed;transform:none; }
         .textarea-msg { width:100%;padding:12px 14px;border:2px solid #e5e7eb;border-radius:14px;font-size:14px;font-weight:500;outline:none;transition:border-color .2s;font-family:inherit;resize:none;color:#111; }
@@ -520,7 +520,7 @@ export default function CampaignsPage() {
       {/* Modal profil incomplet */}
       {showProfileModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div style={{ background: 'white', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
             <div style={{ width: 52, height: 52, borderRadius: 16, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, fontSize: 24 }}>⚠️</div>
             <h2 style={{ fontSize: 17, fontWeight: 900, color: '#1e1b4b', margin: '0 0 6px' }}>Profilul tău e incomplet</h2>
             <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 14px', lineHeight: 1.6 }}>
@@ -542,7 +542,7 @@ export default function CampaignsPage() {
                 Înapoi
               </button>
               <a href="/influencer/profile"
-                style={{ flex: 1, padding: '11px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', fontSize: 13, fontWeight: 900, cursor: 'pointer', color: 'white', fontFamily: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ flex: 1, padding: '11px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#7040f0, #9030f0)', fontSize: 13, fontWeight: 900, cursor: 'pointer', color: 'white', fontFamily: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 Completează profilul →
               </a>
             </div>
@@ -582,7 +582,7 @@ export default function CampaignsPage() {
           onClick={() => setActiveTab('barter')}
           className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-sm transition ${activeTab === 'barter' ? 'text-white shadow-lg' : 'bg-white border-2 border-gray-200 text-gray-500 hover:border-orange-300 hover:text-orange-600'
             }`}
-          style={activeTab === 'barter' ? { background: 'linear-gradient(135deg,#f97316,#ec4899)' } : {}}
+          style={activeTab === 'barter' ? { background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' } : {}}
         >
           <Sparkles className="w-4 h-4" />
           Free Offer / Barter
@@ -649,8 +649,8 @@ export default function CampaignsPage() {
         {/* Filters */}
         <div className="card p-4 mb-5">
           {/* Row 1: search + sort */}
-          <div className="flex gap-3 mb-3">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap gap-3 mb-3">
+            <div className="relative flex-1 min-w-[180px]">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input className="search-box" placeholder="Search campaigns, brands, niches…" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
@@ -864,7 +864,7 @@ export default function CampaignsPage() {
                   type="button"
                   onClick={() => setBarterFilterPlatform(p)}
                   className={`pill-btn ${barterFilterPlatform === p ? 'on' : ''}`}
-                  style={barterFilterPlatform === p ? { background: 'linear-gradient(135deg,#f97316,#ec4899)', borderColor: 'transparent' } : {}}
+                  style={barterFilterPlatform === p ? { background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', borderColor: 'transparent' } : {}}
                 >
                   {p}
                 </button>
@@ -881,7 +881,7 @@ export default function CampaignsPage() {
           {filteredBarter.length === 0 ? (
             <div className="card p-16 text-center">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 4px 16px rgba(249,115,22,.25)' }}>
+                style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 4px 16px rgba(90,53,230,.25)' }}>
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
               <p className="font-black text-gray-700 text-lg mb-2">
@@ -925,11 +925,11 @@ export default function CampaignsPage() {
                       borderRadius: '18px',
                       overflow: 'hidden',
                     }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(249,115,22,0.15)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(90,53,230,0.15)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = ''; (e.currentTarget as HTMLElement).style.transform = '' }}
                   >
                     {/* Gradient top bar */}
-                    <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#f97316,#ec4899)' }} />
+                    <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#2f6fe0, #5a35e6)' }} />
                     {/* Imagine campanie */}
                     {(() => {
                       const img = (Array.isArray(c.offer_images) && c.offer_images[0])
@@ -948,7 +948,7 @@ export default function CampaignsPage() {
                         <div className="flex-1 min-w-0 pr-3">
                           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                             <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full text-white"
-                              style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+                              style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
                               🎁 Free Offer
                             </span>
                             {isClosed && (
@@ -1017,7 +1017,7 @@ export default function CampaignsPage() {
                           <div className="h-full rounded-full transition-all"
                             style={{
                               width: `${pct}%`,
-                              background: pct > 80 ? '#ef4444' : 'linear-gradient(90deg,#f97316,#ec4899)'
+                              background: pct > 80 ? '#ef4444' : 'linear-gradient(90deg,#2f6fe0, #5a35e6)'
                             }} />
                         </div>
                       </div>
@@ -1027,7 +1027,7 @@ export default function CampaignsPage() {
                         className="w-full py-3 rounded-xl text-sm font-black text-white transition"
                         style={isClosed
                           ? { background: '#e5e7eb', color: '#9ca3af', cursor: 'not-allowed' }
-                          : { background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 4px 12px rgba(249,115,22,0.25)' }
+                          : { background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 4px 12px rgba(90,53,230,0.25)' }
                         }
                       >
                         {isClosed ? '🚫 Înscrieri închise' : 'Vezi oferta →'}
@@ -1095,7 +1095,7 @@ export default function CampaignsPage() {
 
                   {/* Barter stats — focus pe ce primește influencerul */}
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-2xl p-3.5 text-center border" style={{ background: 'linear-gradient(135deg,#fff7ed,#ffedd5)', borderColor: '#fed7aa' }}>
+                    <div className="rounded-2xl p-3.5 text-center border" style={{ background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', borderColor: '#ddd6fe' }}>
                       <span className="text-xl mb-1 block">🎁</span>
                       <p className="text-sm font-black text-orange-600 leading-tight line-clamp-2" title={selected.offer_name}>
                         {selected.offer_name || 'Produs gratuit'}
@@ -1117,9 +1117,9 @@ export default function CampaignsPage() {
                   </div>
 
                   {/* Barter: detalii ofertă - bine ordonată */}
-                  <div className="rounded-2xl overflow-hidden border" style={{ borderColor: '#fed7aa' }}>
+                  <div className="rounded-2xl overflow-hidden border" style={{ borderColor: '#ddd6fe' }}>
                     {/* Header */}
-                    <div className="px-4 py-3 border-b" style={{ background: 'linear-gradient(135deg,#fff7ed,#ffedd5)', borderColor: '#fed7aa' }}>
+                    <div className="px-4 py-3 border-b" style={{ background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', borderColor: '#ddd6fe' }}>
                       <p className="text-xs font-black text-orange-700 uppercase tracking-wider">🎁 Despre ofertă</p>
                       {selected.offer_name && (
                         <p className="text-base font-black text-gray-900 mt-1">{selected.offer_name}</p>

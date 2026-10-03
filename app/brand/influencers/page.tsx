@@ -435,7 +435,7 @@ function InfluencerCard({ influencer, isSaved, onSave, onClick, stats }: {
           </div>
         )}
         <div className="absolute -bottom-6 left-4">
-          <div className="w-12 h-12 rounded-2xl overflow-hidden border-4 border-white shadow-md" style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+          <div className="w-12 h-12 rounded-2xl overflow-hidden border-4 border-white shadow-md" style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }}>
             {influencer.avatar
               ? <img src={influencer.avatar} alt={influencer.name} className="w-full h-full object-cover" />
               : <span className="w-full h-full flex items-center justify-center text-white font-black text-lg">{influencer.name[0]?.toUpperCase()}</span>}
@@ -501,7 +501,7 @@ function InfluencerCard({ influencer, isSaved, onSave, onClick, stats }: {
           </div>
         )}
 
-        <button onClick={onClick} className="w-full py-2 rounded-xl text-xs font-black text-white" style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+        <button onClick={onClick} className="w-full py-2 rounded-xl text-xs font-black text-white" style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
           <Eye className="w-3.5 h-3.5 inline mr-1.5" /> View Profile
         </button>
       </div>
@@ -746,14 +746,14 @@ export default function BrandInfluencersPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between flex-wrap gap-3 mb-6">
         <div>
           <h1 className="text-3xl font-bold mb-1">Influencers</h1>
           <p className="text-muted-foreground text-sm">
             {access?.granted ? `${influencers.length} creator${influencers.length !== 1 ? 'i' : ''} pe platformă` : 'Descoperă rețeaua completă de creatori'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {access?.granted && (
             <button onClick={() => setShowSavedOnly(v => !v)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition ${showSavedOnly ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'}`}>
@@ -763,7 +763,7 @@ export default function BrandInfluencersPage() {
           )}
           <button onClick={() => setShowCampaignSheet(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
+            style={{ background: 'linear-gradient(135deg, #2f6fe0, #5a35e6)' }}>
             <Plus className="w-4 h-4" /> Campanie nouă
           </button>
         </div>
@@ -784,7 +784,7 @@ export default function BrandInfluencersPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <p className="font-black text-base">Rapid — Wizard</p>
-                  <span className="text-[10px] font-black bg-orange-500 text-white px-2 py-0.5 rounded-full">RECOMANDAT</span>
+                  <span className="text-[10px] font-black bg-violet-600 text-white px-2 py-0.5 rounded-full">RECOMANDAT</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Pas cu pas, gata în 5 minute</p>
               </div>
@@ -983,7 +983,7 @@ export default function BrandInfluencersPage() {
                     </button>
                     <button onClick={() => setShowSavedOnly(v => !v)}
                       className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition ${showSavedOnly ? 'bg-orange-50 border-orange-400 text-orange-700' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
-                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${showSavedOnly ? 'bg-orange-500 border-orange-500' : 'border-gray-300'}`}>
+                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${showSavedOnly ? 'bg-violet-600 border-orange-500' : 'border-gray-300'}`}>
                         {showSavedOnly && <span className="text-white text-[10px]">✓</span>}
                       </div>
                       Doar salvați
@@ -1035,7 +1035,7 @@ export default function BrandInfluencersPage() {
                   {Array.from({ length: Math.min(5, Math.ceil(displayed.length / ITEMS_PER_PAGE)) }, (_, i) => i + 1).map(page => (
                     <button key={page} onClick={() => setCurrentPage(page)}
                       className={"w-9 h-9 rounded-xl text-sm font-black transition " + (currentPage === page ? 'text-white' : 'text-gray-500 hover:bg-gray-100')}
-                      style={currentPage === page ? { background: 'linear-gradient(135deg,#f97316,#ec4899)' } : {}}>{page}</button>
+                      style={currentPage === page ? { background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' } : {}}>{page}</button>
                   ))}
                   <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(displayed.length / ITEMS_PER_PAGE), p + 1))} disabled={currentPage >= Math.ceil(displayed.length / ITEMS_PER_PAGE)}
                     className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition">Următor →</button>

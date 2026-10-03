@@ -9,7 +9,7 @@ const TYPE_CFG = {
   info:     { border: '#ddd6fe', iconBg: 'rgba(139,92,246,0.15)', emoji: '📢' },
   urgent:   { border: '#fecaca', iconBg: 'rgba(239,68,68,0.15)',  emoji: '🚨' },
   campaign: { border: '#bbf7d0', iconBg: 'rgba(34,197,94,0.15)',  emoji: '🚀' },
-  tip:      { border: '#fed7aa', iconBg: 'rgba(249,115,22,0.15)', emoji: '💡' },
+  tip:      { border: '#ddd6fe', iconBg: 'rgba(90,53,230,0.15)', emoji: '💡' },
 }
 
 export default function AnnouncementBanner({ userId }) {
@@ -175,7 +175,7 @@ export default function AnnouncementBanner({ userId }) {
                   <Link
                     href={a.cta_url}
                     onClick={e => { e.stopPropagation(); handleCtaClick(a.id) }}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8, padding: '5px 12px', background: '#f97316', borderRadius: 8, color: 'white', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8, padding: '5px 12px', background: '#5a35e6', borderRadius: 8, color: 'white', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}
                   >
                     {a.cta_text} <ExternalLink style={{ width: 11, height: 11 }} />
                   </Link>

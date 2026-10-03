@@ -121,7 +121,7 @@ export default function BrandAnalyticsPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
-      <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -144,8 +144,8 @@ export default function BrandAnalyticsPage() {
   const totalNise = topNise.reduce((s, [, v]) => s + v, 0)
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+      <style>{``}</style>
 
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-6 py-5">
@@ -156,7 +156,7 @@ export default function BrandAnalyticsPage() {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {/* Period selector */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 flex-wrap max-w-full">
               {PERIODS.map(({ label, days }) => (
                 <button key={days} onClick={() => { setLoading(true); setPeriod(days) }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${period === days ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -307,7 +307,7 @@ export default function BrandAnalyticsPage() {
               {topInfluencers.map((inf, idx) => (
                 <div key={inf.id} className="flex items-center gap-4">
                   <span className="text-xs font-black text-gray-300 w-4">{idx + 1}</span>
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {inf.avatar
                       ? <img src={inf.avatar} alt={inf.name} className="w-full h-full object-cover" />
                       : <span className="text-sm font-black text-orange-500">{inf.name?.[0]}</span>

@@ -107,7 +107,7 @@ const ALL_PAYMENT_METHODS = [
     label: 'Crypto',
     icon: Shield,
     color: 'text-orange-600',
-    bg: 'bg-orange-500/10',
+    bg: 'bg-violet-600/10',
     border: 'border-orange-500/30',
     description: 'USDT / USDC',
     active: CRYPTO.active,
@@ -356,7 +356,7 @@ function BrandWalletPageInner() {
               <a href="mailto:ciprian@addfame.ro" className="underline font-bold">ciprian@addfame.ro</a> pentru acces anticipat.
             </p>
           </div>
-          <Button onClick={() => setModal('select_method')} size="sm" className="bg-orange-500 hover:bg-orange-600 text-white flex-shrink-0">
+          <Button onClick={() => setModal('select_method')} size="sm" className="bg-violet-600 hover:bg-violet-700 text-white flex-shrink-0">
             Adaugă acum
           </Button>
         </div>

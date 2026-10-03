@@ -14,7 +14,7 @@ import { publishCampaignWithFee } from '@/app/actions/campaigns'
 import { InfluencerSlotsSelector } from '@/components/brand/InfluencerSlotsSelector'
 
 const PLATFORMS = [
-  { value: 'INSTAGRAM', label: 'Instagram', Icon: InstagramIcon, color: 'from-pink-500 to-purple-500' },
+  { value: 'INSTAGRAM', label: 'Instagram', Icon: InstagramIcon, color: 'from-violet-500 to-purple-500' },
   { value: 'TIKTOK', label: 'TikTok', Icon: TikTokSVG, color: 'from-gray-800 to-gray-600' },
   { value: 'YOUTUBE', label: 'YouTube', Icon: YoutubeIcon, color: 'from-red-500 to-red-600' },
   {
@@ -161,10 +161,10 @@ export default function NewManagedCampaign() {
   }
 
   if (done) return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div className="text-center max-w-md">
         <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
-          style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 12px 40px rgba(139,92,246,0.35)' }}>
+          style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 12px 40px rgba(139,92,246,0.35)' }}>
           <CheckCircle2 className="w-10 h-10 text-white" />
         </div>
         <h2 className="text-2xl font-black text-gray-900 mb-3">Campanie trimisă! 🎉</h2>
@@ -179,7 +179,7 @@ export default function NewManagedCampaign() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 md:p-8" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="min-h-screen bg-gray-50/50 p-4 md:p-8" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
@@ -189,7 +189,7 @@ export default function NewManagedCampaign() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }}>
                 <Sparkles className="w-3.5 h-3.5 text-white" />
               </div>
               <h1 className="font-black text-gray-900 text-lg">Campanie Managed</h1>
@@ -205,7 +205,7 @@ export default function NewManagedCampaign() {
               <div className={`flex items-center gap-2 ${i < STEPS.length - 1 ? 'flex-1' : ''}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all flex-shrink-0 ${step > s.n ? 'bg-green-500 text-white' :
                     step === s.n ? 'text-white' : 'bg-gray-200 text-gray-400'
-                  }`} style={step === s.n ? { background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' } : {}}>
+                  }`} style={step === s.n ? { background: 'linear-gradient(135deg,#7040f0, #9030f0)' } : {}}>
                   {step > s.n ? <Check className="w-4 h-4" /> : s.n}
                 </div>
                 <span className={`text-xs font-black hidden sm:block ${step === s.n ? 'text-purple-600' : step > s.n ? 'text-green-600' : 'text-gray-400'}`}>{s.label}</span>
@@ -342,7 +342,7 @@ export default function NewManagedCampaign() {
                         className={`relative p-3 rounded-2xl border-2 text-center transition ${form.budget === b.value ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'
                           }`}>
                         {b.popular && (
-                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-black bg-orange-500 text-white px-2 py-0.5 rounded-full">POPULAR</span>
+                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-black bg-violet-600 text-white px-2 py-0.5 rounded-full">POPULAR</span>
                         )}
                         <p className="font-black text-sm text-gray-900">{b.label}</p>
                         <p className="text-[10px] text-gray-400 mt-0.5">{b.desc}</p>
@@ -509,7 +509,7 @@ export default function NewManagedCampaign() {
                 onClick={() => setStep(s => (s + 1) as Step)}
                 disabled={!canNext()}
                 className="flex-1 py-3 rounded-2xl font-black text-sm text-white transition flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 4px 16px rgba(139,92,246,0.3)' }}>
+                style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 16px rgba(139,92,246,0.3)' }}>
                 Continuă <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
@@ -517,7 +517,7 @@ export default function NewManagedCampaign() {
                 onClick={handleSubmit}
                 disabled={loading}
                 className="flex-1 py-3 rounded-2xl font-black text-sm text-white transition flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 4px 16px rgba(139,92,246,0.3)' }}>
+                style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 16px rgba(139,92,246,0.3)' }}>
                 {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Se trimite...</> : <><Sparkles className="w-4 h-4" /> Trimite campania</>}
               </button>
             )}

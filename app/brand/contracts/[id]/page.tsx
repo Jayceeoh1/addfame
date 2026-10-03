@@ -68,7 +68,7 @@ export default function BrandContractPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
-      <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -84,8 +84,8 @@ export default function BrandContractPage() {
   const fullySigned = contract.brand_signed_at && contract.influencer_signed_at
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+    <div className="min-h-screen bg-gray-50 pb-20" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+      <style>{``}</style>
 
       {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10 px-5 py-4">
@@ -188,7 +188,7 @@ export default function BrandContractPage() {
                 onClick={handleSign}
                 disabled={signing || !agreed || !signatureName.trim()}
                 className="w-full py-3.5 rounded-2xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 4px 14px rgba(249,115,22,0.3)' }}
+                style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 4px 14px rgba(90,53,230,0.3)' }}
               >
                 {signing
                   ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Se procesează…</>

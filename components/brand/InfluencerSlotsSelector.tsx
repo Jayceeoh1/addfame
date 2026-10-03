@@ -77,8 +77,8 @@ export function InfluencerSlotsSelector({
           disabled={n <= min}
           aria-label="Mai puțini influenceri"
           style={{
-            width: 44, height: 44, borderRadius: 999, border: '2px solid #f97316', background: 'white',
-            color: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 44, height: 44, borderRadius: 999, border: '2px solid #5a35e6', background: 'white',
+            color: '#5a35e6', display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: n <= min ? 'not-allowed' : 'pointer', opacity: n <= min ? 0.35 : 1,
           }}
         >
@@ -98,7 +98,7 @@ export function InfluencerSlotsSelector({
           onBlur={() => setDraft(String(n))}
           aria-label="Număr de influenceri"
           style={{
-            width: 96, textAlign: 'center', fontSize: 36, fontWeight: 900, color: '#f97316',
+            width: 96, textAlign: 'center', fontSize: 36, fontWeight: 900, color: '#5a35e6',
             border: 'none', outline: 'none', background: 'transparent', fontVariantNumeric: 'tabular-nums',
           }}
         />
@@ -109,7 +109,7 @@ export function InfluencerSlotsSelector({
           aria-label="Mai mulți influenceri"
           style={{
             width: 44, height: 44, borderRadius: 999, border: 'none',
-            background: 'linear-gradient(135deg,#f97316,#ec4899)', color: 'white',
+            background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', color: 'white',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: n >= max ? 'not-allowed' : 'pointer', opacity: n >= max ? 0.35 : 1,
           }}
@@ -127,8 +127,8 @@ export function InfluencerSlotsSelector({
             onClick={() => set(q)}
             style={{
               padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 800, cursor: 'pointer',
-              border: `1.5px solid ${n === q ? '#f97316' : '#e5e7eb'}`,
-              background: n === q ? '#fff7ed' : 'white', color: n === q ? '#c2410c' : '#6b7280',
+              border: `1.5px solid ${n === q ? '#5a35e6' : '#e5e7eb'}`,
+              background: n === q ? '#f5f3ff' : 'white', color: n === q ? '#c2410c' : '#6b7280',
             }}
           >
             {q} {q === 1 ? 'influencer' : 'influenceri'}
@@ -177,7 +177,7 @@ export function InfluencerSlotsSelector({
 
       {/* Informare: campanii customizate */}
       <div style={{
-        background: 'linear-gradient(135deg,#f5f3ff,#fdf2f8)', border: '1.5px solid #e9d5ff',
+        background: 'linear-gradient(135deg,#f5f3ff,#faf5ff)', border: '1.5px solid #e9d5ff',
         borderRadius: 16, padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start',
       }}>
         <div style={{

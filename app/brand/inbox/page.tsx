@@ -201,14 +201,14 @@ function InboxContent() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex h-[calc(100vh-64px)]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        .brand-grad { background:linear-gradient(135deg,#f97316,#ec4899); }
+        .brand-grad { background:linear-gradient(135deg,#2f6fe0, #5a35e6); }
         .field { padding:9px 14px 9px 40px;border:2px solid #f0f0f0;border-radius:12px;font-size:14px;font-weight:500;outline:none;background:white;transition:border-color .2s;font-family:inherit;width:100%; }
-        .field:focus { border-color:#f97316; }
+        .field:focus { border-color:#5a35e6; }
         .field::placeholder { color:#9ca3af;font-weight:400; }
         .msg-input { flex:1;padding:11px 16px;border:2px solid #f0f0f0;border-radius:14px;font-size:14px;font-weight:500;outline:none;background:white;font-family:inherit;resize:none;transition:border-color .2s;line-height:1.5; }
-        .msg-input:focus { border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.06); }
+        .msg-input:focus { border-color:#5a35e6;box-shadow:0 0 0 3px rgba(90,53,230,.06); }
         .msg-input::placeholder { color:#9ca3af;font-weight:400; }
         ::-webkit-scrollbar { width:4px; }
         ::-webkit-scrollbar-thumb { background:#e5e7eb;border-radius:99px; }
@@ -240,7 +240,7 @@ function InboxContent() {
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-7 h-7 rounded-full border-t-orange-400 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+              <div className="w-7 h-7 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
             </div>
           ) : visibleCollabs.length === 0 ? (
             <div className="text-center py-12 px-4">
@@ -256,7 +256,7 @@ function InboxContent() {
               {group.items.map(c => (
                 <button key={c.id} onClick={() => setSelected(c)}
                   className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition"
-                  style={{ borderBottom: '1px solid #f9f9f9', background: selected?.id === c.id ? '#fff7ed' : 'white' }}>
+                  style={{ borderBottom: '1px solid #f9f9f9', background: selected?.id === c.id ? '#f5f3ff' : 'white' }}>
                   <div className="w-10 h-10 rounded-2xl bg-orange-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {c.influencer?.avatar
                       ? <img src={c.influencer.avatar} className="w-full h-full object-cover" alt="" />
@@ -277,7 +277,7 @@ function InboxContent() {
       {!selected ? (
         <div className="hidden md:flex flex-1 items-center justify-center bg-gray-50">
           <div className="text-center">
-            <div className="w-16 h-16 brand-grad rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ boxShadow: '0 4px 16px rgba(249,115,22,.25)' }}>
+            <div className="w-16 h-16 brand-grad rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ boxShadow: '0 4px 16px rgba(90,53,230,.25)' }}>
               <MessageSquare className="w-8 h-8 text-white" />
             </div>
             <p className="font-black text-gray-700">Selectează o conversație</p>
@@ -321,7 +321,7 @@ function InboxContent() {
                   )}
                   <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${m._pending ? 'msg-pending' : ''}`}>
                     <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm font-medium leading-relaxed ${isMe ? 'text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm'}`}
-                      style={isMe ? { background: 'linear-gradient(135deg,#f97316,#ec4899)' } : { border: '1.5px solid #f0f0f0' }}>
+                      style={isMe ? { background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' } : { border: '1.5px solid #f0f0f0' }}>
                       <p style={{ whiteSpace: 'pre-wrap' }}>{m.content}</p>
                       <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70 text-right' : 'text-gray-400'}`}>
                         {m._pending ? 'Sending…' : fmtTime(m.created_at)}
@@ -349,7 +349,7 @@ function InboxContent() {
             />
             <button onClick={sendMessage} disabled={!text.trim() || sending}
               className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition text-white disabled:opacity-40"
-              style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 3px 10px rgba(249,115,22,.3)' }}>
+              style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 3px 10px rgba(90,53,230,.3)' }}>
               {sending
                 ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                 : <Send className="w-4 h-4" />}
@@ -373,7 +373,7 @@ function LoadingFallback() {
   return (
     <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-gray-50">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 rounded-full border-t-orange-400 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+        <div className="w-8 h-8 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
         <p className="text-sm font-medium text-gray-600">Se încarcă mesajele...</p>
       </div>
     </div>

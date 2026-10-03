@@ -325,9 +325,9 @@ export default function CampaignDetailPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 rounded-full border-t-orange-500 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+        <div className="w-10 h-10 rounded-full border-t-violet-500 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
         <p className="text-sm text-gray-400 font-semibold">Se încarcă campania…</p>
       </div>
     </div>
@@ -336,16 +336,16 @@ export default function CampaignDetailPage() {
   if (!campaign) return null
 
   return (
-    <div className="p-5 lg:p-8 max-w-5xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-5 lg:p-8 max-w-5xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        .brand-grad { background: linear-gradient(135deg,#f97316,#ec4899); }
+        .brand-grad { background: linear-gradient(135deg,#2f6fe0, #5a35e6); }
         .card { background:white; border:1.5px solid #f0f0f0; border-radius:20px; }
         .tab-btn { padding:7px 14px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;font-family:inherit; }
-        .tab-btn.on { background:linear-gradient(135deg,#f97316,#ec4899);color:white;box-shadow:0 3px 10px rgba(249,115,22,.28); }
+        .tab-btn.on { background:linear-gradient(135deg,#2f6fe0, #5a35e6);color:white;box-shadow:0 3px 10px rgba(90,53,230,.28); }
         .tab-btn:not(.on) { background:#f3f4f6;color:#6b7280; }
-        .tab-btn:not(.on):hover { background:#fff7ed;color:#f97316; }
-        .btn-pub { display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:12px;font-size:14px;font-weight:800;background:linear-gradient(135deg,#f97316,#ec4899);color:white;border:none;cursor:pointer;transition:all .18s;font-family:inherit; }
-        .btn-pub:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 6px 18px rgba(249,115,22,.38); }
+        .tab-btn:not(.on):hover { background:#f5f3ff;color:#5a35e6; }
+        .btn-pub { display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:12px;font-size:14px;font-weight:800;background:linear-gradient(135deg,#2f6fe0, #5a35e6);color:white;border:none;cursor:pointer;transition:all .18s;font-family:inherit; }
+        .btn-pub:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 6px 18px rgba(90,53,230,.38); }
         .btn-pub:disabled { opacity:.6;cursor:not-allowed;transform:none; }
         .btn-sec { display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:12px;font-size:14px;font-weight:700;background:white;color:#374151;border:2px solid #e5e7eb;cursor:pointer;transition:all .18s;font-family:inherit; }
         .btn-sec:hover:not(:disabled) { border-color:#d1d5db;background:#f9fafb; }
@@ -356,7 +356,7 @@ export default function CampaignDetailPage() {
         .btn-approve:disabled,.btn-decline:disabled { opacity:.6;cursor:not-allowed;transform:none; }
         .badge { display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700; }
         .field { width:100%;padding:10px 14px;border:2px solid #e5e7eb;border-radius:12px;font-size:14px;font-weight:500;outline:none;transition:border-color .2s;font-family:inherit;color:#111; }
-        .field:focus { border-color:#f97316;box-shadow:0 0 0 4px rgba(249,115,22,.08); }
+        .field:focus { border-color:#5a35e6;box-shadow:0 0 0 4px rgba(90,53,230,.08); }
         .dropdown { position:absolute;right:0;top:calc(100%+6px);background:white;border:1.5px solid #f0f0f0;border-radius:14px;padding:6px;z-index:50;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.12); }
         .d-item { display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:inherit;color:#374151;transition:background .1s; }
         .d-item:hover { background:#f9fafb; }
@@ -449,7 +449,7 @@ export default function CampaignDetailPage() {
                 {bulkMode ? (
                   <>
                     <button onClick={() => { setBulkMode(false); setSelectedInfs([]) }} className="text-xs font-bold text-gray-500 border border-gray-200 px-3 py-2 rounded-xl hover:bg-gray-50 transition">Anulează</button>
-                    <button onClick={bulkInvite} disabled={selectedInfs.length === 0 || bulkInviting} className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 px-3.5 py-2 rounded-xl transition disabled:opacity-50">
+                    <button onClick={bulkInvite} disabled={selectedInfs.length === 0 || bulkInviting} className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 px-3.5 py-2 rounded-xl transition disabled:opacity-50">
                       {bulkInviting ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                       Invită {selectedInfs.length > 0 ? `(${selectedInfs.length})` : 'selectați'}
                     </button>
@@ -512,7 +512,7 @@ export default function CampaignDetailPage() {
                   {bulkMode && collab.status === 'INVITED' && <div className="flex items-center pt-1"><input type="checkbox" checked={selectedInfs.includes(collab.influencer_id)} onChange={e => setSelectedInfs(prev => e.target.checked ? [...prev, collab.influencer_id] : prev.filter(id => id !== collab.influencer_id))} className="w-4 h-4 accent-orange-500 cursor-pointer" /></div>}
                   {bulkRejectMode && collab.status === 'PENDING' && <div className="flex items-center pt-1"><input type="checkbox" checked={selectedRejectIds.includes(collab.id)} onChange={e => setSelectedRejectIds(prev => e.target.checked ? [...prev, collab.id] : prev.filter(id => id !== collab.id))} className="w-4 h-4 accent-red-500 cursor-pointer" /></div>}
 
-                  <button type="button" onClick={() => setProfileModal({ ...inf, _slug: infSlug })} className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center flex-shrink-0 overflow-hidden hover:ring-2 hover:ring-orange-300 transition cursor-pointer">
+                  <button type="button" onClick={() => setProfileModal({ ...inf, _slug: infSlug })} className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center flex-shrink-0 overflow-hidden hover:ring-2 hover:ring-orange-300 transition cursor-pointer">
                     {inf?.avatar ? <img src={inf.avatar} alt={inf.name} className="w-full h-full object-cover" /> : <span className="font-black text-orange-500 text-lg">{inf?.name?.[0]?.toUpperCase() ?? '?'}</span>}
                   </button>
 

@@ -24,8 +24,8 @@ export function LangToggle({ className = '' }: { className?: string }) {
           bottom: 4px;
           width: calc(50% - 4px);
           border-radius: 10px;
-          background: linear-gradient(135deg, #f97316, #ec4899);
-          box-shadow: 0 2px 8px rgba(249,115,22,0.35);
+          background: linear-gradient(135deg, #2f6fe0, #5a35e6);
+          box-shadow: 0 2px 8px rgba(90,53,230,0.35);
           transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
           pointer-events: none;
         }

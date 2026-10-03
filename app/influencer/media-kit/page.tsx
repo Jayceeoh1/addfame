@@ -51,7 +51,7 @@ export default function MediaKitRedirect() {
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]"
-      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div className="text-center">
         <div className="w-10 h-10 rounded-full border-t-purple-500 border-purple-100 animate-spin mx-auto mb-3"
           style={{ borderWidth: '3px', borderStyle: 'solid' }} />

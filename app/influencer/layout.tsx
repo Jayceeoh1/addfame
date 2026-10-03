@@ -12,6 +12,7 @@ import {
   Wallet, Settings, LogOut, Menu, X, User, ChevronRight, Sliders,
   Star, Award, Building2, CreditCard, AlertCircle, Check, Copy, ArrowLeft, Shield, BarChart2, FileText, Lock, Loader2
 } from 'lucide-react'
+import { fontVars } from '@/lib/fonts'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
@@ -239,11 +240,11 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
   const walletBalance = profile?.wallet_balance || 0
 
   return (
-    <div className="flex h-screen bg-gray-50" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className={`flex h-screen ${fontVars}`} style={{ '--primary': 'oklch(0.51 0.24 282)', '--ring': 'oklch(0.51 0.24 282)', '--accent': 'oklch(0.55 0.25 300)', '--sidebar-primary': 'oklch(0.51 0.24 282)', height: '100dvh', background: '#f6f6fc', color: '#14123a', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" } as React.CSSProperties}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-        .infl-grad { background: linear-gradient(135deg, #8b5cf6, #06b6d4); }
-        .nav-active { background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(6,182,212,0.08)); color: #7c3aed; }
+        
+        .infl-grad { background: linear-gradient(135deg, #7040f0, #9030f0); }
+        .nav-active { background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(34,200,240,0.08)); color: #7c3aed; }
         .nav-active .nav-icon { color: #8b5cf6; }
         .nav-item { display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;transition:all .15s;cursor:pointer;text-decoration:none;color:#6b7280;font-weight:600;font-size:14px; }
         .nav-item:hover:not(.nav-active) { background:#f3f0ff;color:#7c3aed; }
@@ -283,7 +284,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
             <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: '#fff', border: '1px solid #ede9fe', boxShadow: '0 2px 8px rgba(124,58,237,0.12)' }}>
               <img src="/logo.png" alt="AddFame" style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
             </div>
-            {open && <span className="font-black text-base tracking-tight text-gray-900">Add<span className="text-purple-500">Fame</span></span>}
+            {open && <span className="font-black text-base tracking-tight text-gray-900">Add<span style={{ background: 'linear-gradient(100deg,#22c8f0 0%,#3090f0 38%,#7040f0 72%,#9030f0 100%)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', WebkitTextFillColor: 'transparent' }}>Fame</span></span>}
           </div>
           {open && !mobile && (
             <button className="collapse-btn" onClick={() => setOpen(false)}>
@@ -309,9 +310,9 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
                 title={!open ? item.label : undefined}
                 onClick={() => mobile && setOpen(false)}
               >
-                <item.icon className={`nav-icon ${active ? 'text-purple-500' : ''}`} />
+                <item.icon className={`nav-icon ${active ? 'text-violet-600' : ''}`} />
                 {open && <span>{item.label}</span>}
-                {open && active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-500" />}
+                {open && active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-600" />}
               </Link>
             )
           })}
@@ -474,7 +475,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
             style={{ animation: 'slideUp .35s cubic-bezier(0.34,1.56,0.64,1)' }}>
 
             {/* Header gradient */}
-            <div style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }} className="px-6 pt-6 pb-8 text-center relative">
+            <div style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }} className="px-6 pt-6 pb-8 text-center relative">
               <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <span className="text-3xl">🎯</span>
               </div>
@@ -496,7 +497,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
                 <button
                   onClick={() => { setInvitePopup(null); router.push(invitePopup.link) }}
                   className="flex-1 py-3 rounded-2xl font-black text-sm text-white transition flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 4px 14px rgba(249,115,22,0.4)' }}>
+                  style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 4px 14px rgba(90,53,230,0.4)' }}>
                   <Zap className="w-4 h-4" /> Vezi invitația
                 </button>
               </div>
@@ -507,7 +508,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
 
       {badgeModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">

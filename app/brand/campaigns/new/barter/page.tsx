@@ -258,7 +258,7 @@ function MultiImageUploader({ values, onChange }: { values: string[]; onChange: 
                 className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-black/80 transition">
                 <X className="w-3 h-3" />
               </button>
-              {idx === 0 && <span className="absolute bottom-1.5 left-1.5 text-[10px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded-full">Principală</span>}
+              {idx === 0 && <span className="absolute bottom-1.5 left-1.5 text-[10px] font-black bg-violet-600 text-white px-1.5 py-0.5 rounded-full">Principală</span>}
             </div>
           ))}
           {values.length < 5 && (
@@ -428,7 +428,7 @@ function LocationPicker({ name, address, onSelect }: {
           onClick={handleManualSave}
           disabled={!manualName.trim() || !manualAddress.trim()}
           className="w-full py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition"
-          style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}
+          style={{ background: 'linear-gradient(135deg, #2f6fe0, #5a35e6)' }}
         >
           Confirmă locația
         </button>
@@ -581,7 +581,7 @@ const INITIAL: WizardData = {
 
 export default function BarterCampaignWizard() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-violet-200 border-t-violet-500 rounded-full animate-spin" /></div>}>
       <BarterCampaignWizardContent />
     </Suspense>
   )
@@ -963,7 +963,7 @@ function BarterCampaignWizardContent() {
           <button
             onClick={() => router.push('/brand/campaigns')}
             className="w-full py-3.5 rounded-2xl font-bold text-white text-sm"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}
+            style={{ background: 'linear-gradient(135deg, #2f6fe0, #5a35e6)' }}
           >
             Văd campaniile mele
           </button>
@@ -1000,7 +1000,7 @@ function BarterCampaignWizardContent() {
             <p className="text-sm font-black text-amber-800 mb-1">💾 Campania a fost salvată ca draft</p>
             <p className="text-xs text-amber-700 leading-relaxed mb-3">{savedDraftNotice}</p>
             <div className="flex flex-wrap gap-2">
-              <a href="/brand/wallet" className="px-4 py-2 rounded-xl text-xs font-black text-white" style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
+              <a href="/brand/wallet" className="px-4 py-2 rounded-xl text-xs font-black text-white" style={{ background: 'linear-gradient(135deg, #2f6fe0, #5a35e6)' }}>
                 Adaugă credite
               </a>
               <a href="/brand/campaigns" className="px-4 py-2 rounded-xl text-xs font-bold border-2 border-amber-300 text-amber-800 bg-white">
@@ -1777,7 +1777,7 @@ function BarterCampaignWizardContent() {
                 disabled={!canProceed()}
                 className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
-                  background: canProceed() ? 'linear-gradient(135deg, #f97316, #ec4899)' : undefined,
+                  background: canProceed() ? 'linear-gradient(135deg, #2f6fe0, #5a35e6)' : undefined,
                   backgroundColor: canProceed() ? undefined : 'hsl(var(--muted))'
                 }}
               >
@@ -1789,7 +1789,7 @@ function BarterCampaignWizardContent() {
                 onClick={saveDraft}
                 disabled={savingDraft}
                 className="w-full py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition border-2"
-                style={{ borderColor: '#f97316', color: draftSaved ? '#16a34a' : '#f97316', background: draftSaved ? '#f0fdf4' : 'white' }}
+                style={{ borderColor: '#5a35e6', color: draftSaved ? '#16a34a' : '#5a35e6', background: draftSaved ? '#f0fdf4' : 'white' }}
               >
                 {savingDraft
                   ? <><Loader2 className="w-4 h-4 animate-spin" />Se salvează...</>
@@ -1806,7 +1806,7 @@ function BarterCampaignWizardContent() {
               onClick={handleSubmit}
               disabled={loading}
               className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 transition disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}
+              style={{ background: 'linear-gradient(135deg, #2f6fe0, #5a35e6)' }}
             >
               {loading
                 ? <><Loader2 className="w-4 h-4 animate-spin" />Se publică...</>
@@ -1818,7 +1818,7 @@ function BarterCampaignWizardContent() {
                 onClick={saveDraft}
                 disabled={savingDraft}
                 className="w-full py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition border-2"
-                style={{ borderColor: '#f97316', color: draftSaved ? '#16a34a' : '#f97316', background: draftSaved ? '#f0fdf4' : 'white' }}
+                style={{ borderColor: '#5a35e6', color: draftSaved ? '#16a34a' : '#5a35e6', background: draftSaved ? '#f0fdf4' : 'white' }}
               >
                 {savingDraft
                   ? <><Loader2 className="w-4 h-4 animate-spin" />Se salvează...</>

@@ -199,13 +199,13 @@ export default function PublicInfluencerProfile() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div className="w-10 h-10 rounded-full border-t-orange-400 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+      <div className="w-10 h-10 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
     </div>
   )
 
   if (notFound) return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <p className="text-4xl mb-3">🔍</p>
       <p className="font-black text-gray-800 text-xl mb-2">Profil negăsit</p>
       <p className="text-sm text-gray-400 mb-6">Acest profil nu există sau nu este aprobat</p>
@@ -232,7 +232,7 @@ export default function PublicInfluencerProfile() {
   const isIdentityVerified = inf.identity_verified
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
         .card { background:white; border:1.5px solid #f0f0f0; border-radius:20px; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
@@ -243,7 +243,7 @@ export default function PublicInfluencerProfile() {
       <title>{inf.name} — Creator pe AddFame</title>
 
       {/* Header gradient */}
-      <div className="h-40 relative" style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+      <div className="h-40 relative" style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
         <div className="absolute top-4 left-4">
           <Link href="/" className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-bold transition">
             <ArrowLeft className="w-4 h-4" /> AddFame
@@ -298,7 +298,7 @@ export default function PublicInfluencerProfile() {
             {brandId && (
               <button onClick={() => setInviteOpen(true)}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm text-white flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 4px 14px rgba(249,115,22,.3)' }}>
+                style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 4px 14px rgba(90,53,230,.3)' }}>
                 <Send className="w-4 h-4" /> Invită la campanie
               </button>
             )}
@@ -511,7 +511,7 @@ export default function PublicInfluencerProfile() {
                       : <div className="w-full h-full flex flex-col items-center justify-center"
                           style={{ background: isIG ? 'linear-gradient(135deg,#f9f0ff,#fff0f6)' : 'linear-gradient(135deg,#1a1a2e,#2d1463)' }}>
                           <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2"
-                            style={{ background: isIG ? 'linear-gradient(135deg,#f97316,#ec4899)' : '#000' }}>
+                            style={{ background: isIG ? 'linear-gradient(135deg,#2f6fe0, #5a35e6)' : '#000' }}>
                             {isIG
                               ? <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069z"/></svg>
                               : <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
@@ -557,7 +557,7 @@ export default function PublicInfluencerProfile() {
                       : <div className="w-full h-full flex flex-col items-center justify-center"
                           style={{ background: isIGEmbed ? 'linear-gradient(135deg,#fff0f6,#f9f0ff)' : 'linear-gradient(135deg,#1a1a2e,#2d1463)' }}>
                           <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
-                            style={{ background: isIGEmbed ? 'linear-gradient(135deg,#f97316,#ec4899)' : '#000' }}>
+                            style={{ background: isIGEmbed ? 'linear-gradient(135deg,#2f6fe0, #5a35e6)' : '#000' }}>
                             {isIGEmbed
                               ? <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069z"/></svg>
                               : <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
@@ -628,8 +628,8 @@ export default function PublicInfluencerProfile() {
                   {activeCampaigns.map(c => (
                     <button key={c.id} onClick={() => setSelectedCamp(c.id)}
                       className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition"
-                      style={{ border: `2px solid ${selectedCamp === c.id ? '#f97316' : '#f0f0f0'}`, background: selectedCamp === c.id ? '#fff7ed' : 'white' }}>
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: selectedCamp === c.id ? '#f97316' : '#e5e7eb' }} />
+                      style={{ border: `2px solid ${selectedCamp === c.id ? '#5a35e6' : '#f0f0f0'}`, background: selectedCamp === c.id ? '#f5f3ff' : 'white' }}>
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: selectedCamp === c.id ? '#5a35e6' : '#e5e7eb' }} />
                       <span className={`text-sm font-bold ${selectedCamp === c.id ? 'text-orange-600' : 'text-gray-700'}`}>{c.title}</span>
                     </button>
                   ))}
@@ -638,7 +638,7 @@ export default function PublicInfluencerProfile() {
                   <button onClick={() => setInviteOpen(false)} className="flex-1 py-3 rounded-xl font-bold text-sm text-gray-600 border-2 border-gray-100 hover:bg-gray-50 transition">Anulează</button>
                   <button onClick={handleInvite} disabled={!selectedCamp || inviting}
                     className="flex-1 py-3 rounded-xl font-black text-sm text-white disabled:opacity-40 transition"
-                    style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+                    style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
                     {inviting ? 'Se trimite…' : 'Trimite invitația'}
                   </button>
                 </div>

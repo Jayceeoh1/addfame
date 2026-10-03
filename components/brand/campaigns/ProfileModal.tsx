@@ -30,12 +30,12 @@ export function ProfileModal({ profileModal, onClose }: { profileModal: any; onC
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
 
         {/* Header cu gradient + avatar mare */}
-        <div className="relative h-32 bg-gradient-to-br from-orange-400 to-pink-500 flex-shrink-0">
+        <div className="relative h-32 bg-gradient-to-br from-blue-400 to-violet-500 flex-shrink-0">
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 flex items-center justify-center text-white transition z-10">
             <X className="w-4 h-4" />
           </button>
           <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
-            <div className="w-24 h-24 rounded-2xl border-4 border-white shadow-xl overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-2xl border-4 border-white shadow-xl overflow-hidden bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center">
               {p.avatar
                 ? <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" />
                 : <span className="font-black text-orange-500 text-3xl">{p.name?.[0]?.toUpperCase() ?? '?'}</span>}

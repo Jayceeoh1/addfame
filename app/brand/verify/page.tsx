@@ -109,21 +109,21 @@ export default function BrandVerifyPage() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div className="w-10 h-10 rounded-full border-t-orange-400 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+      <div className="w-10 h-10 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
     </div>
   )
 
   const status = brand?.verification_status || 'unverified'
 
   return (
-    <div className="p-6 lg:p-8 max-w-3xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-3xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        
         .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
-        .brand-grad { background:linear-gradient(135deg,#f97316,#ec4899); }
+        .brand-grad { background:linear-gradient(135deg,#2f6fe0, #5a35e6); }
         .field { width:100%;padding:11px 16px;border:2px solid #f0f0f0;border-radius:12px;font-size:14px;font-weight:500;outline:none;background:white;transition:border-color .2s;font-family:inherit;color:#111; }
-        .field:focus { border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.08); }
+        .field:focus { border-color:#5a35e6;box-shadow:0 0 0 3px rgba(90,53,230,.08); }
         .field::placeholder { color:#9ca3af;font-weight:400; }
         textarea.field { resize:vertical;min-height:90px; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
@@ -142,7 +142,7 @@ export default function BrandVerifyPage() {
       {/* Header */}
       <div className="mb-7 fade-up">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 brand-grad rounded-2xl flex items-center justify-center" style={{ boxShadow: '0 4px 14px rgba(249,115,22,.3)' }}>
+          <div className="w-10 h-10 brand-grad rounded-2xl flex items-center justify-center" style={{ boxShadow: '0 4px 14px rgba(90,53,230,.3)' }}>
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -278,7 +278,7 @@ export default function BrandVerifyPage() {
 
           <button type="submit" disabled={saving}
             className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-white text-sm transition disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 4px 16px rgba(249,115,22,.3)' }}>
+            style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 4px 16px rgba(90,53,230,.3)' }}>
             {saving
               ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> {uploading ? 'Uploading document…' : 'Submitting…'}</>
               : <><Shield className="w-4 h-4" /> Submit for Verification <ArrowRight className="w-4 h-4" /></>}
@@ -291,7 +291,7 @@ export default function BrandVerifyPage() {
         <div className="text-center fade-up" style={{ animationDelay: '.1s' }}>
           <button onClick={() => router.push('/brand/dashboard')}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm text-white brand-grad"
-            style={{ boxShadow: '0 4px 14px rgba(249,115,22,.3)' }}>
+            style={{ boxShadow: '0 4px 14px rgba(90,53,230,.3)' }}>
             Go to Dashboard <ArrowRight className="w-4 h-4" />
           </button>
         </div>

@@ -18,7 +18,7 @@ const PLATFORMS = [
     id: 'instagram', label: 'Instagram',
     icon: InstagramIcon,
     grad: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
-    light: '#fdf2f8', textColor: '#9d174d',
+    light: '#faf5ff', textColor: '#9d174d',
     benchmarks: { excellent: 5, good: 2, avg: 1 },
     fields: ['likes', 'comments', 'saves'],
   },
@@ -89,7 +89,7 @@ export default function EngagementCalculatorPage() {
   function getRating(er) {
     if (er >= plat.benchmarks.excellent) return { label: 'Excelent 🔥', color: '#15803d', bg: '#f0fdf4', bar: '#22c55e', pct: 100 }
     if (er >= plat.benchmarks.good) return { label: 'Bun 👍', color: '#b45309', bg: '#fffbeb', bar: '#f59e0b', pct: 66 }
-    if (er >= plat.benchmarks.avg) return { label: 'Mediu 😐', color: '#c2410c', bg: '#fff7ed', bar: '#f97316', pct: 40 }
+    if (er >= plat.benchmarks.avg) return { label: 'Mediu 😐', color: '#c2410c', bg: '#f5f3ff', bar: '#5a35e6', pct: 40 }
     return { label: 'Scăzut ⚠️', color: '#b91c1c', bg: '#fef2f2', bar: '#ef4444', pct: 15 }
   }
 
@@ -97,9 +97,9 @@ export default function EngagementCalculatorPage() {
   const canCalc = followers && plat.fields.some(k => fields[k])
 
   return (
-    <div className="p-5 lg:p-8 max-w-2xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-5 lg:p-8 max-w-2xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        
         .er-input {
           width: 100%; padding: 11px 14px; font-size: 14px; font-family: inherit; font-weight: 600;
           border: 2px solid #e5e7eb; border-radius: 12px; background: white; color: #111;
@@ -121,7 +121,7 @@ export default function EngagementCalculatorPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', boxShadow: '0 4px 14px rgba(139,92,246,0.35)' }}>
+          style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 14px rgba(139,92,246,0.35)' }}>
           <BarChart2 className="w-6 h-6 text-white" />
         </div>
         <div>
@@ -217,7 +217,7 @@ export default function EngagementCalculatorPage() {
           <RefreshCw className="w-4 h-4" /> Reset
         </button>
         <button className="calc-btn" disabled={!canCalc} onClick={calculate}
-          style={{ background: canCalc ? 'linear-gradient(135deg,#8b5cf6,#06b6d4)' : '#e5e7eb' }}>
+          style={{ background: canCalc ? 'linear-gradient(135deg,#7040f0, #9030f0)' : '#e5e7eb' }}>
           <span className="flex items-center justify-center gap-2">
             <Sparkles className="w-4 h-4" /> Calculează Engagement Rate
           </span>
@@ -282,7 +282,7 @@ export default function EngagementCalculatorPage() {
           {[
             { label: 'Excelent — top creator', range: `≥ ${plat.benchmarks.excellent}%`, color: '#15803d', bg: '#f0fdf4', bar: '#22c55e' },
             { label: 'Bun — peste medie', range: `${plat.benchmarks.good}–${plat.benchmarks.excellent}%`, color: '#b45309', bg: '#fffbeb', bar: '#f59e0b' },
-            { label: 'Mediu — industrie', range: `${plat.benchmarks.avg}–${plat.benchmarks.good}%`, color: '#c2410c', bg: '#fff7ed', bar: '#f97316' },
+            { label: 'Mediu — industrie', range: `${plat.benchmarks.avg}–${plat.benchmarks.good}%`, color: '#c2410c', bg: '#f5f3ff', bar: '#5a35e6' },
             { label: 'Scăzut', range: `< ${plat.benchmarks.avg}%`, color: '#b91c1c', bg: '#fef2f2', bar: '#ef4444' },
           ].map(b => (
             <div key={b.label} className="flex items-center justify-between px-4 py-2.5 rounded-xl"

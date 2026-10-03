@@ -194,7 +194,7 @@ export function LeaveReview({ collaborationId, reviewerRole, targetName, onSaved
             onClick={submit}
             disabled={saving || !rating}
             className="flex-1 py-2.5 rounded-xl font-black text-sm text-white disabled:opacity-40 transition flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(135deg,#f59e0b,#f97316)' }}
+            style={{ background: 'linear-gradient(135deg,#f59e0b,#5a35e6)' }}
           >
             {saving
               ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Se salvează…</>

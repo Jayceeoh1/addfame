@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationsBell } from '@/components/shared/notifications-bell'
+import { fontVars } from '@/lib/fonts'
 import AdminFloatingButton from '@/components/AdminFloatingButton'
 import {
   LayoutDashboard, Briefcase, Users, MessageSquare,
@@ -73,7 +74,7 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
   const Avatar = ({ size = 36 }: { size?: number }) => (
     <div
       className="brand-grad rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
-      style={{ width: size, height: size, boxShadow: '0 2px 8px rgba(249,115,22,0.3)' }}
+      style={{ width: size, height: size, boxShadow: '0 2px 8px rgba(90,53,230,0.3)' }}
     >
       {profile?.logo
         ? <img src={profile.logo} alt={profile.name} className="w-full h-full object-cover" />
@@ -83,28 +84,28 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
   )
 
   return (
-    <div className="flex h-screen bg-gray-50" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className={`flex h-screen ${fontVars}`} style={{ '--primary': 'oklch(0.51 0.24 282)', '--ring': 'oklch(0.51 0.24 282)', '--accent': 'oklch(0.55 0.25 300)', '--sidebar-primary': 'oklch(0.51 0.24 282)', height: '100dvh', background: '#f6f6fc', color: '#14123a', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" } as React.CSSProperties}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-        .brand-grad { background: linear-gradient(135deg, #f97316, #ec4899); }
-        .nav-active { background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(236,72,153,0.06)); color: #ea6b0e; }
-        .nav-active .nav-icon { color: #f97316; }
+        
+        .brand-grad { background: linear-gradient(135deg, #2f6fe0, #5a35e6); }
+        .nav-active { background: linear-gradient(135deg, rgba(90,53,230,0.1), rgba(144,48,240,0.06)); color: #4423c4; }
+        .nav-active .nav-icon { color: #5a35e6; }
         .nav-item { display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;transition:all .15s;cursor:pointer;text-decoration:none;color:#6b7280;font-weight:600;font-size:14px; }
-        .nav-item:hover:not(.nav-active) { background:#fff7ed;color:#ea6b0e; }
-        .nav-item:hover:not(.nav-active) .nav-icon { color:#f97316; }
+        .nav-item:hover:not(.nav-active) { background:#f5f3ff;color:#4423c4; }
+        .nav-item:hover:not(.nav-active) .nav-icon { color:#5a35e6; }
         .nav-icon { width:18px;height:18px;flex-shrink:0;color:#9ca3af;transition:color .15s; }
         .sidebar-shadow { box-shadow: 4px 0 24px rgba(0,0,0,0.04); }
         .collapse-btn { display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9px;background:#f3f4f6;border:none;cursor:pointer;transition:background .15s;flex-shrink:0; }
-        .collapse-btn:hover { background:#ffedd5; }
+        .collapse-btn:hover { background:#ede9fe; }
         .topbar-search { flex:1;padding:9px 14px 9px 40px;border:2px solid #f0f0f0;border-radius:12px;font-size:14px;font-family:inherit;font-weight:500;outline:none;background:white;transition:border-color .2s; }
-        .topbar-search:focus { border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,0.08); }
+        .topbar-search:focus { border-color:#5a35e6;box-shadow:0 0 0 3px rgba(90,53,230,0.08); }
         .topbar-search::placeholder { color:#9ca3af;font-weight:400; }
         .icon-btn { display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:12px;background:white;border:1.5px solid #f0f0f0;cursor:pointer;transition:all .15s;color:#6b7280; }
-        .icon-btn:hover { border-color:#fed7aa;color:#ea6b0e;background:#fff7ed; }
+        .icon-btn:hover { border-color:#ddd6fe;color:#4423c4;background:#f5f3ff; }
         @keyframes slideIn { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
         .sidebar-anim { animation: slideIn .3s ease; }
         .mobile-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:40; }
-        .credits-pill { background:linear-gradient(135deg,rgba(249,115,22,0.1),rgba(236,72,153,0.06));border:1.5px solid rgba(249,115,22,0.2);border-radius:12px;padding:6px 14px;text-align:right; }
+        .credits-pill { background:linear-gradient(135deg,rgba(90,53,230,0.1),rgba(144,48,240,0.06));border:1.5px solid rgba(90,53,230,0.2);border-radius:12px;padding:6px 14px;text-align:right; }
       `}</style>
 
       {mobile && open && (
@@ -121,10 +122,10 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
       >
         <div className="flex items-center justify-between px-4 h-16 flex-shrink-0" style={{ borderBottom: '1.5px solid #f5f5f5' }}>
           <div className={`flex items-center gap-2.5 ${!open ? 'justify-center w-full' : ''}`}>
-            <div className="w-8 h-8 brand-grad rounded-xl flex items-center justify-center flex-shrink-0" style={{ boxShadow: '0 3px 10px rgba(249,115,22,0.35)' }}>
-              <span className="text-white font-black text-xs">AF</span>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: '#fff', border: '1px solid #ede9fe', boxShadow: '0 2px 8px rgba(112,64,240,0.15)' }}>
+              <img src="/logo.png" alt="AddFame" style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
             </div>
-            {open && <span className="font-black text-base tracking-tight text-gray-900">Add<span className="text-orange-500">Fame</span></span>}
+            {open && <span className="font-black text-base tracking-tight text-gray-900">Add<span style={{ background: 'linear-gradient(100deg,#22c8f0 0%,#3090f0 38%,#7040f0 72%,#9030f0 100%)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', WebkitTextFillColor: 'transparent' }}>Fame</span></span>}
           </div>
           {open && !mobile && (
             <button className="collapse-btn" onClick={() => setOpen(false)}>
@@ -148,9 +149,9 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
                 title={!open ? item.label : undefined}
                 onClick={() => mobile && setOpen(false)}
               >
-                <item.icon className={`nav-icon ${active ? 'text-orange-500' : ''}`} />
+                <item.icon className={`nav-icon ${active ? 'text-violet-600' : ''}`} />
                 {open && <span>{item.label}</span>}
-                {open && active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-500" />}
+                {open && active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-600" />}
               </Link>
             )
           })}
@@ -191,24 +192,24 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input className="topbar-search" placeholder="Search…" />
+              <input className="topbar-search" placeholder="Caută…" />
             </div>
           </div>
           <div className="flex items-center gap-2.5 flex-shrink-0">
             {profile !== null && (
               <div className="credits-pill hidden md:block">
-                <p className="text-sm font-black text-orange-600 leading-tight">{(profile.credits_balance ?? 0).toLocaleString('ro-RO')} RON</p>
-                <p className="text-[10px] text-orange-400 font-bold">Credite</p>
+                <p className="text-sm font-black text-violet-700 leading-tight">{(profile.credits_balance ?? 0).toLocaleString('ro-RO')} RON</p>
+                <p className="text-[10px] text-violet-400 font-bold">Credite</p>
               </div>
             )}
-            <NotificationsBell accentColor="#f97316" />
+            <NotificationsBell accentColor="#5a35e6" />
             <Link href="/brand/settings">
               <Avatar size={36} />
             </Link>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-gray-50">
+        <main className="flex-1 overflow-y-auto" style={{ background: '#f6f6fc' }}>
           {children}
         </main>
         <AdminFloatingButton />

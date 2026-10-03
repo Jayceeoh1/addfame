@@ -99,13 +99,13 @@ export default function MediaKitSetup() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex items-center justify-center min-h-screen" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div className="w-10 h-10 rounded-full animate-spin" style={{ border: '3px solid #ede9fe', borderTopColor: '#8b5cf6' }} />
     </div>
   )
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#f8f7ff', minHeight: '100vh', paddingBottom: 80 }}>
+    <div style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif", background: '#f8f7ff', minHeight: '100vh', paddingBottom: 80 }}>
 
       {/* Header */}
       <div style={{ background: 'white', borderBottom: '1px solid #ede9fe', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 8, position: 'sticky', top: 0, zIndex: 10, flexWrap: 'nowrap' }}>
@@ -118,7 +118,7 @@ export default function MediaKitSetup() {
         <button
           onClick={handleSave}
           disabled={saving}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: saved ? '#16a34a' : 'linear-gradient(135deg,#8b5cf6,#ec4899)', color: 'white', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: saved ? '#16a34a' : 'linear-gradient(135deg,#8b5cf6,#9030f0)', color: 'white', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}
         >
           {saved ? <><Check size={14} /> Salvat!</> : saving ? 'Se salvează...' : <><Save size={14} /> Salvează</>}
         </button>
@@ -273,7 +273,7 @@ export default function MediaKitSetup() {
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button
                   onClick={async () => { await handleSave(); if (slug) window.open(`/influencer/media-kit/${slug}`, '_blank') }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#8b5cf6,#ec4899)', color: 'white', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#8b5cf6,#9030f0)', color: 'white', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   <Eye size={16} /> Salvează și previzualizează
                 </button>
@@ -311,7 +311,7 @@ export default function MediaKitSetup() {
             : <div />
           }
           {step < 4
-            ? <button onClick={async () => { await handleSave(); setStep(s => s + 1) }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#8b5cf6,#ec4899)', color: 'white', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+            ? <button onClick={async () => { await handleSave(); setStep(s => s + 1) }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#8b5cf6,#9030f0)', color: 'white', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Salvează și continuă <ArrowRight size={14} />
               </button>
             : null

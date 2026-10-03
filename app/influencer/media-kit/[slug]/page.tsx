@@ -13,7 +13,7 @@ import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, Link
 import Link from 'next/link'
 
 const PLATFORM_CFG = {
-  instagram: { icon: InstagramIcon, label: 'Instagram', color: '#E1306C', bg: '#fdf2f8' },
+  instagram: { icon: InstagramIcon, label: 'Instagram', color: '#E1306C', bg: '#faf5ff' },
   tiktok: { icon: TikTokSVG, label: 'TikTok', color: '#000', bg: '#f3f4f6' },
   youtube: { icon: YoutubeIcon, label: 'YouTube', color: '#FF0000', bg: '#fff5f5' },
   twitter: { icon: TwitterXIcon, label: 'X / Twitter', color: '#000', bg: '#f9fafb' },
@@ -87,13 +87,13 @@ export default function MediaKitPage() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #f0f0f0', borderTopColor: '#8b5cf6', animation: 'spin 1s linear infinite' }} />
     </div>
   )
 
   if (!inf) return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <p style={{ fontSize: 20, fontWeight: 800, color: '#111' }}>Profil negăsit</p>
       <Link href="/" style={{ color: '#8b5cf6', marginTop: 12, fontSize: 14 }}>← Înapoi la AddFame</Link>
     </div>
@@ -115,7 +115,7 @@ export default function MediaKitPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        
         * { box-sizing: border-box; }
         body { margin: 0; background: #f8f7ff; }
         .no-print { }
@@ -130,34 +130,34 @@ export default function MediaKitPage() {
       `}</style>
 
       {/* Top bar — no print */}
-      <div className="no-print" style={{ background: 'white', borderBottom: '1px solid #f0f0f0', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
-        <Link href="/" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 900, fontSize: 16, textDecoration: 'none', color: '#111' }}>
+      <div className="no-print" style={{ background: 'white', borderBottom: '1px solid #f0f0f0', padding: '12px 16px', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
+        <Link href="/" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif", fontWeight: 900, fontSize: 16, textDecoration: 'none', color: '#111' }}>
           Add<span style={{ color: '#8b5cf6' }}>Fame</span>
         </Link>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {isOwner && (
             <Link href={`/influencer/profile`}
-              style={{ padding: '8px 16px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#6b7280', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              style={{ padding: '8px 16px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#6b7280', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
               Editează profilul
             </Link>
           )}
-          <button onClick={copyLink} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, fontWeight: 700, background: 'white', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", color: copied ? '#16a34a' : '#374151' }}>
+          <button onClick={copyLink} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, fontWeight: 700, background: 'white', cursor: 'pointer', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif", color: copied ? '#16a34a' : '#374151' }}>
             {copied ? <Check size={14} /> : <Copy size={14} />}
             {copied ? 'Copiat!' : 'Copiază link'}
           </button>
-          <button onClick={downloadPDF} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', color: 'white', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <button onClick={downloadPDF} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 800, background: 'linear-gradient(135deg,#7040f0, #9030f0)', color: 'white', cursor: 'pointer', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
             <Download size={14} /> Download PDF
           </button>
         </div>
       </div>
 
       {/* Kit content */}
-      <div className="kit-wrapper" style={{ maxWidth: 800, margin: '32px auto', padding: '0 16px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div className="kit-wrapper" style={{ maxWidth: 800, margin: '32px auto', padding: '0 16px', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
 
         {/* Header card */}
         <div className="kit-card" style={{ background: 'white', borderRadius: 24, overflow: 'hidden', marginBottom: 20, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
           {/* Gradient banner */}
-          <div style={{ height: 100, background: 'linear-gradient(135deg,#8b5cf6,#06b6d4,#f97316)', position: 'relative' }}>
+          <div style={{ height: 100, background: 'linear-gradient(135deg,#7040f0, #9030f0,#5a35e6)', position: 'relative' }}>
             <div style={{ position: 'absolute', bottom: -40, left: 32 }}>
               <div style={{ width: 80, height: 80, borderRadius: 20, border: '4px solid white', overflow: 'hidden', background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
                 {inf.avatar
@@ -298,7 +298,7 @@ export default function MediaKitPage() {
             )}
 
             {/* CTA */}
-            <div className="kit-card" style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', borderRadius: 20, padding: '20px', boxShadow: '0 4px 16px rgba(139,92,246,0.3)' }}>
+            <div className="kit-card" style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', borderRadius: 20, padding: '20px', boxShadow: '0 4px 16px rgba(139,92,246,0.3)' }}>
               <p style={{ fontSize: 14, fontWeight: 900, color: 'white', margin: '0 0 4px' }}>Colaborează cu {inf.name}</p>
               <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', margin: '0 0 14px' }}>
                 Invită-l la campania ta pe AddFame

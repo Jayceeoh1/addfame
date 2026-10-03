@@ -93,23 +93,23 @@ export default function CampaignCalendarPage() {
   const fmt = (n: number) => `${(n || 0).toLocaleString('ro-RO', { minimumFractionDigits: 0 })} RON`
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div className="w-10 h-10 rounded-full border-t-orange-400 border-orange-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+      <div className="w-10 h-10 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
     </div>
   )
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        
         .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
-        .brand-grad { background:linear-gradient(135deg,#f97316,#ec4899); }
+        .brand-grad { background:linear-gradient(135deg,#2f6fe0, #5a35e6); }
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         .fu { animation:fadeUp .4s ease both; }
         .day-cell { min-height:80px;border:1px solid #f5f5f5;border-radius:12px;padding:6px;cursor:pointer;transition:all .15s; }
-        .day-cell:hover { background:#fff9f5;border-color:#fed7aa; }
-        .day-cell.today { border-color:#f97316;border-width:2px; }
-        .day-cell.selected { background:#fff7ed;border-color:#f97316;border-width:2px; }
+        .day-cell:hover { background:#fff9f5;border-color:#ddd6fe; }
+        .day-cell.today { border-color:#5a35e6;border-width:2px; }
+        .day-cell.selected { background:#f5f3ff;border-color:#5a35e6;border-width:2px; }
         @media (max-width: 640px) { .day-cell { min-height:52px;padding:4px; } }
       `}</style>
 
@@ -128,7 +128,7 @@ export default function CampaignCalendarPage() {
           </button>
           <Link href="/brand/campaigns/new"
             className="flex items-center gap-1.5 text-sm font-black text-white px-4 py-2 rounded-xl brand-grad"
-            style={{ boxShadow: '0 3px 10px rgba(249,115,22,.3)' }}>
+            style={{ boxShadow: '0 3px 10px rgba(90,53,230,.3)' }}>
             + Campaign
           </Link>
         </div>

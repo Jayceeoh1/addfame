@@ -275,7 +275,7 @@ export default function NewOpenCallPage() {
             <p className="text-sm font-black text-amber-800 mb-1">💾 Campania a fost salvată ca draft</p>
             <p className="text-xs text-amber-700 leading-relaxed mb-3">{draftNotice.message}</p>
             <div className="flex flex-wrap gap-2">
-              <a href="/brand/wallet" className="px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-orange-500 to-pink-500">Adaugă credite</a>
+              <a href="/brand/wallet" className="px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-500 to-violet-500">Adaugă credite</a>
               <a href={`/brand/campaigns/${draftNotice.campaignId}`} className="px-4 py-2 rounded-xl text-xs font-bold border-2 border-amber-300 text-amber-800 bg-white">Deschide draft-ul</a>
             </div>
           </div>

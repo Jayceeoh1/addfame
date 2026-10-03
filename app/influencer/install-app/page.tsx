@@ -37,9 +37,9 @@ export default function InstallAppPage() {
 
   if (isInstalled) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
         <div className="text-center max-w-sm">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
             <Check className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-2xl font-black text-gray-900 mb-2">Ești deja instalat!</h1>
@@ -50,12 +50,12 @@ export default function InstallAppPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
       <div className="max-w-lg mx-auto px-4 py-8">
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
             <Smartphone className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-2xl font-black text-gray-900 mb-2">Instalează AddFame</h1>
@@ -102,7 +102,7 @@ export default function InstallAppPage() {
                   onClick={handleInstallAndroid}
                   disabled={installing}
                   className="w-full py-3.5 rounded-xl font-black text-sm text-white flex items-center justify-center gap-2 transition"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}
+                  style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}
                 >
                   {installing
                     ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Se instalează...</>
@@ -146,7 +146,7 @@ export default function InstallAppPage() {
                   step: 1,
                   title: 'Deschide Safari',
                   desc: 'Asigură-te că ești în Safari, nu în Chrome sau alt browser.',
-                  icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f97316" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+                  icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#5a35e6" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
                 },
                 {
                   step: 2,
@@ -210,7 +210,7 @@ export default function InstallAppPage() {
         {/* Nu se detecteaza device-ul */}
         {!device && (
           <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4 text-center">
-            <div className="w-10 h-10 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-3" />
+            <div className="w-10 h-10 border-2 border-violet-200 border-t-violet-500 rounded-full animate-spin mx-auto mb-3" />
             <p className="text-sm text-gray-400">Se detectează dispozitivul...</p>
           </div>
         )}
