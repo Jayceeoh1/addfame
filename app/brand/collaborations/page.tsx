@@ -368,6 +368,13 @@ export default function BrandCollaborations() {
 
   useEffect(() => { load() }, [load])
 
+  // Linkuri directe din dashboard: /brand/collaborations?tab=review | applied | active
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab')
+    const map: Record<string, Tab> = { review: 'Pending Review', applied: 'Applied', active: 'Active', completed: 'Completed', invited: 'Invited' }
+    if (t && map[t]) { setTab(map[t]); setViewMode('list') }
+  }, [])
+
   async function doAction(collabId: string, status: 'ACTIVE' | 'REJECTED') {
     setActionId(collabId)
     try {

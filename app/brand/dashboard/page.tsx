@@ -4,27 +4,11 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { OnboardingChecklist } from '@/components/shared/onboarding-checklist'
-import { VerificationBanner } from '@/components/shared/verification-banner'
 import {
-  Zap, Users, TrendingUp, DollarSign, Plus, ArrowRight,
-  Briefcase, Clock, AlertCircle, RefreshCw, Lock,
-  ChevronRight, X, Coins, Sparkles, Search,
-  MessageCircle, Send, Bot, Minimize2
+  Plus, ChevronRight, X, Lock, Eye, UserPlus, Clock, FileText, ShieldCheck,
+  Wallet as WalletIcon, XCircle, CheckCircle2, Rocket, Gift, Banknote,
+  Send, Bot, Minimize2
 } from 'lucide-react'
-
-const STATUS_CFG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  DRAFT: { label: 'Draft', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
-  ACTIVE: { label: 'Active', bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500' },
-  PAUSED: { label: 'Pausat', bg: 'bg-gray-100', text: 'text-gray-500', dot: 'bg-gray-400' },
-  COMPLETED: { label: 'Finalizat', bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-400' },
-  LIVE: { label: 'Live', bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500' },
-  PENDING: { label: 'Pending', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
-  REJECTED: { label: 'Respins', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-400' },
-}
-
-const fmt = (n: number) => `${(n || 0).toLocaleString('ro-RO', { minimumFractionDigits: 0 })} RON`
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
 // ── AI Assistant Widget ──────────────────────────────────────────────────────
 const QUICK_QUESTIONS = [
@@ -37,7 +21,7 @@ const QUICK_QUESTIONS = [
 function AIAssistant() {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([
-    { role: 'ai', text: 'Salut! 👋 Sunt asistentul AI AddFame. Cu ce te pot ajuta azi?' }
+    { role: 'ai', text: 'Salut! Sunt asistentul AddFame. Cu ce te pot ajuta azi?' }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -166,7 +150,7 @@ function AIAssistant() {
                 <button
                   key={q}
                   onClick={() => sendMessage(q)}
-                  className="text-[11px] font-bold px-2.5 py-1 rounded-full border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 transition"
+                  className="text-[11px] font-bold px-2.5 py-1 rounded-full border border-violet-200 text-violet-700 bg-violet-50 hover:bg-violet-100 transition"
                 >
                   {q}
                 </button>
@@ -176,7 +160,7 @@ function AIAssistant() {
 
           {/* Input */}
           <div className="px-3 pb-3 flex-shrink-0" style={{ borderTop: '1px solid #f0f0f0', paddingTop: 8 }}>
-            <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-3 py-2 border border-gray-200 focus-within:border-orange-300 transition">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-3 py-2 border border-gray-200 focus-within:border-violet-300 transition">
               <input
                 value={input}
                 onChange={e => setInput(e.target.value)}
@@ -201,7 +185,79 @@ function AIAssistant() {
   )
 }
 
-// ── Main Dashboard ───────────────────────────────────────────────────────────
+
+// ── Ajutătoare ───────────────────────────────────────────────────────────────
+const DAY = 86400000
+const num = (n: number) => (n || 0).toLocaleString('ro-RO')
+const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` : `${n} ${many}`)
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const min = Math.floor(diff / 60000)
+  if (min < 1) return 'acum'
+  if (min < 60) return `acum ${min} min`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `acum ${h} h`
+  const d = Math.floor(h / 24)
+  if (d === 1) return 'ieri'
+  if (d < 7) return `acum ${d} zile`
+  return new Date(iso).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })
+}
+
+function daysLeft(deadline?: string | null) {
+  if (!deadline) return null
+  return Math.ceil((new Date(deadline).getTime() - Date.now()) / DAY)
+}
+
+const FACE_COLORS = [
+  ['#ffe0cc', '#9a3d06'], ['#d6eefe', '#075985'], ['#fde0ea', '#9d174d'], ['#ebe4ff', '#4c1d95'],
+  ['#dcf5ec', '#14532d'], ['#fff1c2', '#854d0e'], ['#dff4fd', '#0c4a6e'],
+]
+function faceColor(key: string) {
+  let h = 0
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0
+  return FACE_COLORS[h % FACE_COLORS.length]
+}
+function initials(name?: string | null) {
+  const parts = (name || '?').trim().split(/\s+/)
+  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?'
+}
+
+function Face({ inf, size = 30, ring = false }: { inf: any; size?: number; ring?: boolean }) {
+  const [bg, fg] = faceColor(inf?.id || inf?.name || '?')
+  const inner = (
+    <span className="bd-face" style={{ width: ring ? '100%' : size, height: ring ? '100%' : size, background: bg, color: fg, fontSize: Math.round(size * 0.34), border: ring ? '2px solid #fff' : '2px solid #fff' }}>
+      {inf?.avatar ? <img src={inf.avatar} alt="" /> : initials(inf?.name)}
+    </span>
+  )
+  if (!ring) return inner
+  return <span className="bd-ring" style={{ width: size, height: size }}>{inner}</span>
+}
+
+const isSelected = (c: any) => c.status === 'ACTIVE' || c.status === 'COMPLETED'
+const hasPosted = (c: any) => !!c.deliverable_submitted_at || !!c.deliverable_approved_at || c.status === 'COMPLETED'
+const isApproved = (c: any) => !!c.deliverable_approved_at || c.status === 'COMPLETED'
+const awaitsReview = (c: any) => c.status === 'ACTIVE' && !!c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at
+
+type Todo = { key: string; title: string; sub: string; href?: string; onClick?: () => void; cta: string; tone: 'primary' | 'blue' | 'warn' | 'danger' | 'neutral'; icon: any }
+
+const TONES: Record<Todo['tone'], { bg: string; fg: string }> = {
+  primary: { bg: '#5a35e6', fg: '#ffffff' },
+  blue: { bg: '#e6f0ff', fg: '#1d4fb8' },
+  warn: { bg: '#fff1e6', fg: '#b4530b' },
+  danger: { bg: '#fdecec', fg: '#b42318' },
+  neutral: { bg: '#eef0f6', fg: '#4a4770' },
+}
+
+const PLATFORM: Record<string, string> = { instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube', facebook: 'Facebook', twitch: 'Twitch', x: 'X', twitter: 'X', linkedin: 'LinkedIn', pinterest: 'Pinterest', snapchat: 'Snapchat' }
+
+const TYPE_LABEL: Record<string, { label: string; short: string; bg: string; fg: string }> = {
+  PAID: { label: 'Plătită', short: 'P', bg: '#e6f0ff', fg: '#1d4fb8' },
+  BARTER: { label: 'Barter', short: 'B', bg: '#efeaff', fg: '#4423c4' },
+  OPEN_CALL: { label: 'Open call', short: 'O', bg: '#e3f6fd', fg: '#075f7d' },
+}
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
 export default function BrandDashboard() {
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)
@@ -226,14 +282,14 @@ export default function BrandDashboard() {
 
       const campIds = (camps || []).map((c: any) => c.id)
       if (campIds.length > 0) {
-        const { data: colls } = await sb.from('collaborations').select('*, campaigns(title)').in('campaign_id', campIds).order('created_at', { ascending: false }).limit(8)
+        const { data: colls } = await sb.from('collaborations').select('*').in('campaign_id', campIds).order('created_at', { ascending: false }).limit(1000)
         if (colls && colls.length > 0) {
           const infIds = [...new Set(colls.map((c: any) => c.influencer_id).filter(Boolean))]
           const { data: infs } = await sb.from('influencers').select('id, name, avatar').in('id', infIds as string[])
           const infMap = Object.fromEntries((infs || []).map((i: any) => [i.id, i]))
           setCollabs(colls.map((c: any) => ({ ...c, influencer: infMap[c.influencer_id] || null })))
-        }
-      }
+        } else setCollabs([])
+      } else setCollabs([])
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }, [router])
@@ -241,346 +297,467 @@ export default function BrandDashboard() {
   useEffect(() => { load() }, [load])
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <div className="w-10 h-10 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-10 h-10 rounded-full border-t-violet-500 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
     </div>
   )
 
-  const activeCampaigns = campaigns.filter(c => ['ACTIVE', 'LIVE'].includes(c.status))
+  // ── Date derivate ──
+  const campById = Object.fromEntries(campaigns.map(c => [c.id, c]))
+  const activeCampaigns = campaigns.filter(c => ['ACTIVE', 'LIVE', 'PAUSED'].includes(c.status))
   const draftCampaigns = campaigns.filter(c => c.status === 'DRAFT')
-  const pendingCollabs = collabs.filter(c => c.status === 'PENDING')
-  const totalApplications = collabs.length
-  const totalBudget = campaigns.reduce((s, c) => s + (c.budget || 0), 0)
+  const completedCampaigns = campaigns.filter(c => c.status === 'COMPLETED')
   const creditsBalance = profile?.credits_balance || 0
+  const creditsReserved = Math.max(0, profile?.credits_reserved || 0)
+  const available = Math.max(0, creditsBalance - creditsReserved)
   const totalSpent = profile?.total_spent || 0
   const canCreateCampaign = creditsBalance >= 250 || profile?.influencers_access === true
+  const verification: string = profile?.verification_status || 'unverified'
 
-  const featuredCampaign = activeCampaigns[0] || campaigns[0]
-  const featuredStats = featuredCampaign ? {
-    total: collabs.filter(c => c.campaign_id === featuredCampaign.id).length,
-    accepted: collabs.filter(c => c.campaign_id === featuredCampaign.id && c.status === 'ACTIVE').length,
-    pending: collabs.filter(c => c.campaign_id === featuredCampaign.id && c.status === 'PENDING').length,
-  } : null
+  const reviewQueue = collabs.filter(awaitsReview)
+  const newApplications = collabs.filter(c => c.status === 'PENDING')
+  const closingSoon = activeCampaigns
+    .filter(c => c.status !== 'PAUSED')
+    .map(c => ({ c, d: daysLeft(c.deadline) }))
+    .filter(x => x.d !== null && x.d >= 0 && x.d <= 3)
+    .sort((a, b) => (a.d as number) - (b.d as number))
 
-  const onboardingSteps = [
-    { id: 'profile', label: 'Completează profilul brandului', desc: 'Adaugă logo, descriere și informații de contact', href: '/brand/settings', done: !!(profile?.logo || profile?.description) },
-    { id: 'verify', label: 'Verifică-ți brandul', desc: 'Trimite verificarea pentru a debloca publicarea', href: '/brand/verify', done: profile?.verification_status === 'verified' },
-    { id: 'campaign', label: 'Creează prima ta campanie', desc: 'Definește obiectivele, bugetul și livrabilele', href: canCreateCampaign ? '/brand/campaigns/new' : '/brand/wallet', done: campaigns.length > 0 },
-    { id: 'publish', label: 'Publică o campanie', desc: 'Lansează pentru ca influencerii să poată aplica', href: '/brand/campaigns', done: activeCampaigns.length > 0 },
-    { id: 'wallet', label: 'Adaugă credite în wallet', desc: 'Finanțează contul pentru a plăti colaboratorii', href: '/brand/wallet', done: (creditsBalance + totalSpent) > 0 },
-  ]
-  const onboardingDone = onboardingSteps.filter(s => s.done).length === onboardingSteps.length
+  const campaignNames = (list: any[]) => {
+    const ids = [...new Set(list.map(c => c.campaign_id))]
+    if (ids.length === 1) return campById[ids[0] as string]?.title || ''
+    return `în ${ids.length} campanii`
+  }
+
+  const openNewCampaign = () => (canCreateCampaign ? setShowSheet(true) : router.push('/brand/wallet'))
+
+  // ── De făcut acum (în ordinea urgenței) ──
+  const todos: Todo[] = []
+  if (verification === 'rejected') todos.push({ key: 'verify-rej', title: 'Verificarea brandului a fost respinsă', sub: profile?.verification_rejection_reason ? `Motiv: ${profile.verification_rejection_reason}` : 'Actualizează detaliile și retrimite', href: '/brand/verify', cta: 'Retrimite', tone: 'danger', icon: XCircle })
+  if (reviewQueue.length > 0) todos.push({ key: 'review', title: `${plural(reviewQueue.length, 'postare', 'postări')} de aprobat`, sub: campaignNames(reviewQueue), href: '/brand/collaborations?tab=review', cta: 'Revizuiește', tone: 'primary', icon: Eye })
+  if (newApplications.length > 0) todos.push({ key: 'apps', title: `${plural(newApplications.length, 'aplicare nouă', 'aplicări noi')}`, sub: campaignNames(newApplications), href: '/brand/collaborations?tab=applied', cta: 'Alege creatori', tone: 'blue', icon: UserPlus })
+  closingSoon.slice(0, 2).forEach(({ c, d }) => {
+    const taken = collabs.filter(x => x.campaign_id === c.id && isSelected(x)).length
+    todos.push({ key: 'close-' + c.id, title: `${c.title} se închide ${d === 0 ? 'azi' : d === 1 ? 'mâine' : `în ${d} zile`}`, sub: c.max_influencers ? `${taken} din ${c.max_influencers} locuri ocupate` : `${plural(taken, 'creator selectat', 'creatori selectați')}`, href: `/brand/campaigns/${c.id}`, cta: 'Vezi campania', tone: 'warn', icon: Clock })
+  })
+  if (draftCampaigns.length > 0) todos.push({ key: 'drafts', title: `${plural(draftCampaigns.length, 'campanie', 'campanii')} în draft`, sub: 'Nu sunt vizibile pentru influenceri până le publici', href: '/brand/campaigns', cta: 'Publică', tone: 'warn', icon: FileText })
+  if (verification === 'unverified') todos.push({ key: 'verify', title: 'Verifică-ți brandul', sub: 'Ai nevoie de verificare ca influencerii să vadă campaniile', href: '/brand/verify', cta: 'Începe', tone: 'neutral', icon: ShieldCheck })
+  if (campaigns.length === 0) todos.push({ key: 'first', title: 'Creează prima campanie', sub: canCreateCampaign ? 'Gata în 5 minute, cu ghidul pas cu pas' : 'Adaugă minimum 250 RON în portofel pentru acces', onClick: openNewCampaign, cta: canCreateCampaign ? 'Începe' : 'Adaugă credite', tone: 'neutral', icon: Plus })
+  if (creditsBalance + totalSpent <= 0) todos.push({ key: 'wallet', title: 'Adaugă credite în portofel', sub: 'Din ele plătești colaborările cu creatorii', href: '/brand/wallet', cta: 'Adaugă', tone: 'neutral', icon: WalletIcon })
+  if (!(profile?.logo || profile?.description)) todos.push({ key: 'profile', title: 'Completează profilul brandului', sub: 'Logo și descriere — creatorii aplică mai ușor la branduri complete', href: '/brand/settings', cta: 'Completează', tone: 'neutral', icon: ShieldCheck })
+  if (verification === 'pending') todos.push({ key: 'verify-pending', title: 'Verificarea brandului e în analiză', sub: 'De obicei durează până la 24 de ore', href: '/brand/verify', cta: 'Vezi statusul', tone: 'blue', icon: Clock })
+  const actionCount = todos.filter(t => t.key !== 'verify-pending').length
+
+  // ── Campanii cu traseu ──
+  const pipelineCampaigns = activeCampaigns.slice(0, 4).map(c => {
+    const list = collabs.filter(x => x.campaign_id === c.id)
+    const applied = list.filter(x => x.status !== 'INVITED').length
+    const selected = list.filter(isSelected)
+    const posted = list.filter(hasPosted).length
+    const approved = list.filter(isApproved).length
+    const review = list.filter(awaitsReview).length
+    const pending = list.filter(x => x.status === 'PENDING').length
+    const slots = c.max_influencers || 0
+    return { c, applied, selected, posted, approved, review, pending, slots }
+  })
+  const otherCampaigns = [...draftCampaigns, ...completedCampaigns].slice(0, 3)
+
+  // ── Activitate recentă ──
+  const events: { at: string; inf: any; what: string; camp: string }[] = []
+  collabs.forEach(c => {
+    const camp = campById[c.campaign_id]?.title || ''
+    if (c.deliverable_approved_at) events.push({ at: c.deliverable_approved_at, inf: c.influencer, what: 'are postarea aprobată', camp })
+    if (c.deliverable_submitted_at && !c.deliverable_approved_at) events.push({ at: c.deliverable_submitted_at, inf: c.influencer, what: 'a trimis postarea pentru aprobare', camp })
+    if (c.package_received_at) events.push({ at: c.package_received_at, inf: c.influencer, what: 'a primit produsul', camp })
+    if (c.created_at) events.push({ at: c.created_at, inf: c.influencer, what: c.status === 'INVITED' ? 'a primit invitația ta' : 'a aplicat', camp })
+  })
+  events.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+  const activity = events.slice(0, 6)
+
+  // ── Rezultate ──
+  const approvedPosts = collabs.filter(isApproved).length
+  const creators = new Set(collabs.filter(isSelected).map(c => c.influencer_id)).size
+  const launched = campaigns.filter(c => c.status !== 'DRAFT').length
+
+  const today = new Date().toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' })
+  const todayLabel = today.charAt(0).toUpperCase() + today.slice(1)
+  const reservedPct = creditsBalance > 0 ? Math.min(100, Math.round((creditsReserved / creditsBalance) * 100)) : 0
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+    <div className="bd">
       <style>{`
-        .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
-        .brand-grad { background:linear-gradient(135deg,#2f6fe0, #5a35e6); }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .fade-up { animation:fadeUp .35s ease both; }
-        .row-hover:hover { background:#fafbff; }
-        .hero-bg { background: linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 50%, #4c1d3d 100%); }
-        .glow-orb { position: absolute; top: -80px; right: -40px; width: 280px; height: 280px; background: radial-gradient(circle, rgba(90,53,230,0.18) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
-        .stat-mini { background:white;border:1.5px solid #f0f0f0;border-radius:16px;padding:16px 18px;transition:all .2s; }
-        .stat-mini:hover { box-shadow:0 8px 24px rgba(0,0,0,0.05);transform:translateY(-1px); }
+        .bd { padding: 28px; max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; color: #14123a; font-family: var(--font-body, system-ui), system-ui, sans-serif; font-size: 15px; line-height: 1.5; }
+        .bd h1, .bd h2, .bd .bd-num { font-family: var(--font-display, system-ui), system-ui, sans-serif; }
+        .bd h1 { margin: 0; font-weight: 800; font-size: 34px; letter-spacing: -0.03em; line-height: 1.1; }
+        .bd h2 { margin: 0; font-weight: 700; font-size: 19px; letter-spacing: -0.01em; }
+        .bd-muted { color: #6a6690; }
+        .bd-card { background: #fff; border: 1px solid #e5e3f3; border-radius: 20px; min-width: 0; }
+        .bd-hello { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+        .bd-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 18px; border-radius: 12px; font-weight: 700; font-size: 15px; text-decoration: none; cursor: pointer; border: 1.5px solid #d8d5ec; background: #fff; color: #14123a; transition: border-color .15s, background .15s, transform .15s; white-space: nowrap; font-family: inherit; }
+        .bd-btn:hover { border-color: #b9aef0; background: #faf9ff; }
+        .bd-btn-main { border: 0; background: #5a35e6; color: #fff; font-weight: 800; box-shadow: 0 10px 22px -10px rgba(90,53,230,.7); }
+        .bd-btn-main:hover { background: #4a27d4; }
+        .bd-btn-sm { height: 40px; padding: 0 16px; border-radius: 10px; font-size: 14px; }
+        .bd-top { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+        .bd-bottom { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+        .bd-todo { list-style: none; margin: 0; padding: 0 10px 10px; display: flex; flex-direction: column; gap: 4px; }
+        .bd-todo li { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 14px; }
+        .bd-todo li.hot { background: #f7f4ff; }
+        .bd-ico { width: 42px; height: 42px; flex: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .bd-todo-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .bd-todo-txt span { font-size: 13px; color: #6a6690; overflow-wrap: anywhere; }
+        .bd-wallet { position: relative; overflow: hidden; background: #14123a; color: #fff; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+        .bd-wallet-glow { position: absolute; right: -70px; top: -90px; width: 240px; height: 240px; border-radius: 50%; background: linear-gradient(135deg, #22c8f0, #7040f0); opacity: .35; filter: blur(40px); pointer-events: none; }
+        .bd-wallet > *:not(.bd-wallet-glow) { position: relative; }
+        .bd-camp { padding: 20px 22px; display: flex; flex-direction: column; gap: 18px; }
+        .bd-camp-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+        .bd-pill { font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
+        .bd-pipe { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .bd-stage { display: flex; flex-direction: column; gap: 10px; padding-right: 12px; }
+        .bd-stage-top { display: flex; align-items: center; gap: 8px; }
+        .bd-dot { width: 28px; height: 28px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+        .bd-line { flex: 1; height: 3px; border-radius: 3px; }
+        .bd-stage .bd-num { font-weight: 800; font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+        .bd-stage-lbl { font-size: 13px; font-weight: 600; color: #6a6690; }
+        .bd-bar { height: 8px; border-radius: 999px; background: #eeecf7; overflow: hidden; }
+        .bd-bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22c8f0, #3090f0, #7040f0); }
+        .bd-faces { display: flex; align-items: center; padding-left: 8px; }
+        .bd-faces .bd-face { margin-left: -8px; }
+        .bd-face { border-radius: 50%; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; overflow: hidden; flex: none; }
+        .bd-face img { width: 100%; height: 100%; object-fit: cover; }
+        .bd-ring { flex: none; border-radius: 50%; padding: 2px; box-sizing: border-box; background: linear-gradient(135deg, #22c8f0, #7040f0); display: inline-flex; }
+        .bd-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 14px 22px; border-radius: 16px; border: 1px dashed #d8d5ec; color: #4a4770; text-decoration: none; }
+        .bd-row:hover { border-color: #b9aef0; background: #fff; }
+        .bd-feed { list-style: none; margin: 0; padding: 0; }
+        .bd-feed li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #f1f0f8; }
+        .bd-feed li:last-child { border-bottom: 0; }
+        .bd-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .bd-tile { background: #f6f6fc; border-radius: 14px; padding: 14px; }
+        .bd-tile .bd-num { display: block; font-weight: 800; font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+        .bd-tile span:last-child { font-size: 13px; color: #6a6690; font-weight: 600; }
+        .bd-link { font-weight: 700; font-size: 14px; color: #5a35e6; text-decoration: none; }
+        .bd-link:hover { color: #4423c4; text-decoration: underline; }
+        .bd-empty { padding: 28px 22px; text-align: center; color: #6a6690; }
+        @keyframes bdUp { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+        .bd > section { animation: bdUp .35s ease both; }
+        .bd > section:nth-of-type(2) { animation-delay: .04s } .bd > section:nth-of-type(3) { animation-delay: .08s } .bd > section:nth-of-type(4) { animation-delay: .12s }
+        @media (prefers-reduced-motion: reduce) { .bd > section { animation: none } }
+        @media (max-width: 1023px) {
+          .bd-top, .bd-bottom { grid-template-columns: minmax(0, 1fr); }
+        }
+        @media (max-width: 640px) {
+          .bd { padding: 20px 16px 96px; gap: 18px; }
+          .bd h1 { font-size: 28px; }
+          .bd h2 { font-size: 18px; }
+          .bd-hello-btns { width: 100%; }
+          .bd-hello-btns .bd-btn { flex: 1; }
+          .bd-hello-btns .bd-btn-sec { display: none; }
+          .bd-todo { padding: 0 8px 8px; gap: 2px; }
+          .bd-todo li { flex-wrap: wrap; gap: 12px; }
+          .bd-todo li .bd-ico { width: 40px; height: 40px; }
+          .bd-todo li .bd-btn { width: 100%; height: 44px; }
+          .bd-todo li:not(.hot) .bd-btn { display: none; }
+          .bd-todo li:not(.hot) { position: relative; }
+          .bd-todo li:not(.hot) .bd-todo-chev { display: block; }
+          .bd-wallet { padding: 18px; }
+          .bd-camp { padding: 16px; gap: 14px; }
+          .bd-pipe { background: #f6f6fc; border-radius: 14px; padding: 12px 6px; }
+          .bd-stage { padding-right: 0; align-items: center; text-align: center; gap: 6px; }
+          .bd-stage-top .bd-dot { width: 24px; height: 6px; border-radius: 999px; font-size: 0; }
+          .bd-stage-top .bd-line { display: none; }
+          .bd-stage .bd-num { font-size: 22px; line-height: 1; }
+          .bd-stage-lbl { font-size: 12px; line-height: 1.2; }
+          .bd-row { padding: 14px 16px; }
+          .bd-tile .bd-num { font-size: 24px; }
+        }
+        .bd-todo-chev { display: none; }
+        .bd a.bd-link, .bd a.bd-tlink, .bd a.bd-pill { min-height: 0; }
+        .bd-meta { font-size: 13px; color: #6a6690; }
+        .bd-ago-m { display: none; }
+        @media (max-width: 640px) { .bd-ago { display: none; } .bd-ago-m { display: inline; } .bd-feed li { align-items: flex-start; } }
+        .bd-todo-stretch { position: absolute; inset: 0; border-radius: 14px; min-height: 0 !important; }
       `}</style>
 
-      {/* TOP BAR */}
-      <div className="flex items-center justify-between mb-5 fade-up flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">
-            Welcome back, <span style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{profile?.name}</span> 👋
-          </h1>
-          <p className="text-sm text-gray-400 mt-0.5">Iată ce se întâmplă cu campaniile tale</p>
+      {/* SALUT */}
+      <section className="bd-hello">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span className="bd-muted" style={{ fontSize: 13, fontWeight: 600 }}>{todayLabel}</span>
+          <h1>Bună, {profile?.name || 'brand'}.</h1>
+          <p style={{ margin: 0, color: '#4a4770' }}>
+            {actionCount > 0
+              ? <>Ai <b style={{ color: '#5a35e6' }}>{actionCount === 1 ? 'un lucru' : `${actionCount} lucruri`}</b> care așteaptă după tine azi.</>
+              : 'Totul e la zi. Campaniile tale merg mai departe.'}
+          </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Link href="/brand/wallet" className="flex items-center gap-2 bg-white border-2 border-gray-100 hover:border-orange-200 transition pl-1.5 pr-3 py-1.5 rounded-full">
-            <div className="w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center">
-              <Coins className="w-3.5 h-3.5 text-amber-600" />
-            </div>
-            <span className="font-black text-sm text-gray-900">{fmt(creditsBalance)}</span>
-            <span className="text-xs font-bold text-orange-500">+ Top-up</span>
-          </Link>
-          <button onClick={load} className="p-2 rounded-xl border border-gray-200 bg-white text-gray-400 hover:text-orange-500 transition">
-            <RefreshCw className="w-4 h-4" />
+        <div className="bd-hello-btns" style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <Link href="/brand/wallet" className="bd-btn bd-btn-sec"><Plus className="w-4 h-4" /> Adaugă credite</Link>
+          <button type="button" onClick={openNewCampaign} className="bd-btn bd-btn-main" title={canCreateCampaign ? undefined : 'Ai nevoie de minimum 250 RON pentru a crea campanii'}>
+            {canCreateCampaign ? <Plus className="w-4 h-4" /> : <Lock className="w-4 h-4" />} Campanie nouă
           </button>
-          {canCreateCampaign ? (
-            <button
-              onClick={() => setShowSheet(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black text-white brand-grad"
-              style={{ boxShadow: '0 4px 14px rgba(90,53,230,0.3)' }}
-            >
-              <Plus className="w-4 h-4" /> New Campaign
-            </button>
+        </div>
+      </section>
+
+      {/* DE FĂCUT + PORTOFEL */}
+      <section className="bd-top">
+        <div className="bd-card" style={{ overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '18px 22px 12px' }}>
+            <h2>De făcut acum</h2>
+            {todos.length > 0
+              ? <span className="bd-muted" style={{ fontSize: 13, fontWeight: 600 }}>în ordinea urgenței</span>
+              : null}
+          </div>
+          {todos.length === 0 ? (
+            <div className="bd-empty" style={{ paddingTop: 8 }}>
+              <div className="bd-ico" style={{ margin: '0 auto 10px', background: '#e3f6ec', color: '#166534' }}><CheckCircle2 className="w-5 h-5" /></div>
+              <b style={{ color: '#14123a' }}>Nimic de rezolvat acum.</b>
+              <p style={{ margin: '2px 0 0', fontSize: 14 }}>Te anunțăm aici când un creator aplică sau trimite o postare.</p>
+            </div>
           ) : (
-            <Link
-              href="/brand/wallet"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black bg-gray-100 text-gray-400 border border-gray-200"
-              title="Ai nevoie de minimum 250 RON pentru a crea campanii"
-            >
-              <Lock className="w-4 h-4" /> New Campaign
-            </Link>
+            <ol className="bd-todo">
+              {todos.slice(0, 5).map((t, i) => {
+                const hot = t.tone === 'primary' || t.tone === 'danger'
+                const tone = TONES[t.tone]
+                const Icon = t.icon
+                const btnClass = `bd-btn bd-btn-sm ${hot ? 'bd-btn-main' : ''}`
+                return (
+                  <li key={t.key} className={hot ? 'hot' : ''} style={hot && t.tone === 'danger' ? { background: '#fff6f5' } : undefined}>
+                    <span className="bd-ico" style={{ background: tone.bg, color: tone.fg }}><Icon className="w-5 h-5" /></span>
+                    <span className="bd-todo-txt"><b>{t.title}</b>{t.sub && <span>{t.sub}</span>}</span>
+                    {t.href
+                      ? <Link href={t.href} className={btnClass} style={hot && t.tone === 'danger' ? { background: '#b42318', boxShadow: 'none' } : undefined}>{t.cta}</Link>
+                      : <button type="button" onClick={t.onClick} className={btnClass}>{t.cta}</button>}
+                    {!hot && (t.href
+                      ? <Link href={t.href} className="bd-todo-stretch bd-todo-chev" aria-label={t.cta} />
+                      : <button type="button" onClick={t.onClick} className="bd-todo-stretch bd-todo-chev" aria-label={t.cta} style={{ background: 'transparent', border: 0 }} />)}
+                    {!hot && <ChevronRight className="bd-todo-chev w-[18px] h-[18px] flex-none" style={{ color: '#a3a0bf' }} />}
+                  </li>
+                )
+              })}
+            </ol>
           )}
         </div>
-      </div>
 
-      {/* Draft warning */}
-      {draftCampaigns.length > 0 && (
-        <div className="mb-5 fade-up px-5 py-3.5 rounded-2xl bg-amber-50 border-2 border-amber-200 flex items-center justify-between" style={{ animationDelay: '.03s' }}>
-          <div className="flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-            <p className="text-sm font-bold text-amber-700">{draftCampaigns.length} campaign{draftCampaigns.length > 1 ? 's' : ''} in draft — not visible to influencers</p>
+        <div className="bd-wallet">
+          <span className="bd-wallet-glow" aria-hidden="true" />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#b9b5dc' }}>Portofel</span>
+            <Link href="/brand/wallet" className="bd-tlink" style={{ fontSize: 13, fontWeight: 700, color: '#c9bdff', textDecoration: 'none' }}>Istoric</Link>
           </div>
-          <Link href="/brand/campaigns" className="text-xs font-black text-amber-600 hover:underline">Publish →</Link>
-        </div>
-      )}
-
-      {!onboardingDone && (
-        <div className="fade-up" style={{ animationDelay: '.02s' }}>
-          <OnboardingChecklist role="brand" steps={onboardingSteps} />
-        </div>
-      )}
-
-      {profile && profile.verification_status !== 'verified' && (
-        <div className="mb-5 fade-up" style={{ animationDelay: '.04s' }}>
-          <VerificationBanner
-            status={profile.verification_status || 'unverified'}
-            rejectionReason={profile.verification_rejection_reason}
-          />
-        </div>
-      )}
-
-      {/* HERO */}
-      {featuredCampaign ? (
-        <div className="hero-bg rounded-3xl p-7 mb-5 text-white relative overflow-hidden fade-up" style={{ animationDelay: '.06s' }}>
-          <div className="glow-orb" />
-          <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-center">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-wider opacity-70 mb-2 flex items-center gap-2">
-                <span className={`w-1.5 h-1.5 rounded-full ${featuredCampaign.status === 'ACTIVE' || featuredCampaign.status === 'LIVE' ? 'bg-green-400' : 'bg-amber-400'}`} />
-                {featuredCampaign.status === 'ACTIVE' || featuredCampaign.status === 'LIVE' ? 'Campanie activă' : `Campanie ${STATUS_CFG[featuredCampaign.status]?.label || 'în lucru'}`}
-              </p>
-              <h2 className="text-2xl font-black mb-1.5 leading-tight">{featuredCampaign.title}</h2>
-              <p className="text-sm opacity-70 mb-5">
-                {featuredCampaign.platforms?.join(' · ')}
-                {featuredCampaign.deadline && <> · Deadline {fmtDate(featuredCampaign.deadline)}</>}
-              </p>
-              {featuredStats && (
-                <div className="flex gap-7 flex-wrap">
-                  <div><p className="text-xl font-black">{featuredStats.total}</p><p className="text-[11px] opacity-60 mt-0.5">Aplicații totale</p></div>
-                  <div><p className="text-xl font-black text-green-300">{featuredStats.accepted}</p><p className="text-[11px] opacity-60 mt-0.5">Acceptate</p></div>
-                  <div><p className="text-xl font-black text-amber-300">{featuredStats.pending}</p><p className="text-[11px] opacity-60 mt-0.5">În așteptare</p></div>
-                </div>
-              )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 13, color: '#b9b5dc' }}>Disponibil pentru campanii</span>
+            <span className="bd-num" style={{ fontFamily: 'var(--font-display, system-ui), system-ui, sans-serif', fontWeight: 800, fontSize: 40, letterSpacing: '-0.02em', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+              {num(available)} <span style={{ fontSize: 20, color: '#b9b5dc' }}>RON</span>
+            </span>
+          </div>
+          {creditsBalance > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.12)', overflow: 'hidden', display: 'flex' }}>
+                <span style={{ width: `${100 - reservedPct}%`, background: 'linear-gradient(90deg, #22c8f0, #7040f0)' }} />
+                <span style={{ width: `${reservedPct}%`, background: '#f0a35a' }} />
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 4, fontSize: 13, color: '#c9c5e8', fontVariantNumeric: 'tabular-nums' }}>
+                <span>Total {num(creditsBalance)} RON</span>
+                {creditsReserved > 0 && <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#f0a35a', marginRight: 6 }} />{num(creditsReserved)} RON rezervat</span>}
+              </div>
             </div>
-            <Link href={`/brand/campaigns/${featuredCampaign.id}`} className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 transition px-5 py-3 rounded-xl font-black text-sm flex-shrink-0 self-end lg:self-center">
-              Gestionează <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      ) : (
-        <div className="hero-bg rounded-3xl p-10 mb-5 text-white relative overflow-hidden fade-up text-center" style={{ animationDelay: '.06s' }}>
-          <div className="glow-orb" />
-          <div className="relative">
-            <Sparkles className="w-10 h-10 mx-auto mb-3 text-orange-300" />
-            <h2 className="text-2xl font-black mb-2">Lansează prima ta campanie</h2>
-            <p className="text-sm opacity-70 mb-5 max-w-md mx-auto">Conectează-te cu influenceri reali, pe barter. Setezi campania în sub 5 minute.</p>
-            {canCreateCampaign ? (
-              <button onClick={() => setShowSheet(true)} className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 transition px-6 py-3 rounded-xl font-black text-sm">
-                <Plus className="w-4 h-4" /> Creează campanie
-              </button>
-            ) : (
-              <Link href="/brand/wallet" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 transition px-6 py-3 rounded-xl font-black text-sm text-white">
-                <Lock className="w-4 h-4" /> Adaugă 250 RON pentru acces
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        {[
-          { label: 'Campanii active', value: activeCampaigns.length, icon: Zap, color: 'bg-orange-50 text-orange-500', href: '/brand/campaigns', trend: null as string | null },
-          { label: 'În așteptare', value: pendingCollabs.length, icon: Clock, color: 'bg-amber-50 text-amber-500', href: '/brand/collaborations', trend: pendingCollabs.length > 0 ? `${pendingCollabs.length} noi` : null },
-          { label: 'Total aplicații', value: totalApplications, icon: Users, color: 'bg-purple-50 text-purple-500', href: '/brand/collaborations', trend: null },
-          { label: 'Total cheltuit', value: fmt(totalSpent), icon: TrendingUp, color: 'bg-green-50 text-green-500', href: '/brand/wallet', trend: null },
-        ].map((s, i) => (
-          <Link key={s.label} href={s.href} className="stat-mini fade-up block" style={{ animationDelay: `${0.08 + i * 0.04}s` }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${s.color}`}><s.icon className="w-4 h-4" /></div>
-              {s.trend && <span className="text-[10px] font-black bg-green-50 text-green-600 px-2 py-0.5 rounded-full">{s.trend}</span>}
-            </div>
-            <p className="text-2xl font-black text-gray-900">{s.value}</p>
-            <p className="text-[11px] font-bold text-gray-400 mt-0.5">{s.label}</p>
+          )}
+          {creditsBalance <= 0 && <p style={{ margin: 0, fontSize: 13, color: '#c9c5e8' }}>Adaugă credite ca să poți lansa campanii și plăti creatorii.</p>}
+          <Link href="/brand/wallet" style={{ height: 46, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, background: '#fff', color: '#14123a', fontWeight: 800, textDecoration: 'none' }}>
+            <Plus className="w-4 h-4" /> Adaugă credite
           </Link>
-        ))}
-      </div>
+        </div>
+      </section>
 
-      {/* Two-column */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="card overflow-hidden fade-up" style={{ animationDelay: '.32s' }}>
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1.5px solid #f5f5f5' }}>
-            <h2 className="font-black text-gray-900 flex items-center gap-2"><Users className="w-4 h-4 text-orange-400" /> Aplicații recente</h2>
-            <Link href="/brand/collaborations" className="text-xs font-bold text-orange-500 hover:text-orange-700 flex items-center gap-1">Vezi toate <ChevronRight className="w-3.5 h-3.5" /></Link>
+      {/* CAMPANIILE TALE */}
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+          <h2 style={{ fontSize: 21 }}>Campaniile tale</h2>
+          {campaigns.length > 0 && <Link href="/brand/campaigns" className="bd-link">Toate campaniile</Link>}
+        </div>
+
+        {campaigns.length === 0 && (
+          <div className="bd-card bd-empty" style={{ padding: '36px 22px' }}>
+            <div className="bd-ico" style={{ margin: '0 auto 12px', background: '#efeaff', color: '#5a35e6' }}><Rocket className="w-5 h-5" /></div>
+            <b style={{ color: '#14123a', fontSize: 17 }}>Lansează prima ta campanie</b>
+            <p style={{ margin: '4px auto 16px', fontSize: 14, maxWidth: 420 }}>Conectează-te cu creatori reali. Setezi campania în sub 5 minute.</p>
+            <button type="button" onClick={openNewCampaign} className="bd-btn bd-btn-main">
+              {canCreateCampaign ? <><Plus className="w-4 h-4" /> Creează campanie</> : <><Lock className="w-4 h-4" /> Adaugă 250 RON pentru acces</>}
+            </button>
           </div>
-          {collabs.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="font-bold text-gray-400 text-sm">Nicio aplicație încă</p>
-            </div>
+        )}
+
+        {pipelineCampaigns.map(({ c, applied, selected, posted, approved, review, pending, slots }) => {
+          const type = TYPE_LABEL[c.campaign_type] || { label: 'Campanie', short: (c.title?.[0] || 'C').toUpperCase(), bg: '#efeaff', fg: '#4423c4' }
+          const d = daysLeft(c.deadline)
+          const paused = c.status === 'PAUSED'
+          const deadline = d === null ? null : d < 0 ? { t: 'Termen depășit', bg: '#f0eff7', fg: '#4a4770' } : d <= 3 ? { t: d === 0 ? 'Se închide azi' : d === 1 ? 'Se închide mâine' : `Se închide în ${d} zile`, bg: '#fff1e6', fg: '#9a4206' } : { t: `${d} zile rămase`, bg: '#f0eff7', fg: '#4a4770' }
+          const stages = [
+            { v: applied, l: 'aplicări', hint: pending > 0 },
+            { v: selected.length, l: 'selectați', hint: false },
+            { v: posted, l: 'au postat', hint: review > 0 },
+            { v: approved, l: 'aprobate', hint: false },
+          ]
+          const pct = slots > 0 ? Math.min(100, Math.round((selected.length / slots) * 100)) : 0
+          const faces = selected.slice(0, 4).map(x => x.influencer || { id: x.influencer_id, name: '?' })
+          return (
+            <article key={c.id} className="bd-card bd-camp">
+              <div className="bd-camp-head">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: '1 1 260px' }}>
+                  <span className="bd-ico" style={{ width: 44, height: 44, background: type.bg, color: type.fg, fontWeight: 800, fontSize: 13 }}>{type.short}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                    <Link href={`/brand/campaigns/${c.id}`} className="bd-tlink" style={{ fontSize: 17, fontWeight: 700, color: '#14123a', textDecoration: 'none', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{c.title}</Link>
+                    <span className="bd-muted" style={{ fontSize: 13 }}>{type.label}{Array.isArray(c.platforms) && c.platforms.length > 0 ? ` · ${c.platforms.map((p: string) => PLATFORM[String(p).toLowerCase()] || p).join(', ')}` : ''}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                  <span className="bd-pill" style={paused ? { background: '#f0eff7', color: '#4a4770' } : { background: '#e3f6ec', color: '#166534' }}>{paused ? 'Pe pauză' : 'Activă'}</span>
+                  {deadline && <span className="bd-pill" style={{ background: deadline.bg, color: deadline.fg }}>{deadline.t}</span>}
+                  <Link href={`/brand/campaigns/${c.id}`} className="bd-btn bd-btn-sm" style={{ height: 38 }}>Deschide</Link>
+                </div>
+              </div>
+
+              <div className="bd-pipe">
+                {stages.map((s, i) => {
+                  const on = s.v > 0
+                  return (
+                    <div key={s.l} className="bd-stage">
+                      <div className="bd-stage-top">
+                        <span className="bd-dot" style={s.hint ? { background: '#efeaff', color: '#4423c4', boxShadow: 'inset 0 0 0 2px #5a35e6' } : on ? { background: '#5a35e6', color: '#fff' } : { background: '#f0eff7', color: '#8783a8' }}>{i + 1}</span>
+                        {i < 3 && <span className="bd-line" style={{ background: stages[i + 1].v > 0 ? '#5a35e6' : '#e5e3f3' }} />}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span className="bd-num">{s.v}</span>
+                        <span className="bd-stage-lbl">{s.l}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {(review > 0 || pending > 0) && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {review > 0 && <Link href="/brand/collaborations?tab=review" className="bd-pill" style={{ background: '#efeaff', color: '#4423c4', textDecoration: 'none', minHeight: 0 }}>{plural(review, 'postare așteaptă', 'postări așteaptă')} aprobarea</Link>}
+                  {pending > 0 && <Link href="/brand/collaborations?tab=applied" className="bd-pill" style={{ background: '#e6f0ff', color: '#1d4fb8', textDecoration: 'none', minHeight: 0 }}>{plural(pending, 'aplicare nouă', 'aplicări noi')}</Link>}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
+                {slots > 0 && (
+                  <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600, color: '#4a4770' }}>
+                      <span>Locuri ocupate</span><span style={{ fontVariantNumeric: 'tabular-nums' }}>{selected.length} din {slots}</span>
+                    </div>
+                    <div className="bd-bar"><span style={{ width: `${pct}%` }} /></div>
+                  </div>
+                )}
+                {faces.length > 0 && (
+                  <div className="bd-faces">
+                    {faces.map((f: any, i: number) => <Face key={(f.id || '') + i} inf={f} size={30} />)}
+                    {selected.length > faces.length && <span className="bd-muted" style={{ marginLeft: 8, fontSize: 13, fontWeight: 600 }}>+{selected.length - faces.length}</span>}
+                  </div>
+                )}
+                {faces.length === 0 && slots === 0 && <span className="bd-muted" style={{ fontSize: 13 }}>Încă niciun creator selectat.</span>}
+              </div>
+            </article>
+          )
+        })}
+
+        {activeCampaigns.length > 4 && (
+          <Link href="/brand/campaigns" className="bd-link" style={{ alignSelf: 'flex-start' }}>Încă {activeCampaigns.length - 4} campanii active</Link>
+        )}
+
+        {otherCampaigns.map(c => {
+          const draft = c.status === 'DRAFT'
+          const list = collabs.filter(x => x.campaign_id === c.id)
+          return (
+            <Link key={c.id} href={draft ? `/brand/campaigns/${c.id}` : `/brand/campaigns/${c.id}/report`} className="bd-row">
+              <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+                <b style={{ color: '#14123a' }}>{c.title}</b>
+                {draft ? ' · draft, nepublicată' : ` · finalizată · ${plural(new Set(list.filter(isSelected).map(x => x.influencer_id)).size, 'creator', 'creatori')} · ${plural(list.filter(isApproved).length, 'postare aprobată', 'postări aprobate')}`}
+              </span>
+              <span style={{ fontWeight: 700, color: '#5a35e6' }}>{draft ? 'Continuă' : 'Vezi raportul'}</span>
+            </Link>
+          )
+        })}
+      </section>
+
+      {/* ACTIVITATE + REZULTATE */}
+      <section className="bd-bottom">
+        <div className="bd-card" style={{ padding: '18px 22px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+            <h2>Activitate recentă</h2>
+            <Link href="/brand/collaborations" className="bd-link" style={{ fontSize: 13 }}>Colaborări</Link>
+          </div>
+          {activity.length === 0 ? (
+            <p className="bd-muted" style={{ margin: '8px 0 4px', fontSize: 14 }}>Aici vezi ce fac creatorii în campaniile tale: aplicări, produse primite, postări trimise.</p>
           ) : (
-            <div className="divide-y divide-gray-50">
-              {collabs.slice(0, 5).map(c => {
-                const cfg = STATUS_CFG[c.status] ?? { bg: 'bg-gray-50', text: 'text-gray-500', dot: 'bg-gray-400', label: c.status }
-                return (
-                  <Link key={c.id} href="/brand/collaborations" className="flex items-center gap-3 px-5 py-3 row-hover transition">
-                    <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {c.influencer?.avatar
-                        ? <img src={c.influencer.avatar} className="w-full h-full object-cover" alt="" />
-                        : <span className="font-black text-orange-500 text-sm">{c.influencer?.name?.[0]?.toUpperCase() || '?'}</span>
-                      }
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-black text-gray-900 text-sm truncate">{c.influencer?.name || 'Unknown'}</p>
-                      <p className="text-xs text-gray-400 truncate">{c.campaigns?.title}</p>
-                    </div>
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-black ${cfg.bg} ${cfg.text} flex-shrink-0`}>
-                      <span className={`w-1 h-1 rounded-full ${cfg.dot}`} />{cfg.label}
-                    </span>
-                  </Link>
-                )
-              })}
-            </div>
+            <ul className="bd-feed">
+              {activity.map((a, i) => (
+                <li key={i}>
+                  <Face inf={a.inf || { name: '?' }} size={38} ring />
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 14, lineHeight: 1.4, display: 'flex', flexDirection: 'column', overflowWrap: 'anywhere' }}>
+                    <span><b>{a.inf?.name || 'Un creator'}</b> {a.what}</span>
+                    <span className="bd-meta">{a.camp}<span className="bd-ago-m">{a.camp ? ' · ' : ''}{timeAgo(a.at)}</span></span>
+                  </span>
+                  <span className="bd-ago" style={{ flex: 'none', fontSize: 12, color: '#8783a8', fontVariantNumeric: 'tabular-nums' }}>{timeAgo(a.at)}</span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
-        <div className="space-y-4">
-          <div className="card p-5 fade-up" style={{ animationDelay: '.36s' }}>
-            <h2 className="font-black text-gray-900 mb-3 text-sm">Acțiuni rapide</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {canCreateCampaign ? (
-                <button onClick={() => setShowSheet(true)} className="flex flex-col items-start gap-2 px-3 py-3 rounded-xl font-bold text-xs transition bg-orange-50 text-orange-600 hover:bg-orange-100 text-left">
-                  <Plus className="w-4 h-4" /> Creează campanie
-                </button>
-              ) : (
-                <Link href="/brand/wallet" className="flex flex-col items-start gap-2 px-3 py-3 rounded-xl font-bold text-xs transition bg-gray-50 text-gray-400 hover:bg-gray-100 text-left" title="250 RON necesari">
-                  <Lock className="w-4 h-4" /> Creează campanie
-                </Link>
-              )}
-              {[
-                { label: 'Caută influenceri', href: '/brand/influencers', icon: Search, color: 'bg-pink-50 text-pink-600 hover:bg-pink-100' },
-                { label: 'Colaborări', href: '/brand/collaborations', icon: Briefcase, color: 'bg-purple-50 text-purple-600 hover:bg-purple-100' },
-                { label: 'Top-up credite', href: '/brand/wallet', icon: DollarSign, color: 'bg-green-50 text-green-600 hover:bg-green-100' },
-              ].map(a => (
-                <Link key={a.href} href={a.href} className={`flex flex-col items-start gap-2 px-3 py-3 rounded-xl font-bold text-xs transition ${a.color}`}>
-                  <a.icon className="w-4 h-4" /> {a.label}
-                </Link>
-              ))}
-            </div>
+        <div className="bd-card" style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <h2>Rezultate până acum</h2>
+          <div className="bd-tiles">
+            <div className="bd-tile"><span className="bd-num">{num(approvedPosts)}</span><span>postări aprobate</span></div>
+            <div className="bd-tile"><span className="bd-num">{num(creators)}</span><span>creatori</span></div>
+            <div className="bd-tile"><span className="bd-num">{num(launched)}</span><span>campanii</span></div>
+            <div className="bd-tile"><span className="bd-num">{num(totalSpent)}</span><span>RON investiți</span></div>
           </div>
-
-          <div className="card p-5 fade-up" style={{ animationDelay: '.4s' }}>
-            <h2 className="font-black text-gray-900 mb-3 text-sm">Rezumat campanii</h2>
-            <div className="space-y-2">
-              {[
-                { label: 'Total campanii', value: campaigns.length, color: 'text-gray-700' },
-                { label: 'Active / Live', value: activeCampaigns.length, color: 'text-green-600' },
-                { label: 'Drafts', value: draftCampaigns.length, color: 'text-amber-600' },
-                { label: 'Finalizate', value: campaigns.filter(c => c.status === 'COMPLETED').length, color: 'text-blue-600' },
-                { label: 'Buget total', value: fmt(totalBudget), color: 'text-orange-600' },
-              ].map(s => (
-                <div key={s.label} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid #f5f5f5' }}>
-                  <p className="text-xs text-gray-500 font-semibold">{s.label}</p>
-                  <p className={`font-black text-xs ${s.color}`}>{s.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Link href="/brand/analytics" className="bd-link">Vezi analizele complete</Link>
         </div>
-      </div>
+      </section>
 
-      {/* Recent campaigns table */}
-      {campaigns.length > 0 && (
-        <div className="card overflow-hidden fade-up mt-4" style={{ animationDelay: '.44s' }}>
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1.5px solid #f5f5f5' }}>
-            <h2 className="font-black text-gray-900 flex items-center gap-2"><Briefcase className="w-4 h-4 text-orange-400" /> Campanii recente</h2>
-            <Link href="/brand/campaigns" className="text-xs font-bold text-orange-500 hover:text-orange-700 flex items-center gap-1">Vezi toate <ChevronRight className="w-3.5 h-3.5" /></Link>
-          </div>
-          <table className="w-full text-sm">
-            <thead style={{ borderBottom: '1px solid #f5f5f5', background: '#fafafa' }}>
-              <tr>
-                {['Campanie', 'Buget', 'Deadline', 'Status'].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {campaigns.slice(0, 5).map(c => {
-                const cfg = STATUS_CFG[c.status] ?? STATUS_CFG.DRAFT
-                return (
-                  <tr key={c.id} className="row-hover transition" style={{ borderBottom: '1px solid #f9f9f9' }}>
-                    <td className="px-5 py-3.5">
-                      <Link href={`/brand/campaigns/${c.id}`} className="font-black text-gray-900 hover:text-orange-500 transition">{c.title}</Link>
-                      <p className="text-xs text-gray-400">{c.platforms?.join(', ')}</p>
-                    </td>
-                    <td className="px-5 py-3.5 font-black text-green-600">{fmt(c.budget)}</td>
-                    <td className="px-5 py-3.5 text-xs text-gray-400">{fmtDate(c.deadline)}</td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black ${cfg.bg} ${cfg.text}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />{cfg.label}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Campaign type sheet */}
+      {/* Alegerea tipului de campanie */}
       {showSheet && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={() => setShowSheet(false)}>
+        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center" onClick={() => setShowSheet(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="relative bg-white rounded-t-3xl border-t border-gray-100 px-4 pt-4 pb-12" onClick={e => e.stopPropagation()}>
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+          <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md px-4 pt-4 pb-10 sm:pb-5" onClick={e => e.stopPropagation()} role="dialog" aria-label="Campanie nouă">
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5 sm:hidden" />
             <div className="flex items-center justify-between mb-4 px-1">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Cum vrei să creezi campania?</p>
-              <button onClick={() => setShowSheet(false)} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition">
-                <X className="w-3.5 h-3.5 text-gray-500" />
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6a6690' }}>Cum vrei să creezi campania?</p>
+              <button onClick={() => setShowSheet(false)} aria-label="Închide" className="w-8 h-8 rounded-full flex items-center justify-center transition" style={{ background: '#f0eff7', minHeight: 0 }}>
+                <X className="w-4 h-4" style={{ color: '#4a4770' }} />
               </button>
             </div>
             <button onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/wizard') }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-100 transition mb-3 text-left group">
-              <div className="w-14 h-14 rounded-2xl bg-orange-100 border border-orange-200 flex items-center justify-center flex-shrink-0 text-3xl group-hover:scale-105 transition">🚀</div>
+              className="w-full flex items-center gap-4 p-4 rounded-2xl transition mb-3 text-left group" style={{ border: '2px solid #cfc4fb', background: '#f7f4ff' }}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-white" style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}><Rocket className="w-6 h-6" /></div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="font-black text-gray-900 text-base">Rapid — Wizard</p>
-                  <span className="text-[10px] font-black bg-violet-600 text-white px-2 py-0.5 rounded-full">RECOMANDAT</span>
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                  <p className="font-black text-base" style={{ color: '#14123a' }}>Rapid — ghid pas cu pas</p>
+                  <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full" style={{ background: '#5a35e6' }}>RECOMANDAT</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">Pas cu pas, gata în 5 minute</p>
+                <p className="text-sm mt-0.5" style={{ color: '#6a6690' }}>Gata în 5 minute</p>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-orange-400 transition flex-shrink-0" />
+              <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: '#a3a0bf' }} />
             </button>
-            <p className="text-xs text-gray-400 text-center mb-3 font-medium">sau alege tipul manual</p>
-            <div className="flex gap-3 mb-3">
+            <p className="text-xs text-center mb-3 font-medium" style={{ color: '#8783a8' }}>sau alege tipul manual</p>
+            <div className="flex gap-3">
               <button onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/barter') }}
-                className="flex-1 flex items-center gap-3 p-3.5 rounded-2xl border-2 border-gray-100 hover:border-orange-200 hover:bg-orange-50/50 transition text-left group">
-                <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0 text-xl group-hover:scale-105 transition">🎁</div>
-                <div className="min-w-0"><p className="font-black text-gray-900 text-sm">Barter</p><p className="text-xs text-gray-500">Produs gratuit</p></div>
+                className="flex-1 flex items-center gap-3 p-3.5 rounded-2xl transition text-left hover:bg-violet-50" style={{ border: '2px solid #eeecf7' }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#efeaff', color: '#4423c4' }}><Gift className="w-5 h-5" /></div>
+                <div className="min-w-0"><p className="font-black text-sm" style={{ color: '#14123a' }}>Barter</p><p className="text-xs" style={{ color: '#6a6690' }}>Produs gratuit</p></div>
               </button>
               <button onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new') }}
-                className="flex-1 flex items-center gap-3 p-3.5 rounded-2xl border-2 border-gray-100 hover:border-purple-200 hover:bg-purple-50/50 transition text-left group">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center flex-shrink-0 text-xl group-hover:scale-105 transition">💰</div>
-                <div className="min-w-0"><p className="font-black text-gray-900 text-sm">Plătită</p><p className="text-xs text-gray-500">Cash per post</p></div>
+                className="flex-1 flex items-center gap-3 p-3.5 rounded-2xl transition text-left hover:bg-violet-50" style={{ border: '2px solid #eeecf7' }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#e6f0ff', color: '#1d4fb8' }}><Banknote className="w-5 h-5" /></div>
+                <div className="min-w-0"><p className="font-black text-sm" style={{ color: '#14123a' }}>Plătită</p><p className="text-xs" style={{ color: '#6a6690' }}>Plată per postare</p></div>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* AI Assistant Widget */}
       <AIAssistant />
     </div>
   )

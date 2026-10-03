@@ -527,7 +527,7 @@ export default function CampaignDetailPage() {
                         {inf?.niches && inf.niches.length > 0 && <div className="flex flex-wrap gap-1 mt-1.5">{inf.niches.slice(0, 3).map((n: string) => <span key={n} className="text-[11px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{n}</span>)}</div>}
                       </div>
 
-                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className="flex flex-col items-end gap-2 min-w-0 max-w-full">
                         <div className="flex items-center gap-1.5 flex-wrap justify-end">
                           <span className={`badge ${cst.bg} ${cst.text}`}><span className={`w-1.5 h-1.5 rounded-full ${cst.dot}`} /> {cst.label}</span>
                           {packageSent && <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">📦 Trimis</span>}
