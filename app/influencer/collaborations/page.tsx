@@ -791,6 +791,13 @@ export default function CollaborationsPage() {
 
   const notify = (msg: string, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
 
+  // Linkuri directe din dashboard: /influencer/collaborations?tab=invited | noReply | active | applied | completed
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab')
+    const map: Record<string, Tab> = { invited: 'Invited', noReply: 'Fara raspuns', active: 'Active', applied: 'Applied', completed: 'Completed' }
+    if (t && map[t]) setActiveTab(map[t])
+  }, [])
+
   const fetchCollabs = useCallback(async () => {
     try {
       const sb = createClient()
