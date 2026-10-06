@@ -50,12 +50,6 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
     try {
       const r = await fetch(`/api/deliverables?collabId=${collabId}`, { cache: 'no-store' })
       const j = await r.json()
-      if (r.ok && first.current) {
-        first.current = false
-        const l = (j.drafts || [])[0]
-        // se deschide singur când e ceva de făcut
-        if (l && ((role === 'brand' && l.status === 'pending') || (role === 'influencer' && l.status === 'changes_requested'))) setOpen(true)
-      }
       if (r.ok) { setDrafts(j.drafts || []); setSel(s => s && (j.drafts || []).some((d: Draft) => d.id === s) ? s : (j.drafts?.[0]?.id ?? null)) }
     } catch { /* ignore */ }
     setLoading(false)
@@ -170,8 +164,8 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
   return (
     <div style={{ ...box, display: 'flex', flexDirection: 'column', gap: 12, fontFamily: 'inherit' }}>
       <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
-        style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ fontSize: 14, fontWeight: 800, color: '#14123a' }}>{summary}{draft ? ` · ${fmtMB(draft.file_size)}` : ''}</span>
+        style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 14, fontWeight: 800, color: '#14123a', whiteSpace: 'nowrap' }}>{summary}{draft ? ` · ${fmtMB(draft.file_size)}` : ''}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {draft ? chip(draft.status) : <span style={{ fontSize: 12, fontWeight: 700, color: accent }}>Trimite la aprobare</span>}
           <span style={{ fontSize: 12, fontWeight: 800, color: accent }}>{draft ? 'Vezi draftul' : 'Deschide'}</span>
