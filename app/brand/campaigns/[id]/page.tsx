@@ -69,6 +69,7 @@ export default function CampaignDetailPage() {
   const [rejecting, setRejecting] = useState(false)
   const [profileModal, setProfileModal] = useState<any | null>(null)
   const [view, setView] = useState<'collabs' | 'stats'>('collabs')
+  const [openCards, setOpenCards] = useState<Record<string, boolean>>({})
   const [draftPending, setDraftPending] = useState<string[]>([])
 
   const notify = useCallback((msg: string, ok = true) => {
@@ -347,7 +348,7 @@ export default function CampaignDetailPage() {
     .filter(c => c.status === 'ACTIVE' && ((!!c.deliverable_submitted_at && !c.deliverable_approved_at) || draftPending.includes(c.id)))
     .map(c => ({ c, draft: draftPending.includes(c.id), proof: !!c.deliverable_submitted_at && !c.deliverable_approved_at }))
   const goToCollab = (id: string) => {
-    setView('collabs'); setTab('active')
+    setView('collabs'); setTab('active'); setOpenCards(o => ({ ...o, [id]: true }))
     setTimeout(() => document.getElementById(`collab-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80)
   }
 
@@ -394,6 +395,19 @@ export default function CampaignDetailPage() {
         .toast-anim { animation:slideD .3s ease; }
         .dd-anim { animation:slideD .18s ease; }
         .card-anim { animation:fadeUp .35s ease both; }
+        @media (max-width: 640px) {
+          .cl-card { flex-wrap: wrap; gap: 10px !important; padding: 14px !important; }
+          .cl-avatar { width: 44px !important; height: 44px !important; }
+          .cl-body { display: contents; }
+          .cl-head { flex: 1 1 0; min-width: 0; flex-direction: column; flex-wrap: nowrap !important; gap: 10px !important; }
+          .cl-head > div { max-width: 100%; }
+          .cl-head .cl-actions { align-items: flex-start !important; width: 100%; }
+          .cl-head .cl-actions > * { justify-content: flex-start !important; }
+          .cl-body > *:not(.cl-head) { flex: 0 0 100%; width: 100%; min-width: 0; box-sizing: border-box; margin-top: 0 !important; }
+          .cl-list { max-height: 460px !important; }
+          .cl-toolbar { flex-direction: column; align-items: flex-start !important; }
+          .cl-toolbar > div { flex-wrap: wrap; }
+        }
       `}</style>
 
       {/* ── Modals ── */}
@@ -479,7 +493,7 @@ export default function CampaignDetailPage() {
       {/* ── Colaborări ── */}
       {view === 'collabs' && (
       <div className="card p-5 card-anim" style={{ animationDelay: '.08s' }}>
-        <div className="flex items-center justify-between mb-4">
+        <div className="cl-toolbar flex items-center justify-between gap-3 flex-wrap mb-4">
           <div>
             <h2 className="font-black text-gray-900 text-lg">Aplicanți & Colaborări</h2>
             <p className="text-xs text-gray-400 mt-0.5">
@@ -548,7 +562,8 @@ export default function CampaignDetailPage() {
             {campaign.status === 'DRAFT' && <button className="btn-pub" onClick={() => changeStatus('ACTIVE')} disabled={statusLoading}><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> Publică campania</button>}
           </div>
         ) : (
-          <div className="space-y-3">
+          <>
+          <div className="cl-list space-y-3" style={{ maxHeight: 640, overflowY: 'auto', paddingRight: 6 }}>
             {visible.map(collab => {
               const inf = influencerData[collab.influencer_id]
               const cst = COLLAB_CFG[collab.status] ?? COLLAB_CFG.PENDING
@@ -561,19 +576,21 @@ export default function CampaignDetailPage() {
               const packageReceived = isActive && !!collab.package_received_at
               const noPackage = isActive && !collab.package_sent_at
               const infSlug = inf?.slug || collab.influencer_id
+              const needsAttention = hasPendingDeliverable || draftPending.includes(collab.id)
+              const expanded = openCards[collab.id] ?? needsAttention
               const cardBorder = (hasPendingDeliverable || draftPending.includes(collab.id)) ? 'border-orange-200 bg-orange-50/30' : packageReceived ? 'border-green-200 bg-green-50/20' : packageSent ? 'border-blue-200 bg-blue-50/20' : noPackage && isActive ? 'border-gray-200 bg-gray-50/30' : 'border-gray-100 hover:border-orange-100 hover:bg-orange-50/20'
 
               return (
-                <div key={collab.id} id={`collab-${collab.id}`} className={`flex items-start gap-4 p-4 rounded-2xl border transition ${cardBorder}`} style={{ scrollMarginTop: 90 }}>
+                <div key={collab.id} id={`collab-${collab.id}`} className={`cl-card flex items-start gap-4 p-4 rounded-2xl border transition ${cardBorder}`} style={{ scrollMarginTop: 90 }}>
                   {bulkMode && collab.status === 'INVITED' && <div className="flex items-center pt-1"><input type="checkbox" checked={selectedInfs.includes(collab.influencer_id)} onChange={e => setSelectedInfs(prev => e.target.checked ? [...prev, collab.influencer_id] : prev.filter(id => id !== collab.influencer_id))} className="w-4 h-4 accent-orange-500 cursor-pointer" /></div>}
                   {bulkRejectMode && collab.status === 'PENDING' && <div className="flex items-center pt-1"><input type="checkbox" checked={selectedRejectIds.includes(collab.id)} onChange={e => setSelectedRejectIds(prev => e.target.checked ? [...prev, collab.id] : prev.filter(id => id !== collab.id))} className="w-4 h-4 accent-red-500 cursor-pointer" /></div>}
 
-                  <button type="button" onClick={() => setProfileModal({ ...inf, _slug: infSlug })} className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center flex-shrink-0 overflow-hidden hover:ring-2 hover:ring-orange-300 transition cursor-pointer">
+                  <button type="button" onClick={() => setProfileModal({ ...inf, _slug: infSlug })} className="cl-avatar w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center flex-shrink-0 overflow-hidden hover:ring-2 hover:ring-orange-300 transition cursor-pointer">
                     {inf?.avatar ? <img src={inf.avatar} alt={inf.name} className="w-full h-full object-cover" /> : <span className="font-black text-orange-500 text-lg">{inf?.name?.[0]?.toUpperCase() ?? '?'}</span>}
                   </button>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <div className="cl-body flex-1 min-w-0">
+                    <div className="cl-head flex items-start justify-between gap-2 flex-wrap">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <button type="button" onClick={() => setProfileModal({ ...inf, _slug: infSlug })} className="font-black text-gray-900 hover:text-orange-500 transition text-left">{inf?.name ?? 'Influencer necunoscut'}</button>
@@ -583,7 +600,7 @@ export default function CampaignDetailPage() {
                         {inf?.niches && inf.niches.length > 0 && <div className="flex flex-wrap gap-1 mt-1.5">{inf.niches.slice(0, 3).map((n: string) => <span key={n} className="text-[11px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{n}</span>)}</div>}
                       </div>
 
-                      <div className="flex flex-col items-end gap-2 min-w-0 max-w-full">
+                      <div className="cl-actions flex flex-col items-end gap-2 min-w-0 max-w-full">
                         <div className="flex items-center gap-1.5 flex-wrap justify-end">
                           <span className={`badge ${cst.bg} ${cst.text}`}><span className={`w-1.5 h-1.5 rounded-full ${cst.dot}`} /> {cst.label}</span>
                           {packageSent && <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">📦 Trimis</span>}
@@ -612,6 +629,29 @@ export default function CampaignDetailPage() {
                       </div>
                     </div>
 
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                      {inf?.platforms && inf.platforms.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          {inf.platforms.slice(0, 3).map((p: any) => (
+                            <div key={p.platform} className="flex items-center gap-1 bg-gray-50 rounded-full px-2 py-0.5">
+                              {PLATFORM_ICON[p.platform?.toLowerCase()] ?? <Star className="w-3.5 h-3.5 text-gray-300" />}
+                              {p.followers && <span className="text-xs font-black text-gray-700">{p.followers}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {(() => { const reach = getFollowers(inf); if (reach > 0) return <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">~{fmtNum(Math.round(reach * 0.08))} impresii est.</span> })()}
+                      <span className="text-xs text-gray-300">·</span>
+                      <span className="text-xs text-gray-400">{collab.status === 'INVITED' ? 'Invitat' : 'Aplicat'} {new Date(collab.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}</span>
+                    </div>
+                    <div>
+                      <button type="button" onClick={() => setOpenCards(o => ({ ...o, [collab.id]: !expanded }))} aria-expanded={expanded}
+                        className="text-xs font-black text-violet-600 hover:text-violet-800 transition mt-2">
+                        {expanded ? 'Mai puțin ▲' : 'Vezi mai mult ▼'}
+                      </button>
+                    </div>
+                    {expanded && (
+                      <>
                     {collab.delivery_name && (
                       <div className="mt-3 p-3 rounded-xl border border-orange-200 bg-orange-50">
                         <div className="flex items-center justify-between mb-2">
@@ -653,26 +693,15 @@ export default function CampaignDetailPage() {
                       </div>
                     )}
 
-                    <div className="flex items-center gap-3 mt-2 flex-wrap">
-                      {inf?.platforms && inf.platforms.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          {inf.platforms.slice(0, 3).map((p: any) => (
-                            <div key={p.platform} className="flex items-center gap-1 bg-gray-50 rounded-full px-2 py-0.5">
-                              {PLATFORM_ICON[p.platform?.toLowerCase()] ?? <Star className="w-3.5 h-3.5 text-gray-300" />}
-                              {p.followers && <span className="text-xs font-black text-gray-700">{p.followers}</span>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {(() => { const reach = getFollowers(inf); if (reach > 0) return <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">~{fmtNum(Math.round(reach * 0.08))} impresii est.</span> })()}
-                      <span className="text-xs text-gray-300">·</span>
-                      <span className="text-xs text-gray-400">{collab.status === 'INVITED' ? 'Invitat' : 'Aplicat'} {new Date(collab.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}</span>
-                    </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )
             })}
           </div>
+          {visible.length > 3 && <p className="text-center text-xs font-bold text-gray-400 mt-2">Derulează lista · {visible.length} în această categorie</p>}
+          </>
         )}
       </div>
       )}
