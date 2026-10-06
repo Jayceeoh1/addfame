@@ -13,6 +13,7 @@ import {
 import Link from 'next/link'
 import { approveApplication, approveDeliverable, rejectDeliverable, cancelCollaboration } from '@/app/actions/collaborations'
 import { LeaveReview } from '@/components/shared/leave-review'
+import DraftReview from '@/components/shared/DraftReview'
 
 const STATUS_CFG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
   PENDING:   { label: 'Aplicat',     bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-400' },
@@ -839,6 +840,10 @@ export default function BrandCollaborations() {
               <X size={15} /> Refuză
             </button>
           </div>
+        )}
+
+        {(c.status === 'ACTIVE' || c.status === 'COMPLETED') && (
+          <DraftReview collabId={c.id} role="brand" />
         )}
 
         {c.status === 'ACTIVE' && !hasPendingDeliverable && !c.deliverable_rejected_at && (
