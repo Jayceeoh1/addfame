@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { syncInstagram } from '@/lib/instagram'
 
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID!
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET!
@@ -104,84 +105,34 @@ export async function GET(req: NextRequest) {
     const expiresIn: number = longData.expires_in || 3600
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
 
-    // ── 3. Profil ───────────────────────────────────────────────────────────
-    const profileFields = [
-      'id',
-      'user_id',
-      'username',
-      'account_type',
-      'media_count',
-      'followers_count',
-      'follows_count',
-      'biography',
-      'profile_picture_url',
-      'website',
-    ].join(',')
-
-    const profileUrl2 = new URL('https://graph.instagram.com/v21.0/me')
-    profileUrl2.searchParams.set('fields', profileFields)
-    profileUrl2.searchParams.set('access_token', accessToken)
-
-    const profileRes = await fetch(profileUrl2.toString())
-    const profile = await profileRes.json()
-
-    if (!profileRes.ok) {
-      console.error('[IG Callback] Profile fetch failed', { status: profileRes.status, data: profile })
-    }
-
-    // ── 4. Engagement rate — best-effort (nu blocăm conectarea dacă pică) ───
-    let engagementRate = 0
-    try {
-      const mediaUrl = new URL('https://graph.instagram.com/v21.0/me/media')
-      mediaUrl.searchParams.set('fields', 'like_count,comments_count')
-      mediaUrl.searchParams.set('limit', '12')
-      mediaUrl.searchParams.set('access_token', accessToken)
-
-      const mediaRes = await fetch(mediaUrl.toString())
-      const mediaData = await mediaRes.json()
-
-      if (mediaData.data?.length > 0 && profile.followers_count > 0) {
-        const totalEng = mediaData.data.reduce(
-          (s: number, p: any) => s + (p.like_count || 0) + (p.comments_count || 0),
-          0
-        )
-        engagementRate = (totalEng / mediaData.data.length / profile.followers_count) * 100
-      }
-    } catch (e) {
-      console.warn('[IG Callback] Engagement calc failed', e)
-    }
-
-    // ── 5. Salvare în DB (service role, bypass RLS) ─────────────────────────
+    // ── 3. Salvare token (tabel doar pentru server) + prima sincronizare ────
     const admin = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const { error: updateError } = await admin
-      .from('influencers')
-      .update({
-        instagram_connected: true,
-        instagram_handle: profile.username || null,
-        instagram_user_id: String(igUserId || profile.user_id || profile.id || ''),
-        instagram_access_token: accessToken,
-        instagram_token_expires: expiresAt,
-        ig_account_type: profile.account_type || null,
-        ig_followers: profile.followers_count || 0,
-        ig_following: profile.follows_count || 0,
-        ig_posts_count: profile.media_count || 0,
-        ig_bio: profile.biography || null,
-        ig_avatar: profile.profile_picture_url || null,
-        ig_engagement_rate: Math.round(engagementRate * 100) / 100,
-        ig_last_sync: new Date().toISOString(),
-      })
-      .eq('user_id', savedUserId)
+    const { data: inf } = await admin.from('influencers').select('id').eq('user_id', savedUserId).maybeSingle()
+    if (!inf) return NextResponse.redirect(profileUrl(host, 'instagram=error&reason=no_influencer'))
 
-    if (updateError) {
-      console.error('[IG Callback] DB update failed', updateError)
-      const msg = encodeURIComponent(updateError.message)
-      return NextResponse.redirect(profileUrl(host, `instagram=error&reason=db&msg=${msg}`))
+    // Un cont Instagram poate fi legat de un singur creator
+    if (igUserId) {
+      const { data: taken } = await admin.from('influencers').select('id')
+        .eq('instagram_user_id', igUserId).neq('id', inf.id).limit(1)
+      if (taken?.length) return NextResponse.redirect(profileUrl(host, 'instagram=error&reason=already_linked'))
     }
+
+    const sync = await syncInstagram(admin, inf.id, accessToken)
+    if (!sync.ok) {
+      const reason = sync.reason === 'not_professional' ? 'not_professional' : 'api'
+      return NextResponse.redirect(profileUrl(host, `instagram=error&reason=${reason}&msg=${encodeURIComponent(sync.message || '')}`))
+    }
+
+    await admin.from('instagram_private').upsert({
+      influencer_id: inf.id, ig_user_id: igUserId || null, access_token: accessToken,
+      token_expires: expiresAt, updated_at: new Date().toISOString(),
+    })
+    await admin.from('influencers').update({ instagram_user_id: igUserId || null }).eq('id', inf.id)
 
     return NextResponse.redirect(profileUrl(host, 'instagram=success'))
   } catch (e: any) {

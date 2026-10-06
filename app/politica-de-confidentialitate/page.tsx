@@ -78,6 +78,11 @@ export default function PrivacyPage() {
           <p>Datele publice ale profilului tău de influencer (nume, nișe, platforme, rate) sunt vizibile pentru brandurile înregistrate pe platformă.</p>
         </Section>
 
+        <Section title="5.1. Conectarea contului Instagram">
+          <p>Dacă alegi să conectezi un cont Instagram profesional (Business sau Creator), AddFame primește prin API-ul oficial Instagram, doar cu acordul tău: numele de utilizator, poza de profil, biografia, numărul de urmăritori și de postări, precum și ultimele postări (link, imagine, număr de aprecieri și comentarii). Le folosim exclusiv pentru a-ți afișa în profil statistici verificate și pentru ca brandurile să îți evalueze audiența.</p>
+          <p>Tokenul de acces este stocat securizat, accesibil doar serverelor AddFame, și nu este vizibil nici ție, nici brandurilor. Nu publicăm și nu trimitem mesaje în numele tău. Poți deconecta contul oricând din Profil → Rețele sociale, sau din setările Instagram (Aplicații și site-uri); la deconectare ștergem tokenul și toate datele Instagram sincronizate. Poți cere ștergerea și la <a href="mailto:privacy@addfame.ro">privacy@addfame.ro</a> sau prin opțiunea de ștergere a datelor din Instagram.</p>
+        </Section>
+
         <Section title="6. Drepturile tale">
           <p>Conform GDPR, ai dreptul la: <strong>acces</strong> (să știi ce date deținem), <strong>rectificare</strong> (să corectezi date incorecte), <strong>ștergere</strong> (să ceri ștergerea datelor), <strong>portabilitate</strong> (să primești datele în format structurat), <strong>opoziție</strong> (față de prelucrarea bazată pe interes legitim).</p>
           <p>Exercitați aceste drepturi scriind la <a href="mailto:privacy@addfame.ro">privacy@addfame.ro</a>. Răspundem în maxim 30 de zile.</p>

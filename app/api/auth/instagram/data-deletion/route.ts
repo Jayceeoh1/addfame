@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { wipeInstagram } from '@/lib/instagram'
 
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET!
 
@@ -71,25 +72,9 @@ export async function POST(req: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // Șterge imediat datele Instagram din influencers
-  const { error: updErr } = await admin
-    .from('influencers')
-    .update({
-      instagram_connected: false,
-      instagram_access_token: null,
-      instagram_token_expires: null,
-      instagram_handle: null,
-      instagram_user_id: null,
-      ig_followers: null,
-      ig_following: null,
-      ig_posts_count: null,
-      ig_bio: null,
-      ig_avatar: null,
-      ig_engagement_rate: null,
-      ig_account_type: null,
-      ig_last_sync: null,
-    })
-    .eq('instagram_user_id', igUserId)
+  let error: any = null
+  try { await wipeInstagram(admin, { instagram_user_id: igUserId }) } catch (e) { error = e }
+  const updErr = error
 
   if (updErr) {
     console.error('[IG DataDeletion] DB update failed', updErr)

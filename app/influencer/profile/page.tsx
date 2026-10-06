@@ -195,6 +195,8 @@ export default function ProfilePage() {
   const [priceYoutube, setPriceYoutube] = useState('')
   const [priceMin, setPriceMin] = useState('')
   const [igStatus, setIgStatus] = useState<'idle' | 'success' | 'error' | 'no_account'>('idle')
+  const [igErrMsg, setIgErrMsg] = useState('')
+  const [igErrDetail, setIgErrDetail] = useState('')
   const [erResult, setErResult] = useState<number | null>(null)
   const [igData, setIgData] = useState<{
     connected: boolean; handle: string; followers: number; following: number;
@@ -220,32 +222,22 @@ export default function ProfilePage() {
       const reason = params.get('reason')
       const msg = params.get('msg')
       console.error('[IG OAuth] error', { reason, msg })
+      setIgErrMsg(
+        reason === 'not_professional' ? 'Contul trebuie să fie Professional (Business sau Creator). În Instagram: Setări → Tip cont → Comută la cont profesional, apoi reconectează-te.'
+        : reason === 'already_linked' ? 'Acest cont Instagram este deja conectat la alt cont AddFame.'
+        : reason === 'denied' ? 'Ai refuzat permisiunile cerute de Instagram.'
+        : 'Încearcă din nou. Dacă problema persistă, contactează-ne.')
+      setIgErrDetail([reason, msg].filter(Boolean).join(' — '))
       window.history.replaceState({}, '', '/influencer/profile')
-      setTimeout(() => setIgStatus('idle'), 8000)
+      setTimeout(() => setIgStatus('idle'), 60000)
     }
   }, [])
 
   async function disconnectInstagram() {
     if (!confirm('Sigur vrei să deconectezi contul Instagram? Va trebui să te reconectezi ca să vezi date live.')) return
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('influencers').update({
-        instagram_connected: false,
-        instagram_access_token: null,
-        instagram_token_expires: null,
-        instagram_handle: null,
-        instagram_user_id: null,
-        ig_followers: null,
-        ig_following: null,
-        ig_posts_count: null,
-        ig_bio: null,
-        ig_avatar: null,
-        ig_engagement_rate: null,
-        ig_account_type: null,
-        ig_last_sync: null,
-      }).eq('user_id', user.id)
+      const r = await fetch('/api/auth/instagram/disconnect', { method: 'POST' })
+      if (!r.ok) throw new Error('disconnect failed')
       setIgData(null)
     } catch (e) {
       console.error('Disconnect failed', e)
@@ -580,7 +572,8 @@ export default function ProfilePage() {
           <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
           <div className="text-sm">
             <p className="font-semibold text-red-900">Conectarea Instagram a eșuat</p>
-            <p className="text-red-700">Încearcă din nou. Dacă problema persistă, contactează-ne.</p>
+            <p className="text-red-700">{igErrMsg || 'Încearcă din nou. Dacă problema persistă, contactează-ne.'}</p>
+            {igErrDetail && <p className="text-red-700" style={{ fontSize: 11, opacity: 0.8, wordBreak: 'break-word' }}>Cod: {igErrDetail}</p>}
           </div>
         </div>
       )}

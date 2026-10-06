@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { syncInstagram, refreshTokenIfNeeded } from '@/lib/instagram'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,63 +23,28 @@ export async function GET(req: NextRequest) {
   console.log('[Cron] Starting social sync...')
   let igSynced = 0, igErrors = 0
 
-  const { data: igInfluencers } = await admin
-    .from('influencers')
-    .select('id, user_id, instagram_access_token, instagram_token_expires, instagram_user_id')
-    .eq('instagram_connected', true)
-    .not('instagram_access_token', 'is', null)
+  const { data: rows } = await admin
+    .from('instagram_private')
+    .select('influencer_id, access_token, token_expires')
 
-  for (const inf of igInfluencers || []) {
+  for (const r of rows || []) {
     try {
-      if (inf.instagram_token_expires && new Date(inf.instagram_token_expires) < new Date()) {
-        const refreshRes = await fetch(
-          `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${inf.instagram_access_token}`
-        )
-        const refreshData = await refreshRes.json()
-        if (refreshData.access_token) {
-          const newExpiry = new Date(Date.now() + refreshData.expires_in * 1000).toISOString()
-          await admin.from('influencers').update({
-            instagram_access_token: refreshData.access_token,
-            instagram_token_expires: newExpiry,
-          }).eq('id', inf.id)
-          inf.instagram_access_token = refreshData.access_token
-        } else {
-          await admin.from('influencers').update({ instagram_connected: false }).eq('id', inf.id)
-          continue
-        }
+      const token = await refreshTokenIfNeeded(admin, r.influencer_id, r.access_token, r.token_expires)
+      if (!token) {
+        // expirat — creatorul trebuie să se reconecteze
+        await admin.from('influencers').update({ instagram_connected: false }).eq('id', r.influencer_id)
+        igErrors++; continue
       }
-
-      const profileRes = await fetch(
-        `https://graph.instagram.com/v21.0/me?fields=id,username,biography,followers_count,follows_count,media_count,profile_picture_url&access_token=${inf.instagram_access_token}`
-      )
-      const profile = await profileRes.json()
-      if (!profile.id) { igErrors++; continue }
-
-      const mediaRes = await fetch(
-        `https://graph.instagram.com/v21.0/me/media?fields=like_count,comments_count&limit=12&access_token=${inf.instagram_access_token}`
-      )
-      const mediaData = await mediaRes.json()
-      let engagementRate = 0
-      if (mediaData.data?.length > 0 && profile.followers_count > 0) {
-        const totalEng = mediaData.data.reduce((s: number, p: any) =>
-          s + (p.like_count || 0) + (p.comments_count || 0), 0)
-        engagementRate = (totalEng / mediaData.data.length / profile.followers_count) * 100
+      const res = await syncInstagram(admin, r.influencer_id, token)
+      if (res.ok) igSynced++
+      else {
+        igErrors++
+        if (res.reason === 'token' || res.reason === 'not_professional')
+          await admin.from('influencers').update({ instagram_connected: false }).eq('id', r.influencer_id)
       }
-
-      await admin.from('influencers').update({
-        ig_followers: profile.followers_count || 0,
-        ig_following: profile.follows_count || 0,
-        ig_posts_count: profile.media_count || 0,
-        ig_bio: profile.biography || null,
-        ig_avatar: profile.profile_picture_url || null,
-        ig_engagement_rate: Math.round(engagementRate * 100) / 100,
-        ig_last_sync: new Date().toISOString(),
-      }).eq('id', inf.id)
-
-      igSynced++
-      await new Promise(r => setTimeout(r, 200))
+      await new Promise(r => setTimeout(r, 250))
     } catch (e: any) {
-      console.error(`[Cron] IG error for ${inf.id}:`, e.message)
+      console.error(`[Cron] IG error for ${r.influencer_id}:`, e.message)
       igErrors++
     }
   }
