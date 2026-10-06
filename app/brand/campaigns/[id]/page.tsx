@@ -4,12 +4,13 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { updateCampaignStatus, getCampaignFeeInfo } from '@/app/actions/campaigns'
-import { approveApplication } from '@/app/actions/collaborations'
+import { approveApplication, approveDeliverable } from '@/app/actions/collaborations'
 import { duplicateBarterCampaign } from '@/app/actions/barter-campaigns'
 import { getPlatformSettings } from '@/app/actions/admin'
 import { ArrowLeft, CheckCircle, AlertCircle, X, Check, Star, MessageSquare, ArrowUpRight, Send, Users } from 'lucide-react'
 import Link from 'next/link'
 import { LeaveReview } from '@/components/shared/leave-review'
+import DraftReview from '@/components/shared/DraftReview'
 
 import { CampaignHero } from '@/components/brand/campaigns/CampaignHero'
 import { CampaignAnalytics } from '@/components/brand/campaigns/CampaignAnalytics'
@@ -67,6 +68,8 @@ export default function CampaignDetailPage() {
   const [rejectReason, setRejectReason] = useState('')
   const [rejecting, setRejecting] = useState(false)
   const [profileModal, setProfileModal] = useState<any | null>(null)
+  const [view, setView] = useState<'collabs' | 'stats'>('collabs')
+  const [draftPending, setDraftPending] = useState<string[]>([])
 
   const notify = useCallback((msg: string, ok = true) => {
     setToast({ msg, ok })
@@ -189,6 +192,15 @@ export default function CampaignDetailPage() {
         // Selecția trece prin server: verifică locurile plătite / escrow și actualizează contorul
         const res: any = await approveApplication(collabId)
         if (res?.error) throw new Error(res.error)
+      } else if (newStatus === 'COMPLETED') {
+        // Aprobarea postării trece prin server: plata, scorul creatorului și notificările
+        const res: any = await approveDeliverable(collabId)
+        if (res?.error) {
+          throw new Error(res.error === 'No deliverable submitted'
+            ? 'Influencerul nu a trimis încă dovada postării.'
+            : res.error === 'Already completed' ? 'Colaborarea este deja finalizată.' : res.error)
+        }
+        update.deliverable_approved_at = update.completed_at
       } else {
         const { error } = await sb.from('collaborations').update(update).eq('id', collabId)
         if (error) throw error
@@ -278,6 +290,14 @@ export default function CampaignDetailPage() {
     finally { setBulkInviting(false) }
   }
 
+  useEffect(() => {
+    if (!campaign?.id) return
+    fetch(`/api/deliverables/pending?campaignId=${campaign.id}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : { collabIds: [] })
+      .then(j => setDraftPending(j.collabIds || []))
+      .catch(() => {})
+  }, [campaign?.id, collabs.length])
+
   // ── Analytics ──────────────────────────────────────────────────────────────
   const activeAndCompleted = collabs.filter(c => ['ACTIVE', 'COMPLETED'].includes(c.status))
   const completedCollabs = collabs.filter(c => c.status === 'COMPLETED')
@@ -322,6 +342,14 @@ export default function CampaignDetailPage() {
     if (sortBy === 'rating') return (infB?.avg_rating || 0) - (infA?.avg_rating || 0)
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   })
+
+  const reviewItems = collabs
+    .filter(c => c.status === 'ACTIVE' && ((!!c.deliverable_submitted_at && !c.deliverable_approved_at) || draftPending.includes(c.id)))
+    .map(c => ({ c, draft: draftPending.includes(c.id), proof: !!c.deliverable_submitted_at && !c.deliverable_approved_at }))
+  const goToCollab = (id: string) => {
+    setView('collabs'); setTab('active')
+    setTimeout(() => document.getElementById(`collab-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80)
+  }
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) return (
@@ -410,18 +438,46 @@ export default function CampaignDetailPage() {
         }}
       />
 
-      <CampaignAnalytics
-        campaign={campaign} collabs={collabs} counts={counts}
-        totalReach={totalReach} totalSpent={totalSpent}
-        completionRate={completionRate} avgRating={avgRating}
-        costPerCompleted={costPerCompleted} budgetUsedPct={budgetUsedPct}
-        activeAndCompleted={activeAndCompleted} completedCollabs={completedCollabs}
-        reviews={reviews}
-      />
+      {/* ── De revizuit ── */}
+      {reviewItems.length > 0 && (
+        <div className="card p-5 mb-5 card-anim" style={{ borderColor: '#fcd34d', background: '#fffbeb' }}>
+          <p className="font-black text-amber-900 text-base mb-1">{reviewItems.length} {reviewItems.length === 1 ? 'livrabil așteaptă' : 'livrabile așteaptă'} răspunsul tău</p>
+          <p className="text-xs text-amber-800 mb-3">Apasă pe un creator ca să vezi draftul sau dovada postării și să decizi.</p>
+          <div className="flex flex-wrap gap-2">
+            {reviewItems.map(({ c, draft, proof }) => (
+              <button key={c.id} type="button" onClick={() => goToCollab(c.id)}
+                className="inline-flex items-center gap-2 bg-white border border-amber-300 hover:border-amber-500 rounded-xl px-3 py-2 text-sm font-bold text-gray-800 transition">
+                {influencerData[c.influencer_id]?.name || 'Creator'}
+                <span className="text-[11px] font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">{draft ? 'Draft video' : 'Dovadă post'}{draft && proof ? ' + dovadă' : ''}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-      <CampaignSavings agencyCosts={agencyCosts} collabs={collabs} />
+      {/* ── Navigare principală ── */}
+      <div className="flex gap-2 mb-5">
+        {([{ k: 'collabs', l: `Colaborări (${collabs.length})` }, { k: 'stats', l: 'Statistici și economii' }] as const).map(t => (
+          <button key={t.k} className={`tab-btn ${view === t.k ? 'on' : ''}`} onClick={() => setView(t.k)}>{t.l}</button>
+        ))}
+      </div>
+
+      {view === 'stats' && (
+        <>
+          <CampaignAnalytics
+            campaign={campaign} collabs={collabs} counts={counts}
+            totalReach={totalReach} totalSpent={totalSpent}
+            completionRate={completionRate} avgRating={avgRating}
+            costPerCompleted={costPerCompleted} budgetUsedPct={budgetUsedPct}
+            activeAndCompleted={activeAndCompleted} completedCollabs={completedCollabs}
+            reviews={reviews}
+          />
+          <CampaignSavings agencyCosts={agencyCosts} collabs={collabs} />
+        </>
+      )}
 
       {/* ── Colaborări ── */}
+      {view === 'collabs' && (
       <div className="card p-5 card-anim" style={{ animationDelay: '.08s' }}>
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -505,10 +561,10 @@ export default function CampaignDetailPage() {
               const packageReceived = isActive && !!collab.package_received_at
               const noPackage = isActive && !collab.package_sent_at
               const infSlug = inf?.slug || collab.influencer_id
-              const cardBorder = hasPendingDeliverable ? 'border-orange-200 bg-orange-50/30' : packageReceived ? 'border-green-200 bg-green-50/20' : packageSent ? 'border-blue-200 bg-blue-50/20' : noPackage && isActive ? 'border-gray-200 bg-gray-50/30' : 'border-gray-100 hover:border-orange-100 hover:bg-orange-50/20'
+              const cardBorder = (hasPendingDeliverable || draftPending.includes(collab.id)) ? 'border-orange-200 bg-orange-50/30' : packageReceived ? 'border-green-200 bg-green-50/20' : packageSent ? 'border-blue-200 bg-blue-50/20' : noPackage && isActive ? 'border-gray-200 bg-gray-50/30' : 'border-gray-100 hover:border-orange-100 hover:bg-orange-50/20'
 
               return (
-                <div key={collab.id} className={`flex items-start gap-4 p-4 rounded-2xl border transition ${cardBorder}`}>
+                <div key={collab.id} id={`collab-${collab.id}`} className={`flex items-start gap-4 p-4 rounded-2xl border transition ${cardBorder}`} style={{ scrollMarginTop: 90 }}>
                   {bulkMode && collab.status === 'INVITED' && <div className="flex items-center pt-1"><input type="checkbox" checked={selectedInfs.includes(collab.influencer_id)} onChange={e => setSelectedInfs(prev => e.target.checked ? [...prev, collab.influencer_id] : prev.filter(id => id !== collab.influencer_id))} className="w-4 h-4 accent-orange-500 cursor-pointer" /></div>}
                   {bulkRejectMode && collab.status === 'PENDING' && <div className="flex items-center pt-1"><input type="checkbox" checked={selectedRejectIds.includes(collab.id)} onChange={e => setSelectedRejectIds(prev => e.target.checked ? [...prev, collab.id] : prev.filter(id => id !== collab.id))} className="w-4 h-4 accent-red-500 cursor-pointer" /></div>}
 
@@ -569,6 +625,10 @@ export default function CampaignDetailPage() {
                       </div>
                     )}
 
+                    {(isActive || collab.status === 'COMPLETED') && (
+                      <div className="mt-3"><DraftReview collabId={collab.id} role="brand" onChanged={() => fetch(`/api/deliverables/pending?campaignId=${campaign.id}`).then(r => r.json()).then(j => setDraftPending(j.collabIds || [])).catch(() => {})} /></div>
+                    )}
+
                     {collab.deliverable_url && (
                       <div className="mt-3 p-3 rounded-xl border-2 border-orange-200 bg-orange-50">
                         <div className="flex items-center justify-between mb-1.5">
@@ -615,6 +675,7 @@ export default function CampaignDetailPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }

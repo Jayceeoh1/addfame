@@ -1,5 +1,6 @@
 // @ts-nocheck
 'use client'
+import { useState } from 'react'
 import { Calendar, DollarSign, Edit2, Eye, MoreHorizontal, Pause, Play, RefreshCw, Save, TrendingUp, Users, X, EyeOff, Archive, Copy } from 'lucide-react'
 import { STATUS_CFG, fmt, fmtDate, daysLeft } from './types'
 
@@ -14,6 +15,7 @@ export function CampaignHero({ campaign, collabs, counts, editing, editForm, set
   const days = daysLeft(campaign.deadline)
   const expired = days < 0
   const urgent = !expired && days <= 3
+  const [showDetails, setShowDetails] = useState(false)
 
   return (
     <div className="card p-6 mb-5 card-anim">
@@ -85,7 +87,7 @@ export function CampaignHero({ campaign, collabs, counts, editing, editForm, set
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         {[
           { icon: DollarSign, label: campaign.campaign_type === 'BARTER' ? 'Valoare ofertă' : 'Buget total', color: 'text-green-600', bg: 'bg-green-50',
             value: editing ? null : campaign.campaign_type === 'BARTER' ? `${(campaign.offer_value || 0).toLocaleString('ro-RO')} RON` : fmt(campaign.budget),
@@ -109,7 +111,15 @@ export function CampaignHero({ campaign, collabs, counts, editing, editForm, set
       </div>
 
       {/* Detalii campanie */}
-      <CampaignDetails campaign={campaign} editing={editing} editForm={editForm} setEditForm={setEditForm} />
+      {!editing && (
+        <button type="button" onClick={() => setShowDetails(v => !v)} aria-expanded={showDetails}
+          className="text-sm font-bold text-violet-600 hover:text-violet-800 transition">
+          {showDetails ? 'Ascunde detaliile campaniei ▲' : 'Vezi detaliile campaniei ▼'}
+        </button>
+      )}
+      {(editing || showDetails) && (
+        <div className="mt-4"><CampaignDetails campaign={campaign} editing={editing} editForm={editForm} setEditForm={setEditForm} /></div>
+      )}
     </div>
   )
 }
