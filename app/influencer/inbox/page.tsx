@@ -409,7 +409,8 @@ function InboxContent() {
               {messages.map((m, i) => {
                 const isMe = m.sender_role === 'influencer'
                 const isAI = m.sender_role === 'system' && !DRAFT_MSG.test(m.content || '')
-                const isDraft = m.sender_role === 'system' && DRAFT_MSG.test(m.content || '')
+                // (isDraft de mai jos: recunoscut după conținut, indiferent de sender_role)
+                const isDraft = DRAFT_MSG.test(m.content || '')
                 const showDay = i === 0 || fmtDay(messages[i - 1].created_at) !== fmtDay(m.created_at)
                 return (
                   <Fragment key={m.id}>

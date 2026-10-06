@@ -358,7 +358,7 @@ function InboxContent() {
               )}
               {messages.map((m, i) => {
                 const isMe = m.sender_role === 'brand'
-                if (m.sender_role === 'system' && DRAFT_MSG.test(m.content || '')) {
+                if (DRAFT_MSG.test(m.content || '')) {
                   return (
                     <Fragment key={m.id}>
                       {(i === 0 || fmtDay(messages[i - 1].created_at) !== fmtDay(m.created_at)) && <div className="ib-day">{fmtDay(m.created_at)}</div>}

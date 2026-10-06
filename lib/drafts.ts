@@ -68,8 +68,9 @@ export async function notify(
 ) {
   if (!userId) return
   try {
-    await admin.from('notifications').insert({ user_id: userId, title, body, link, read: false })
-  } catch { /* notificarea nu trebuie să blocheze fluxul */ }
+    const { error } = await admin.from('notifications').insert({ user_id: userId, title, body, link, read: false })
+    if (error) console.error('[drafts] notify a eșuat', error.code, error.message)
+  } catch (e) { console.error('[drafts] notify excepție', e) }
 }
 
 export type DraftEvent = 'uploaded' | 'changes' | 'approved'
@@ -78,13 +79,24 @@ const fmtSec = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2
 /** Postează în inbox-ul colaborării un mesaj de sistem despre draft (apare la ambele părți, în timp real). */
 export async function postDraftMessage(
   admin: SupabaseClient, collabId: string, actorUserId: string, event: DraftEvent, text: string,
-) {
-  try {
-    await admin.from('messages').insert({
-      collaboration_id: collabId, sender_id: actorUserId, sender_role: 'system',
-      content: `::draft:${event}::\n${text}`,
-    })
-  } catch { /* mesajul nu trebuie să blocheze fluxul */ }
+  actorRole: 'brand' | 'influencer' = 'brand',
+): Promise<boolean> {
+  const content = `::draft:${event}::\n${text}`
+  // supabase-js NU aruncă excepții: returnează { error }. Verificăm explicit.
+  // Încercăm întâi 'system'; dacă baza de date refuză valoarea, reîncercăm cu rolul real al autorului
+  // (inbox-ul recunoaște mesajul după conținut, nu după rol).
+  for (const role of ['system', actorRole]) {
+    try {
+      const { error } = await admin.from('messages').insert({
+        collaboration_id: collabId, sender_id: actorUserId, sender_role: role, content,
+      })
+      if (!error) return true
+      console.error('[drafts] postDraftMessage a eșuat', { role, code: error.code, message: error.message })
+    } catch (e) {
+      console.error('[drafts] postDraftMessage excepție', e)
+    }
+  }
+  return false
 }
 
 /** Rezumat scurt al comentariilor pe secunde (primele 5). */

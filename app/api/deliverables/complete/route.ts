@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       `${access.influencerName} a trimis un draft video pentru „${access.title}”.`,
       '/brand/collaborations')
     await postDraftMessage(admin, d.collaboration_id, user.id, 'uploaded',
-      `Am trimis draftul video v${d.version} pentru „${access.title}”. Îl poți revizui acum.`)
+      `Am trimis draftul video v${d.version} pentru „${access.title}”. Îl poți revizui acum.`, 'influencer')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Eroare server' }, { status: 500 })
