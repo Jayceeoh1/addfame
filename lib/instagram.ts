@@ -61,7 +61,7 @@ export async function syncInstagram(
   }
 
   const now = new Date().toISOString()
-  await admin.from('influencers').update({
+  const { error: upErr } = await admin.from('influencers').update({
     instagram_connected: true,
     instagram_handle: profile.username || null,
     ig_account_type: profile.account_type || null,
@@ -73,6 +73,7 @@ export async function syncInstagram(
     ig_engagement_rate: engagement,
     ig_last_sync: now,
   }).eq('id', influencerId)
+  if (upErr) return { ok: false, reason: 'api', message: 'db: ' + upErr.message }
 
   if (media.length) {
     await admin.from('instagram_media').upsert(
