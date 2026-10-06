@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationsBell } from '@/components/shared/notifications-bell'
 import { fontVars } from '@/lib/fonts'
+import './brand-ui.css'
 import AdminFloatingButton from '@/components/AdminFloatingButton'
 import {
   LayoutDashboard, Briefcase, Users, MessageSquare,

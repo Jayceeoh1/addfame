@@ -56,7 +56,9 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${checked ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+      role="switch" aria-checked={checked}
+      className="bs-tg relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0"
+      style={{ background: checked ? '#5a35e6' : '#d8d5ec' }}
     >
       <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
     </button>
@@ -67,7 +69,7 @@ function SettingRow({ label, description, checked, onChange }: {
   label: string; description?: string; checked: boolean; onChange: (v: boolean) => void
 }) {
   return (
-    <div className="flex items-center justify-between py-3">
+    <div className="flex items-center justify-between py-3" style={{ minHeight: 56 }}>
       <div className="flex-1 pr-4">
         <p className="text-sm font-medium">{label}</p>
         {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
@@ -400,55 +402,76 @@ export default function BrandSettingsPage() {
   )
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Settings</h1>
-      <p className="text-muted-foreground mb-8">Gestionează contul, preferințele și securitatea brandului</p>
+    <div className="bu bs">
+      <style>{`
+        .bs input:not([type=file]):not([type=checkbox]), .bs select { height: 44px; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 0 14px; background: #fff; color: #14123a; font-size: 14px; box-sizing: border-box; }
+        .bs textarea { border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 10px 14px; background: #fff; color: #14123a; font-size: 14px; }
+        .bs input:disabled { background: #f6f6fc; color: #8783a8; }
+        .bs input:focus, .bs select:focus, .bs textarea:focus { border-color: #5a35e6; outline: none; box-shadow: 0 0 0 3px rgba(90,53,230,.1); }
+        .bs input.pl-9:not([type=file]):not([type=checkbox]) { padding-left: 36px; } .bs input.pr-10:not([type=file]):not([type=checkbox]) { padding-right: 44px; }
+        .bs label.block { font-size: 12px; font-weight: 700; color: #4a4770; }
+        .bs button.bg-gradient-to-r, .bs a.bs-p { min-height: 44px; border-radius: 12px; background: #5a35e6; color: #fff; font-weight: 700; border: 0; box-shadow: 0 10px 22px -12px rgba(90,53,230,.7); }
+        .bs button.bg-gradient-to-r:hover { background: #4423c4; }
+        .bs button.bg-gradient-to-r:disabled { opacity: .55; }
+        .bs [data-slot=button], .bs button[class*="border-input"], .bs button[class*="bg-destructive"] { min-height: 44px; border-radius: 12px; }
+        .bs-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+        .bs-tab { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid #e5e3f3; background: #fff; color: #4a4770; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+        .bs-tab.on { background: #14123a; border-color: #14123a; color: #fff; }
+        .bs-tab.dg { color: #b42318; border-color: #f3c9c4; } .bs-tab.dg.on { background: #b42318; border-color: #b42318; color: #fff; }
+        .bs-save { position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: flex-end; margin: 24px -20px -20px; padding: 14px 20px; background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border-top: 1px solid #eeecf7; border-radius: 0 0 20px 20px; }
+        .bs-tg { position: relative; } .bs-tg::after { content: ''; position: absolute; inset: -10px -4px; }
+        .bs-dr { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .bs-msg { border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+        @media (max-width: 767px) { .bs-save { margin: 20px -16px -16px; padding: 12px 16px; } .bs-save button { width: 100%; } .bs-tab { padding: 0 14px; } }
+      `}</style>
+      <div className="bu-head">
+        <div>
+          <div className="bu-label" style={{ marginBottom: 6 }}>Cont</div>
+          <h1>Setări</h1>
+          <p className="bu-muted bu-sm" style={{ margin: '6px 0 0' }}>Gestionează contul, preferințele și securitatea brandului</p>
+        </div>
+      </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col gap-5">
 
         {/* Sidebar */}
-        <div className="lg:w-56 flex-shrink-0">
-          <nav className="space-y-1">
+        <div>
+          <nav className="bs-nav">
             {tabs.map(tab => {
               const Icon = tab.icon
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition text-left ${activeTab === tab.id
-                    ? 'bg-primary text-white'
-                    : tab.id === 'danger'
-                      ? 'text-destructive hover:bg-destructive/10'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
+                  className={`bs-tab${activeTab === tab.id ? ' on' : ''}${tab.id === 'danger' ? ' dg' : ''}`}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
                   {tab.label}
                 </button>
               )
             })}
-            <div className="pt-2 border-t border-border mt-2">
+            <div style={{ display: "contents" }}>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition"
+                className="bs-tab"
               >
                 <LogOut className="w-4 h-4" />
-                Sign Out
+                Deconectare
               </button>
             </div>
           </nav>
         </div>
 
         {/* Content */}
-        <div className="flex-1 space-y-5 min-w-0">
+        <div className="space-y-5 min-w-0" style={{ maxWidth: 860 }}>
 
           {saveSuccess && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-2 text-sm text-green-600">
+            <div className="bs-msg" style={{ background: "#dcf5ec", color: "#14532d" }}>
               <CheckCircle className="w-4 h-4 flex-shrink-0" /> Settings saved successfully.
             </div>
           )}
           {saveError && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2 text-sm text-destructive">
+            <div className="bs-msg" style={{ background: "#fde8e6", color: "#b42318" }}>
               <AlertCircle className="w-4 h-4 flex-shrink-0" /> {saveError}
             </div>
           )}
@@ -457,9 +480,9 @@ export default function BrandSettingsPage() {
           {activeTab === 'brand' && (
             <>
               {/* Logo */}
-              <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bu-card bu-card-pad">
                 <h2 className="font-bold text-lg mb-5 flex items-center gap-2"><Building2 className="w-5 h-5" /> Brand Logo</h2>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-5 flex-wrap">
                   <div className="relative">
                     <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center overflow-hidden ring-4 ring-primary/20">
                       {logoPreview
@@ -489,7 +512,7 @@ export default function BrandSettingsPage() {
               </div>
 
               {/* Brand Info */}
-              <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bu-card bu-card-pad">
                 <h2 className="font-bold text-lg mb-5">Brand Information</h2>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -573,7 +596,7 @@ export default function BrandSettingsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end mt-6">
+                <div className="bs-save">
                   <Button onClick={saveBrandInfo} disabled={saving} className="bg-gradient-to-r from-primary to-accent">
                     {saving ? 'Saving...' : 'Save Changes'}
                   </Button>
@@ -581,7 +604,7 @@ export default function BrandSettingsPage() {
               </div>
 
               {/* Export */}
-              <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bu-card bu-card-pad">
                 <h2 className="font-bold text-lg mb-2 flex items-center gap-2"><Download className="w-5 h-5" /> Export Data</h2>
                 <p className="text-sm text-muted-foreground mb-4">Descarcă toate datele brandului și campaniile ca fișier JSON.</p>
                 <Button variant="outline" onClick={handleExportData}>
@@ -593,7 +616,7 @@ export default function BrandSettingsPage() {
 
           {/* NOTIFICATIONS */}
           {activeTab === 'notifications' && (
-            <div className="bg-card border border-border rounded-xl p-6">
+            <div className="bu-card bu-card-pad">
               <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Bell className="w-5 h-5" /> Notification Preferences</h2>
               <p className="text-sm text-muted-foreground mb-5">Alege despre ce vrei să fii notificat.</p>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Channels</p>
@@ -610,7 +633,7 @@ export default function BrandSettingsPage() {
                 <SettingRow label="Actualizări Plăți" description="Activitate credite, facturare și plăți" checked={notifications.payment_updates} onChange={v => setNotifications(p => ({ ...p, payment_updates: v }))} />
                 <SettingRow label="Raport Săptămânal" description="Rezumat al performanței campaniilor în fiecare luni" checked={notifications.weekly_report} onChange={v => setNotifications(p => ({ ...p, weekly_report: v }))} />
               </div>
-              <div className="flex justify-end mt-6">
+              <div className="bs-save">
                 <Button onClick={() => saveSection('notifications')} disabled={saving} className="bg-gradient-to-r from-primary to-accent">
                   {saving ? 'Saving...' : 'Save Preferences'}
                 </Button>
@@ -620,7 +643,7 @@ export default function BrandSettingsPage() {
 
           {/* PRIVACY */}
           {activeTab === 'privacy' && (
-            <div className="bg-card border border-border rounded-xl p-6">
+            <div className="bu-card bu-card-pad">
               <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Shield className="w-5 h-5" /> Privacy Settings</h2>
               <p className="text-sm text-muted-foreground mb-5">Controlează cum apare brandul tău influencerilor.</p>
               <div className="divide-y divide-border">
@@ -629,7 +652,7 @@ export default function BrandSettingsPage() {
                 <SettingRow label="Permite Contact de la Influenceri" description="Influencerii îți pot trimite mesaje directe" checked={privacy.allow_influencer_contact} onChange={v => setPrivacy(p => ({ ...p, allow_influencer_contact: v }))} />
                 <SettingRow label="Afișează Mărimea Companiei" description="Afișează mărimea companiei pe profilul tău" checked={privacy.show_company_size} onChange={v => setPrivacy(p => ({ ...p, show_company_size: v }))} />
               </div>
-              <div className="flex justify-end mt-6">
+              <div className="bs-save">
                 <Button onClick={() => saveSection('privacy')} disabled={saving} className="bg-gradient-to-r from-primary to-accent">
                   {saving ? 'Saving...' : 'Save Settings'}
                 </Button>
@@ -640,11 +663,11 @@ export default function BrandSettingsPage() {
           {/* SECURITY */}
           {activeTab === 'security' && (
             <>
-              <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bu-card bu-card-pad">
                 <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Mail className="w-5 h-5" /> Change Email</h2>
                 <p className="text-sm text-muted-foreground mb-5">Un link de confirmare va fi trimis la noul tău email.</p>
-                {emailSuccess && <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-2 text-sm text-green-600 mb-4"><CheckCircle className="w-4 h-4" /> Confirmation email sent! Check your inbox.</div>}
-                {emailError && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2 text-sm text-destructive mb-4"><AlertCircle className="w-4 h-4" /> {emailError}</div>}
+                {emailSuccess && <div className="bs-msg mb-4" style={{ background: "#dcf5ec", color: "#14532d" }}><CheckCircle className="w-4 h-4" /> Confirmation email sent! Check your inbox.</div>}
+                {emailError && <div className="bs-msg mb-4" style={{ background: "#fde8e6", color: "#b42318" }}><AlertCircle className="w-4 h-4" /> {emailError}</div>}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Current Email</label>
@@ -660,11 +683,11 @@ export default function BrandSettingsPage() {
                 </div>
               </div>
 
-              <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bu-card bu-card-pad">
                 <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Lock className="w-5 h-5" /> Change Password</h2>
                 <p className="text-sm text-muted-foreground mb-5">Use a strong password with at least 8 characters, uppercase, numbers and special characters.</p>
-                {passwordSuccess && <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-2 text-sm text-green-600 mb-4"><CheckCircle className="w-4 h-4" /> Password changed successfully!</div>}
-                {passwordError && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2 text-sm text-destructive mb-4"><AlertCircle className="w-4 h-4" /> {passwordError}</div>}
+                {passwordSuccess && <div className="bs-msg mb-4" style={{ background: "#dcf5ec", color: "#14532d" }}><CheckCircle className="w-4 h-4" /> Password changed successfully!</div>}
+                {passwordError && <div className="bs-msg mb-4" style={{ background: "#fde8e6", color: "#b42318" }}><AlertCircle className="w-4 h-4" /> {passwordError}</div>}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Current Password</label>
@@ -702,17 +725,16 @@ export default function BrandSettingsPage() {
           {activeTab === 'billing' && (
             <div className="space-y-5">
               {/* Date facturare salvate */}
-              <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bu-card bu-card-pad">
                 <BillingDetailsForm />
               </div>
 
               {/* Link către wallet */}
-              <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bu-card bu-card-pad">
                 <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><CreditCard className="w-5 h-5" /> Credite & Plăți</h2>
                 <p className="text-sm text-muted-foreground mb-4">Gestionează creditele și istoricul plăților din Wallet.</p>
                 <a href="/brand/wallet"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white transition"
-                  style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                  className="bu-btn p big">
                   Mergi la Wallet →
                 </a>
               </div>
@@ -723,7 +745,7 @@ export default function BrandSettingsPage() {
           {/* SHIPPING ADDRESS */}
           {activeTab === 'shipping' && (
             <div className="space-y-6">
-              <div className="bg-card border rounded-xl p-6">
+              <div className="bu-card bu-card-pad">
                 <div className="flex items-center gap-3 mb-1">
                   <Package className="w-5 h-5 text-indigo-500" />
                   <h2 className="font-bold text-lg">Adresă expediere colete</h2>
@@ -785,7 +807,7 @@ export default function BrandSettingsPage() {
 
                 {/* Preview */}
                 {shippingAddr.contact && shippingAddr.street && (
-                  <div className="mt-5 bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+                  <div className="mt-5 rounded-xl p-4" style={{ background: "#efeaff" }}>
                     <p className="text-xs font-black text-indigo-600 uppercase tracking-wider mb-2">Preview adresă expeditor</p>
                     <p className="text-sm font-bold text-gray-800">{shippingAddr.contact}</p>
                     {shippingAddr.phone && <p className="text-xs text-gray-600">📞 {shippingAddr.phone}</p>}
@@ -794,10 +816,10 @@ export default function BrandSettingsPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between flex-wrap gap-3 mt-6 pt-4 border-t border-gray-100">
                   <p className="text-xs text-gray-400">* Câmpuri obligatorii pentru generarea AWB</p>
                   <button onClick={saveShippingAddress} disabled={shippingSaving}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black text-white transition disabled:opacity-60 ${shippingSaved ? 'bg-green-500' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
+                    className={`flex items-center gap-2 px-5 min-h-[44px] rounded-xl text-sm font-black text-white transition disabled:opacity-60 ${shippingSaved ? 'bg-green-600' : 'bg-[#5a35e6] hover:bg-[#4423c4]'}`}>
                     {shippingSaving ? (
                       <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Se salvează...</>
                     ) : shippingSaved ? (
@@ -809,7 +831,7 @@ export default function BrandSettingsPage() {
                 </div>
               </div>
 
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-start gap-3">
+              <div className="rounded-xl p-4 flex items-start gap-3" style={{ background: "#fff1c2" }}>
                 <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-amber-700">
                   <p className="font-bold mb-1">Cum funcționează</p>
@@ -821,11 +843,11 @@ export default function BrandSettingsPage() {
 
           {/* DANGER ZONE */}
           {activeTab === 'danger' && (
-            <div className="bg-card border border-destructive/30 rounded-xl p-6">
+            <div className="bu-card bu-card-pad" style={{ borderColor: "#f3c9c4" }}>
               <h2 className="font-bold text-lg mb-1 text-destructive flex items-center gap-2"><Trash2 className="w-5 h-5" /> Danger Zone</h2>
               <p className="text-sm text-muted-foreground mb-6">Aceste acțiuni sunt ireversibile. Te rugăm să procedezi cu atenție.</p>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="bs-dr p-4 border border-border rounded-xl">
                   <div>
                     <p className="font-medium text-sm">Pausează Toate Campaniile</p>
                     <p className="text-xs text-muted-foreground">Pausează temporar toate campaniile active</p>
@@ -836,7 +858,7 @@ export default function BrandSettingsPage() {
                     showSuccess()
                   }}>Pausează Tot</Button>
                 </div>
-                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="bs-dr p-4 border border-border rounded-xl">
                   <div>
                     <p className="font-medium text-sm">Dezactivează Contul</p>
                     <p className="text-xs text-muted-foreground">Ascunde temporar profilul brandului tău</p>
@@ -847,7 +869,7 @@ export default function BrandSettingsPage() {
                     showSuccess()
                   }}>Dezactivează</Button>
                 </div>
-                <div className="flex items-center justify-between p-4 border border-destructive/30 bg-destructive/5 rounded-lg">
+                <div className="bs-dr p-4 border border-destructive/30 bg-destructive/5 rounded-xl">
                   <div>
                     <p className="font-medium text-sm text-destructive">Șterge Contul</p>
                     <p className="text-xs text-muted-foreground">Șterge permanent brandul și toate campaniile</p>

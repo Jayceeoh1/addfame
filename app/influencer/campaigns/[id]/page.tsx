@@ -8,13 +8,11 @@ import { applyToCampaign } from '@/app/actions/collaborations'
 import {
   ArrowLeft, Clock, CheckCircle, AlertCircle, Send,
   Globe, Calendar, Users, Zap, Star, MessageSquare,
-  Instagram, Youtube, Tag, Shield, ExternalLink, Hash, Quote
+  Instagram, Youtube, Tag, Shield, ExternalLink, Hash, Quote, Ban
 } from 'lucide-react'
 import Link from 'next/link'
-import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon } from '@/components/shared/platform-icons'
+import { CampaignHero, CampaignStats, CampaignSections, CAMPAIGN_CSS, daysLeft, fmtDate } from '../campaign-sections'
 
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })
-const daysLeft = (d: string) => Math.ceil((new Date(d).getTime() - Date.now()) / 864e5)
 
 export default function CampaignBriefPage() {
   const params = useParams()
@@ -97,7 +95,7 @@ export default function CampaignBriefPage() {
         }
         setApplied(true); setAlreadyApplied(true)
         setShowApplyForm(false)
-        notify('✅ Aplicație trimisă! Brandul te va contacta în curând.')
+        notify('Aplicație trimisă! Brandul te va contacta în curând.')
       } else {
         notify(result.error || 'Eroare la aplicare', false)
       }
@@ -106,8 +104,9 @@ export default function CampaignBriefPage() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <div className="w-10 h-10 rounded-full border-t-purple-500 border-purple-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+    <div className="iu" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid #e5e3f3', borderTopColor: '#7040f0', animation: 'cpspin .8s linear infinite' }} />
+      <style>{`@keyframes cpspin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 
@@ -140,491 +139,132 @@ export default function CampaignBriefPage() {
   const hasYouTube = campaign.tasks_yt_short || campaign.tasks_yt_video || campaign.tasks_yt_mention
   const hasFacebook = campaign.tasks_fb_post || campaign.tasks_fb_story || campaign.tasks_fb_reel || campaign.tasks_fb_share
 
+  const cleanTitle = campaign.title?.replace(/^\[Barter\]\s*\[Barter\]\s*/i, '[Barter] ')
+  const spotsLeft = (campaign.max_influencers || 0) - (campaign.current_influencers || 0)
+  const closed = campaign?.registrations_open === false
+  const applyDone = alreadyApplied || applied
+
   return (
-    <div className="pb-32" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+    <div className="iu cp">
+      <style>{CAMPAIGN_CSS}</style>
       <style>{`
-        .card { background: white; border-radius: 16px; border: 1px solid #f0f0f0; }
-        .section-label { font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
-        .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
-        .check-item:last-child { border-bottom: none; padding-bottom: 0; }
-        .check-dot { width: 18px; height: 18px; border-radius: 50%; background: #dcfce7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-        .platform-header { padding: 9px 14px; background: #f9fafb; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
-        .platform-block { border: 1px solid #f0f0f0; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
-        .platform-block:last-child { margin-bottom: 0; }
-        @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .anim { animation: slideUp .35s ease both; }
+        .cp { max-width: 1120px; }
+        .cp-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .cp-back { width: 44px; height: 44px; flex: none; padding: 0; }
+        .cp-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+        .cp-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+        .cp-side { display: block; position: sticky; top: 16px; }
+        .cp-apply { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+        .cp-addr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 14px; border-radius: 14px; background: #fff7ed; border: 1px solid #fbdcc0; }
+        .cp-addr .iu-input { font-size: 16px; width: 100%; }
+        .cp-addr .full { grid-column: 1 / -1; }
+        .cp-ta { width: 100%; height: auto; min-height: 84px; padding: 12px 14px; resize: none; font-size: 16px; line-height: 1.5; }
+        .cp-toast { position: fixed; top: 76px; right: 20px; z-index: 60; display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 14px; background: #fff; font-size: 14px; font-weight: 700; max-width: 380px; box-shadow: 0 18px 40px -18px rgba(20,18,58,.4); }
+        .cp-spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: cpspin .8s linear infinite; }
+        @keyframes cpspin { to { transform: rotate(360deg); } }
+        @media (max-width: 960px) {
+          .cp-grid { display: flex; flex-direction: column; align-items: stretch; }
+          .cp-side { display: contents; }
+        }
+        @media (max-width: 767px) {
+          .cp-toast { top: 12px; left: 12px; right: 12px; max-width: none; }
+          .cp-apply { position: sticky; bottom: var(--mobile-nav-h, 0px); z-index: 20; margin: 0 -16px; border-radius: 20px 20px 0 0; border-bottom: 0; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -14px 30px -18px rgba(20,18,58,.35); max-height: 78dvh; overflow-y: auto; }
+          .cp-apply .iu-btn { min-height: 48px; }
+        }
       `}</style>
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold max-w-sm ${toast.ok ? 'bg-white border-2 border-green-200 text-green-700' : 'bg-white border-2 border-red-200 text-red-600'}`}>
-          {toast.ok ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+        <div className="cp-toast" role="status" style={{ border: `1.5px solid ${toast.ok ? '#bfe8d4' : '#f3c9c4'}`, color: toast.ok ? '#14532d' : '#b42318' }}>
+          {toast.ok ? <CheckCircle size={16} style={{ flex: 'none' }} /> : <AlertCircle size={16} style={{ flex: 'none' }} />}
           {toast.msg}
         </div>
       )}
 
-      {/* Back + title */}
-      <div className="flex items-center gap-3 mb-4 px-1">
-        <Link href="/influencer/campaigns" className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition flex-shrink-0">
-          <ArrowLeft className="w-4 h-4 text-gray-600" />
-        </Link>
-        <div className="flex-1 min-w-0">
-          <p className="font-black text-gray-900 truncate text-sm">{campaign.title?.replace(/^\[Barter\]\s*\[Barter\]\s*/i, '[Barter] ')}</p>
-          <p className="text-xs text-gray-400">{campaign.brand_name}</p>
+      {/* Back */}
+      <div className="cp-top">
+        <Link href="/influencer/campaigns" className="iu-btn cp-back" aria-label="Înapoi la campanii"><ArrowLeft size={18} /></Link>
+        <div className="iu-col" style={{ flex: 1, minWidth: 0 }}>
+          <b style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cleanTitle}</b>
+          <span className="iu-xs iu-muted">{campaign.brand_name}</span>
         </div>
-        {alreadyApplied && (
-          <span className="flex items-center gap-1.5 text-xs font-black text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
-            <CheckCircle className="w-3.5 h-3.5" /> Aplicat
-          </span>
+        {applyDone && (
+          <span className="iu-chip" style={{ background: '#dcf5ec', color: '#14532d' }}><CheckCircle size={13} /> Aplicat</span>
         )}
       </div>
 
-      <div className="max-w-lg mx-auto px-4 pt-0 pb-4">
+      {/* ── HERO ── */}
+      <CampaignHero c={campaign} applied={applyDone} imageUrl={campaign.offer_image_url} />
 
-        {/* ── HERO ── */}
-        <div className="relative overflow-hidden rounded-2xl mb-3">
-          {campaign.offer_image_url ? (
-            <div className="relative" style={{ height: 220 }}>
-              <img src={campaign.offer_image_url} alt={campaign.title} className="w-full h-full object-cover" />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 20%, rgba(0,0,0,0.75))' }} />
-            </div>
-          ) : (
-            <div className="relative flex items-end" style={{ height: 180, background: 'linear-gradient(135deg,#1c1033,#3b1d6e)' }}>
-              <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #9333ea 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+      {/* ── STATS ── */}
+      <CampaignStats c={campaign} />
+
+      <div className="cp-grid">
+        <div className="cp-main">
+
+          <CampaignSections c={campaign} onCopy={(text, msg) => { navigator.clipboard.writeText(text); notify(msg) }} />
+
+          {closed && !alreadyApplied && !applied && (
+            <div className="cp-note" style={{ background: '#fff4f2', borderColor: '#f3c9c4', textAlign: 'center', alignItems: 'center', padding: 18 }}>
+              <Ban size={26} color="#b42318" />
+              <b style={{ color: '#b42318' }}>Brandul nu mai acceptă înscrieri</b>
+              <span className="iu-sm" style={{ color: '#b42318' }}>Locurile disponibile s-au ocupat pentru această campanie.</span>
             </div>
           )}
-          <div className="absolute top-12 left-4 flex gap-2 flex-wrap">
-            <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'rgba(251,191,36,0.92)', color: '#78350f' }}>
-              {campaign.campaign_type === 'BARTER' ? '🎁 Barter' : '💰 Plătit'}
-            </span>
-            {urgent && <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'rgba(239,68,68,0.9)', color: 'white' }}>🔥 Urgent</span>}
-            {!expired && (campaign.max_influencers || 0) - (campaign.current_influencers || 0) > 0 && (
-              <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'rgba(34,197,94,0.9)', color: '#14532d' }}>
-                {(campaign.max_influencers || 0) - (campaign.current_influencers || 0)} locuri rămase
-              </span>
-            )}
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
-            <p className="text-xs font-bold mb-1" style={{ color: 'rgba(255,255,255,0.6)', letterSpacing: '.06em', textTransform: 'uppercase' }}>{campaign.brand_name}</p>
-            <h1 className="font-bold text-white leading-tight" style={{ fontSize: 18 }}>{campaign.title?.replace(/^\[Barter\]\s*\[Barter\]\s*/i, '[Barter] ')}</h1>
-          </div>
         </div>
 
-        {/* ── STATS ROW ── */}
-        <div className="grid grid-cols-3 anim card mb-3" style={{ animationDelay: '.04s', border: '1px solid #f0f0f0' }}>
-          <div className="py-3 px-4 text-center" style={{ borderRight: '1px solid #f0f0f0' }}>
-            {isBarter ? (
+        {/* ── Apply (coloană lipicioasă pe desktop, bară jos pe mobil) ── */}
+        <div className="cp-side">
+          <div className="iu-card cp-apply">
+            {applyDone ? (
+              <div className="iu-row" style={{ justifyContent: 'center', gap: 10, padding: '12px 14px', borderRadius: 14, background: '#dcf5ec', color: '#14532d' }}>
+                <CheckCircle size={20} style={{ flex: 'none' }} />
+                <b className="iu-sm">Ai aplicat deja la această campanie!</b>
+              </div>
+            ) : showApplyForm ? (
               <>
-                <p className="font-bold text-sm" style={{ color: '#4423c4', margin: 0 }}>{campaign.offer_name || 'Produs gratuit'}</p>
+                {needsAddress && (
+                  <div className="cp-addr">
+                    <span className="iu-label full" style={{ color: '#9a4206' }}>Adresă de livrare produs</span>
+                    <input className="iu-input full" value={address.name} onChange={e => setAddress(p => ({ ...p, name: e.target.value }))} placeholder="Nume complet *" />
+                    <input className="iu-input" value={address.phone} onChange={e => setAddress(p => ({ ...p, phone: e.target.value }))} placeholder="Telefon *" />
+                    <input className="iu-input" value={address.postal_code} onChange={e => setAddress(p => ({ ...p, postal_code: e.target.value }))} placeholder="Cod poștal" />
+                    <input className="iu-input full" value={address.address} onChange={e => setAddress(p => ({ ...p, address: e.target.value }))} placeholder="Stradă, număr, bloc, ap. *" />
+                    <input className="iu-input" value={address.city} onChange={e => setAddress(p => ({ ...p, city: e.target.value }))} placeholder="Oraș *" />
+                    <input className="iu-input" value={address.county} onChange={e => setAddress(p => ({ ...p, county: e.target.value }))} placeholder="Județ *" />
+                  </div>
+                )}
+                <textarea className="iu-input cp-ta" value={applyMsg} onChange={e => setApplyMsg(e.target.value)}
+                  placeholder="Mesaj opțional pentru brand — de ce ești potrivit pentru această campanie..."
+                  rows={3} />
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => setShowApplyForm(false)} className="iu-btn big" style={{ flex: 1 }}>Anulează</button>
+                  <button onClick={handleApply} disabled={applying} className="iu-btn p big" style={{ flex: 1.4 }}>
+                    {applying ? <><span className="cp-spin" />Se trimite…</> : <><Send size={16} />Trimite aplicația</>}
+                  </button>
+                </div>
               </>
             ) : (
               <>
-                <p className="font-bold text-lg" style={{ color: '#7c3aed', margin: 0 }}>{campaign.budget_per_influencer ? `${campaign.budget_per_influencer} RON` : 'Negociat'}</p>
-                <p className="text-xs text-gray-400">recompensă</p>
-              </>
-            )}
-            <p style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em' }}>{isBarter ? 'primești' : 'câștig'}</p>
-          </div>
-          <div className="py-3 px-4 text-center" style={{ borderRight: '1px solid #f0f0f0' }}>
-            <p className="font-bold text-lg" style={{ color: expired ? '#dc2626' : urgent ? '#4423c4' : '#111827', margin: 0 }}>
-              {expired ? 'Expirat' : `${days}z`}
-            </p>
-            <p style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em' }}>{fmtDate(campaign.deadline)}</p>
-          </div>
-          <div className="py-3 px-4 text-center">
-            <p className="font-bold text-lg" style={{ color: '#111827', margin: 0 }}>{campaign.current_influencers || 0}/{campaign.max_influencers || '∞'}</p>
-            <p style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em' }}>locuri</p>
-          </div>
-        </div>
-
-        <div className="space-y-3 pt-4">
-
-        {/* ── REZERVARE ── */}
-        {campaign.reservation_required && (
-          <div className="anim" style={{ animationDelay: '.05s', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 20 }}>📞</span>
-            <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#c2410c', margin: 0 }}>Rezervare necesară</p>
-              <p style={{ fontSize: 12, color: '#4423c4', margin: 0 }}>Trebuie să contactezi brandul înainte de vizită</p>
-            </div>
-          </div>
-        )}
-
-        {/* ── DESPRE CAMPANIE ── */}
-        {(campaign.description || campaign.offer_description) && (
-          <div className="card p-5 anim" style={{ animationDelay: '.06s' }}>
-            <p className="section-label">Despre campanie</p>
-            <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.75 }}>{campaign.description || campaign.offer_description}</p>
-          </div>
-        )}
-
-        {/* ── CE TREBUIE SĂ POSTEZI ── */}
-        {(campaign.deliverables || hasInstagram || hasTikTok || hasYouTube || hasFacebook) && (
-          <div className="card p-5 anim" style={{ animationDelay: '.07s' }}>
-            <p className="section-label">Ce trebuie să postezi</p>
-
-            {campaign.deliverables && (
-              <div style={{ background: '#faf5ff', borderRadius: 10, padding: '10px 14px', marginBottom: 14, border: '1px solid #e9d5ff' }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#6d28d9', margin: 0 }}>{campaign.deliverables}</p>
-              </div>
-            )}
-
-            {/* INSTAGRAM */}
-            {hasInstagram && (
-              <div className="platform-block">
-                <div className="platform-header">
-                  <InstagramIcon className="w-4 h-4" />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>Instagram</span>
-                  {campaign.tasks_ig_days_online && <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 'auto' }}>online minim {campaign.tasks_ig_days_online} zile</span>}
-                </div>
-                <div style={{ padding: '10px 14px' }}>
-                  {campaign.tasks_stories_count > 0 && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}><strong>{campaign.tasks_stories_count}</strong> Instagram {campaign.tasks_stories_count === 1 ? 'Story' : 'Stories'}</p>
-                    </div>
-                  )}
-                  {campaign.tasks_ig_reel && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Reel{campaign.tasks_ig_reel_duration ? <span style={{ color: '#6b7280' }}> (minim {campaign.tasks_ig_reel_duration} sec)</span> : ''}</p>
-                    </div>
-                  )}
-                  {(campaign.tasks_ig_post || campaign.tasks_include_post) && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Post Feed (foto/carousel)</p>
-                    </div>
-                  )}
-                  {campaign.tasks_ig_live && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Instagram Live</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* TIKTOK */}
-            {hasTikTok && (
-              <div className="platform-block">
-                <div className="platform-header">
-                  <TikTokSVG className="w-4 h-4" />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>TikTok</span>
-                  {campaign.tasks_tt_days_online && (
-                    <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 'auto' }}>
-                      {campaign.tasks_tt_days_online === 9999 ? 'permanent' : `online minim ${campaign.tasks_tt_days_online} zile`}
-                    </span>
-                  )}
-                </div>
-                <div style={{ padding: '10px 14px' }}>
-                  {campaign.tasks_tt_video && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>TikTok Video{campaign.tasks_tt_video_duration ? <span style={{ color: '#6b7280' }}> (minim {campaign.tasks_tt_video_duration} sec)</span> : ''}</p>
-                    </div>
-                  )}
-                  {campaign.tasks_tt_live && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>TikTok Live</p>
-                    </div>
-                  )}
-                  {campaign.tasks_tt_duet && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Duet / Stitch</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* YOUTUBE */}
-            {hasYouTube && (
-              <div className="platform-block">
-                <div className="platform-header">
-                  <YoutubeIcon className="w-4 h-4" />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>YouTube</span>
-                </div>
-                <div style={{ padding: '10px 14px' }}>
-                  {campaign.tasks_yt_short && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>YouTube Short{campaign.tasks_yt_short_duration ? <span style={{ color: '#6b7280' }}> (minim {campaign.tasks_yt_short_duration} sec)</span> : ''}</p>
-                    </div>
-                  )}
-                  {campaign.tasks_yt_video && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Video lung dedicat{campaign.tasks_yt_video_duration ? <span style={{ color: '#6b7280' }}> (minim {campaign.tasks_yt_video_duration} min)</span> : ''}</p>
-                    </div>
-                  )}
-                  {campaign.tasks_yt_mention && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Mențiune în video existent</p>
-                    </div>
-                  )}
-                  {campaign.tasks_yt_link_in_desc && (
-                    <div className="check-item">
-                      <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                      <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Link în descrierea video</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* FACEBOOK */}
-            {hasFacebook && (
-              <div className="platform-block">
-                <div className="platform-header">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="#2563eb"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>Facebook</span>
-                </div>
-                <div style={{ padding: '10px 14px' }}>
-                  {campaign.tasks_fb_post && <div className="check-item"><div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div><p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Post pe pagina personală</p></div>}
-                  {campaign.tasks_fb_story && <div className="check-item"><div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div><p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Facebook Story</p></div>}
-                  {campaign.tasks_fb_reel && <div className="check-item"><div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div><p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Facebook Reel</p></div>}
-                  {campaign.tasks_fb_share && <div className="check-item"><div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div><p style={{ fontSize: 13, color: '#374151', margin: 0 }}>Share postarea brandului</p></div>}
-                </div>
-              </div>
-            )}
-
-            {/* Zile online general (dacă nu e setat per-platformă) */}
-            {campaign.min_days_online > 0 && !campaign.tasks_ig_days_online && !campaign.tasks_tt_days_online && (
-              <p style={{ fontSize: 12, color: '#6b7280', marginTop: 8 }}>⏱ Postarea rămâne online minim <strong>{campaign.min_days_online} zile</strong></p>
-            )}
-          </div>
-        )}
-
-        {/* ── STORY INCLUDES (ce să includă în stories) ── */}
-        {storyIncludes.length > 0 && (
-          <div className="card p-5 anim" style={{ animationDelay: '.08s' }}>
-            <p className="section-label">Ce să incluzi în conținut</p>
-            {storyIncludes.map((item, i) => (
-              <div key={i} className="check-item">
-                <div className="check-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-                <p style={{ fontSize: 13, color: '#374151', margin: 0 }}>{item}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── LINK DE PROMOVAT ── */}
-        {campaign.promotion_link && (
-          <div className="anim" style={{ animationDelay: '.09s', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 14, padding: '14px 16px' }}>
-            <p className="section-label" style={{ color: '#15803d' }}>Link de promovat</p>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#16a34a', margin: '0 0 10px', wordBreak: 'break-all' }}>{campaign.promotion_link}</p>
-            {linkPlacements.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {linkPlacements.map((p: string) => (
-                  <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#374151' }}>
-                    <span style={{ color: '#16a34a', fontWeight: 700 }}>✓</span>
-                    {p === 'bio' ? 'Adaugă în bio pe durata campaniei' :
-                     p === 'swipeup' ? 'Swipe-up în Stories' :
-                     p === 'verbal' ? 'Menționat verbal în video' :
-                     p === 'description' ? 'Link în descrierea video (YouTube)' : p}
+                {earnings && (
+                  <div className="iu-row" style={{ justifyContent: 'space-between', gap: 12 }}>
+                    <span className="iu-sm iu-muted" style={{ fontWeight: 600 }}>Câștig net</span>
+                    <b className="iu-d" style={{ fontSize: 22, color: '#14532d' }}>{earnings.toLocaleString('ro-RO')} RON</b>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── HASHTAG-URI ── (NOU — lipsea complet) */}
-        {hashtags.length > 0 && (
-          <div className="anim" style={{ animationDelay: '.095s', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 14, padding: '14px 16px' }}>
-            <p className="section-label" style={{ color: '#6d28d9' }}>Hashtag-uri obligatorii</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {hashtags.map((h: string) => (
-                <span key={h} style={{ fontSize: 13, fontWeight: 700, color: '#7c3aed', background: '#ede9fe', padding: '4px 10px', borderRadius: 99 }}>
-                  #{h.replace(/^#/, '')}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── CAPTION OBLIGATORIU ── (NOU — lipsea complet) */}
-        {campaign.required_caption && (
-          <div className="anim" style={{ animationDelay: '.1s', background: '#fafafa', border: '1px solid #e5e7eb', borderRadius: 14, padding: '14px 16px' }}>
-            <p className="section-label">Caption obligatoriu</p>
-            <div style={{ borderLeft: '3px solid #d1d5db', paddingLeft: 12 }}>
-              <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.7, fontStyle: 'italic' }}>"{campaign.required_caption}"</p>
-            </div>
-            <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>📋 Copiază și folosește exact acest text în postarea ta</p>
-          </div>
-        )}
-
-        {/* ── TON + INSTRUCȚIUNI ── */}
-        {(contentTone.length > 0 || campaign.story_instructions) && (
-          <div className="anim" style={{ animationDelay: '.11s', background: '#fffbeb', borderRadius: 14, padding: '14px 16px', border: '1px solid #fde68a' }}>
-            {contentTone.length > 0 && (
-              <div style={{ marginBottom: campaign.story_instructions ? 12 : 0 }}>
-                <p className="section-label" style={{ color: '#b45309' }}>Ton dorit</p>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {contentTone.map((t: string) => (
-                    <span key={t} style={{ fontSize: 11, background: '#fef3c7', color: '#92400e', padding: '3px 10px', borderRadius: 99, fontWeight: 700 }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {campaign.story_instructions && (
-              <>
-                <p className="section-label" style={{ color: '#b45309' }}>Instrucțiuni speciale</p>
-                <p style={{ fontSize: 13, color: '#92400e', margin: 0, lineHeight: 1.75 }}>{campaign.story_instructions}</p>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ── MESAJE CHEIE ── */}
-        {keyMessages.length > 0 && (
-          <div className="card p-5 anim" style={{ animationDelay: '.12s' }}>
-            <p className="section-label">Mesaje cheie de transmis</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {keyMessages.map((m: string, i: number) => (
-                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                )}
+                {applyError && (
+                  <div className="iu-row iu-sm" style={{ gap: 8, padding: '10px 12px', borderRadius: 12, background: '#fff4f2', border: '1px solid #f3c9c4', color: '#b42318', fontWeight: 700, alignItems: 'flex-start' }}>
+                    <AlertCircle size={16} style={{ flex: 'none', marginTop: 2 }} /> {applyError}
                   </div>
-                  <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.65 }}>{m}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── CE NU E PERMIS ── */}
-        {(forbiddenMentions.length > 0 || campaign.forbidden_content) && (
-          <div className="anim" style={{ animationDelay: '.13s', background: '#fef2f2', borderRadius: 14, padding: '14px 16px', border: '1px solid #fecaca' }}>
-            <p className="section-label" style={{ color: '#b91c1c' }}>🚫 Ce NU este permis</p>
-            {forbiddenMentions.length > 0 && (
-              <p style={{ fontSize: 13, color: '#7f1d1d', margin: '0 0 6px' }}>Mențiuni interzise: <strong>{forbiddenMentions.join(', ')}</strong></p>
-            )}
-            {campaign.forbidden_content && (
-              <p style={{ fontSize: 13, color: '#7f1d1d', margin: 0 }}>{campaign.forbidden_content}</p>
-            )}
-          </div>
-        )}
-
-        {/* ── CUM FINALIZEZI ── */}
-        <div className="card p-5 anim" style={{ animationDelay: '.14s' }}>
-          <p className="section-label">Cum finalizezi colaborarea</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {[
-              { num: '1', title: 'Aplică la campanie', sub: needsAddress ? 'Completează adresa de livrare' : 'Trimite aplicația ta' },
-              isBarter && isDelivery && { num: '2', title: 'Primești produsul acasă', sub: 'Bifează în AddFame că l-ai primit' },
-              isBarter && !isDelivery && { num: '2', title: 'Ridică de la locație', sub: campaign.pickup_location_name ? `Locație: ${campaign.pickup_location_name}` : 'Conform detaliilor brandului' },
-              { num: isBarter ? '3' : '2', title: `Postează în ${campaign.post_deadline_days || 5} zile de la primire`, sub: 'Respectă instrucțiunile și hashtag-urile' },
-              { num: isBarter ? '4' : '3', title: 'Trimite dovada în AddFame', sub: 'Link postare + screenshot obligatoriu' },
-            ].filter(Boolean).map((step: any, i: number, arr: any[]) => (
-              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingBottom: i < arr.length - 1 ? 16 : 0, position: 'relative' }}>
-                {i < arr.length - 1 && <div style={{ position: 'absolute', left: 13, top: 28, bottom: 0, width: 1, background: '#e5e7eb' }} />}
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#f3f4f6', border: '1.5px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 12, fontWeight: 700, color: '#6b7280', zIndex: 1 }}>{step.num}</div>
-                <div style={{ paddingTop: 4 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: '0 0 1px' }}>{step.title}</p>
-                  <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>{step.sub}</p>
-                </div>
-              </div>
-            ))}
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingTop: 16, borderTop: '1px dashed #e5e7eb', marginTop: 4 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#dcfce7', border: '1.5px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-              </div>
-              <div style={{ paddingTop: 4 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#15803d', margin: '0 0 1px' }}>Colaborare finalizată!</p>
-                <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>Brandul aprobă → primești rating și recenzie</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── PLATFORME + LIVRARE ── */}
-        <div className="grid grid-cols-2 anim" style={{ animationDelay: '.15s', gap: 10 }}>
-          {campaign.platforms?.length > 0 && (
-            <div className="card" style={{ padding: '12px 14px' }}>
-              <p className="section-label">Platformă</p>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>{campaign.platforms.join(', ')}</p>
-            </div>
-          )}
-          <div className="card" style={{ padding: '12px 14px' }}>
-            <p className="section-label">Livrare</p>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>
-              {campaign.delivery_method === 'delivery' ? '🚚 Curier la adresă' : `📍 ${campaign.pickup_location_name || 'Ridicare personală'}`}
-            </p>
-            {campaign.pickup_location_address && campaign.delivery_method !== 'delivery' && (
-              <p style={{ fontSize: 11, color: '#9ca3af', margin: '3px 0 0' }}>{campaign.pickup_location_address}</p>
-            )}
-          </div>
-        </div>
-
-        {/* ── ÎNSCRIERI ÎNCHISE ── */}
-        {campaign?.registrations_open === false && !alreadyApplied && !applied && (
-          <div className="anim" style={{ animationDelay: '.16s', background: '#fef2f2', borderRadius: 16, padding: 16, border: '2px solid #fecaca', textAlign: 'center' }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🚫</div>
-            <p style={{ fontWeight: 700, color: '#b91c1c', fontSize: 14, margin: '0 0 4px' }}>Brandul nu mai acceptă înscrieri</p>
-            <p style={{ fontSize: 12, color: '#ef4444', margin: 0 }}>Locurile disponibile s-au ocupat pentru această campanie.</p>
-          </div>
-        )}
-
-        </div>
-      </div>
-
-      {/* ── Apply Bar ── */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-4 mt-4">
-        <div>
-          {alreadyApplied || applied ? (
-            <div className="flex items-center justify-center gap-2 py-3 bg-green-50 border-2 border-green-200 rounded-2xl">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <p className="font-black text-green-700">Ai aplicat deja la această campanie!</p>
-            </div>
-          ) : showApplyForm ? (
-            <div className="space-y-3">
-              {needsAddress && (
-                <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 space-y-2">
-                  <p className="text-xs font-black text-orange-700 uppercase tracking-wide mb-3">📦 Adresă de livrare produs</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input value={address.name} onChange={e => setAddress(p => ({ ...p, name: e.target.value }))} placeholder="Nume complet *" className="col-span-2 px-3 py-2.5 border-2 border-orange-200 rounded-xl text-sm font-medium outline-none focus:border-orange-400 bg-white" />
-                    <input value={address.phone} onChange={e => setAddress(p => ({ ...p, phone: e.target.value }))} placeholder="Telefon *" className="px-3 py-2.5 border-2 border-orange-200 rounded-xl text-sm font-medium outline-none focus:border-orange-400 bg-white" />
-                    <input value={address.postal_code} onChange={e => setAddress(p => ({ ...p, postal_code: e.target.value }))} placeholder="Cod poștal" className="px-3 py-2.5 border-2 border-orange-200 rounded-xl text-sm font-medium outline-none focus:border-orange-400 bg-white" />
-                    <input value={address.address} onChange={e => setAddress(p => ({ ...p, address: e.target.value }))} placeholder="Stradă, număr, bloc, ap. *" className="col-span-2 px-3 py-2.5 border-2 border-orange-200 rounded-xl text-sm font-medium outline-none focus:border-orange-400 bg-white" />
-                    <input value={address.city} onChange={e => setAddress(p => ({ ...p, city: e.target.value }))} placeholder="Oraș *" className="px-3 py-2.5 border-2 border-orange-200 rounded-xl text-sm font-medium outline-none focus:border-orange-400 bg-white" />
-                    <input value={address.county} onChange={e => setAddress(p => ({ ...p, county: e.target.value }))} placeholder="Județ *" className="px-3 py-2.5 border-2 border-orange-200 rounded-xl text-sm font-medium outline-none focus:border-orange-400 bg-white" />
-                  </div>
-                </div>
-              )}
-              <textarea value={applyMsg} onChange={e => setApplyMsg(e.target.value)}
-                placeholder="Mesaj opțional pentru brand — de ce ești potrivit pentru această campanie..."
-                rows={2} className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition resize-none" style={{ fontFamily: 'inherit' }} />
-              <div className="flex gap-3">
-                <button onClick={() => setShowApplyForm(false)} className="flex-1 py-3 rounded-2xl font-black text-sm text-gray-600 border-2 border-gray-200 hover:bg-gray-50 transition">Anulează</button>
-                <button onClick={handleApply} disabled={applying}
-                  className="flex-1 py-3 rounded-2xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 14px rgba(139,92,246,0.35)' }}>
-                  {applying ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Se trimite…</> : <><Send className="w-4 h-4" />Trimite aplicația</>}
+                )}
+                <button onClick={() => setShowApplyForm(true)}
+                  disabled={expired || closed || !!applyError}
+                  className="iu-btn p big" style={{ width: '100%' }}>
+                  {expired ? 'Campanie expirată' : closed ? 'Înscrieri închise' : needsAddress ? <><Zap size={18} />Aplică + adresă livrare</> : <><Zap size={18} />Aplică acum</>}
                 </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              {earnings && (
-                <div className="flex-shrink-0">
-                  <p className="text-xs text-gray-400 font-semibold">Câștig net</p>
-                  <p className="text-lg font-black text-green-600">{earnings.toLocaleString('ro-RO')} RON</p>
-                </div>
-              )}
-              <button onClick={() => setShowApplyForm(true)}
-                disabled={expired || campaign?.registrations_open === false || !!applyError}
-                className="flex-1 py-4 rounded-2xl font-black text-base text-white disabled:opacity-40 transition flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
-                {expired ? 'Campanie expirată' : campaign?.registrations_open === false ? '🚫 Înscrieri închise' : needsAddress ? <><Zap className="w-5 h-5" />Aplică + adresă livrare</> : <><Zap className="w-5 h-5" />Aplică acum</>}
-              </button>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

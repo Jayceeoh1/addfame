@@ -8,11 +8,11 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Calendar, Zap, Clock, CheckCircle, Pause, FileEdit } from 'lucide-react'
 import Link from 'next/link'
 
-const STATUS_CFG: Record<string, { label: string; dot: string; bg: string; text: string; border: string }> = {
-  ACTIVE: { label: 'Activ', dot: 'bg-green-500', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-  DRAFT: { label: 'Draft', dot: 'bg-amber-400', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-  PAUSED: { label: 'Pausat', dot: 'bg-gray-400', bg: 'bg-gray-100', text: 'text-gray-500', border: 'border-gray-200' },
-  COMPLETED: { label: 'Finalizat', dot: 'bg-blue-400', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+const STATUS_CFG: Record<string, { label: string; dot: string; bg: string; fg: string }> = {
+  ACTIVE: { label: 'Activ', dot: '#1d9e75', bg: '#dcf5ec', fg: '#14532d' },
+  DRAFT: { label: 'Draft', dot: '#e0a81a', bg: '#fff1c2', fg: '#854d0e' },
+  PAUSED: { label: 'Pausat', dot: '#9a97b8', bg: '#f0eff7', fg: '#4a4770' },
+  COMPLETED: { label: 'Finalizat', dot: '#2f6fe0', bg: '#e6f0ff', fg: '#1d4fb8' },
 }
 
 const STATUS_ICON: Record<string, React.ReactElement> = {
@@ -22,8 +22,8 @@ const STATUS_ICON: Record<string, React.ReactElement> = {
   COMPLETED: <CheckCircle className="w-3 h-3" />,
 }
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTHS = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie']
+const DAYS = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm']
 
 export default function CampaignCalendarPage() {
   const router = useRouter()
@@ -93,79 +93,87 @@ export default function CampaignCalendarPage() {
   const fmt = (n: number) => `${(n || 0).toLocaleString('ro-RO', { minimumFractionDigits: 0 })} RON`
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <div className="w-10 h-10 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+    <div className="bu" style={{ alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+      <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: '#5a35e6', borderTopColor: 'transparent' }} />
     </div>
   )
 
+  const dFmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleDateString('ro-RO', o)
+  const upcoming = campaigns
+    .filter(c => c.deadline && new Date(c.deadline) > new Date())
+    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+    .slice(0, 5)
+  const urgency = (days: number) => days < 7 ? { background: '#fff1e6', color: '#9a4206' } : days < 14 ? { background: '#fff1c2', color: '#854d0e' } : { background: '#f0eff7', color: '#4a4770' }
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+    <div className="bu">
       <style>{`
-        
-        .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
-        .brand-grad { background:linear-gradient(135deg,#2f6fe0, #5a35e6); }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        .fu { animation:fadeUp .4s ease both; }
-        .day-cell { min-height:80px;border:1px solid #f5f5f5;border-radius:12px;padding:6px;cursor:pointer;transition:all .15s; }
-        .day-cell:hover { background:#fff9f5;border-color:#ddd6fe; }
-        .day-cell.today { border-color:#5a35e6;border-width:2px; }
-        .day-cell.selected { background:#f5f3ff;border-color:#5a35e6;border-width:2px; }
-        @media (max-width: 640px) { .day-cell { min-height:52px;padding:4px; } }
+        .ca-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+        @media(max-width:1023px){.ca-layout{grid-template-columns:minmax(0,1fr)}}
+        .ca-nav{width:44px;height:44px;border-radius:12px;border:1.5px solid #e5e3f3;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#14123a;flex:none}
+        .ca-nav:hover{background:#f7f4ff;border-color:#c9b9fb}
+        .ca-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+        .ca-dow{text-align:center;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#8783a8;padding:4px 0}
+        .ca-cell{min-height:92px;border:1.5px solid #eeecf7;border-radius:12px;padding:6px;cursor:pointer;background:#fff;text-align:left;font-family:inherit;color:inherit;min-width:0;display:flex;flex-direction:column;gap:3px;transition:background .15s,border-color .15s}
+        .ca-cell:hover{background:#faf8ff;border-color:#c9b9fb}
+        .ca-cell.today{border-color:#5a35e6}
+        .ca-cell.sel{background:#efeaff;border-color:#5a35e6}
+        .ca-d{font-family:var(--font-display,system-ui),system-ui,sans-serif;font-weight:800;font-size:13px;width:24px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+        .ca-cell.today .ca-d{background:linear-gradient(135deg,#2f6fe0,#5a35e6);color:#fff}
+        .ca-ev{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+        .ca-dots{display:none;gap:3px;flex-wrap:wrap}
+        .ca-dot{width:7px;height:7px;border-radius:99px}
+        @media(max-width:640px){.ca-cell{min-height:50px;padding:4px;align-items:center}.ca-ev{display:none}.ca-dots{display:flex;justify-content:center}.ca-grid{gap:4px}}
+        .ca-item{display:flex;align-items:center;gap:12px;padding:14px 20px;text-decoration:none;color:inherit;border-bottom:1px solid #eeecf7;min-height:44px}
+        .ca-item:last-child{border-bottom:0}
+        .ca-item:hover{background:#faf8ff}
       `}</style>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 fu">
+      <div className="bu-head">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-orange-500" /> Campaign Calendar
-          </h1>
-          <p className="text-sm text-gray-400 mt-0.5">{activeCampaignsThisMonth.length} active · {deadlinesThisMonth.length} deadline{deadlinesThisMonth.length !== 1 ? 's' : ''} this month</p>
+          <h1>Calendar campanii</h1>
+          <p className="bu-muted" style={{ margin: '6px 0 0' }}>{activeCampaignsThisMonth.length} active · {deadlinesThisMonth.length} deadline-ur luna aceasta</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setListView(p => !p)}
-            className={`text-sm font-bold px-3 py-2 rounded-xl border transition ${listView ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-white text-gray-400 border-gray-200 hover:border-orange-200'}`}>
-            {listView ? 'Calendar' : 'Listă'}
+        <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => setListView(p => !p)} className={`bu-pill${listView ? ' on' : ''}`} style={{ height: 44 }}>
+            <Calendar className="w-4 h-4" /> {listView ? 'Calendar' : 'Listă'}
           </button>
-          <Link href="/brand/campaigns/new"
-            className="flex items-center gap-1.5 text-sm font-black text-white px-4 py-2 rounded-xl brand-grad"
-            style={{ boxShadow: '0 3px 10px rgba(90,53,230,.3)' }}>
-            + Campaign
-          </Link>
+          <Link href="/brand/campaigns/new" className="bu-btn p big">+ Campanie</Link>
         </div>
       </div>
 
       {listView ? (
-        /* ── List view ── */
-        <div className="card overflow-hidden fu" style={{ animationDelay: '.05s' }}>
-          <div className="p-5 border-b border-gray-100">
-            <h2 className="font-black text-gray-900">Toate Campaniile</h2>
-          </div>
+        <div className="bu-card" style={{ overflow: 'hidden' }}>
+          <div style={{ padding: '18px 20px', borderBottom: '1px solid #eeecf7' }}><h2>Toate campaniile</h2></div>
           {campaigns.length === 0 ? (
-            <div className="text-center py-16"><Calendar className="w-10 h-10 text-gray-200 mx-auto mb-3" /><p className="text-sm font-bold text-gray-400">No campaigns yet</p></div>
+            <div style={{ textAlign: 'center', padding: '56px 20px' }}>
+              <div className="bu-ico" style={{ margin: '0 auto 12px', background: '#f0eff7', color: '#4a4770' }}><Calendar className="w-5 h-5" /></div>
+              <p className="bu-muted bu-sm" style={{ margin: 0, fontWeight: 700 }}>Nicio campanie încă</p>
+            </div>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div>
               {campaigns.map(c => {
                 const cfg = STATUS_CFG[c.status] ?? STATUS_CFG.DRAFT
                 const deadline = c.deadline ? new Date(c.deadline) : null
                 const daysLeft = deadline ? Math.ceil((deadline.getTime() - Date.now()) / 864e5) : null
                 return (
-                  <Link key={c.id} href={`/brand/campaigns/${c.id}`}
-                    className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition">
-                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-black text-gray-900 truncate">{c.title}</p>
-                      <p className="text-xs text-gray-400">
-                        Started {new Date(c.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        {deadline && ` · Deadline ${deadline.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                  <Link key={c.id} href={`/brand/campaigns/${c.id}`} className="ca-item" style={{ flexWrap: 'wrap' }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 99, background: cfg.dot, flex: 'none' }} />
+                    <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                      <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</p>
+                      <p className="bu-muted bu-xs" style={{ margin: 0 }}>
+                        Început {dFmt(new Date(c.created_at), { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {deadline && ` · Deadline ${dFmt(deadline, { day: 'numeric', month: 'short', year: 'numeric' })}`}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="bu-row" style={{ gap: 8, flex: 'none' }}>
                       {daysLeft !== null && c.status === 'ACTIVE' && (
-                        <span className={`text-xs font-bold ${daysLeft < 7 ? 'text-red-600' : daysLeft < 14 ? 'text-amber-600' : 'text-gray-400'}`}>
+                        <span className="bu-chip" style={urgency(daysLeft)}>
                           {daysLeft < 0 ? 'Întârziat' : `${daysLeft}z rămase`}
                         </span>
                       )}
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black ${cfg.bg} ${cfg.text}`}>
+                      <span className="bu-chip" style={{ background: cfg.bg, color: cfg.fg }}>
                         {STATUS_ICON[c.status]} {cfg.label}
                       </span>
                     </div>
@@ -176,128 +184,99 @@ export default function CampaignCalendarPage() {
           )}
         </div>
       ) : (
-        /* ── Calendar view ── */
-        <div className="grid lg:grid-cols-4 gap-5">
-          <div className="lg:col-span-3">
-            <div className="card p-4 sm:p-5 fu" style={{ animationDelay: '.05s' }}>
-              {/* Month nav */}
-              <div className="flex items-center justify-between mb-5">
-                <button onClick={() => setView(new Date(year, month - 1, 1))}
-                  className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition">
-                  <ChevronLeft className="w-4 h-4 text-gray-600" />
-                </button>
-                <h2 className="font-black text-gray-900 text-lg">{MONTHS[month]} {year}</h2>
-                <button onClick={() => setView(new Date(year, month + 1, 1))}
-                  className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition">
-                  <ChevronRight className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
+        <div className="ca-layout">
+          <div className="bu-card bu-card-pad">
+            <div className="bu-row" style={{ justifyContent: 'space-between', marginBottom: 16 }}>
+              <button className="ca-nav" aria-label="Luna anterioară" onClick={() => setView(new Date(year, month - 1, 1))}><ChevronLeft className="w-4 h-4" /></button>
+              <h2 style={{ fontSize: 20 }}>{MONTHS[month]} {year}</h2>
+              <button className="ca-nav" aria-label="Luna următoare" onClick={() => setView(new Date(year, month + 1, 1))}><ChevronRight className="w-4 h-4" /></button>
+            </div>
 
-              {/* Day labels */}
-              <div className="grid grid-cols-7 gap-1.5 mb-1.5">
-                {DAYS.map(d => <div key={d} className="text-center text-xs font-black text-gray-400 py-1">{d}</div>)}
-              </div>
+            <div className="ca-grid" style={{ marginBottom: 6 }}>
+              {DAYS.map(d => <div key={d} className="ca-dow">{d}</div>)}
+            </div>
 
-              {/* Grid */}
-              <div className="grid grid-cols-7 gap-1.5">
-                {cells.map((day, i) => {
-                  if (!day) return <div key={`e-${i}`} />
-                  const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year
-                  const isSel = selected?.getDate() === day && selected?.getMonth() === month && selected?.getFullYear() === year
-                  const deadlines = campaignsForDay(day)
-                  const starts = campaignsStartedDay(day)
-                  return (
-                    <div key={day}
-                      className={`day-cell ${isToday ? 'today' : ''} ${isSel ? 'selected' : ''}`}
-                      onClick={() => setSelected(isSel ? null : new Date(year, month, day))}>
-                      <div className={`text-xs font-black mb-1 w-6 h-6 rounded-lg flex items-center justify-center ${isToday ? 'text-white brand-grad' : 'text-gray-700'}`}>
-                        {day}
+            <div className="ca-grid">
+              {cells.map((day, i) => {
+                if (!day) return <div key={`e-${i}`} />
+                const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year
+                const isSel = selected?.getDate() === day && selected?.getMonth() === month && selected?.getFullYear() === year
+                const deadlines = campaignsForDay(day)
+                const starts = campaignsStartedDay(day)
+                return (
+                  <div key={day} role="button" tabIndex={0}
+                    className={`ca-cell${isToday ? ' today' : ''}${isSel ? ' sel' : ''}`}
+                    onClick={() => setSelected(isSel ? null : new Date(year, month, day))}>
+                    <div className="ca-d">{day}</div>
+                    {starts.map(c => (
+                      <div key={`s-${c.id}`} className="ca-ev" style={{ background: '#e6f0ff', color: '#1d4fb8' }}>▶ {c.title}</div>
+                    ))}
+                    {deadlines.map(c => {
+                      const cfg = STATUS_CFG[c.status] ?? STATUS_CFG.DRAFT
+                      return <div key={`d-${c.id}`} className="ca-ev" style={{ background: cfg.bg, color: cfg.fg }}>⏰ {c.title}</div>
+                    })}
+                    {(starts.length + deadlines.length) > 0 && (
+                      <div className="ca-dots">
+                        {starts.map(c => <span key={c.id} className="ca-dot" style={{ background: '#2f6fe0' }} />)}
+                        {deadlines.map(c => <span key={c.id} className="ca-dot" style={{ background: (STATUS_CFG[c.status] ?? STATUS_CFG.DRAFT).dot }} />)}
                       </div>
-                      <div className="space-y-0.5">
-                        {starts.map(c => (
-                          <div key={`s-${c.id}`} className="hidden sm:block text-[10px] font-bold truncate px-1 rounded bg-orange-100 text-orange-700">▶ {c.title}</div>
-                        ))}
-                        {deadlines.map(c => {
-                          const cfg = STATUS_CFG[c.status] ?? STATUS_CFG.DRAFT
-                          return <div key={`d-${c.id}`} className={`hidden sm:block text-[10px] font-bold truncate px-1 rounded ${cfg.bg} ${cfg.text}`}>⏰ {c.title}</div>
-                        })}
-                        {(starts.length + deadlines.length) > 0 && (
-                          <div className="sm:hidden flex gap-0.5 flex-wrap">
-                            {starts.map(c => <div key={c.id} className="w-2 h-2 rounded-full bg-orange-400" />)}
-                            {deadlines.map(c => <div key={c.id} className={`w-2 h-2 rounded-full ${(STATUS_CFG[c.status] ?? STATUS_CFG.DRAFT).dot}`} />)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Legend */}
-              <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-orange-600"><div className="w-3 h-3 rounded bg-orange-100" /> Campaign start</div>
-                {Object.entries(STATUS_CFG).map(([k, v]) => (
-                  <div key={k} className="flex items-center gap-1.5 text-xs font-bold" style={{ color: 'inherit' }}>
-                    <div className={`w-3 h-3 rounded ${v.bg}`} />
-                    <span className="text-gray-400">{v.label} deadline</span>
+                    )}
                   </div>
-                ))}
-              </div>
+                )
+              })}
+            </div>
+
+            <div className="bu-div bu-row" style={{ flexWrap: 'wrap', gap: 8, marginTop: 16, paddingTop: 14 }}>
+              <span className="bu-chip" style={{ background: '#e6f0ff', color: '#1d4fb8' }}>Start campanie</span>
+              {Object.entries(STATUS_CFG).map(([k, v]) => (
+                <span key={k} className="bu-chip" style={{ background: v.bg, color: v.fg }}>Deadline · {v.label}</span>
+              ))}
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-4">
-            {/* Selected day */}
+          <div className="bu-col" style={{ gap: 16 }}>
             {selected && (
-              <div className="card p-4 fu">
-                <p className="font-black text-gray-900 text-sm mb-3">
-                  {selected.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
+              <div className="bu-card bu-card-pad">
+                <h3 style={{ marginBottom: 12, textTransform: 'capitalize' }}>
+                  {dFmt(selected, { weekday: 'long', day: 'numeric', month: 'long' })}
+                </h3>
                 {selectedCampaigns.length === 0
-                  ? <p className="text-sm text-gray-400">No campaigns on this day</p>
+                  ? <p className="bu-muted bu-sm" style={{ margin: 0 }}>Nicio campanie în această zi</p>
                   : selectedCampaigns.map(c => {
                     const cfg = STATUS_CFG[c.status] ?? STATUS_CFG.DRAFT
                     return (
                       <Link key={c.id} href={`/brand/campaigns/${c.id}`}
-                        className={`block p-3 rounded-xl border mb-2 hover:opacity-80 transition ${cfg.bg} ${cfg.border}`}>
-                        <p className={`font-black text-sm ${cfg.text}`}>{c.title}</p>
-                        <p className={`text-xs ${cfg.text} opacity-70 mt-0.5`}>{cfg.label} · {c.budget ? fmt(c.budget) : '—'}</p>
+                        style={{ display: 'block', padding: 12, borderRadius: 14, marginBottom: 8, background: cfg.bg, color: cfg.fg, textDecoration: 'none' }}>
+                        <p style={{ margin: 0, fontWeight: 800, fontSize: 14 }}>{c.title}</p>
+                        <p className="bu-xs" style={{ margin: '2px 0 0', opacity: .8 }}>{cfg.label} · {c.budget ? fmt(c.budget) : '—'}</p>
                       </Link>
                     )
                   })}
               </div>
             )}
 
-            {/* Upcoming deadlines */}
-            <div className="card p-4 fu" style={{ animationDelay: '.08s' }}>
-              <p className="font-black text-gray-900 text-sm mb-3 flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-orange-400" /> Upcoming Deadlines
-              </p>
-              {campaigns
-                .filter(c => c.deadline && new Date(c.deadline) > new Date())
-                .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-                .slice(0, 5)
-                .map(c => {
-                  const d = new Date(c.deadline)
-                  const days = Math.ceil((d.getTime() - Date.now()) / 864e5)
-                  const cfg = STATUS_CFG[c.status] ?? STATUS_CFG.DRAFT
-                  return (
-                    <Link key={c.id} href={`/brand/campaigns/${c.id}`}
-                      className="flex items-start gap-2.5 py-2.5 border-b border-gray-100 last:border-0 hover:opacity-70 transition">
-                      <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${cfg.dot}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-black text-gray-900 text-xs truncate">{c.title}</p>
-                        <p className="text-[11px] text-gray-400">{d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</p>
-                      </div>
-                      <span className={`text-xs font-black flex-shrink-0 ${days < 7 ? 'text-red-500' : days < 14 ? 'text-amber-500' : 'text-gray-400'}`}>
-                        {days}d
-                      </span>
-                    </Link>
-                  )
-                })}
-              {!campaigns.some(c => c.deadline && new Date(c.deadline) > new Date()) && (
-                <p className="text-xs text-gray-400">No upcoming deadlines</p>
+            <div className="bu-card" style={{ overflow: 'hidden' }}>
+              <div className="bu-row" style={{ gap: 8, padding: '16px 20px', borderBottom: '1px solid #eeecf7' }}>
+                <Clock className="w-4 h-4" style={{ color: '#5a35e6' }} />
+                <h3 style={{ fontSize: 16 }}>Deadline-uri apropiate</h3>
+              </div>
+              {upcoming.map(c => {
+                const d = new Date(c.deadline)
+                const days = Math.ceil((d.getTime() - Date.now()) / 864e5)
+                const cfg = STATUS_CFG[c.status] ?? STATUS_CFG.DRAFT
+                return (
+                  <Link key={c.id} href={`/brand/campaigns/${c.id}`} className="ca-item">
+                    <span style={{ width: 8, height: 8, borderRadius: 99, background: cfg.dot, flex: 'none' }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</p>
+                      <p className="bu-muted bu-xs" style={{ margin: 0 }}>{dFmt(d, { day: 'numeric', month: 'short' })}</p>
+                    </div>
+                    <span className="bu-chip" style={urgency(days)}>{days}z</span>
+                  </Link>
+                )
+              })}
+              {upcoming.length === 0 && (
+                <p className="bu-muted bu-sm" style={{ margin: 0, padding: 20 }}>Niciun deadline apropiat</p>
               )}
             </div>
           </div>

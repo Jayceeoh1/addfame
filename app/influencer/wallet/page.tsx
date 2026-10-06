@@ -7,7 +7,7 @@ import { requestWithdrawal } from '@/app/actions/collaborations'
 import {
   Wallet, TrendingUp, ArrowUpRight, ArrowDownLeft, Clock,
   CheckCircle, XCircle, AlertCircle, X, Plus, Trash2,
-  Building2, CreditCard, Smartphone, Star, Edit2, Shield
+  Building2, CreditCard, Smartphone, Star, Edit2, Shield, Info
 , Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -204,11 +204,11 @@ export default function WalletPage() {
 
   async function handleSaveMethod() {
     setMethodError(null)
-    if (!selectedType) return setMethodError('Please select a payment type.')
+    if (!selectedType) return setMethodError('Selectează un tip de plată.')
     const typeConfig = PAYMENT_TYPES.find(t => t.id === selectedType)!
     for (const field of typeConfig.fields) {
       if (!field.placeholder.includes('optional') && !methodFields[field.key]) {
-        return setMethodError(`Please fill in ${field.label}.`)
+        return setMethodError(`Completează câmpul: ${field.label}.`)
       }
     }
 
@@ -216,7 +216,7 @@ export default function WalletPage() {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      if (!user) throw new Error('Neautentificat')
 
       const isFirst = paymentMethods.length === 0
       const { error } = await supabase.from('influencer_payment_methods').insert({
@@ -263,120 +263,183 @@ export default function WalletPage() {
     setSelectedMethodId(null)
   }
 
-  const statusIcon = (status: string) => {
-    if (status === 'completed') return <CheckCircle className="w-4 h-4 text-green-500" />
-    if (status === 'pending') return <Clock className="w-4 h-4 text-amber-500" />
-    return <XCircle className="w-4 h-4 text-destructive" />
+  const TX_CHIP: Record<string, { bg: string; fg: string; label: string }> = {
+    completed: { bg: '#dcf5ec', fg: '#14532d', label: 'Finalizat' },
+    pending: { bg: '#fff1c2', fg: '#854d0e', label: 'În așteptare' },
+    failed: { bg: '#fde8e6', fg: '#b42318', label: 'Eșuat' },
   }
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  const formatDate = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })
 
   const getTypeConfig = (type: string) => PAYMENT_TYPES.find(t => t.id === type) ?? PAYMENT_TYPES[0]
 
   if (loading) return (
-    <div className="flex items-center justify-center h-full">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    <div className="iu">
+      <div className="iw-empty" style={{ padding: '80px 12px' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#7040f0' }} />
+        <p className="iu-muted iu-sm" style={{ margin: 0 }}>Se încarcă portofelul...</p>
+      </div>
     </div>
   )
 
+  const canPayout = wallet.available_balance >= WITHDRAWAL_MIN && paymentMethods.length > 0
+  const wStatus = getWithdrawalStatus(wallet.last_payout_at)
+
   return (
-    <div style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif", background: '#f8f7ff', minHeight: '100vh' }}>
+    <div className="iu">
       <style>{`
-        
-        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        .fu { animation: fadeUp .3s ease both; }
-        .wcard { background:white;border-radius:16px;border:1.5px solid #f0f0f0;transition:border-color .15s; }
-        .wcard:hover { border-color:#ddd6fe; }
-        .wtab { padding:8px 18px;border-radius:99px;font-size:12px;font-weight:800;border:none;cursor:pointer;transition:all .15s;font-family:inherit; }
-        .wfield { width:100%;padding:10px 14px;border:1.5px solid #f0f0f0;border-radius:12px;font-size:14px;outline:none;background:white;font-family:inherit;transition:border-color .2s; }
-        .wfield:focus { border-color:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,.08); }
+        .iw-grid { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 18px; align-items: stretch; }
+        .iw-wallet { position: relative; overflow: hidden; background: #14123a; color: #fff; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .iw-glow { position: absolute; right: -70px; top: -90px; width: 260px; height: 260px; border-radius: 50%; background: linear-gradient(135deg, #9030f0, #7040f0); opacity: .45; filter: blur(40px); pointer-events: none; }
+        .iw-wallet > *:not(.iw-glow) { position: relative; }
+        .iw-bal { font-family: var(--font-display, system-ui), system-ui, sans-serif; font-weight: 800; font-size: 44px; letter-spacing: -0.03em; line-height: 1.05; }
+        .iw-bal small { font-size: 20px; color: rgba(255,255,255,.6); margin-left: 6px; }
+        .iw-lbl { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+        .iw-cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: 12px; border: 0; background: linear-gradient(135deg, #7040f0, #9030f0); color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; font-family: inherit; align-self: flex-start; }
+        .iw-cta:disabled { opacity: .45; cursor: not-allowed; }
+        .iw-note { display: flex; gap: 10px; align-items: flex-start; border-radius: 12px; padding: 10px 12px; font-size: 12.5px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.85); }
+        .iw-stats { display: grid; grid-template-rows: 1fr 1fr; gap: 18px; }
+        .iw-stat { padding: 20px; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+        .iw-stat .v { font-family: var(--font-display, system-ui), system-ui, sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -0.02em; }
+        .iw-tx { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid #eeecf7; }
+        .iw-tx:first-child { border-top: 0; }
+        .iw-tx-main { min-width: 0; flex: 1; }
+        .iw-tx-main p { margin: 0; }
+        .iw-tx-d { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .iw-tx-r { text-align: right; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .iw-tx-amt { font-family: var(--font-display, system-ui), system-ui, sans-serif; font-weight: 800; font-size: 15px; }
+        .iw-ib { width: 44px; height: 44px; border-radius: 12px; border: 0; background: transparent; color: #6a6690; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+        .iw-ib:hover { background: #f7f4ff; color: #5a35e6; }
+        .iw-ib.del { color: #b42318; }
+        .iw-ib.del:hover { background: #fff4f2; color: #b42318; }
+        .iw-empty { text-align: center; padding: 48px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .iw-pm { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+        .iw-pm.def { border-color: #cdb8ff; background: #fcfaff; }
+        .iw-pm-main { min-width: 0; flex: 1; }
+        .iw-pm-main p { margin: 0; }
+        .iw-ov { position: fixed; inset: 0; background: rgba(20,18,58,.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .iw-modal { background: #fff; border-radius: 20px; padding: 24px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; box-shadow: 0 30px 80px -20px rgba(20,18,58,.5); color: #14123a; font-family: var(--font-body, system-ui), system-ui, sans-serif; }
+        .iw-modal.lg { max-width: 520px; }
+        .iw-modal h2 { font-family: var(--font-display, system-ui), system-ui, sans-serif; margin: 0; font-weight: 800; font-size: 21px; letter-spacing: -0.01em; }
+        .iw-modal h3 { font-family: var(--font-display, system-ui), system-ui, sans-serif; margin: 0; font-weight: 700; font-size: 17px; }
+        .iw-mh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+        .iw-field { display: flex; flex-direction: column; gap: 6px; }
+        .iw-field .iu-input { width: 100%; height: 46px; }
+        .iw-banner { display: flex; align-items: flex-start; gap: 10px; border-radius: 14px; padding: 12px 14px; font-size: 13px; }
+        .iw-opt { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #e5e3f3; background: #fff; text-align: left; cursor: pointer; font-family: inherit; color: #14123a; min-height: 56px; }
+        .iw-opt:hover { border-color: #cdb8ff; }
+        .iw-opt.on { border-color: #7040f0; background: #f7f4ff; }
+        .iw-types { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+        .iw-type { padding: 12px 6px; border-radius: 14px; border: 1.5px solid #e5e3f3; background: #fff; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; font-family: inherit; color: #14123a; font-size: 12px; font-weight: 700; text-align: center; min-height: 44px; }
+        .iw-type:hover { border-color: #cdb8ff; }
+        .iw-type.on { border-color: #7040f0; background: #f7f4ff; }
+        @media (max-width: 860px) { .iw-grid { grid-template-columns: minmax(0,1fr); } .iw-stats { grid-template-rows: none; grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 560px) {
+          .iw-bal { font-size: 36px; } .iw-wallet { padding: 20px; } .iw-cta { width: 100%; align-self: stretch; }
+          .iw-tx { flex-wrap: wrap; } .iw-tx-r { flex-direction: row; align-items: center; margin-left: 56px; width: calc(100% - 56px); justify-content: space-between; }
+          .iw-stat { padding: 16px; } .iw-stat .v { font-size: 20px; }
+          .iw-types { grid-template-columns: repeat(2, minmax(0,1fr)); }
+          .iw-modal { padding: 20px; }
+        }
       `}</style>
 
-      {/* Dark Header */}
-      <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81,#0f3460)', padding: '20px 20px 24px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(139,92,246,0.2)' }} />
-        <div style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(34,200,240,0.15)' }} />
-        <div style={{ position: 'relative', marginBottom: 16 }}>
-          <p style={{ color: '#a78bfa', fontSize: 11, fontWeight: 800, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💰 Wallet</p>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-            <div>
-              <p style={{ color: 'white', fontSize: 32, fontWeight: 900, margin: 0, lineHeight: 1 }}>
-                {wallet.available_balance.toFixed(2)} <span style={{ fontSize: 16, color: '#a78bfa' }}>RON</span>
-              </p>
-              <p style={{ color: '#6b7280', fontSize: 11, margin: '4px 0 0' }}>Sold disponibil</p>
-            </div>
-            <button
-              onClick={() => setShowPayoutModal(true)}
-              disabled={wallet.available_balance < WITHDRAWAL_MIN || paymentMethods.length === 0}
-              style={{ padding: '10px 18px', background: wallet.available_balance >= WITHDRAWAL_MIN && paymentMethods.length > 0 ? '#5a35e6' : 'rgba(255,255,255,0.15)', color: 'white', border: 'none', borderRadius: 12, fontSize: 12, fontWeight: 900, cursor: wallet.available_balance >= WITHDRAWAL_MIN && paymentMethods.length > 0 ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
-              💸 Retrage fonduri
-            </button>
-          </div>
-          {paymentMethods.length === 0 && <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 4 }}>Adaugă o metodă de plată mai întâi</p>}
+      {/* Header */}
+      <div className="iu-head">
+        <div>
+          <div className="iu-label" style={{ marginBottom: 6 }}>Finanțe</div>
+          <h1>Wallet</h1>
+          <p className="iu-muted iu-sm" style={{ margin: '6px 0 0' }}>Câștigurile tale, retrageri și metode de plată</p>
         </div>
-        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 12px' }}>
-            <p style={{ color: '#a78bfa', fontSize: 10, fontWeight: 800, margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total câștigat</p>
-            <p style={{ color: '#34d399', fontSize: 16, fontWeight: 900, margin: 0 }}>{wallet.total_earned.toFixed(2)} RON</p>
+      </div>
+
+      {/* Sold + statistici */}
+      <div className="iw-grid">
+        <div className="iw-wallet">
+          <div className="iw-glow" />
+          <div className="iw-lbl" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Wallet className="w-4 h-4" /> Sold disponibil</div>
+          <div className="iw-bal">{wallet.available_balance.toFixed(2)}<small>RON</small></div>
+
+          <div className="iw-note">
+            <Info className="w-4 h-4" style={{ flex: 'none', marginTop: 2 }} />
+            <span>
+              Retragere minimă <strong>{WITHDRAWAL_MIN} RON</strong> · taxă {Math.round(WITHDRAWAL_FEE * 100)}% · o dată la {WITHDRAWAL_CYCLE_DAYS} zile
+              {!wStatus.canWithdraw && wStatus.nextAvailable && <> · următoarea: <strong>{wStatus.nextAvailable.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}</strong></>}
+            </span>
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 12px' }}>
-            <p style={{ color: '#a78bfa', fontSize: 10, fontWeight: 800, margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>În așteptare</p>
-            <p style={{ color: '#fbbf24', fontSize: 16, fontWeight: 900, margin: 0 }}>{wallet.pending_payout.toFixed(2)} RON</p>
+
+          <button onClick={() => setShowPayoutModal(true)} disabled={!canPayout} className="iw-cta">
+            <ArrowUpRight className="w-4 h-4" /> Retrage fonduri
+          </button>
+          {paymentMethods.length === 0 && <p style={{ margin: 0, fontSize: 12.5, color: 'rgba(255,255,255,.65)' }}>Adaugă o metodă de plată mai întâi</p>}
+        </div>
+
+        <div className="iw-stats">
+          <div className="iu-card iw-stat">
+            <div className="iu-row" style={{ gap: 10 }}>
+              <div className="iu-ico" style={{ background: '#dcf5ec', color: '#14532d', width: 34, height: 34, borderRadius: 10 }}><TrendingUp className="w-4 h-4" /></div>
+              <span className="iu-label">Total câștigat</span>
+            </div>
+            <div className="v">{wallet.total_earned.toFixed(2)} RON</div>
+          </div>
+          <div className="iu-card iw-stat">
+            <div className="iu-row" style={{ gap: 10 }}>
+              <div className="iu-ico" style={{ background: '#fff1c2', color: '#854d0e', width: 34, height: 34, borderRadius: 10 }}><Clock className="w-4 h-4" /></div>
+              <span className="iu-label">În așteptare</span>
+            </div>
+            <div className="v">{wallet.pending_payout.toFixed(2)} RON</div>
           </div>
         </div>
       </div>
 
-      {/* Body */}
-      <div style={{ background: '#faf5ff', padding: 14, border: '1.5px solid #ddd6fe', borderTop: 'none' }}>
-
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+      <div className="iu-tabs">
         {[
-          { id: 'overview', label: 'Tranzacții' },
-          { id: 'payment_methods', label: 'Metode plată' },
+          { id: 'overview', label: 'Tranzacții', icon: Wallet },
+          { id: 'payment_methods', label: 'Metode plată', icon: CreditCard },
         ].map(tab => (
-          <button key={tab.id} className="wtab"
-            onClick={() => setActiveTab(tab.id as ActiveTab)}
-            style={{ background: activeTab === tab.id ? '#8b5cf6' : 'white', color: activeTab === tab.id ? 'white' : '#6b7280', border: activeTab === tab.id ? 'none' : '1.5px solid #f0f0f0' }}>
-            {tab.label}
+          <button key={tab.id} onClick={() => setActiveTab(tab.id as ActiveTab)} className={`iu-pill${activeTab === tab.id ? ' on' : ''}`} style={{ minHeight: 44 }}>
+            <tab.icon className="w-4 h-4" />{tab.label}
           </button>
         ))}
       </div>
 
       {/* Transactions Tab */}
       {activeTab === 'overview' && (
-        <div className="wcard fu" style={{ overflow: 'hidden' }}>
+        <div className="iu-card iu-card-pad">
           {transactions.length === 0 ? (
-            <div style={{ padding: 32, textAlign: 'center' }}>
-              <p style={{ fontSize: 32, margin: '0 0 8px' }}>💸</p>
-              <p style={{ fontSize: 13, fontWeight: 800, color: '#9ca3af', margin: 0 }}>Nicio tranzacție încă</p>
-              <p style={{ fontSize: 12, color: '#d1d5db', margin: '4px 0 0' }}>Aplică la campanii să câștigi primii bani!</p>
+            <div className="iw-empty">
+              <div className="iu-ico" style={{ background: '#efeaff', color: '#5b2fd0', width: 56, height: 56, borderRadius: 16 }}><Wallet className="w-6 h-6" /></div>
+              <h3>Nicio tranzacție încă</h3>
+              <p className="iu-muted iu-sm" style={{ margin: 0 }}>Aplică la campanii să câștigi primii bani!</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {transactions.map((tx) => (
-                <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid #f5f5f5' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: tx.type === 'EARN' ? '#dcfce7' : '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {tx.type === 'EARN' ? <ArrowDownLeft style={{ width: 16, height: 16, color: '#16a34a' }} /> : <ArrowUpRight style={{ width: 16, height: 16, color: '#ef4444' }} />}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 800, color: '#1e1b4b', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description || (tx.type === 'EARN' ? 'Câștig colaborare' : 'Retragere')}</p>
-                    <p style={{ fontSize: 11, color: '#9ca3af', margin: '2px 0 0' }}>{formatDate(tx.created_at)}</p>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                    {statusIcon(tx.status)}
-                    <p style={{ fontSize: 14, fontWeight: 900, color: tx.type === 'EARN' ? '#16a34a' : '#ef4444', margin: 0 }}>
-                      {tx.type === 'EARN' ? '+' : '-'}{Math.abs(tx.amount).toFixed(2)}
-                    </p>
-                    {tx.type === 'EARN' && tx.status === 'completed' && (
-                      <button onClick={() => downloadInfluencerInvoice(tx, influencerInfo)} title="Descarcă chitanță"
-                        style={{ width: 30, height: 30, borderRadius: 8, border: '1.5px solid #ede9fe', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                        <Download style={{ width: 13, height: 13, color: '#7c3aed' }} />
+            <div>
+              {transactions.map((tx) => {
+                const isEarn = tx.type === 'EARN'
+                const chip = TX_CHIP[tx.status] ?? TX_CHIP.pending
+                return (
+                  <div key={tx.id} className="iw-tx">
+                    <div className="iu-ico" style={{ background: isEarn ? '#dcf5ec' : '#f0eff7', color: isEarn ? '#14532d' : '#4a4770' }}>
+                      {isEarn ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                    </div>
+                    <div className="iw-tx-main">
+                      <p className="iw-tx-d">{tx.description || (isEarn ? 'Câștig colaborare' : 'Retragere')}</p>
+                      <p className="iu-xs iu-muted">{formatDate(tx.created_at)}</p>
+                    </div>
+                    <div className="iw-tx-r">
+                      <span className="iw-tx-amt" style={{ color: isEarn ? '#14532d' : '#14123a' }}>
+                        {isEarn ? '+' : '-'}{Math.abs(tx.amount).toFixed(2)} RON
+                      </span>
+                      <span className="iu-chip" style={{ background: chip.bg, color: chip.fg }}>{chip.label}</span>
+                    </div>
+                    {isEarn && tx.status === 'completed' && (
+                      <button className="iw-ib" onClick={() => downloadInfluencerInvoice(tx, influencerInfo)} title="Descarcă chitanță" aria-label="Descarcă chitanță">
+                        <Download className="w-4 h-4" />
                       </button>
                     )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -384,54 +447,50 @@ export default function WalletPage() {
 
       {/* Payment Methods Tab */}
       {activeTab === 'payment_methods' && (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <p style={{ fontSize: 13, fontWeight: 800, color: '#4c1d95', margin: 0 }}>Metodele tale de plată</p>
-            <button onClick={() => setShowAddMethod(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-              <Plus style={{ width: 13, height: 13 }} /> Adaugă
+        <div className="iu-col" style={{ gap: 14 }}>
+          <div className="iu-row" style={{ justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <h2>Metodele tale de plată</h2>
+            <button onClick={() => setShowAddMethod(true)} className="iu-btn p" style={{ height: 44 }}>
+              <Plus className="w-4 h-4" /> Adaugă
             </button>
           </div>
 
           {paymentMethods.length === 0 ? (
-            <div className="wcard" style={{ padding: 32, textAlign: 'center' }}>
-              <p style={{ fontSize: 28, margin: '0 0 8px' }}>💳</p>
-              <p style={{ fontSize: 13, fontWeight: 800, color: '#9ca3af', margin: 0 }}>Nicio metodă adăugată</p>
-              <p style={{ fontSize: 12, color: '#d1d5db', margin: '4px 0 12px' }}>Adaugă un cont bancar, PayPal, Revolut sau altă metodă</p>
-              <button onClick={() => setShowAddMethod(true)}
-                style={{ padding: '9px 20px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                + Adaugă metodă
+            <div className="iu-card iw-empty">
+              <div className="iu-ico" style={{ background: '#efeaff', color: '#5b2fd0', width: 56, height: 56, borderRadius: 16 }}><CreditCard className="w-6 h-6" /></div>
+              <h3>Nicio metodă adăugată</h3>
+              <p className="iu-muted iu-sm" style={{ margin: 0 }}>Adaugă un cont bancar, PayPal, Revolut sau altă metodă</p>
+              <button onClick={() => setShowAddMethod(true)} className="iu-btn p big" style={{ marginTop: 8 }}>
+                <Plus className="w-4 h-4" /> Adaugă metodă
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="iu-col" style={{ gap: 12 }}>
               {paymentMethods.map((method) => {
                 const config = getTypeConfig(method.type)
                 const Icon = config.icon
                 return (
-                  <div key={method.id} className="wcard" style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, border: method.is_default ? '1.5px solid #ddd6fe' : '1.5px solid #f0f0f0' }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Icon style={{ width: 16, height: 16, color: '#7c3aed' }} />
+                  <div key={method.id} className={`iu-card iw-pm${method.is_default ? ' def' : ''}`}>
+                    <div className="iu-ico" style={{ background: '#efeaff', color: '#5b2fd0' }}>
+                      <Icon className="w-4 h-4" />
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <p style={{ fontSize: 13, fontWeight: 800, color: '#1e1b4b', margin: 0 }}>{method.label}</p>
-                        {method.is_default && <span style={{ background: '#ede9fe', color: '#5b21b6', fontSize: 10, fontWeight: 800, padding: '1px 7px', borderRadius: 99 }}>Implicit</span>}
+                    <div className="iw-pm-main">
+                      <div className="iu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                        <p style={{ fontWeight: 700, fontSize: 14 }}>{method.label}</p>
+                        {method.is_default && <span className="iu-chip" style={{ background: '#efeaff', color: '#5b2fd0' }}>Implicit</span>}
                       </div>
                       {Object.entries(method.details).slice(0, 1).map(([key, value]) => (
-                        <p key={key} style={{ fontSize: 11, color: '#9ca3af', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value as string}</p>
+                        <p key={key} className="iu-xs iu-muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value as string}</p>
                       ))}
                     </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <div className="iu-row" style={{ gap: 4, flex: 'none' }}>
                       {!method.is_default && (
-                        <button onClick={() => handleSetDefault(method.id)}
-                          style={{ width: 28, height: 28, borderRadius: 8, border: '1.5px solid #f0f0f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Set default">
-                          <Star style={{ width: 12, height: 12, color: '#9ca3af' }} />
+                        <button onClick={() => handleSetDefault(method.id)} className="iw-ib" title="Setează implicit" aria-label="Setează implicit">
+                          <Star className="w-4 h-4" />
                         </button>
                       )}
-                      <button onClick={() => handleDeleteMethod(method.id)}
-                        style={{ width: 28, height: 28, borderRadius: 8, border: '1.5px solid #fecaca', background: '#fef2f2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Trash2 style={{ width: 12, height: 12, color: '#ef4444' }} />
+                      <button onClick={() => handleDeleteMethod(method.id)} className="iw-ib del" title="Șterge" aria-label="Șterge">
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -444,37 +503,35 @@ export default function WalletPage() {
 
       {/* Payout Modal */}
       {showPayoutModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Retrage fonduri</h2>
-              <button onClick={closePayoutModal} className="text-muted-foreground hover:text-foreground transition">
-                <X className="w-5 h-5" />
-              </button>
+        <div className="iw-ov">
+          <div className="iw-modal">
+            <div className="iw-mh">
+              <h2>Retrage fonduri</h2>
+              <button onClick={closePayoutModal} className="iw-ib" aria-label="Închide"><X className="w-5 h-5" /></button>
             </div>
 
             {payoutSuccess ? (
-              <div className="text-center py-6">
-                <CheckCircle className="w-14 h-14 text-green-500 mx-auto mb-4" />
-                <h3 className="text-lg font-bold mb-2">Cerere trimisă! ✅</h3>
-                <p className="text-muted-foreground text-sm mb-6">Cererea ta a fost trimisă. Procesăm plata până pe data de 10 a lunii.</p>
-                <Button className="w-full bg-gradient-to-r from-primary to-accent" onClick={closePayoutModal}>Done</Button>
+              <div className="iw-empty" style={{ padding: '20px 0 4px' }}>
+                <div className="iu-ico" style={{ background: '#dcf5ec', color: '#14532d', width: 56, height: 56, borderRadius: 16 }}><CheckCircle className="w-6 h-6" /></div>
+                <h3>Cerere trimisă!</h3>
+                <p className="iu-muted iu-sm" style={{ margin: '0 0 12px' }}>Cererea ta a fost trimisă. Procesăm plata până pe data de 10 a lunii.</p>
+                <button className="iu-btn p big" style={{ width: '100%' }} onClick={closePayoutModal}>Gata</button>
               </div>
             ) : (
               <>
-                <div className="bg-muted/50 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-muted-foreground">Sold disponibil</p>
-                  <p className="text-2xl font-bold text-primary">{wallet.available_balance.toFixed(2)}</p>
+                <div style={{ background: '#f6f6fc', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+                  <div className="iu-label">Sold disponibil</div>
+                  <div className="iu-d" style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', color: '#5b2fd0' }}>{wallet.available_balance.toFixed(2)} RON</div>
                 </div>
 
                 {(() => {
                   const { canWithdraw, daysLeft, nextAvailable } = getWithdrawalStatus(wallet.last_payout_at)
                   return canWithdraw ? (
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-4 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <div className="iw-banner" style={{ background: '#dcf5ec', color: '#14532d', marginBottom: 14, alignItems: 'center' }}>
+                      <CheckCircle className="w-4 h-4" style={{ flex: 'none' }} />
                       <div>
-                        <p className="text-xs font-black text-green-700">✓ Retragere disponibilă acum</p>
-                        <p className="text-xs text-green-600">
+                        <p style={{ margin: 0, fontWeight: 800 }}>Retragere disponibilă acum</p>
+                        <p className="iu-xs" style={{ margin: 0 }}>
                           {wallet.last_payout_at
                             ? `Ultima retragere: ${new Date(wallet.last_payout_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}`
                             : 'Nu ai mai retras până acum'}
@@ -482,36 +539,37 @@ export default function WalletPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                        <p className="text-xs font-black text-amber-700">Retragerea nu este disponibilă încă</p>
+                    <div className="iw-banner" style={{ background: '#fff1c2', color: '#854d0e', marginBottom: 14, flexDirection: 'column', gap: 8 }}>
+                      <div className="iu-row" style={{ gap: 8 }}>
+                        <Clock className="w-4 h-4" style={{ flex: 'none' }} />
+                        <p style={{ margin: 0, fontWeight: 800 }}>Retragerea nu este disponibilă încă</p>
                       </div>
-                      <p className="text-xs text-amber-600 mb-2">
+                      <p className="iu-xs" style={{ margin: 0 }}>
                         Poți retrage o dată la 15 zile. Următoarea dată disponibilă:{' '}
                         <strong>{nextAvailable!.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
                       </p>
-                      {/* Progress bar */}
-                      <div className="h-1.5 bg-amber-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full transition-all"
-                          style={{ width: `${Math.round(((15 - daysLeft) / 15) * 100)}%` }} />
+                      <div style={{ width: '100%' }}>
+                        <div className="iu-bar" style={{ background: 'rgba(133,77,14,.18)' }}>
+                          <i style={{ width: `${Math.round(((15 - daysLeft) / 15) * 100)}%`, background: '#d4a017' }} />
+                        </div>
+                        <p className="iu-xs" style={{ margin: '4px 0 0', textAlign: 'right' }}>{15 - daysLeft}/15 zile</p>
                       </div>
-                      <p className="text-[10px] text-amber-500 mt-1 text-right">{15 - daysLeft}/15 zile</p>
                     </div>
                   )
                 })()}
 
                 {payoutError && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-4 flex items-center gap-2 text-sm text-destructive">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    {payoutError}
+                  <div className="iw-banner" style={{ background: '#fde8e6', color: '#b42318', marginBottom: 14, alignItems: 'center' }}>
+                    <AlertCircle className="w-4 h-4" style={{ flex: 'none' }} />
+                    <span>{payoutError}</span>
                   </div>
                 )}
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Amount (RON)</label>
-                    <Input
+                <div className="iu-col" style={{ gap: 16 }}>
+                  <div className="iw-field">
+                    <label className="iu-label">Sumă (RON)</label>
+                    <input
+                      className="iu-input"
                       type="number"
                       placeholder="0.00"
                       min="10"
@@ -521,17 +579,17 @@ export default function WalletPage() {
                       disabled={payoutLoading}
                     />
                     {parseFloat(payoutAmount) >= 50 ? (
-                      <p className="text-xs text-green-600 font-bold mt-1">
-                        Primești: {(parseFloat(payoutAmount) * 0.95).toFixed(2)} (după 5% taxă)
+                      <p className="iu-xs" style={{ margin: 0, color: '#14532d', fontWeight: 700 }}>
+                        Primești: {(parseFloat(payoutAmount) * 0.95).toFixed(2)} RON (după 5% taxă)
                       </p>
                     ) : (
-                      <p className="text-xs text-muted-foreground mt-1">Minim 250 RON · taxă 5%</p>
+                      <p className="iu-xs iu-muted" style={{ margin: 0 }}>Minim 250 RON · taxă 5%</p>
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Payout To</label>
-                    <div className="space-y-2">
+                  <div className="iw-field">
+                    <label className="iu-label">Plătește în</label>
+                    <div className="iu-col" style={{ gap: 8 }}>
                       {paymentMethods.map((method) => {
                         const config = getTypeConfig(method.type)
                         const Icon = config.icon
@@ -540,34 +598,30 @@ export default function WalletPage() {
                             key={method.id}
                             type="button"
                             onClick={() => setSelectedMethodId(method.id)}
-                            className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition text-left ${selectedMethodId === method.id
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:border-primary/40'
-                              }`}
+                            className={`iw-opt${selectedMethodId === method.id ? ' on' : ''}`}
                           >
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${config.bg}`}>
-                              <Icon className={`w-4 h-4 ${config.color}`} />
+                            <div className="iu-ico" style={{ background: '#efeaff', color: '#5b2fd0', width: 34, height: 34, borderRadius: 10 }}>
+                              <Icon className="w-4 h-4" />
                             </div>
-                            <div>
-                              <p className="text-sm font-medium">{method.label}</p>
-                              <p className="text-xs text-muted-foreground">{Object.values(method.details)[0]}</p>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <p style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>{method.label}</p>
+                              <p className="iu-xs iu-muted" style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{Object.values(method.details)[0]}</p>
                             </div>
-                            {method.is_default && (
-                              <span className="ml-auto text-xs text-primary">Implicit</span>
-                            )}
+                            {method.is_default && <span className="iu-chip" style={{ background: '#efeaff', color: '#5b2fd0' }}>Implicit</span>}
                           </button>
                         )
                       })}
                     </div>
                   </div>
 
-                  <Button
-                    className="w-full bg-gradient-to-r from-primary to-accent"
+                  <button
+                    className="iu-btn p big"
+                    style={{ width: '100%' }}
                     onClick={handlePayoutRequest}
                     disabled={payoutLoading || !payoutAmount || !selectedMethodId}
                   >
-                    {payoutLoading ? 'Se trimite...' : 'Trimite Cererea'}
-                  </Button>
+                    {payoutLoading ? 'Se trimite...' : 'Trimite cererea'}
+                  </button>
                 </div>
               </>
             )}
@@ -577,27 +631,27 @@ export default function WalletPage() {
 
       {/* Add Payment Method Modal */}
       {showAddMethod && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Add Payment Method</h2>
+        <div className="iw-ov">
+          <div className="iw-modal lg">
+            <div className="iw-mh">
+              <h2>Adaugă metodă de plată</h2>
               <button onClick={() => { setShowAddMethod(false); setSelectedType(null); setMethodFields({}); setMethodError(null) }}
-                className="text-muted-foreground hover:text-foreground transition">
+                className="iw-ib" aria-label="Închide">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {methodError && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-4 flex items-center gap-2 text-sm text-destructive">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                {methodError}
+              <div className="iw-banner" style={{ background: '#fde8e6', color: '#b42318', marginBottom: 14, alignItems: 'center' }}>
+                <AlertCircle className="w-4 h-4" style={{ flex: 'none' }} />
+                <span>{methodError}</span>
               </div>
             )}
 
             {/* Type Selection */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium mb-3">Select Type</label>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="iw-field" style={{ marginBottom: 18 }}>
+              <label className="iu-label">Alege tipul</label>
+              <div className="iw-types">
                 {PAYMENT_TYPES.map((type) => {
                   const Icon = type.icon
                   return (
@@ -605,15 +659,12 @@ export default function WalletPage() {
                       key={type.id}
                       type="button"
                       onClick={() => { setSelectedType(type.id); setMethodFields({}) }}
-                      className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition ${selectedType === type.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/40'
-                        }`}
+                      className={`iw-type${selectedType === type.id ? ' on' : ''}`}
                     >
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${type.bg}`}>
-                        <Icon className={`w-5 h-5 ${type.color}`} />
+                      <div className="iu-ico" style={{ background: '#efeaff', color: '#5b2fd0', width: 34, height: 34, borderRadius: 10 }}>
+                        <Icon className="w-4 h-4" />
                       </div>
-                      <span className="text-xs font-medium text-center">{type.label}</span>
+                      <span>{type.label}</span>
                     </button>
                   )
                 })}
@@ -621,10 +672,11 @@ export default function WalletPage() {
             </div>
 
             {selectedType && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Poreclă (opțional)</label>
-                  <Input
+              <div className="iu-col" style={{ gap: 14 }}>
+                <div className="iw-field">
+                  <label className="iu-label">Poreclă (opțional)</label>
+                  <input
+                    className="iu-input"
                     placeholder={`ex. ${getTypeConfig(selectedType).label} personal`}
                     value={methodLabel}
                     onChange={(e) => setMethodLabel(e.target.value)}
@@ -633,9 +685,10 @@ export default function WalletPage() {
                 </div>
 
                 {PAYMENT_TYPES.find(t => t.id === selectedType)!.fields.map((field) => (
-                  <div key={field.key}>
-                    <label className="block text-sm font-medium mb-2">{field.label}</label>
-                    <Input
+                  <div key={field.key} className="iw-field">
+                    <label className="iu-label">{field.label}</label>
+                    <input
+                      className="iu-input"
                       placeholder={field.placeholder}
                       value={methodFields[field.key] || ''}
                       onChange={(e) => setMethodFields(prev => ({ ...prev, [field.key]: e.target.value }))}
@@ -644,21 +697,19 @@ export default function WalletPage() {
                   </div>
                 ))}
 
-                <Button
-                  className="w-full bg-gradient-to-r from-primary to-accent"
+                <button
+                  className="iu-btn p big"
+                  style={{ width: '100%' }}
                   onClick={handleSaveMethod}
                   disabled={methodSaving}
                 >
-                  {methodSaving ? 'Se salvează...' : 'Salvează Metoda'}
-                </Button>
+                  {methodSaving ? 'Se salvează...' : 'Salvează metoda'}
+                </button>
               </div>
             )}
           </div>
         </div>
       )}
-    </div>
-  )
-
     </div>
   )
 }

@@ -322,80 +322,122 @@ function BrandWalletPageInner() {
   const pendingTx = transactions.filter(tx => tx.status === 'pending')
   const filteredTx = transactions.filter(tx => filterType === 'ALL' || tx.type === filterType)
 
+  const TX_CHIP: Record<string, { bg: string; fg: string }> = {
+    completed: { bg: '#dcf5ec', fg: '#14532d' },
+    pending: { bg: '#fff1c2', fg: '#854d0e' },
+    failed: { bg: '#fde8e6', fg: '#b42318' },
+  }
+  const TX_STATUS_RO: Record<string, string> = { completed: 'Finalizat', pending: 'În așteptare', failed: 'Eșuat' }
+  const TX_ICO: Record<string, { bg: string; fg: string }> = {
+    TOPUP: { bg: '#dcf5ec', fg: '#14532d' },
+    REFUND: { bg: '#e6f0ff', fg: '#1d4fb8' },
+    SPEND: { bg: '#efeaff', fg: '#4423c4' },
+    RESERVE: { bg: '#fff1c2', fg: '#854d0e' },
+  }
+  const CAMP_CHIP: Record<string, { bg: string; fg: string }> = {
+    ACTIVE: { bg: '#e6f0ff', fg: '#1d4fb8' }, LIVE: { bg: '#e6f0ff', fg: '#1d4fb8' },
+    COMPLETED: { bg: '#dcf5ec', fg: '#14532d' }, DRAFT: { bg: '#f0eff7', fg: '#4a4770' },
+    PAUSED: { bg: '#fff1c2', fg: '#854d0e' },
+  }
+
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[400px]">
+    <div className="bu"><div className="bu-card bu-card-pad" style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-    </div>
+    </div></div>
   )
 
+  const available = Math.max(0, wallet.credits_balance - wallet.credits_reserved)
+
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
+    <div className="bu">
+      <style>{`
+        .bw-grid { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 18px; align-items: stretch; }
+        .bw-wallet { position: relative; overflow: hidden; background: #14123a; color: #fff; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .bw-glow { position: absolute; right: -70px; top: -90px; width: 260px; height: 260px; border-radius: 50%; background: linear-gradient(135deg, #22c8f0, #7040f0); opacity: .35; filter: blur(40px); pointer-events: none; }
+        .bw-wallet > *:not(.bw-glow) { position: relative; }
+        .bw-bal { font-family: var(--font-display, system-ui), system-ui, sans-serif; font-weight: 800; font-size: 44px; letter-spacing: -0.03em; line-height: 1.05; }
+        .bw-lbl { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+        .bw-split { display: flex; flex-wrap: wrap; gap: 20px; }
+        .bw-split b { display: block; font-size: 17px; font-family: var(--font-display, system-ui), system-ui, sans-serif; }
+        .bw-cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: 12px; border: 0; background: linear-gradient(135deg, #2f6fe0, #5a35e6); color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; font-family: inherit; width: fit-content; box-shadow: 0 12px 26px -12px rgba(90,53,230,.9); }
+        .bw-note { display: flex; gap: 10px; align-items: flex-start; border-radius: 12px; padding: 10px 12px; font-size: 12.5px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.85); }
+        .bw-stats { display: grid; grid-template-rows: 1fr 1fr; gap: 18px; }
+        .bw-stat { padding: 20px; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+        .bw-stat .v { font-family: var(--font-display, system-ui), system-ui, sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -0.02em; }
+        .bw-banner { display: flex; align-items: flex-start; gap: 14px; border-radius: 20px; padding: 16px 18px; }
+        .bw-tx { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid #eeecf7; }
+        .bw-tx:first-child { border-top: 0; }
+        .bw-tx-main { min-width: 0; flex: 1; }
+        .bw-tx-main p { margin: 0; }
+        .bw-tx-d { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bw-tx-r { text-align: right; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .bw-tx-amt { font-family: var(--font-display, system-ui), system-ui, sans-serif; font-weight: 800; font-size: 15px; }
+        .bw-ib { width: 44px; height: 44px; border-radius: 12px; border: 0; background: transparent; color: #6a6690; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+        .bw-ib:hover { background: #f7f4ff; color: #5a35e6; }
+        .bw-empty { text-align: center; padding: 48px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        @media (max-width: 860px) { .bw-grid { grid-template-columns: minmax(0,1fr); } .bw-stats { grid-template-rows: none; grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 560px) {
+          .bw-bal { font-size: 36px; } .bw-wallet { padding: 20px; } .bw-cta { width: 100%; }
+          .bw-tx { flex-wrap: wrap; } .bw-tx-r { flex-direction: row; align-items: center; margin-left: 56px; width: calc(100% - 56px); justify-content: space-between; }
+          .bw-stat { padding: 16px; } .bw-stat .v { font-size: 20px; }
+          .bw-select { width: 100%; }
+        }
+      `}</style>
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="bu-head">
         <div>
-          <h1 className="text-3xl font-bold mb-1">Wallet</h1>
-          <p className="text-muted-foreground text-sm">Creditele nu se pot retrage — pot fi folosite doar pentru campanii pe platformă</p>
+          <div className="bu-label" style={{ marginBottom: 6 }}>Finanțe</div>
+          <h1>Wallet</h1>
+          <p className="bu-muted bu-sm" style={{ margin: '6px 0 0' }}>Creditele nu se pot retrage — pot fi folosite doar pentru campanii pe platformă</p>
         </div>
-        <Button onClick={() => setModal('select_method')} className="bg-gradient-to-r from-primary to-accent shadow-md">
-          <Plus className="w-4 h-4 mr-2" /> Adaugă Credite
-        </Button>
       </div>
 
       {/* Banner acces blocat */}
       {isLocked && (
-        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5 mb-6 flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-            <Lock className="w-5 h-5 text-orange-600" />
-          </div>
-          <div className="flex-1">
-            <p className="font-black text-orange-800 text-sm mb-1">Acces restricționat</p>
-            <p className="text-xs text-orange-700 leading-relaxed">
+        <div className="bw-banner" style={{ background: '#fff1c2', border: '1px solid #f3dc8a' }}>
+          <div className="bu-ico" style={{ background: '#fff', color: '#854d0e' }}><Lock className="w-5 h-5" /></div>
+          <div style={{ flex: 1, minWidth: 0, color: '#854d0e' }}>
+            <p style={{ margin: 0, fontWeight: 800 }}>Acces restricționat</p>
+            <p className="bu-sm" style={{ margin: '4px 0 12px' }}>
               Pentru a accesa lista de influenceri și a crea campanii ai nevoie de <strong>minimum 500 RON credite</strong> în cont.
               Adaugă credite mai jos sau contactează echipa AddFame la{' '}
-              <a href="mailto:ciprian@addfame.ro" className="underline font-bold">ciprian@addfame.ro</a> pentru acces anticipat.
+              <a href="mailto:ciprian@addfame.ro" style={{ fontWeight: 700, textDecoration: 'underline' }}>ciprian@addfame.ro</a> pentru acces anticipat.
             </p>
+            <button onClick={() => setModal('select_method')} className="bu-btn p">Adaugă acum</button>
           </div>
-          <Button onClick={() => setModal('select_method')} size="sm" className="bg-violet-600 hover:bg-violet-700 text-white flex-shrink-0">
-            Adaugă acum
-          </Button>
         </div>
       )}
 
       {/* Pending alert */}
       {pendingTx.length > 0 && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
-          <Clock className="w-5 h-5 text-amber-600 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-amber-700">
-              {pendingTx.length} payment{pendingTx.length > 1 ? 's' : ''} awaiting confirmation
+        <div className="bw-banner" style={{ background: '#fff8dc', border: '1px solid #f3dc8a', alignItems: 'center' }}>
+          <div className="bu-ico" style={{ background: '#fff1c2', color: '#854d0e' }}><Clock className="w-5 h-5" /></div>
+          <div style={{ flex: 1, minWidth: 0, color: '#854d0e' }}>
+            <p style={{ margin: 0, fontWeight: 800, fontSize: 14 }}>
+              {pendingTx.length} {pendingTx.length > 1 ? 'plăți' : 'plată'} în așteptarea confirmării
             </p>
-            <p className="text-xs text-amber-600 mt-0.5">
-              Credits will be added once we verify your transfer. Reference: {pendingTx[0]?.invoice_number}
+            <p className="bu-xs" style={{ margin: '2px 0 0' }}>
+              Creditele vor fi adăugate după verificarea transferului. Referință: {pendingTx[0]?.invoice_number}
             </p>
           </div>
-          <button onClick={fetchAll} className="text-xs text-amber-700 font-medium hover:underline">Refresh</button>
+          <button onClick={fetchAll} className="bu-btn">Reîmprospătează</button>
         </div>
       )}
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="col-span-2 relative overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 rounded-2xl p-6">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-8 translate-x-8 pointer-events-none" />
-          <div className="flex items-center gap-2 mb-2">
-            <Wallet className="w-5 h-5 text-primary" />
-            <span className="text-sm text-muted-foreground">Total Balance</span>
-          </div>
-          <p className="text-4xl font-bold tracking-tight mb-2">{fmt(wallet.credits_balance)}</p>
+      {/* Balance + stats */}
+      <div className="bw-grid">
+        <div className="bw-wallet">
+          <div className="bw-glow" />
+          <div className="bw-lbl" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Wallet className="w-4 h-4" /> Sold total</div>
+          <div className="bw-bal">{fmt(wallet.credits_balance)}</div>
 
-          {/* Expiry info */}
           {wallet.credits_expires_at && wallet.credits_balance > 0 && (() => {
             const expiresDate = new Date(wallet.credits_expires_at)
             const daysLeft = Math.ceil((expiresDate.getTime() - Date.now()) / 864e5)
             const isUrgent = daysLeft <= 30
             return (
-              <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-xl text-xs font-semibold ${isUrgent ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-amber-50 border border-amber-200 text-amber-700'
-                }`}>
+              <div className="bw-note" style={isUrgent ? { background: 'rgba(240,68,56,.2)', color: '#ffd9d5' } : undefined}>
                 <span>{isUrgent ? '⚠️' : '⏳'}</span>
                 <span>
                   Creditele expiră pe <strong>{expiresDate.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
@@ -405,52 +447,45 @@ function BrandWalletPageInner() {
             )
           })()}
 
-          {/* Escrow breakdown */}
-          <div className="flex items-center gap-4 mb-4">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-xs text-muted-foreground">
-                Disponibil: <strong className="text-green-600">{fmt(Math.max(0, wallet.credits_balance - wallet.credits_reserved))}</strong>
-              </span>
-            </div>
+          <div className="bw-split">
+            <div><span className="bw-lbl">Disponibil</span><b style={{ color: '#7ee2b8' }}>{fmt(available)}</b></div>
             {wallet.credits_reserved > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-amber-400" />
-                <span className="text-xs text-muted-foreground">
-                  Rezervat escrow: <strong className="text-amber-600">{fmt(wallet.credits_reserved)}</strong>
-                </span>
-              </div>
+              <div><span className="bw-lbl">Rezervat escrow</span><b style={{ color: '#ffd666' }}>{fmt(wallet.credits_reserved)}</b></div>
             )}
           </div>
+
           {wallet.credits_reserved > 0 && (
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
-              <Shield className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700">
-                <strong>{fmt(wallet.credits_reserved)}</strong> sunt blocați ca garanție pentru colaborările active. Se eliberează automat la aprobarea posturilor.
-              </p>
+            <div className="bw-note">
+              <Shield className="w-4 h-4" style={{ flex: 'none', marginTop: 2 }} />
+              <span><strong>{fmt(wallet.credits_reserved)}</strong> sunt blocați ca garanție pentru colaborările active. Se eliberează automat la aprobarea posturilor.</span>
             </div>
           )}
-          <Button onClick={() => setModal('select_method')} size="sm" className="bg-gradient-to-r from-primary to-accent w-fit shadow-md">
-            <Plus className="w-3.5 h-3.5 mr-1.5" /> Adaugă Credite
-          </Button>
+
+          <button onClick={() => setModal('select_method')} className="bw-cta"><Plus className="w-4 h-4" /> Adaugă credite</button>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3"><TrendingUp className="w-4 h-4 text-destructive" /><span className="text-xs text-muted-foreground">Total Cheltuit</span></div>
-          <p className="text-2xl font-bold">{fmt(wallet.total_spent)}</p>
-          <p className="text-xs text-muted-foreground mt-1">Total</p>
-        </div>
-        <div className="bg-card border border-border rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3"><Calendar className="w-4 h-4 text-blue-500" /><span className="text-xs text-muted-foreground">Luna aceasta</span></div>
-          <p className="text-2xl font-bold">{fmt(thisMonthSpend)}</p>
-          <p className="text-xs text-muted-foreground mt-1">Cheltuieli</p>
+
+        <div className="bw-stats">
+          <div className="bu-card bw-stat">
+            <div className="bu-row" style={{ gap: 10 }}>
+              <div className="bu-ico" style={{ background: '#efeaff', color: '#4423c4', width: 34, height: 34, borderRadius: 10 }}><TrendingUp className="w-4 h-4" /></div>
+              <span className="bu-label">Total cheltuit</span>
+            </div>
+            <div className="v">{fmt(wallet.total_spent)}</div>
+          </div>
+          <div className="bu-card bw-stat">
+            <div className="bu-row" style={{ gap: 10 }}>
+              <div className="bu-ico" style={{ background: '#e6f0ff', color: '#1d4fb8', width: 34, height: 34, borderRadius: 10 }}><Calendar className="w-4 h-4" /></div>
+              <span className="bu-label">Luna aceasta</span>
+            </div>
+            <div className="v">{fmt(thisMonthSpend)}</div>
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border mb-6">
-        {[{ id: 'transactions', label: 'Tranzacții', icon: Receipt }, { id: 'campaigns', label: 'Cheltuieli Campanii', icon: BarChart3 }].map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+      <div className="bu-tabs">
+        {[{ id: 'transactions', label: 'Tranzacții', icon: Receipt }, { id: 'campaigns', label: 'Cheltuieli campanii', icon: BarChart3 }].map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`bu-pill${activeTab === tab.id ? ' on' : ''}`} style={{ minHeight: 44 }}>
             <tab.icon className="w-4 h-4" />{tab.label}
           </button>
         ))}
@@ -458,73 +493,65 @@ function BrandWalletPageInner() {
 
       {/* Transactions */}
       {activeTab === 'transactions' && (
-        <div className="bg-card border border-border rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <select value={filterType} onChange={e => setFilterType(e.target.value)}
-              className="text-sm border border-input rounded-lg px-3 py-2 bg-background outline-none focus:ring-2 focus:ring-primary/30">
+        <div className="bu-card bu-card-pad">
+          <div className="bu-row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+            <select value={filterType} onChange={e => setFilterType(e.target.value)} className="bu-input bw-select" style={{ height: 44 }}>
               <option value="ALL">Toate tranzacțiile</option>
               <option value="TOPUP">Top-ups</option>
               <option value="SPEND">Cheltuieli</option>
               <option value="REFUND">Refunds</option>
             </select>
             {transactions.length > 0 && (
-              <Button variant="outline" size="sm" onClick={exportCSV}>
-                <Download className="w-4 h-4 mr-2" /> Exportă CSV
-              </Button>
+              <button className="bu-btn" style={{ height: 44 }} onClick={exportCSV}>
+                <Download className="w-4 h-4" /> Exportă CSV
+              </button>
             )}
           </div>
 
           {filteredTx.length === 0 ? (
-            <div className="text-center py-16">
-              <Wallet className="w-12 h-12 mx-auto mb-4 opacity-20" />
-              <p className="font-medium mb-2">Nicio tranzacție încă</p>
-              <p className="text-sm text-muted-foreground mb-5">Adaugă credite pentru a lansa campanii</p>
-              <Button onClick={() => setModal('select_method')} size="sm" className="bg-gradient-to-r from-primary to-accent">Adaugă Credite</Button>
+            <div className="bw-empty">
+              <div className="bu-ico" style={{ background: '#efeaff', color: '#4423c4', width: 56, height: 56, borderRadius: 16 }}><Wallet className="w-6 h-6" /></div>
+              <h3>Nicio tranzacție încă</h3>
+              <p className="bu-muted bu-sm" style={{ margin: 0 }}>Adaugă credite pentru a lansa campanii</p>
+              <button onClick={() => setModal('select_method')} className="bu-btn p big" style={{ marginTop: 8 }}>Adaugă credite</button>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div>
               {filteredTx.map(tx => {
-                const meta = TX_META[tx.type] ?? TX_META.SPEND
+                const ico = TX_ICO[tx.type] ?? TX_ICO.SPEND
                 const isCredit = tx.type === 'TOPUP' || tx.type === 'REFUND'
                 const method = PAYMENT_METHODS.find(m => m.id === tx.payment_method)
+                const chip = TX_CHIP[tx.status] ?? TX_CHIP.pending
                 return (
-                  <div key={tx.id} className="flex items-center justify-between p-4 border border-border rounded-xl hover:bg-muted/30 transition">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${meta.bg}`}>
-                        {isCredit ? <ArrowDownLeft className={`w-4 h-4 ${meta.text}`} /> : <ArrowUpRight className={`w-4 h-4 ${meta.text}`} />}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{tx.description}</p>
-                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <span className="text-xs text-muted-foreground">{fmtDateTime(tx.created_at)}</span>
-                          {method && <span className="text-xs text-muted-foreground">· {method.label}</span>}
-                          {tx.invoice_number && <span className="text-xs text-muted-foreground">· {tx.invoice_number}</span>}
-                        </div>
-                      </div>
+                  <div key={tx.id} className="bw-tx">
+                    <div className="bu-ico" style={{ background: ico.bg, color: ico.fg }}>
+                      {isCredit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                     </div>
-                    <div className="flex items-center gap-3 ml-3 flex-shrink-0">
-                      <div className="hidden sm:flex items-center gap-1.5">
-                        {tx.status === 'completed' && <CheckCircle className="w-3.5 h-3.5 text-green-500" />}
-                        {tx.status === 'pending' && <Clock className="w-3.5 h-3.5 text-amber-500" />}
-                        {tx.status === 'failed' && <XCircle className="w-3.5 h-3.5 text-destructive" />}
-                        <span className="text-xs text-muted-foreground capitalize">{tx.status}</span>
-                      </div>
-                      <p className={`font-bold text-sm min-w-[72px] text-right ${meta.text}`}>
-                        {isCredit ? '+' : '−'}{fmt(Math.abs(tx.amount))}
+                    <div className="bw-tx-main">
+                      <p className="bw-tx-d">{tx.description}</p>
+                      <p className="bu-xs bu-muted">
+                        {fmtDateTime(tx.created_at)}
+                        {method && ` · ${method.label}`}
+                        {tx.invoice_number && ` · ${tx.invoice_number}`}
                       </p>
-                      {tx.invoice_number && (
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => openInvoice(tx)} title="Vezi factura"
-                            className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-primary transition">
-                            <FileText className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => printInvoiceAsPDF(tx)} title="Descarcă PDF"
-                            className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-primary transition">
-                            <Download className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
                     </div>
+                    <div className="bw-tx-r">
+                      <span className="bw-tx-amt" style={{ color: isCredit ? '#14532d' : '#14123a' }}>
+                        {isCredit ? '+' : '−'}{fmt(Math.abs(tx.amount))}
+                      </span>
+                      <span className="bu-chip" style={{ background: chip.bg, color: chip.fg }}>
+                        {tx.status === 'completed' && <CheckCircle className="w-3 h-3" />}
+                        {tx.status === 'pending' && <Clock className="w-3 h-3" />}
+                        {tx.status === 'failed' && <XCircle className="w-3 h-3" />}
+                        {TX_STATUS_RO[tx.status] ?? tx.status}
+                      </span>
+                    </div>
+                    {tx.invoice_number && (
+                      <div className="bu-row">
+                        <button onClick={() => openInvoice(tx)} title="Vezi factura" className="bw-ib"><FileText className="w-4 h-4" /></button>
+                        <button onClick={() => printInvoiceAsPDF(tx)} title="Descarcă PDF" className="bw-ib"><Download className="w-4 h-4" /></button>
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -535,50 +562,50 @@ function BrandWalletPageInner() {
 
       {/* Campaign spend */}
       {activeTab === 'campaigns' && (
-        <div className="bg-card border border-border rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-bold">Budget Allocation</h2>
-            <p className="text-sm text-muted-foreground">{campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''}</p>
+        <div className="bu-card bu-card-pad">
+          <div className="bu-row" style={{ justifyContent: 'space-between', marginBottom: 16, gap: 12 }}>
+            <h2>Alocare buget</h2>
+            <p className="bu-muted bu-sm" style={{ margin: 0 }}>{campaigns.length} {campaigns.length !== 1 ? 'campanii' : 'campanie'}</p>
           </div>
           {campaigns.length === 0 ? (
-            <div className="text-center py-16">
-              <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-20" />
-              <p className="font-medium mb-2">No campaigns yet</p>
-              <Button asChild size="sm" className="mt-2 bg-gradient-to-r from-primary to-accent"><a href="/brand/campaigns">Creează Campanie</a></Button>
+            <div className="bw-empty">
+              <div className="bu-ico" style={{ background: '#efeaff', color: '#4423c4', width: 56, height: 56, borderRadius: 16 }}><Briefcase className="w-6 h-6" /></div>
+              <h3>Nicio campanie încă</h3>
+              <a href="/brand/campaigns" className="bu-btn p big" style={{ marginTop: 8 }}>Creează campanie</a>
             </div>
           ) : (
             <>
-              <div className="space-y-3 mb-5">
+              <div className="bu-col" style={{ gap: 12, marginBottom: 16 }}>
                 {campaigns.map(c => {
                   const spent = transactions.filter(tx => tx.type === 'SPEND' && tx.description.toLowerCase().includes(c.title.toLowerCase())).reduce((s, tx) => s + Math.abs(tx.amount), 0)
                   const pct = c.budget > 0 ? Math.min((spent / c.budget) * 100, 100) : 0
+                  const cc = CAMP_CHIP[c.status] ?? { bg: '#f0eff7', fg: '#4a4770' }
                   return (
-                    <div key={c.id} className="p-4 border border-border rounded-xl hover:border-primary/30 transition">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <Briefcase className="w-4 h-4 text-primary" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{c.title}</p>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${CAMPAIGN_COLORS[c.status] ?? 'bg-muted text-muted-foreground'}`}>{c.status}</span>
+                    <div key={c.id} style={{ padding: 16, border: '1px solid #e5e3f3', borderRadius: 16 }}>
+                      <div className="bu-row" style={{ justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+                        <div className="bu-row" style={{ gap: 12, minWidth: 0 }}>
+                          <div className="bu-ico" style={{ background: '#efeaff', color: '#4423c4' }}><Briefcase className="w-4 h-4" /></div>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</p>
+                            <span className="bu-chip" style={{ background: cc.bg, color: cc.fg }}>{c.status}</span>
                           </div>
                         </div>
-                        <div className="text-right ml-3"><p className="text-sm font-bold">{fmt(spent)}</p><p className="text-xs text-muted-foreground">of {fmt(c.budget ?? 0)}</p></div>
+                        <div style={{ textAlign: 'right', flex: 'none' }}>
+                          <p style={{ margin: 0, fontWeight: 800, fontSize: 14 }}>{fmt(spent)}</p>
+                          <p className="bu-xs bu-muted" style={{ margin: 0 }}>din {fmt(c.budget ?? 0)}</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(pct)}%</span>
+                      <div className="bu-row" style={{ gap: 12 }}>
+                        <div className="bu-bar" style={{ flex: 1 }}><i style={{ width: `${pct}%` }} /></div>
+                        <span className="bu-xs bu-muted" style={{ width: 34, textAlign: 'right' }}>{Math.round(pct)}%</span>
                       </div>
                     </div>
                   )
                 })}
               </div>
-              <div className="flex items-center justify-between p-4 bg-muted/40 rounded-xl border border-border">
-                <p className="text-sm font-semibold">Total budgets</p>
-                <p className="text-lg font-bold">{fmt(campaigns.reduce((s, c) => s + (c.budget ?? 0), 0))}</p>
+              <div className="bu-row" style={{ justifyContent: 'space-between', padding: 16, background: '#f6f6fc', borderRadius: 14, border: '1px solid #e5e3f3' }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 14 }}>Total bugete</p>
+                <p className="bu-d" style={{ margin: 0, fontWeight: 800, fontSize: 20 }}>{fmt(campaigns.reduce((s, c) => s + (c.budget ?? 0), 0))}</p>
               </div>
             </>
           )}
@@ -703,7 +730,7 @@ function BrandWalletPageInner() {
                   <div className="grid grid-cols-3 gap-2">
                     {PRESET_AMOUNTS.map(({ value, popular }) => (
                       <button key={value} type="button" onClick={() => { setAmount(value); setCustomAmount('') }}
-                        className={`relative p-3.5 rounded-xl border-2 text-sm font-semibold transition ${amount === value ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:border-primary/40'}`}>
+                        className={`relative p-3.5 min-h-[48px] rounded-xl border-2 text-sm font-bold transition ${amount === value ? 'border-[#5a35e6] bg-[#efeaff] text-[#4423c4]' : 'border-[#e5e3f3] hover:border-[#c9b9fb]'}`}>
                         {popular && <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary to-accent text-white text-[9px] font-bold px-2 py-0.5 rounded-full">POPULAR</span>}
                         {value.toLocaleString('ro-RO')} RON
                       </button>

@@ -109,6 +109,31 @@ const SORT_OPTIONS = [
 
 const CREATOR_SCORE_LEVELS = ['Toate nivelurile', 'Starter', 'Rising', 'Pro', 'Elite']
 
+const IF_CSS = `
+.if-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+@media(max-width:1023px){.if-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:639px){.if-grid{grid-template-columns:minmax(0,1fr)}}
+.if-card{padding:18px;display:flex;flex-direction:column;gap:12px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.if-card:hover{border-color:#c9b9fb;box-shadow:0 14px 30px -20px rgba(90,53,230,.45)}
+.if-save{width:44px;height:44px;border-radius:12px;border:1.5px solid #e5e3f3;background:#fff;color:#8783a8;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.if-save.on{background:#efeaff;border-color:#c9b9fb;color:#5a35e6}
+.if-stat{background:#f6f6fc;border-radius:12px;padding:10px 12px;min-width:0}
+.if-stat b{display:block;font-family:var(--font-display,system-ui),system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:-.02em}
+.if-ov{position:fixed;inset:0;z-index:50;display:flex;background:rgba(20,18,58,.45);backdrop-filter:blur(3px)}
+.if-dr{width:100%;max-width:460px;background:#fff;display:flex;flex-direction:column;overflow-y:auto;box-shadow:-20px 0 50px -20px rgba(20,18,58,.35);color:#14123a;font-family:var(--font-body,system-ui),system-ui,sans-serif}
+.if-dr h2,.if-dr h3{font-family:var(--font-display,system-ui),system-ui,sans-serif;margin:0}
+.if-sec{padding:20px;border-bottom:1px solid #eeecf7}
+.if-sel{width:100%;height:46px;border:1.5px solid #e5e3f3;border-radius:12px;padding:0 12px;font:inherit;font-size:14px;background:#fff;color:#14123a;box-sizing:border-box}
+.if-sel.sm{width:auto;height:42px;max-width:100%}
+.if-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media(max-width:767px){.if-filters{grid-template-columns:minmax(0,1fr)}}
+.if-toast{position:fixed;bottom:20px;right:16px;left:16px;margin-left:auto;max-width:420px;z-index:60;display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:14px;font-size:14px;font-weight:700;box-shadow:0 18px 40px -18px rgba(20,18,58,.4)}
+.if-sheet{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(20,18,58,.45)}
+.if-sheet>div{background:#fff;border-radius:24px 24px 0 0;padding:16px 16px 28px;max-width:560px;width:100%;margin:0 auto;box-sizing:border-box}
+.if-opt{width:100%;display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;border:1.5px solid #e5e3f3;background:#fff;text-align:left;cursor:pointer;font-family:inherit;color:#14123a;min-height:44px}
+.if-opt:hover{border-color:#c9b9fb;background:#faf8ff}
+`
+
 // ─── Locked screen ─────────────────────────────────────────────────────────────
 
 const FAKE_INFLUENCERS = [
@@ -123,81 +148,70 @@ const FAKE_INFLUENCERS = [
 function FakeCard() {
   const fake = FAKE_INFLUENCERS[Math.floor(Math.random() * FAKE_INFLUENCERS.length)]
   return (
-    <div className="bg-card border border-border rounded-xl p-3 select-none">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/40 to-accent/40 flex-shrink-0" />
-        <div className="flex-1">
-          <div className="h-3 bg-muted rounded w-16 mb-1" />
-          <div className="h-2.5 bg-muted/60 rounded w-10" />
+    <div className="bu-card" style={{ padding: 14, userSelect: 'none' }}>
+      <div className="bu-row" style={{ gap: 10, marginBottom: 10 }}>
+        <div className="bu-face" style={{ width: 40, height: 40, background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', opacity: .4 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ height: 10, background: '#eeecf7', borderRadius: 6, width: 70, marginBottom: 6 }} />
+          <div style={{ height: 8, background: '#f0eff7', borderRadius: 6, width: 44 }} />
         </div>
       </div>
-      <div className="h-2 bg-muted/50 rounded w-full mb-1.5" />
-      <div className="h-2 bg-muted/30 rounded w-3/4 mb-3" />
-      <div className="grid grid-cols-2 gap-1.5 mb-2">
-        <div className="bg-muted/40 rounded-lg p-1.5 text-center">
-          <p className="text-xs font-bold blur-sm">{fake.followers}</p>
-          <p className="text-[10px] text-muted-foreground">Reach</p>
-        </div>
-        <div className="bg-muted/40 rounded-lg p-1.5 text-center">
-          <p className="text-xs font-bold blur-sm">{fake.platform}</p>
-          <p className="text-[10px] text-muted-foreground">Platform</p>
-        </div>
+      <div style={{ height: 8, background: '#f0eff7', borderRadius: 6, marginBottom: 6 }} />
+      <div style={{ height: 8, background: '#f0eff7', borderRadius: 6, width: '70%', marginBottom: 12 }} />
+      <div className="bu-row" style={{ gap: 6, marginBottom: 10 }}>
+        {fake.niches.map(n => <span key={n} className="bu-chip" style={{ background: '#efeaff', color: '#4423c4', filter: 'blur(4px)' }}>{n}</span>)}
       </div>
-      <div className="flex gap-1 mb-2">
-        {fake.niches.map(n => (
-          <span key={n} className="bg-primary/10 px-1.5 py-0.5 rounded-full text-[10px] blur-sm">{n}</span>
-        ))}
-      </div>
-      <div className="h-7 bg-muted/40 rounded-lg" />
+      <div className="if-stat"><b style={{ filter: 'blur(5px)' }}>{fake.followers}</b></div>
     </div>
   )
 }
 
 function LockedScreen({ reason }: { reason: 'no_credits' }) {
-  const noCredits = true
   return (
-    <div className="relative">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 blur-sm pointer-events-none select-none opacity-60">
-        {Array.from({ length: 12 }).map((_, i) => <FakeCard key={i} />)}
+    <div style={{ position: 'relative' }}>
+      <div className="if-grid" style={{ filter: 'blur(3px)', pointerEvents: 'none', userSelect: 'none', opacity: .6 }}>
+        {Array.from({ length: 6 }).map((_, i) => <FakeCard key={i} />)}
       </div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="bg-card/95 border border-border rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-primary" />
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 0' }}>
+        <div className="bu-card" style={{ padding: 24, maxWidth: 460, width: '100%', textAlign: 'center', boxShadow: '0 30px 60px -30px rgba(20,18,58,.4)' }}>
+          <div className="bu-ico" style={{ width: 56, height: 56, margin: '0 auto 14px', background: '#efeaff', color: '#5a35e6' }}>
+            <Lock className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-black text-foreground mb-2">Lista de influenceri este blocată</h2>
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            Pentru a accesa rețeaua completă de creatori ai nevoie de <strong>minimum 250 RON credite</strong> în wallet sau aprobare din partea echipei AddFame.
+          <h2 style={{ fontSize: 22, marginBottom: 8 }}>Lista de influenceri este blocată</h2>
+          <p className="bu-muted bu-sm" style={{ margin: '0 0 18px' }}>
+            Pentru a accesa rețeaua completă de creatori ai nevoie de <strong style={{ color: '#14123a' }}>minimum 250 RON credite</strong> în wallet sau aprobare din partea echipei AddFame.
           </p>
-          <div className="space-y-3 mb-6 text-left">
-            <div className="flex items-center gap-3 p-3 rounded-xl border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-orange-100 dark:bg-orange-900/40">
-                <Wallet className="w-3.5 h-3.5 text-orange-600" />
+          <div className="bu-col" style={{ gap: 10, textAlign: 'left', marginBottom: 16 }}>
+            <div className="bu-row" style={{ gap: 12, padding: 12, borderRadius: 14, background: '#fff1e6', flexWrap: 'wrap' }}>
+              <div className="bu-ico" style={{ width: 36, height: 36, background: '#fff', color: '#9a4206' }}><Wallet className="w-4 h-4" /></div>
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#9a4206' }}>Adaugă credite în wallet</p>
+                <p className="bu-xs" style={{ margin: 0, color: '#9a4206' }}>Minim 250 RON necesari pentru acces</p>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-orange-800 dark:text-orange-300">Adaugă credite în wallet</p>
-                <p className="text-xs text-orange-600 dark:text-orange-400">Minim 250 RON necesari pentru acces</p>
-              </div>
-              <Link href="/brand/wallet">
-                <Button size="sm" variant="outline" className="text-xs border-orange-300 text-orange-700 hover:bg-orange-100 flex-shrink-0">
-                  Adaugă fonduri <ArrowRight className="w-3 h-3 ml-1" />
-                </Button>
-              </Link>
+              <Link href="/brand/wallet" className="bu-btn" style={{ height: 44 }}>Adaugă fonduri <ArrowRight className="w-3.5 h-3.5" /></Link>
             </div>
-            <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-200 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-800">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-100 dark:bg-purple-900/40">
-                <Zap className="w-3.5 h-3.5 text-purple-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-purple-800 dark:text-purple-300">Aprobare echipă AddFame</p>
-                <p className="text-xs text-purple-600 dark:text-purple-400">Contactează-ne pentru acces rapid</p>
+            <div className="bu-row" style={{ gap: 12, padding: 12, borderRadius: 14, background: '#efeaff' }}>
+              <div className="bu-ico" style={{ width: 36, height: 36, background: '#fff', color: '#4423c4' }}><Zap className="w-4 h-4" /></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#4423c4' }}>Aprobare echipă AddFame</p>
+                <p className="bu-xs" style={{ margin: 0, color: '#4423c4' }}>Contactează-ne pentru acces rapid</p>
               </div>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Una dintre cele două condiții este suficientă pentru a debloca accesul la rețeaua completă de creatori.</p>
+          <p className="bu-muted bu-xs" style={{ margin: 0 }}>Una dintre cele două condiții este suficientă pentru a debloca accesul la rețeaua completă de creatori.</p>
         </div>
       </div>
     </div>
+  )
+}
+
+function Face({ influencer, size }: { influencer: Influencer; size: number }) {
+  return (
+    <span className="bu-face" style={{ width: size, height: size, background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', color: '#fff', fontSize: size * 0.4 }}>
+      {influencer.avatar
+        ? <img src={influencer.avatar} alt={influencer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : influencer.name[0]?.toUpperCase()}
+    </span>
   )
 }
 
@@ -226,184 +240,140 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="w-full max-w-md bg-card border-l border-border flex flex-col overflow-y-auto shadow-2xl">
+  const rateColor = stats ? (stats.successRate >= 80 ? '#14532d' : stats.successRate >= 50 ? '#854d0e' : '#b42318') : '#14123a'
 
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-card z-10">
-          <h2 className="font-bold">Influencer Profile</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center transition">
-            <X className="w-4 h-4" />
-          </button>
+  return (
+    <div className="if-ov">
+      <div style={{ flex: 1, minWidth: 0 }} onClick={onClose} />
+      <div className="if-dr">
+
+        <div className="bu-row" style={{ justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #eeecf7', position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700 }}>Profil creator</h2>
+          <button onClick={onClose} aria-label="Închide" className="if-save"><X className="w-4 h-4" /></button>
         </div>
 
-        {/* Hero */}
-        <div className="p-6 border-b border-border">
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center overflow-hidden ring-4 ring-primary/20 flex-shrink-0">
-              {influencer.avatar
-                ? <img src={influencer.avatar} alt={influencer.name} className="w-full h-full object-cover" />
-                : <span className="text-white text-2xl font-bold">{influencer.name[0]?.toUpperCase()}</span>}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <h3 className="font-bold text-lg leading-tight">{influencer.name}</h3>
+        <div className="if-sec">
+          <div className="bu-row" style={{ alignItems: 'flex-start', gap: 14 }}>
+            <Face influencer={influencer} size={64} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800 }}>{influencer.name}</h3>
                 {influencer.is_verified && (
-                  <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
-                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> Verified Creator
-                  </span>
+                  <span className="bu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star className="w-3 h-3" /> Verified Creator</span>
                 )}
                 {influencer.approval_status === 'approved' && !influencer.is_verified && (
-                  <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4" style={{ color: '#5a35e6' }} />
                 )}
               </div>
-              {/* Oraș în drawer */}
               {influencer.city && (
-                <div className="flex items-center gap-1 mt-1 mb-1">
-                  <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
-                  <span className="text-xs font-semibold text-primary">{influencer.city}</span>
+                <div className="bu-row bu-xs" style={{ gap: 4, marginTop: 4, color: '#5a35e6', fontWeight: 700 }}>
+                  <MapPin className="w-3 h-3" /> {influencer.city}
                 </div>
               )}
-              {influencer.bio && (
-                <p className="text-sm text-muted-foreground leading-relaxed mt-1">{influencer.bio}</p>
-              )}
+              {influencer.bio && <p className="bu-muted bu-sm" style={{ margin: '8px 0 0' }}>{influencer.bio}</p>}
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mt-5">
-            <div className="bg-muted/40 rounded-xl p-3 text-center">
-              <p className="text-lg font-bold">{formatFollowers(totalF + (influencer.ig_followers || 0))}</p>
-              <p className="text-xs text-muted-foreground">Total Reach</p>
-            </div>
-            <div className="bg-muted/40 rounded-xl p-3 text-center">
-              <p className="text-lg font-bold">{(influencer.platforms?.length ?? 0) + (influencer.instagram_connected ? 1 : 0)}</p>
-              <p className="text-xs text-muted-foreground">Platforms</p>
-            </div>
-            <div className="bg-muted/40 rounded-xl p-3 text-center">
-              <p className="text-lg font-bold">{influencer.niches.length}</p>
-              <p className="text-xs text-muted-foreground">Niches</p>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10, marginTop: 18 }}>
+            <div className="if-stat"><b>{formatFollowers(totalF + (influencer.ig_followers || 0))}</b><span className="bu-muted bu-xs">Reach total</span></div>
+            <div className="if-stat"><b>{(influencer.platforms?.length ?? 0) + (influencer.instagram_connected ? 1 : 0)}</b><span className="bu-muted bu-xs">Platforme</span></div>
+            <div className="if-stat"><b>{influencer.niches.length}</b><span className="bu-muted bu-xs">Nișe</span></div>
           </div>
 
           {influencer.is_verified && stats && stats.total > 0 && (
-            <div className="mt-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
-              <p className="text-xs font-black text-amber-700 dark:text-amber-400 mb-3 flex items-center gap-1.5">
-                <Award className="w-3.5 h-3.5" /> Track Record
+            <div style={{ marginTop: 14, background: '#fff8dc', borderRadius: 16, padding: 14 }}>
+              <p className="bu-row" style={{ gap: 6, margin: '0 0 10px', fontWeight: 800, fontSize: 12, color: '#854d0e', textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                <Award className="w-3.5 h-3.5" /> Istoric colaborări
               </p>
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                <div className="text-center">
-                  <p className="text-xl font-black text-amber-700 dark:text-amber-300">{stats.completed}</p>
-                  <p className="text-[10px] text-amber-600">Completate</p>
-                </div>
-                <div className="text-center">
-                  <p className={`text-xl font-black ${stats.successRate >= 80 ? 'text-green-600' : stats.successRate >= 50 ? 'text-amber-600' : 'text-destructive'}`}>{stats.successRate}%</p>
-                  <p className="text-[10px] text-amber-600">Rată succes</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-black text-amber-700 dark:text-amber-300">{stats.totalEarned.toFixed(0)}</p>
-                  <p className="text-[10px] text-amber-600">Total câștigat</p>
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10, marginBottom: 10 }}>
+                <div><b className="bu-d" style={{ fontSize: 20, color: '#854d0e' }}>{stats.completed}</b><div className="bu-xs" style={{ color: '#854d0e' }}>Completate</div></div>
+                <div><b className="bu-d" style={{ fontSize: 20, color: rateColor }}>{stats.successRate}%</b><div className="bu-xs" style={{ color: '#854d0e' }}>Rată succes</div></div>
+                <div><b className="bu-d" style={{ fontSize: 20, color: '#854d0e' }}>{stats.totalEarned.toFixed(0)}</b><div className="bu-xs" style={{ color: '#854d0e' }}>Total câștigat</div></div>
               </div>
-              <div className="h-1.5 bg-amber-200 dark:bg-amber-800 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full ${stats.successRate >= 80 ? 'bg-green-500' : stats.successRate >= 50 ? 'bg-amber-500' : 'bg-destructive'}`}
-                  style={{ width: `${stats.successRate}%` }} />
-              </div>
+              <div className="bu-bar"><i style={{ width: `${stats.successRate}%` }} /></div>
             </div>
           )}
         </div>
 
-        {/* Platforms */}
-        <div className="p-5 border-b border-border">
-          <h4 className="text-sm font-semibold mb-3">Social Platforms</h4>
+        <div className="if-sec">
+          <div className="bu-label" style={{ marginBottom: 10 }}>Platforme sociale</div>
           {(influencer.platforms?.length ?? 0) === 0 && !influencer.instagram_connected
-            ? <p className="text-sm text-muted-foreground">No platforms connected</p>
+            ? <p className="bu-muted bu-sm" style={{ margin: 0 }}>Nicio platformă conectată</p>
             : (
-              <div className="space-y-2">
+              <div className="bu-col">
                 {influencer.instagram_connected && (
-                  <div className="flex items-center justify-between py-2 border-b border-border">
-                    <div className="flex items-center gap-2">
+                  <div className="bu-row" style={{ justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #eeecf7', gap: 8, flexWrap: 'wrap' }}>
+                    <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
                       <Instagram className="w-3.5 h-3.5 text-pink-500" />
-                      <span className="text-sm font-medium">Instagram</span>
+                      <span style={{ fontWeight: 700, fontSize: 14 }}>Instagram</span>
                       {influencer.instagram_handle && (
-                        <a href={`https://instagram.com/${influencer.instagram_handle}`} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition">
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
+                        <a href={`https://instagram.com/${influencer.instagram_handle}`} target="_blank" rel="noreferrer" style={{ color: '#6a6690' }}><ExternalLink className="w-3 h-3" /></a>
                       )}
-                      <span className="text-[10px] font-black text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">✅ Verificat API</span>
+                      <span className="bu-chip" style={{ background: '#dcf5ec', color: '#14532d', height: 20, fontSize: 11 }}>Verificat API</span>
                     </div>
-                    <div className="flex items-center gap-2 text-right">
-                      <span className="text-sm font-black">{(influencer.ig_followers || 0).toLocaleString()}</span>
-                      {influencer.ig_engagement_rate > 0 && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">ER {influencer.ig_engagement_rate}%</span>
-                      )}
+                    <div className="bu-row" style={{ gap: 8 }}>
+                      <b className="bu-d">{(influencer.ig_followers || 0).toLocaleString()}</b>
+                      {(influencer.ig_engagement_rate ?? 0) > 0 && <span className="bu-chip" style={{ background: '#dcf5ec', color: '#14532d' }}>ER {influencer.ig_engagement_rate}%</span>}
                     </div>
                   </div>
                 )}
                 {(influencer.platforms ?? []).filter(p => !(p.platform === 'instagram' && influencer.instagram_connected)).map((p, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                    <div className="flex items-center gap-2">
+                  <div key={i} className="bu-row" style={{ justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #eeecf7' }}>
+                    <div className="bu-row" style={{ gap: 8 }}>
                       <PlatformIcon platform={p.platform} />
-                      <span className="text-sm font-medium capitalize">{p.platform}</span>
-                      {p.url && <a href={p.url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition"><ExternalLink className="w-3 h-3" /></a>}
+                      <span style={{ fontWeight: 700, fontSize: 14, textTransform: 'capitalize' }}>{p.platform}</span>
+                      {p.url && <a href={p.url} target="_blank" rel="noreferrer" style={{ color: '#6a6690' }}><ExternalLink className="w-3 h-3" /></a>}
                     </div>
-                    {p.followers && <span className="text-sm font-semibold">{formatFollowers(p.followers)}</span>}
+                    {p.followers && <b className="bu-d">{formatFollowers(p.followers)}</b>}
                   </div>
                 ))}
               </div>
             )}
         </div>
 
-        {/* Niches */}
-        <div className="p-5 border-b border-border">
-          <h4 className="text-sm font-semibold mb-3">Content Niches</h4>
-          <div className="flex flex-wrap gap-2">
+        <div className="if-sec">
+          <div className="bu-label" style={{ marginBottom: 10 }}>Nișe de conținut</div>
+          <div className="bu-row" style={{ flexWrap: 'wrap', gap: 8 }}>
             {influencer.niches.length === 0
-              ? <p className="text-sm text-muted-foreground">No niches set</p>
-              : influencer.niches.map(n => (
-                <span key={n} className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-medium">{n}</span>
-              ))}
+              ? <p className="bu-muted bu-sm" style={{ margin: 0 }}>Nicio nișă setată</p>
+              : influencer.niches.map(n => <span key={n} className="bu-chip" style={{ background: '#efeaff', color: '#4423c4' }}>{n}</span>)}
           </div>
         </div>
 
-        {/* Invite */}
-        <div className="p-5 mt-auto">
-          <h4 className="text-sm font-semibold mb-3">Invită la Campanie</h4>
+        <div className="if-sec" style={{ marginTop: 'auto', borderBottom: 0 }}>
+          <div className="bu-label" style={{ marginBottom: 10 }}>Invită la campanie</div>
           {inviteState.success ? (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-center">
-              <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-              <p className="font-medium text-sm">Invitație trimisă!</p>
-              <p className="text-xs text-muted-foreground mt-1">Influencerul a fost notificat.</p>
-              <Button variant="outline" size="sm" className="mt-3" onClick={() => setInviteState({ loading: false, success: false, error: null })}>Trimite Alta</Button>
+            <div style={{ background: '#dcf5ec', borderRadius: 16, padding: 16, textAlign: 'center', color: '#14532d' }}>
+              <CheckCircle className="w-8 h-8" style={{ margin: '0 auto 6px' }} />
+              <p style={{ margin: 0, fontWeight: 800 }}>Invitație trimisă!</p>
+              <p className="bu-xs" style={{ margin: '4px 0 12px' }}>Influencerul a fost notificat.</p>
+              <button className="bu-btn" onClick={() => setInviteState({ loading: false, success: false, error: null })}>Trimite alta</button>
             </div>
           ) : (
             <>
               {inviteState.error && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-3 flex items-center gap-2 text-xs text-destructive">
-                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {inviteState.error}
+                <div className="bu-row bu-xs" style={{ gap: 8, background: '#fff1e6', color: '#9a4206', borderRadius: 12, padding: 12, marginBottom: 12, fontWeight: 700 }}>
+                  <AlertCircle className="w-3.5 h-3.5" style={{ flex: 'none' }} /> {inviteState.error}
                 </div>
               )}
               {activeCampaigns.length === 0 ? (
-                <div className="text-center py-4 bg-muted/30 rounded-xl">
-                  <p className="text-sm text-muted-foreground">No active campaigns to invite to.</p>
-                  <Button asChild variant="outline" size="sm" className="mt-2"><Link href="/brand/campaigns/new">Creează Campanie</Link></Button>
+                <div style={{ textAlign: 'center', padding: 16, background: '#f6f6fc', borderRadius: 16 }}>
+                  <p className="bu-muted bu-sm" style={{ margin: '0 0 10px' }}>Nu ai campanii active la care să inviți.</p>
+                  <Link href="/brand/campaigns/new" className="bu-btn">Creează campanie</Link>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <select value={selectedCampaign} onChange={e => setSelectedCampaign(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-input rounded-xl bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30">
+                <div className="bu-col" style={{ gap: 10 }}>
+                  <select value={selectedCampaign} onChange={e => setSelectedCampaign(e.target.value)} className="if-sel">
                     <option value="">Selectează o campanie…</option>
                     {activeCampaigns.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                   </select>
-                  <div className="flex gap-2">
-                    <Button className="flex-1 bg-gradient-to-r from-primary to-accent" onClick={handleInvite} disabled={!selectedCampaign || inviteState.loading}>
-                      <Send className="w-4 h-4 mr-2" />
-                      {inviteState.loading ? 'Se trimite…' : 'Trimite Invitație'}
-                    </Button>
-                    <Button variant="outline" size="icon" onClick={() => onSave(influencer.id)} className={isSaved ? 'text-primary border-primary/40 bg-primary/5' : ''}>
+                  <div className="bu-row" style={{ gap: 8 }}>
+                    <button className="bu-btn p big" style={{ flex: 1 }} onClick={handleInvite} disabled={!selectedCampaign || inviteState.loading}>
+                      <Send className="w-4 h-4" /> {inviteState.loading ? 'Se trimite…' : 'Trimite invitația'}
+                    </button>
+                    <button className={`if-save${isSaved ? ' on' : ''}`} style={{ height: 46 }} aria-label="Salvează" onClick={() => onSave(influencer.id)}>
                       {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}
@@ -421,90 +391,68 @@ function InfluencerCard({ influencer, isSaved, onSave, onClick, stats }: {
   influencer: Influencer; isSaved: boolean; onSave: (id: string) => void; onClick: () => void; stats?: InfluencerStat
 }) {
   const totalF = totalFollowers(influencer.platforms)
+  const reach = totalF + (influencer.instagram_connected && totalF === 0 ? (influencer.ig_followers || 0) : 0)
+  const price = influencer.price_min ? `de la ${influencer.price_min} RON / campanie`
+    : influencer.price_reel ? `Reel ${influencer.price_reel} RON`
+      : influencer.price_story ? `Story ${influencer.price_story} RON` : null
   return (
-    <div onClick={onClick} className="bg-white rounded-2xl overflow-hidden cursor-pointer transition-all group hover:shadow-xl hover:-translate-y-0.5"
-      style={{ border: influencer.is_verified ? '2px solid #fbbf24' : '1.5px solid #f0f0f0' }}>
-      <div className="relative h-20" style={{ background: influencer.is_verified ? 'linear-gradient(135deg,#fef3c7,#fde68a)' : 'linear-gradient(135deg,#f5f3ff,#ede9fe)' }}>
-        <button onClick={e => { e.stopPropagation(); onSave(influencer.id) }}
-          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-xl bg-white/80 flex items-center justify-center hover:bg-white shadow-sm transition">
-          {isSaved ? <BookmarkCheck className="w-4 h-4 text-orange-500" /> : <Bookmark className="w-4 h-4 text-gray-400" />}
-        </button>
-        {influencer.is_verified && (
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-            <Star className="w-2.5 h-2.5 fill-white" /> Verified
+    <div onClick={onClick} className="bu-card if-card" style={influencer.is_verified ? { borderColor: '#f3d98a' } : undefined}>
+      <div className="bu-row" style={{ alignItems: 'flex-start', gap: 12 }}>
+        <Face influencer={influencer} size={52} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="bu-row" style={{ gap: 6 }}>
+            <h3 style={{ fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{influencer.name}</h3>
+            {influencer.approval_status === 'approved' && <CheckCircle className="w-3.5 h-3.5" style={{ color: '#1d4fb8', flex: 'none' }} />}
           </div>
-        )}
-        <div className="absolute -bottom-6 left-4">
-          <div className="w-12 h-12 rounded-2xl overflow-hidden border-4 border-white shadow-md" style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }}>
-            {influencer.avatar
-              ? <img src={influencer.avatar} alt={influencer.name} className="w-full h-full object-cover" />
-              : <span className="w-full h-full flex items-center justify-center text-white font-black text-lg">{influencer.name[0]?.toUpperCase()}</span>}
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-8 px-4 pb-4">
-        <div className="flex items-start justify-between mb-1">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1">
-              <h3 className="font-black text-sm text-gray-900 truncate">{influencer.name}</h3>
-              {influencer.approval_status === 'approved' && <CheckCircle className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />}
-            </div>
-            {/* Oraș sub nume */}
-            {influencer.city && (
-              <div className="flex items-center gap-0.5 mt-0.5">
-                <MapPin className="w-2.5 h-2.5 text-primary flex-shrink-0" />
-                <span className="text-[10px] font-semibold text-primary truncate">{influencer.city}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              {influencer.instagram_connected && (
-                <span className="flex items-center gap-0.5">
-                  <Instagram className="w-3.5 h-3.5 text-pink-500" />
-                  <span className="text-[10px] font-black text-green-600">{(influencer.ig_followers || 0).toLocaleString()}</span>
-                  <span className="text-[10px] text-green-500">✅</span>
-                </span>
-              )}
-              {(influencer.platforms ?? []).filter(p => !(p.platform === 'instagram' && influencer.instagram_connected)).slice(0, 2).map((p, i) => (
-                <span key={i} className="flex items-center gap-0.5">
-                  <PlatformIcon platform={p.platform} />
-                  {p.followers && <span className="text-[10px] font-bold text-gray-400">{formatFollowers(p.followers)}</span>}
-                </span>
-              ))}
-            </div>
-          </div>
-          {totalF > 0 && (
-            <div className="text-right ml-2 flex-shrink-0">
-              <p className="text-sm font-black text-gray-900">{formatFollowers(totalF)}</p>
-              <p className="text-[10px] text-gray-400">followeri</p>
+          {influencer.city && (
+            <div className="bu-row bu-xs" style={{ gap: 3, color: '#6a6690', marginTop: 2 }}>
+              <MapPin className="w-3 h-3" style={{ flex: 'none' }} /> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{influencer.city}</span>
             </div>
           )}
+          <div className="bu-row" style={{ gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
+            {influencer.instagram_connected && (
+              <span className="bu-row bu-xs" style={{ gap: 4, fontWeight: 700, color: '#14532d' }}>
+                <Instagram className="w-3.5 h-3.5 text-pink-500" /> {(influencer.ig_followers || 0).toLocaleString()}
+              </span>
+            )}
+            {(influencer.platforms ?? []).filter(p => !(p.platform === 'instagram' && influencer.instagram_connected)).slice(0, 2).map((p, i) => (
+              <span key={i} className="bu-row bu-xs" style={{ gap: 4, fontWeight: 700, color: '#6a6690' }}>
+                <PlatformIcon platform={p.platform} /> {p.followers && formatFollowers(p.followers)}
+              </span>
+            ))}
+          </div>
         </div>
-
-        {influencer.bio && <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mb-3 mt-2">{influencer.bio}</p>}
-
-        {(influencer.niches ?? []).length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {influencer.niches.slice(0, 3).map(n => <span key={n} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100">{n}</span>)}
-            {influencer.niches.length > 3 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">+{influencer.niches.length - 3}</span>}
-          </div>
-        )}
-
-        {(influencer.price_min || influencer.price_reel || influencer.price_story) && (
-          <div className="flex items-center gap-1.5 mb-3 px-2.5 py-1.5 rounded-xl bg-orange-50 border border-orange-100">
-            <span className="text-xs font-black text-orange-500">RON</span>
-            <span className="text-xs font-bold text-orange-700 truncate">
-              {influencer.price_min ? `de la ${influencer.price_min} RON RON/campanie`
-                : influencer.price_reel ? `Reel ${influencer.price_reel} RON RON`
-                  : `Story ${influencer.price_story} RON RON`}
-            </span>
-          </div>
-        )}
-
-        <button onClick={onClick} className="w-full py-2 rounded-xl text-xs font-black text-white" style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
-          <Eye className="w-3.5 h-3.5 inline mr-1.5" /> View Profile
+        <button className={`if-save${isSaved ? ' on' : ''}`} aria-label="Salvează" onClick={e => { e.stopPropagation(); onSave(influencer.id) }}>
+          {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
         </button>
       </div>
+
+      {influencer.is_verified && (
+        <div><span className="bu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star className="w-3 h-3" /> Verified</span></div>
+      )}
+
+      {influencer.bio && <p className="bu-muted bu-sm" style={{ margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{influencer.bio}</p>}
+
+      {(influencer.niches ?? []).length > 0 && (
+        <div className="bu-row" style={{ flexWrap: 'wrap', gap: 6 }}>
+          {influencer.niches.slice(0, 3).map(n => <span key={n} className="bu-chip" style={{ background: '#efeaff', color: '#4423c4' }}>{n}</span>)}
+          {influencer.niches.length > 3 && <span className="bu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}>+{influencer.niches.length - 3}</span>}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 8 }}>
+        <div className="if-stat"><b>{totalF > 0 ? formatFollowers(totalF) : reach > 0 ? formatFollowers(reach) : '—'}</b><span className="bu-muted bu-xs">followeri</span></div>
+        <div className="if-stat">
+          <b>{stats && stats.total > 0 ? `${stats.successRate}%` : (influencer.ig_engagement_rate ?? 0) > 0 ? `${influencer.ig_engagement_rate}%` : '—'}</b>
+          <span className="bu-muted bu-xs">{stats && stats.total > 0 ? 'rată succes' : 'engagement'}</span>
+        </div>
+      </div>
+
+      {price && <div className="bu-sm" style={{ fontWeight: 700 }}><span className="bu-muted" style={{ fontWeight: 600 }}>Tarif · </span>{price}</div>}
+
+      <button onClick={e => { e.stopPropagation(); onClick() }} className="bu-btn p" style={{ height: 44, marginTop: 'auto' }}>
+        <Eye className="w-4 h-4" /> Vezi profilul · Invită
+      </button>
     </div>
   )
 }
@@ -598,38 +546,52 @@ export default function BrandInfluencersPage() {
       setAccess(accessState)
 
       if (accessState.granted) {
-        const [infRes, campRes] = await Promise.all([
-          supabase
-            .from('influencers')
-            .select('id, user_id, name, slug, bio, avatar, niches, platforms, approval_status, is_verified, verified_at, total_earned, created_at, price_story, price_reel, price_post, price_youtube, price_min, city, instagram_connected, instagram_handle, ig_followers, ig_engagement_rate, tiktok_connected, tt_followers')
-            .eq('approval_status', 'approved')
-            .order('created_at', { ascending: false }),
+        const INF_COLS = 'id, user_id, name, slug, bio, avatar, niches, platforms, approval_status, is_verified, verified_at, total_earned, created_at, price_story, price_reel, price_post, price_youtube, price_min, city, instagram_connected, instagram_handle, ig_followers, ig_engagement_rate, tiktok_connected, tt_followers'
+        // Profilurile publice (vederea fără date private); tabelul direct doar ca rezervă până rulează SQL 09
+        let [infRes, campRes] = await Promise.all([
+          supabase.from('influencers_public').select(INF_COLS).order('created_at', { ascending: false }),
           supabase.from('campaigns').select('id, title, status').eq('brand_id', brand.id),
         ])
+        if (infRes.error) {
+          infRes = await supabase.from('influencers').select(INF_COLS).eq('approval_status', 'approved').order('created_at', { ascending: false })
+        }
 
         setInfluencers((infRes.data as Influencer[]) ?? [])
         setCampaigns((campRes.data as Campaign[]) ?? [])
 
-        const { data: collabs } = await supabase
-          .from('collaborations')
-          .select('influencer_id, status, payment_amount')
-          .in('status', ['COMPLETED', 'ACTIVE', 'PENDING', 'CANCELLED'])
-
-        if (collabs) {
+        // Statistici agregate (doar cifre) — funcția din baza de date; citirea directă doar ca rezervă
+        const infIds = ((infRes.data as any[]) ?? []).map((i: any) => i.id)
+        const { data: statRows, error: statErr } = infIds.length
+          ? await supabase.rpc('public_collab_stats', { p_influencer_ids: infIds })
+          : { data: [], error: null }
+        if (!statErr && Array.isArray(statRows)) {
           const sMap: Record<string, InfluencerStat> = {}
-          for (const c of collabs) {
-            if (!sMap[c.influencer_id]) sMap[c.influencer_id] = { total: 0, completed: 0, successRate: 0, totalEarned: 0 }
-            sMap[c.influencer_id].total++
-            if (c.status === 'COMPLETED') {
-              sMap[c.influencer_id].completed++
-              sMap[c.influencer_id].totalEarned += c.payment_amount || 0
-            }
-          }
-          for (const id in sMap) {
-            const s = sMap[id]
-            s.successRate = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0
+          for (const r of statRows as any[]) {
+            const total = Number(r.total_main) || 0, completed = Number(r.completed) || 0
+            sMap[r.influencer_id] = { total, completed, totalEarned: Number(r.earned) || 0, successRate: total > 0 ? Math.round((completed / total) * 100) : 0 }
           }
           setStatsMap(sMap)
+        } else {
+          const { data: collabs } = await supabase
+            .from('collaborations')
+            .select('influencer_id, status, payment_amount')
+            .in('status', ['COMPLETED', 'ACTIVE', 'PENDING', 'CANCELLED'])
+          if (collabs) {
+            const sMap: Record<string, InfluencerStat> = {}
+            for (const c of collabs) {
+              if (!sMap[c.influencer_id]) sMap[c.influencer_id] = { total: 0, completed: 0, successRate: 0, totalEarned: 0 }
+              sMap[c.influencer_id].total++
+              if (c.status === 'COMPLETED') {
+                sMap[c.influencer_id].completed++
+                sMap[c.influencer_id].totalEarned += c.payment_amount || 0
+              }
+            }
+            for (const id in sMap) {
+              const s = sMap[id]
+              s.successRate = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0
+            }
+            setStatsMap(sMap)
+          }
         }
 
         const { data: savedData } = await supabase.from('saved_influencers').select('influencer_id').eq('brand_id', brand.id)
@@ -731,39 +693,39 @@ export default function BrandInfluencersPage() {
   ].filter(Boolean).length
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    <div className="bu" style={{ alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#5a35e6' }} />
     </div>
   )
 
+  const resetFilters = () => { setPlatformFilter('Toate Platformele'); setNicheFilter('Toate Nișele'); setMinFollowers(''); setMaxFollowers(''); setShowSavedOnly(false); setCityFilter(''); setScoreFilter('Toate nivelurile'); setVerifiedOnly(false) }
+  const totalPages = Math.max(1, Math.ceil(displayed.length / ITEMS_PER_PAGE))
+
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="bu">
+      <style>{IF_CSS}</style>
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[60] flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-sm font-medium transition-all ${toast.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-700' : 'bg-destructive/10 border-destructive/20 text-destructive'}`}>
+        <div className="if-toast" style={toast.type === 'success' ? { background: '#dcf5ec', color: '#14532d' } : { background: '#fff1e6', color: '#9a4206' }}>
           {toast.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
           {toast.message}
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3 mb-6">
+      <div className="bu-head">
         <div>
-          <h1 className="text-3xl font-bold mb-1">Influencers</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1>Influenceri</h1>
+          <p className="bu-muted" style={{ margin: '6px 0 0' }}>
             {access?.granted ? `${influencers.length} creator${influencers.length !== 1 ? 'i' : ''} pe platformă` : 'Descoperă rețeaua completă de creatori'}
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
           {access?.granted && (
-            <button onClick={() => setShowSavedOnly(v => !v)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition ${showSavedOnly ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'}`}>
-              <Bookmark className="w-4 h-4" />
-              Salvați{savedIds.size > 0 ? ` (${savedIds.size})` : ''}
+            <button onClick={() => setShowSavedOnly(v => !v)} className={`bu-pill${showSavedOnly ? ' on' : ''}`} style={{ height: 44 }}>
+              <Bookmark className="w-4 h-4" /> Salvați{savedIds.size > 0 && <span className="n">{savedIds.size}</span>}
             </button>
           )}
-          <button onClick={() => setShowCampaignSheet(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg, #2f6fe0, #5a35e6)' }}>
+          <button onClick={() => setShowCampaignSheet(true)} className="bu-btn p big">
             <Plus className="w-4 h-4" /> Campanie nouă
           </button>
         </div>
@@ -771,44 +733,36 @@ export default function BrandInfluencersPage() {
 
       {/* Campaign sheet */}
       {showCampaignSheet && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={() => setShowCampaignSheet(false)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="relative bg-background rounded-t-3xl border-t border-border px-4 pt-4 pb-10 animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
-            <div className="w-10 h-1 bg-border rounded-full mx-auto mb-5" />
-            <p className="text-xs text-muted-foreground text-center mb-4 font-medium uppercase tracking-wider">Cum vrei să creezi campania?</p>
+        <div className="if-sheet" onClick={() => setShowCampaignSheet(false)}>
+          <div onClick={e => e.stopPropagation()}>
+            <div style={{ width: 40, height: 4, background: '#e5e3f3', borderRadius: 99, margin: '0 auto 16px' }} />
+            <div className="bu-label" style={{ textAlign: 'center', marginBottom: 14 }}>Cum vrei să creezi campania?</div>
 
-            {/* Wizard — Rapid */}
-            <button onClick={() => { setShowCampaignSheet(false); router.push('/brand/campaigns/new/wizard') }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-100 transition mb-3 text-left group">
-              <div className="w-12 h-12 rounded-2xl bg-orange-100 border border-orange-200 flex items-center justify-center flex-shrink-0 text-2xl group-hover:scale-105 transition">🚀</div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="font-black text-base">Rapid — Wizard</p>
-                  <span className="text-[10px] font-black bg-violet-600 text-white px-2 py-0.5 rounded-full">RECOMANDAT</span>
-                </div>
-                <p className="text-sm text-muted-foreground">Pas cu pas, gata în 5 minute</p>
-              </div>
-              <ArrowRight className="w-4 h-4 text-muted-foreground ml-auto flex-shrink-0" />
+            <button onClick={() => { setShowCampaignSheet(false); router.push('/brand/campaigns/new/wizard') }} className="if-opt" style={{ marginBottom: 12, borderColor: '#c9b9fb', background: '#faf8ff' }}>
+              <span className="bu-ico" style={{ background: '#efeaff', color: '#5a35e6' }}><Zap className="w-5 h-5" /></span>
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <span className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                  <b className="bu-d" style={{ fontSize: 16 }}>Rapid — Wizard</b>
+                  <span className="bu-chip" style={{ background: '#5a35e6', color: '#fff', height: 20, fontSize: 10 }}>RECOMANDAT</span>
+                </span>
+                <span className="bu-muted bu-sm">Pas cu pas, gata în 5 minute</span>
+              </span>
+              <ArrowRight className="w-4 h-4" style={{ color: '#8783a8', flex: 'none' }} />
             </button>
 
-            {/* Avansat — formular complet */}
-            <p className="text-xs text-muted-foreground text-center mb-3 font-medium">sau alege tipul manual</p>
-            <div className="flex gap-3">
-              <button onClick={() => { setShowCampaignSheet(false); router.push('/brand/campaigns/new/barter') }}
-                className="flex-1 flex items-center gap-3 p-3.5 rounded-2xl border-2 border-border hover:border-primary/40 hover:bg-primary/5 transition text-left group">
-                <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0 text-xl group-hover:scale-105 transition">🎁</div>
-                <div className="min-w-0">
-                  <p className="font-black text-sm">Barter</p>
-                  <p className="text-xs text-muted-foreground">Produs gratuit</p>
-                </div>
+            <div className="bu-muted bu-xs" style={{ textAlign: 'center', marginBottom: 10 }}>sau alege tipul manual</div>
+            <div className="bu-row" style={{ gap: 10 }}>
+              <button onClick={() => { setShowCampaignSheet(false); router.push('/brand/campaigns/new/barter') }} className="if-opt" style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ minWidth: 0 }}>
+                  <b className="bu-d" style={{ display: 'block' }}>Barter</b>
+                  <span className="bu-muted bu-xs">Produs gratuit</span>
+                </span>
               </button>
-              <button onClick={() => { setShowCampaignSheet(false); router.push('/brand/campaigns/new') }}
-                className="flex-1 flex items-center gap-3 p-3.5 rounded-2xl border-2 border-border hover:border-primary/40 hover:bg-primary/5 transition text-left group">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center flex-shrink-0 text-xl group-hover:scale-105 transition">💰</div>
-                <div className="min-w-0">
-                  <p className="font-black text-sm">Plătită</p>
-                  <p className="text-xs text-muted-foreground">Cash per post</p>
-                </div>
+              <button onClick={() => { setShowCampaignSheet(false); router.push('/brand/campaigns/new') }} className="if-opt" style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ minWidth: 0 }}>
+                  <b className="bu-d" style={{ display: 'block' }}>Plătită</b>
+                  <span className="bu-muted bu-xs">Cash per post</span>
+                </span>
               </button>
             </div>
           </div>
@@ -819,63 +773,49 @@ export default function BrandInfluencersPage() {
         <LockedScreen reason='no_credits' />
       ) : (
         <>
-          {/* ── AI Recomandări ───────────────────────────────────────────── */}
+          {/* AI Recomandări */}
           {campaigns.length > 0 && (
-            <div className="rounded-2xl border-2 border-purple-200 bg-purple-50/50 p-4 mb-5">
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-4 h-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-black text-purple-800">Recomandări AI</p>
-                  <p className="text-[11px] text-purple-500">Claude analizează campania și găsește cei mai potriviți influenceri</p>
+            <div className="bu-card bu-card-pad" style={{ background: '#faf8ff', borderColor: '#d9ccfb' }}>
+              <div className="bu-row" style={{ gap: 12, marginBottom: 14 }}>
+                <div className="bu-ico" style={{ background: '#efeaff', color: '#5a35e6' }}><Sparkles className="w-4 h-4" /></div>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ fontSize: 16 }}>Recomandări AI</h3>
+                  <p className="bu-muted bu-xs" style={{ margin: 0 }}>Claude analizează campania și găsește cei mai potriviți influenceri</p>
                 </div>
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
                 <select
                   value={selectedCampaignForAI}
                   onChange={e => { setSelectedCampaignForAI(e.target.value); setAiRecs([]); setAiSummary('') }}
-                  className="flex-1 min-w-0 px-3 py-2 border border-purple-200 rounded-xl bg-white text-sm outline-none focus:ring-2 focus:ring-purple-300"
+                  className="if-sel" style={{ flex: '1 1 220px', width: 'auto', minWidth: 0 }}
                 >
                   <option value="">Selectează campania...</option>
                   {campaigns.filter(c => c.status === 'ACTIVE' || c.status === 'DRAFT').map(c => (
                     <option key={c.id} value={c.id}>{c.title}</option>
                   ))}
                 </select>
-                <button
-                  onClick={getAIRecommendations}
-                  disabled={aiLoading || !selectedCampaignForAI}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black text-white disabled:opacity-50 transition hover:opacity-90"
-                  style={{ background: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' }}
-                >
+                <button onClick={getAIRecommendations} disabled={aiLoading || !selectedCampaignForAI} className="bu-btn p big">
                   {aiLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Se analizează...</> : <><Sparkles className="w-3.5 h-3.5" /> Găsește potriviri</>}
                 </button>
               </div>
-              {aiError && <p className="text-xs text-red-500 font-bold mt-2">{aiError}</p>}
-              {aiSummary && <p className="text-xs text-purple-700 font-semibold mt-3 bg-white px-3 py-2 rounded-xl border border-purple-100">{aiSummary}</p>}
+              {aiError && <p className="bu-xs" style={{ color: '#9a4206', fontWeight: 700, margin: '10px 0 0' }}>{aiError}</p>}
+              {aiSummary && <p className="bu-sm" style={{ margin: '12px 0 0', background: '#fff', border: '1px solid #e5e3f3', borderRadius: 12, padding: '10px 12px', color: '#4423c4', fontWeight: 600 }}>{aiSummary}</p>}
               {aiRecs.length > 0 && (
-                <div className="mt-3 space-y-2">
+                <div className="bu-col" style={{ gap: 8, marginTop: 12 }}>
                   {aiRecs.map((rec, i) => {
                     const inf = influencers.find(inf => inf.name === rec.name)
                     return (
-                      <div key={i} className="flex items-start gap-3 bg-white px-3 py-2.5 rounded-xl border border-purple-100">
-                        <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 text-xs font-black text-purple-700">
-                          {i + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-black text-gray-900">{rec.name}</p>
-                            <span className="text-[10px] font-black bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Match {rec.score}%</span>
+                      <div key={i} className="bu-row" style={{ alignItems: 'flex-start', gap: 12, background: '#fff', border: '1px solid #e5e3f3', borderRadius: 14, padding: '10px 12px' }}>
+                        <span className="bu-face" style={{ width: 28, height: 28, background: '#efeaff', color: '#4423c4', fontSize: 12 }}>{i + 1}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                            <b className="bu-d" style={{ fontSize: 15 }}>{rec.name}</b>
+                            <span className="bu-chip" style={{ background: '#dcf5ec', color: '#14532d' }}>Match {rec.score}%</span>
                           </div>
-                          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{rec.reason}</p>
+                          <p className="bu-muted bu-xs" style={{ margin: '3px 0 0' }}>{rec.reason}</p>
                         </div>
                         {inf && (
-                          <button
-                            onClick={() => setSelectedInfluencer(inf)}
-                            className="text-[10px] font-black text-purple-600 hover:text-purple-800 transition flex-shrink-0 mt-1"
-                          >
-                            Vezi →
-                          </button>
+                          <button onClick={() => setSelectedInfluencer(inf)} className="bu-btn" style={{ height: 44, flex: 'none' }}>Vezi →</button>
                         )}
                       </div>
                     )
@@ -886,162 +826,115 @@ export default function BrandInfluencersPage() {
           )}
 
           {/* Search + filter bar */}
-          <div className="bg-card border border-border rounded-2xl p-4 mb-5">
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="text" placeholder="Caută după nume, bio sau nișă…" value={search} onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-muted/40 border border-input rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40" />
-                {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X className="w-3.5 h-3.5" /></button>}
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                <select value={platformFilter} onChange={e => setPlatformFilter(e.target.value)}
-                  className="px-3 py-2.5 border border-input rounded-xl bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30">
-                  {PLATFORM_FILTERS.map(p => <option key={p}>{p}</option>)}
-                </select>
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                  className="px-3 py-2.5 border border-input rounded-xl bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30">
-                  {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-                <button onClick={() => setShowFilters(v => !v)}
-                  className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl text-sm font-medium transition ${activeFilterCount > 0 ? 'bg-primary/10 border-primary/30 text-primary' : 'border-input hover:border-primary/30 text-muted-foreground hover:text-foreground'}`}>
-                  <SlidersHorizontal className="w-4 h-4" />
-                  Filtre
-                  {activeFilterCount > 0 && <span className="bg-primary text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">{activeFilterCount}</span>}
-                </button>
-              </div>
+          <div className="bu-card bu-card-pad">
+            <div className="bu-row" style={{ gap: 10, flexWrap: 'wrap' }}>
+              <label className="bu-search" style={{ flex: '1 1 260px', height: 44 }}>
+                <Search className="w-4 h-4" style={{ flex: 'none' }} />
+                <input type="text" placeholder="Caută după nume, bio sau nișă…" value={search} onChange={e => setSearch(e.target.value)} />
+                {search && <button type="button" onClick={() => setSearch('')} aria-label="Șterge" style={{ border: 0, background: 'none', color: '#8783a8', cursor: 'pointer', padding: 8 }}><X className="w-3.5 h-3.5" /></button>}
+              </label>
+              <select value={platformFilter} onChange={e => setPlatformFilter(e.target.value)} className="if-sel sm" style={{ height: 44 }}>
+                {PLATFORM_FILTERS.map(p => <option key={p}>{p}</option>)}
+              </select>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="if-sel sm" style={{ height: 44 }}>
+                {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <button onClick={() => setShowFilters(v => !v)} className={`bu-pill${activeFilterCount > 0 || showFilters ? ' on' : ''}`} style={{ height: 44 }}>
+                <SlidersHorizontal className="w-4 h-4" /> Filtre
+                {activeFilterCount > 0 && <span className="n">{activeFilterCount}</span>}
+              </button>
             </div>
 
             {showFilters && (
-              <div className="mt-4 pt-4 border-t border-border space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Nișă */}
+              <div className="bu-div" style={{ marginTop: 16, paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="if-filters">
                   <div>
-                    <label className="block text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">Nișă</label>
-                    <select value={nicheFilter} onChange={e => setNicheFilter(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-input rounded-xl bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30">
+                    <div className="bu-label" style={{ marginBottom: 8 }}>Nișă</div>
+                    <select value={nicheFilter} onChange={e => setNicheFilter(e.target.value)} className="if-sel">
                       <option>Toate Nișele</option>
                       {INFLUENCER_NICHES.map(n => <option key={n}>{n}</option>)}
                     </select>
                   </div>
-                  {/* Oraș */}
                   <div>
-                    <label className="block text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> Oraș
+                    <div className="bu-label" style={{ marginBottom: 8 }}>Oraș</div>
+                    <label className="bu-search" style={{ height: 46 }}>
+                      <MapPin className="w-3.5 h-3.5" style={{ flex: 'none' }} />
+                      <input type="text" placeholder="ex. București, Cluj, Iași..." value={cityFilter} onChange={e => setCityFilter(e.target.value)} />
+                      {cityFilter && <button type="button" onClick={() => setCityFilter('')} aria-label="Șterge" style={{ border: 0, background: 'none', color: '#8783a8', cursor: 'pointer', padding: 8 }}><X className="w-3 h-3" /></button>}
                     </label>
-                    <div className="relative">
-                      <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                      <input type="text" placeholder="ex. București, Cluj, Iași..." value={cityFilter} onChange={e => setCityFilter(e.target.value)}
-                        className="w-full pl-8 pr-8 py-2.5 border border-input rounded-xl bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30" />
-                      {cityFilter && <button onClick={() => setCityFilter('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"><X className="w-3 h-3" /></button>}
-                    </div>
                   </div>
-                  {/* Creator Score */}
                   <div>
-                    <label className="block text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">Creator Score</label>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {CREATOR_SCORE_LEVELS.map(level => {
-                        const colors: Record<string, string> = {
-                          'Toate nivelurile': 'bg-gray-100 text-gray-600 border-gray-200',
-                          'Starter': 'bg-gray-100 text-gray-700 border-gray-300',
-                          'Rising': 'bg-blue-100 text-blue-700 border-blue-300',
-                          'Pro': 'bg-purple-100 text-purple-700 border-purple-300',
-                          'Elite': 'bg-amber-100 text-amber-700 border-amber-300',
-                        }
-                        const active = scoreFilter === level
-                        return (
-                          <button key={level} onClick={() => setScoreFilter(level)}
-                            className={`text-xs font-bold px-3 py-1.5 rounded-xl border-2 transition ${active ? colors[level] + ' border-opacity-100' : 'border-border text-muted-foreground hover:border-primary/30'}`}
-                            style={active ? { borderColor: 'currentColor' } : {}}>
-                            {level === 'Toate nivelurile' ? 'Toate' : level}
-                          </button>
-                        )
-                      })}
+                    <div className="bu-label" style={{ marginBottom: 8 }}>Creator Score</div>
+                    <div className="bu-tabs">
+                      {CREATOR_SCORE_LEVELS.map(level => (
+                        <button key={level} onClick={() => setScoreFilter(level)} className={`bu-pill${scoreFilter === level ? ' on' : ''}`} style={{ height: 44 }}>
+                          {level === 'Toate nivelurile' ? 'Toate' : level}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                  {/* Followeri min */}
+                <div className="if-filters">
                   <div>
-                    <label className="block text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">Followeri minimi (K)</label>
-                    <Input type="number" placeholder="ex. 5 = 5.000+" value={minFollowers} onChange={e => setMinFollowers(e.target.value)} className="text-sm" />
+                    <div className="bu-label" style={{ marginBottom: 8 }}>Followeri minimi (K)</div>
+                    <input type="number" className="bu-input" style={{ width: '100%', height: 46 }} placeholder="ex. 5 = 5.000+" value={minFollowers} onChange={e => setMinFollowers(e.target.value)} />
                   </div>
-                  {/* Followeri max */}
                   <div>
-                    <label className="block text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">Followeri maximi (K)</label>
-                    <Input type="number" placeholder="ex. 100 = max 100.000" value={maxFollowers} onChange={e => setMaxFollowers(e.target.value)} className="text-sm" />
+                    <div className="bu-label" style={{ marginBottom: 8 }}>Followeri maximi (K)</div>
+                    <input type="number" className="bu-input" style={{ width: '100%', height: 46 }} placeholder="ex. 100 = max 100.000" value={maxFollowers} onChange={e => setMaxFollowers(e.target.value)} />
                   </div>
-                  {/* Toggleuri + Clear */}
-                  <div className="flex flex-col gap-2">
-                    <button onClick={() => setVerifiedOnly(v => !v)}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition ${verifiedOnly ? 'bg-green-50 border-green-400 text-green-700' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
-                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${verifiedOnly ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
-                        {verifiedOnly && <span className="text-white text-[10px]">✓</span>}
-                      </div>
-                      Doar verificați
+                  <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'flex-end', alignSelf: 'end' }}>
+                    <button onClick={() => setVerifiedOnly(v => !v)} className={`bu-pill${verifiedOnly ? ' on' : ''}`} style={{ height: 44 }}>
+                      {verifiedOnly && <CheckCircle className="w-3.5 h-3.5" />} Doar verificați
                     </button>
-                    <button onClick={() => setShowSavedOnly(v => !v)}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition ${showSavedOnly ? 'bg-orange-50 border-orange-400 text-orange-700' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
-                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${showSavedOnly ? 'bg-violet-600 border-orange-500' : 'border-gray-300'}`}>
-                        {showSavedOnly && <span className="text-white text-[10px]">✓</span>}
-                      </div>
-                      Doar salvați
+                    <button onClick={() => setShowSavedOnly(v => !v)} className={`bu-pill${showSavedOnly ? ' on' : ''}`} style={{ height: 44 }}>
+                      {showSavedOnly && <CheckCircle className="w-3.5 h-3.5" />} Doar salvați
                     </button>
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-1">
-                  <button onClick={() => { setPlatformFilter('Toate Platformele'); setNicheFilter('Toate Nișele'); setMinFollowers(''); setMaxFollowers(''); setShowSavedOnly(false); setCityFilter(''); setScoreFilter('Toate nivelurile'); setVerifiedOnly(false) }}
-                    className="text-sm text-muted-foreground hover:text-foreground underline">
-                    Șterge toate filtrele
-                  </button>
+                <div className="bu-row" style={{ justifyContent: 'flex-end' }}>
+                  <button onClick={resetFilters} className="bu-btn" style={{ height: 44 }}>Șterge toate filtrele</button>
                 </div>
               </div>
             )}
           </div>
 
           {(search || activeFilterCount > 0) && (
-            <p className="text-sm text-muted-foreground mb-4">
-              Se afișează <span className="font-semibold text-foreground">{displayed.length}</span> din {influencers.length} influenceri
+            <p className="bu-muted bu-sm" style={{ margin: 0 }}>
+              Se afișează <b style={{ color: '#14123a' }}>{displayed.length}</b> din {influencers.length} influenceri
             </p>
           )}
 
           {displayed.length === 0 ? (
-            <div className="bg-card border border-border rounded-2xl p-16 text-center">
-              <Users className="w-12 h-12 mx-auto mb-4 opacity-20" />
-              <p className="font-semibold mb-2">{influencers.length === 0 ? 'Niciun influencer încă' : 'Niciun rezultat găsit'}</p>
-              <p className="text-sm text-muted-foreground">
+            <div className="bu-card" style={{ padding: '56px 20px', textAlign: 'center' }}>
+              <div className="bu-ico" style={{ margin: '0 auto 14px', background: '#f0eff7', color: '#4a4770' }}><Users className="w-5 h-5" /></div>
+              <h3 style={{ marginBottom: 6 }}>{influencers.length === 0 ? 'Niciun influencer încă' : 'Niciun rezultat găsit'}</h3>
+              <p className="bu-muted bu-sm" style={{ margin: 0 }}>
                 {influencers.length === 0 ? 'Influencerii vor apărea aici după înregistrare și aprobare.' : 'Încearcă să ajustezi căutarea sau filtrele.'}
               </p>
               {(search || activeFilterCount > 0) && (
-                <Button variant="outline" size="sm" className="mt-4"
-                  onClick={() => { setSearch(''); setPlatformFilter('Toate Platformele'); setNicheFilter('Toate Nișele'); setMinFollowers(''); setMaxFollowers(''); setShowSavedOnly(false); setCityFilter(''); setScoreFilter('Toate nivelurile'); setVerifiedOnly(false) }}>
-                  Clear filters
-                </Button>
+                <button className="bu-btn" style={{ marginTop: 16 }} onClick={() => { setSearch(''); resetFilters() }}>Resetează filtrele</button>
               )}
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="if-grid">
                 {displayed.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(influencer => (
                   <InfluencerCard key={influencer.id} influencer={influencer} isSaved={savedIds.has(influencer.id)} onSave={toggleSave} onClick={() => setSelectedInfluencer(influencer)} stats={statsMap[influencer.id]} />
                 ))}
               </div>
               {displayed.length > ITEMS_PER_PAGE && (
-                <div className="flex items-center justify-center gap-2 mt-8 pb-4">
-                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition">← Anterior</button>
+                <div className="bu-row" style={{ justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="bu-btn" style={{ height: 44 }}>← Anterior</button>
                   {Array.from({ length: Math.min(5, Math.ceil(displayed.length / ITEMS_PER_PAGE)) }, (_, i) => i + 1).map(page => (
-                    <button key={page} onClick={() => setCurrentPage(page)}
-                      className={"w-9 h-9 rounded-xl text-sm font-black transition " + (currentPage === page ? 'text-white' : 'text-gray-500 hover:bg-gray-100')}
-                      style={currentPage === page ? { background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' } : {}}>{page}</button>
+                    <button key={page} onClick={() => setCurrentPage(page)} className={`bu-btn${currentPage === page ? ' p' : ''}`} style={{ width: 44, padding: 0, height: 44 }}>{page}</button>
                   ))}
-                  <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(displayed.length / ITEMS_PER_PAGE), p + 1))} disabled={currentPage >= Math.ceil(displayed.length / ITEMS_PER_PAGE)}
-                    className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition">Următor →</button>
+                  <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(displayed.length / ITEMS_PER_PAGE), p + 1))} disabled={currentPage >= Math.ceil(displayed.length / ITEMS_PER_PAGE)} className="bu-btn" style={{ height: 44 }}>Următor →</button>
                 </div>
               )}
-              <p className="text-center text-xs text-gray-400 mt-1 mb-4">{displayed.length} influenceri · pagina {currentPage}/{Math.max(1, Math.ceil(displayed.length / ITEMS_PER_PAGE))}</p>
+              <p className="bu-muted bu-xs" style={{ textAlign: 'center', margin: 0 }}>{displayed.length} influenceri · pagina {currentPage}/{totalPages}</p>
             </>
           )}
         </>

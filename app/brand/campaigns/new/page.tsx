@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Loader2,
   Sparkles, Target, Package, Users, Euro, Calendar,
-  Instagram, Youtube, MessageSquare, Check, Info
+  Instagram, Youtube, MessageSquare, Check, Info, AlertCircle
 } from 'lucide-react'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 import { createManagedCampaign } from '@/app/actions/managed-campaigns'
@@ -81,6 +81,111 @@ const INITIAL: FormData = {
   content_instructions: '',
   forbidden_content: '',
 }
+
+const NW_CSS = `
+.nw-top { display:flex; align-items:center; gap:14px; min-width:0; }
+.nw-back { width:44px; height:44px; flex:none; border-radius:12px; border:1.5px solid #e5e3f3; background:#fff; color:#4a4770; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; text-decoration:none; font-family:inherit; padding:0; }
+.nw-back:hover { background:#f7f4ff; border-color:#c9b9fb; }
+.nw-top .tt { min-width:0; flex:1; }
+.nw-top .tt h1 { font-size:28px; }
+.nw-top .tt p { margin:4px 0 0; color:#6a6690; font-size:14px; }
+.nw-steps { display:flex; align-items:center; gap:0; padding:14px 18px; overflow:hidden; }
+.nw-step { display:flex; align-items:center; gap:10px; flex:none; min-width:0; }
+.nw-step .b { width:30px; height:30px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; background:#f0eff7; color:#8783a8; font-family:var(--font-display,system-ui),system-ui,sans-serif; }
+.nw-step.on .b { background:linear-gradient(135deg,#2f6fe0,#5a35e6); color:#fff; box-shadow:0 8px 16px -8px rgba(90,53,230,.8); }
+.nw-step.done .b { background:#dcf5ec; color:#14532d; }
+.nw-step .l { font-size:13px; font-weight:700; color:#8783a8; white-space:nowrap; }
+.nw-step.on .l { color:#14123a; }
+.nw-step.done .l { color:#14532d; }
+.nw-line { flex:1; height:2px; min-width:14px; margin:0 10px; border-radius:2px; background:#eeecf7; }
+.nw-line.done { background:#9fdcc3; }
+.nw-layout { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:20px; align-items:start; }
+.nw-main { display:flex; flex-direction:column; gap:16px; min-width:0; }
+.nw-card { padding:22px; display:flex; flex-direction:column; gap:18px; }
+.nw-ch { display:flex; align-items:flex-start; gap:12px; }
+.nw-ch .num { width:30px; height:30px; flex:none; border-radius:10px; background:#efeaff; color:#4423c4; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; font-family:var(--font-display,system-ui),system-ui,sans-serif; }
+.nw-ch p { margin:3px 0 0; font-size:13px; color:#6a6690; }
+.nw-f { display:flex; flex-direction:column; gap:7px; min-width:0; }
+.nw-f > label, .nw-lab { font-size:13px; font-weight:700; color:#14123a; }
+.nw-f > label small, .nw-lab small { font-weight:500; color:#8783a8; font-size:12px; }
+.nw-in { width:100%; height:44px; border:1.5px solid #e5e3f3; border-radius:12px; padding:0 14px; font:inherit; font-size:15px; background:#fff; color:#14123a; outline:none; box-sizing:border-box; min-width:0; }
+textarea.nw-in { height:auto; padding:11px 14px; resize:vertical; line-height:1.5; }
+.nw-in:focus { border-color:#5a35e6; box-shadow:0 0 0 3px rgba(90,53,230,.1); }
+.nw-hint { font-size:12px; color:#8783a8; margin:0; }
+.nw-g2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.nw-tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+.nw-tile { position:relative; display:flex; align-items:center; gap:12px; min-height:56px; padding:12px 14px; border-radius:14px; border:1.5px solid #e5e3f3; background:#fff; color:#14123a; text-align:left; cursor:pointer; font-family:inherit; font-size:14px; min-width:0; transition:border-color .15s, background .15s; }
+.nw-tile:hover { border-color:#b9a5f5; background:#faf8ff; }
+.nw-tile.on { border-color:#5a35e6; background:#f7f4ff; box-shadow:0 0 0 3px rgba(90,53,230,.08); }
+.nw-tile .t { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.nw-tile .t b { font-size:14px; font-weight:700; }
+.nw-tile .t span { font-size:12px; color:#6a6690; line-height:1.35; }
+.nw-tile .ck { width:22px; height:22px; flex:none; border-radius:50%; border:1.5px solid #d8d5ec; display:flex; align-items:center; justify-content:center; color:#fff; }
+.nw-tile.on .ck { background:#5a35e6; border-color:#5a35e6; }
+.nw-tile .ic { width:38px; height:38px; flex:none; border-radius:11px; background:#f0eff7; display:flex; align-items:center; justify-content:center; font-size:19px; }
+.nw-tile.on .ic { background:#efeaff; }
+.nw-tile .pop { position:absolute; top:-9px; right:12px; background:#5a35e6; color:#fff; font-size:10px; font-weight:800; letter-spacing:.06em; padding:2px 8px; border-radius:99px; }
+.nw-tile.c { flex-direction:column; justify-content:center; text-align:center; gap:2px; }
+.nw-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.nw-chipbtn { display:inline-flex; align-items:center; min-height:44px; padding:0 16px; border-radius:999px; border:1.5px solid #e5e3f3; background:#fff; color:#4a4770; font-weight:600; font-size:14px; cursor:pointer; font-family:inherit; }
+.nw-chipbtn:hover { border-color:#b9a5f5; }
+.nw-chipbtn.on { background:#14123a; border-color:#14123a; color:#fff; }
+.nw-box { border-radius:14px; padding:14px 16px; background:#f6f6fc; border:1px solid #eeecf7; display:flex; flex-direction:column; gap:8px; font-size:14px; }
+.nw-box .r { display:flex; justify-content:space-between; gap:12px; }
+.nw-box .r span:first-child { color:#6a6690; }
+.nw-box .r b { text-align:right; min-width:0; overflow-wrap:anywhere; }
+.nw-note { display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:14px; font-size:13px; line-height:1.5; }
+.nw-note.blue { background:#e6f0ff; color:#1d4fb8; }
+.nw-note.amber { background:#fff1c2; color:#854d0e; }
+.nw-note.red { background:#fde8e6; color:#b42318; font-weight:600; }
+.nw-note.violet { background:#efeaff; color:#4423c4; }
+.nw-sum { position:sticky; top:20px; padding:20px; display:flex; flex-direction:column; gap:14px; }
+.nw-sum h3 { display:flex; align-items:center; gap:8px; }
+.nw-sum .row { display:flex; justify-content:space-between; gap:12px; font-size:14px; align-items:baseline; }
+.nw-sum .row span { color:#6a6690; flex:none; }
+.nw-sum .row b { text-align:right; min-width:0; overflow-wrap:anywhere; font-weight:700; }
+.nw-sum .big { font-family:var(--font-display,system-ui),system-ui,sans-serif; font-size:26px; font-weight:800; letter-spacing:-.02em; }
+.nw-bar { position:sticky; bottom:12px; z-index:10; display:flex; gap:10px; align-items:center; justify-content:space-between; padding:10px; background:rgba(255,255,255,.96); backdrop-filter:blur(6px); border:1px solid #e5e3f3; border-radius:16px; box-shadow:0 14px 34px -16px rgba(20,18,58,.35); }
+.nw-bar .st { font-size:13px; color:#6a6690; padding-left:8px; min-width:0; }
+.nw-bar .acts { display:flex; gap:10px; margin-left:auto; min-width:0; }
+.nw-bar .bu-btn { height:46px; }
+.nw-drop { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height:140px; padding:18px; border:2px dashed #cfc8ee; border-radius:16px; background:rgba(247,244,255,.5); cursor:pointer; text-align:center; color:#5a35e6; position:relative; overflow:hidden; transition:background .15s; }
+.nw-drop:hover { background:#f7f4ff; }
+.nw-drop b { font-size:14px; color:#14123a; }
+.nw-drop span { font-size:12px; color:#6a6690; }
+.nw-spin { animation:nwSpin 1s linear infinite; }
+@keyframes nwSpin { to { transform:rotate(360deg) } }
+@media (max-width:900px) {
+  .nw-layout { grid-template-columns:minmax(0,1fr); }
+  .nw-sum { position:static; }
+}
+@media (max-width:767px) {
+  .nw-top .tt h1 { font-size:24px; }
+  .nw-steps { padding:12px 14px; }
+  .nw-step:not(.on) .l { display:none; }
+  .nw-line { margin:0 6px; min-width:8px; }
+  .nw-card { padding:16px; gap:16px; }
+  .nw-g2 { grid-template-columns:1fr; }
+  .nw-tiles { grid-template-columns:1fr; }
+  .nw-bar { bottom:8px; padding:8px; }
+  .nw-bar .st { display:none; }
+  .nw-bar .acts { width:100%; }
+  .nw-bar .acts .bu-btn { flex:1; height:50px; }
+}
+
+.nw-bar .bu-btn { white-space:normal; text-align:center; line-height:1.2; height:auto; min-height:46px; padding-top:8px; padding-bottom:8px; }
+.nw-sr { position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+.nw-tile:focus-within { border-color:#5a35e6; }
+.nw-tog { display:none; }
+.wz-side { min-width:0; position:sticky; top:20px; }
+@media (max-width:900px) {
+  .nw-tog { display:inline-flex; height:44px; }
+  .wz-side { display:none; position:static; }
+  .nw-layout.wz-prev .wz-side { display:block; }
+  .nw-layout.wz-prev .wz-form { display:none; }
+}
+@media (max-width:767px) { .nw-bar .acts .bu-btn { min-height:50px; } }
+`
 
 const STEPS = [
   { n: 1, label: 'Obiectiv' },
@@ -160,166 +265,136 @@ export default function NewManagedCampaign() {
     }
   }
 
+  const PLAT_BG: Record<string, string> = {
+    INSTAGRAM: 'linear-gradient(135deg,#8b5cf6,#d946ef)',
+    TIKTOK: 'linear-gradient(135deg,#14123a,#4a4770)',
+    YOUTUBE: 'linear-gradient(135deg,#ef4444,#dc2626)',
+    FACEBOOK: 'linear-gradient(135deg,#2563eb,#1d4fb8)',
+  }
+  const platLabel = (v: string) => PLATFORMS.find(p => p.value === v)?.label || v
+
   if (done) return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <div className="text-center max-w-md">
-        <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
-          style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 12px 40px rgba(139,92,246,0.35)' }}>
-          <CheckCircle2 className="w-10 h-10 text-white" />
+    <div className="bu">
+      <style>{NW_CSS}</style>
+      <div className="bu-card" style={{ maxWidth: 520, margin: '40px auto', padding: 32, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <div className="bu-ico" style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', boxShadow: '0 14px 30px -14px rgba(90,53,230,.7)' }}>
+          <CheckCircle2 size={32} color="#fff" />
         </div>
-        <h2 className="text-2xl font-black text-gray-900 mb-3">Campanie trimisă! 🎉</h2>
-        <p className="text-gray-500 mb-2">Echipa AddFame va analiza brief-ul și va selecta influencerii potriviți.</p>
-        <p className="text-sm text-gray-400">Vei fi notificat în 24-48h cu lista de influenceri propuși.</p>
-        <div className="mt-6 flex items-center justify-center gap-2 text-purple-600">
-          <div className="w-4 h-4 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin" />
-          <span className="text-sm font-bold">Redirecționare...</span>
+        <h2 style={{ fontSize: 24 }}>Campanie trimisă!</h2>
+        <p className="bu-muted" style={{ margin: 0 }}>Echipa AddFame va analiza brief-ul și va selecta influencerii potriviți.</p>
+        <p className="bu-muted bu-sm" style={{ margin: 0 }}>Vei fi notificat în 24-48h cu lista de influenceri propuși.</p>
+        <div className="bu-row" style={{ gap: 8, color: '#5a35e6', marginTop: 8 }}>
+          <Loader2 size={16} className="nw-spin" />
+          <b className="bu-sm">Redirecționare...</b>
         </div>
       </div>
     </div>
   )
 
+  const HEADS: Record<number, { t: string; d: string }> = {
+    1: { t: 'Care este obiectivul campaniei?', d: 'Selectează ce vrei să obții' },
+    2: { t: 'Despre produsul tău', d: 'Ajută-ne să găsim influencerii cei mai potriviți' },
+    3: { t: 'Buget și timeline', d: 'Noi distribuim bugetul optim între influenceri' },
+    4: { t: 'Brief pentru influenceri', d: 'Ce vrei să transmită conținutul creat' },
+  }
+  const head = (n: number) => (
+    <div className="nw-ch">
+      <span className="num">{n}</span>
+      <div><h2>{HEADS[n].t}</h2><p>{HEADS[n].d}</p></div>
+    </div>
+  )
+
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 md:p-8" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <div className="max-w-2xl mx-auto">
+    <div className="bu">
+      <style>{NW_CSS}</style>
 
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Link href="/brand/campaigns/new" className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition">
-            <ArrowLeft className="w-4 h-4 text-gray-600" />
-          </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }}>
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <h1 className="font-black text-gray-900 text-lg">Campanie Managed</h1>
-            </div>
-            <p className="text-sm text-gray-400">Noi ne ocupăm de tot — tu doar urmărești rezultatele</p>
-          </div>
+      {/* Header */}
+      <div className="nw-top">
+        <Link href="/brand/campaigns/new" className="nw-back" aria-label="Înapoi"><ArrowLeft size={18} /></Link>
+        <div className="tt">
+          <h1>Campanie Managed</h1>
+          <p>Noi ne ocupăm de tot — tu doar urmărești rezultatele</p>
         </div>
+        <span className="bu-chip" style={{ background: '#14123a', color: '#fff' }}><Sparkles size={13} /> Managed</span>
+      </div>
 
-        {/* Progress steps */}
-        <div className="flex items-center gap-2 mb-8">
-          {STEPS.map((s, i) => (
-            <div key={s.n} className="flex items-center gap-2 flex-1">
-              <div className={`flex items-center gap-2 ${i < STEPS.length - 1 ? 'flex-1' : ''}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all flex-shrink-0 ${step > s.n ? 'bg-green-500 text-white' :
-                    step === s.n ? 'text-white' : 'bg-gray-200 text-gray-400'
-                  }`} style={step === s.n ? { background: 'linear-gradient(135deg,#7040f0, #9030f0)' } : {}}>
-                  {step > s.n ? <Check className="w-4 h-4" /> : s.n}
-                </div>
-                <span className={`text-xs font-black hidden sm:block ${step === s.n ? 'text-purple-600' : step > s.n ? 'text-green-600' : 'text-gray-400'}`}>{s.label}</span>
-              </div>
-              {i < STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-2 rounded-full transition-all ${step > s.n ? 'bg-green-300' : 'bg-gray-200'}`} />
-              )}
+      {/* Stepper */}
+      <div className="bu-card nw-steps">
+        {STEPS.map((s, i) => (
+          <React.Fragment key={s.n}>
+            <div className={`nw-step ${step === s.n ? 'on' : step > s.n ? 'done' : ''}`}>
+              <span className="b">{step > s.n ? <Check size={15} strokeWidth={3} /> : s.n}</span>
+              <span className="l">{s.label}</span>
             </div>
-          ))}
-        </div>
+            {i < STEPS.length - 1 && <div className={`nw-line ${step > s.n ? 'done' : ''}`} />}
+          </React.Fragment>
+        ))}
+      </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 md:p-8 shadow-sm">
+      <div className="nw-layout">
+        <div className="nw-main">
 
           {/* ── STEP 1: Obiectiv ── */}
           {step === 1 && (
-            <div>
-              <h2 className="text-xl font-black mb-1">Care este obiectivul campaniei?</h2>
-              <p className="text-sm text-gray-400 mb-6">Selectează ce vrei să obții</p>
-
-              <div className="space-y-3 mb-6">
-                {OBJECTIVES.map(obj => (
-                  <button key={obj.value} type="button"
-                    onClick={() => set({ objective: obj.value })}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition ${form.objective === obj.value ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'
-                      }`}>
-                    <span className="text-2xl flex-shrink-0">{obj.emoji}</span>
-                    <div className="flex-1">
-                      <p className="font-black text-sm text-gray-900">{obj.label}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{obj.desc}</p>
-                    </div>
-                    {form.objective === obj.value && (
-                      <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              <div>
-                <p className="text-sm font-black text-gray-700 mb-3">Pe ce platforme? <span className="text-gray-400 font-normal">(selectează toate)</span></p>
-                <div className="grid grid-cols-2 gap-3">
-                  {PLATFORMS.map(p => (
-                    <button key={p.value} type="button"
-                      onClick={() => togglePlatform(p.value)}
-                      className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition ${form.platforms.includes(p.value) ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'
-                        }`}>
-                      <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${p.color} flex items-center justify-center flex-shrink-0`}>
-                        <p.Icon className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="font-bold text-sm text-gray-800">{p.label}</span>
-                      {form.platforms.includes(p.value) && <Check className="w-4 h-4 text-purple-500 ml-auto" />}
+            <>
+              <div className="bu-card nw-card">
+                {head(1)}
+                <div className="nw-tiles" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))' }}>
+                  {OBJECTIVES.map(obj => (
+                    <button key={obj.value} type="button" onClick={() => set({ objective: obj.value })}
+                      className={`nw-tile ${form.objective === obj.value ? 'on' : ''}`}>
+                      <span className="ic">{obj.emoji}</span>
+                      <span className="t"><b>{obj.label}</b><span>{obj.desc}</span></span>
+                      <span className="ck">{form.objective === obj.value && <Check size={13} strokeWidth={3} />}</span>
                     </button>
                   ))}
                 </div>
               </div>
-            </div>
+              <div className="bu-card nw-card">
+                <div className="nw-f">
+                  <span className="nw-lab">Pe ce platforme? <small>(selectează toate)</small></span>
+                </div>
+                <div className="nw-tiles">
+                  {PLATFORMS.map(p => (
+                    <button key={p.value} type="button" onClick={() => togglePlatform(p.value)}
+                      className={`nw-tile ${form.platforms.includes(p.value) ? 'on' : ''}`}>
+                      <span className="ic" style={{ background: PLAT_BG[p.value] }}><p.Icon className="w-4 h-4 text-white" /></span>
+                      <span className="t"><b>{p.label}</b></span>
+                      <span className="ck">{form.platforms.includes(p.value) && <Check size={13} strokeWidth={3} />}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
 
           {/* ── STEP 2: Produs ── */}
           {step === 2 && (
-            <div>
-              <h2 className="text-xl font-black mb-1">Despre produsul tău</h2>
-              <p className="text-sm text-gray-400 mb-6">Ajută-ne să găsim influencerii cei mai potriviți</p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">Numele produsului / brandului *</label>
-                  <input
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition"
-                    placeholder="ex. Cafenea TopFace, Supliment X, Rochie Y..."
-                    value={form.product_name}
-                    onChange={e => set({ product_name: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">Descriere scurtă *</label>
-                  <textarea
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition resize-none"
-                    rows={4}
-                    placeholder="Descrie produsul/serviciul tău, ce îl face special, cui se adresează..."
-                    value={form.product_description}
-                    onChange={e => set({ product_description: e.target.value })}
-                    maxLength={500}
-                  />
-                  <p className="text-xs text-gray-400 text-right mt-1">{form.product_description.length}/500</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">Website / link produs <span className="text-gray-400 font-normal">(opțional)</span></label>
-                  <input
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition"
-                    placeholder="https://..."
-                    value={form.product_url}
-                    onChange={e => set({ product_url: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-3">Nișe influenceri dorite <span className="text-gray-400 font-normal">(opțional)</span></label>
-                  <div className="flex flex-wrap gap-2">
-                    {NICHES.map(n => (
-                      <button key={n} type="button"
-                        onClick={() => toggleNiche(n)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition ${form.target_niches.includes(n)
-                            ? 'border-purple-400 bg-purple-50 text-purple-700'
-                            : 'border-gray-200 text-gray-500 hover:border-purple-200'
-                          }`}>
-                        {n}
-                      </button>
-                    ))}
-                  </div>
+            <div className="bu-card nw-card">
+              {head(2)}
+              <div className="nw-f">
+                <label>Numele produsului / brandului *</label>
+                <input className="nw-in" placeholder="ex. Cafenea TopFace, Supliment X, Rochie Y..."
+                  value={form.product_name} onChange={e => set({ product_name: e.target.value })} />
+              </div>
+              <div className="nw-f">
+                <label>Descriere scurtă *</label>
+                <textarea className="nw-in" rows={4}
+                  placeholder="Descrie produsul/serviciul tău, ce îl face special, cui se adresează..."
+                  value={form.product_description} onChange={e => set({ product_description: e.target.value })} maxLength={500} />
+                <p className="nw-hint" style={{ textAlign: 'right' }}>{form.product_description.length}/500</p>
+              </div>
+              <div className="nw-f">
+                <label>Website / link produs <small>(opțional)</small></label>
+                <input className="nw-in" placeholder="https://..." value={form.product_url} onChange={e => set({ product_url: e.target.value })} />
+              </div>
+              <div className="nw-f">
+                <label>Nișe influenceri dorite <small>(opțional)</small></label>
+                <div className="nw-chips">
+                  {NICHES.map(n => (
+                    <button key={n} type="button" onClick={() => toggleNiche(n)}
+                      className={`nw-chipbtn ${form.target_niches.includes(n) ? 'on' : ''}`}>{n}</button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -327,201 +402,137 @@ export default function NewManagedCampaign() {
 
           {/* ── STEP 3: Buget ── */}
           {step === 3 && (
-            <div>
-              <h2 className="text-xl font-black mb-1">Buget și timeline</h2>
-              <p className="text-sm text-gray-400 mb-6">Noi distribuim bugetul optim între influenceri</p>
-
-              <div className="space-y-5">
-                {/* Budget options */}
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-3">Buget total campanie</label>
-                  <div className="grid grid-cols-3 gap-2 mb-3">
+            <>
+              <div className="bu-card nw-card">
+                {head(3)}
+                <div className="nw-f">
+                  <label>Buget total campanie</label>
+                  <div className="nw-tiles" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))' }}>
                     {BUDGET_OPTIONS.filter(b => b.value > 0).map(b => (
-                      <button key={b.value} type="button"
-                        onClick={() => set({ budget: b.value, custom_budget: '' })}
-                        className={`relative p-3 rounded-2xl border-2 text-center transition ${form.budget === b.value ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'
-                          }`}>
-                        {b.popular && (
-                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-black bg-violet-600 text-white px-2 py-0.5 rounded-full">POPULAR</span>
-                        )}
-                        <p className="font-black text-sm text-gray-900">{b.label}</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{b.desc}</p>
+                      <button key={b.value} type="button" onClick={() => set({ budget: b.value, custom_budget: '' })}
+                        className={`nw-tile c ${form.budget === b.value ? 'on' : ''}`} style={{ minHeight: 70 }}>
+                        {b.popular && <span className="pop">POPULAR</span>}
+                        <span className="t" style={{ alignItems: 'center' }}><b>{b.label}</b><span>{b.desc}</span></span>
                       </button>
                     ))}
-                    <button type="button"
-                      onClick={() => set({ budget: 0 })}
-                      className={`p-3 rounded-2xl border-2 text-center transition ${form.budget === 0 ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'
-                        }`}>
-                      <p className="font-black text-sm text-gray-900">Altul</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">Suma dorită</p>
+                    <button type="button" onClick={() => set({ budget: 0 })}
+                      className={`nw-tile c ${form.budget === 0 ? 'on' : ''}`} style={{ minHeight: 70 }}>
+                      <span className="t" style={{ alignItems: 'center' }}><b>Altul</b><span>Suma dorită</span></span>
                     </button>
                   </div>
                   {form.budget === 0 && (
-                    <div className="relative">
-
-                      <input
-                        type="number" min={100}
-                        className="w-full px-4 py-3 border-2 border-purple-300 rounded-2xl text-sm font-bold outline-none focus:border-purple-400 transition"
-                        placeholder="Introduceți suma (minim 500 RON)"
-                        value={form.custom_budget}
-                        onChange={e => set({ custom_budget: e.target.value })}
-                      />
-                    </div>
+                    <input type="number" min={100} className="nw-in" style={{ borderColor: '#b9a5f5', fontWeight: 700 }}
+                      placeholder="Introduceți suma (minim 500 RON)"
+                      value={form.custom_budget} onChange={e => set({ custom_budget: e.target.value })} />
                   )}
                 </div>
 
-                {/* Breakdown */}
                 {finalBudget > 0 && (
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-100 rounded-2xl p-4">
-                    <p className="text-xs font-black text-purple-700 uppercase tracking-wider mb-3">💡 Cum se distribuie bugetul</p>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Budget total</span>
-                        <span className="font-black text-gray-900">{finalBudget.toLocaleString('ro-RO')} RON</span>
-                      </div>
-                      <div className="flex justify-between border-t border-purple-200 pt-2">
-                        <span className="font-black text-gray-700">Pentru influenceri</span>
-                        <span className="font-black text-green-600">{influencerPool.toLocaleString('ro-RO')} RON</span>
-                      </div>
-                      {form.influencer_count > 0 && (
-                        <div className="flex justify-between bg-white rounded-xl px-3 py-2 mt-1">
-                          <span className="text-xs text-gray-500">Per influencer (~)</span>
-                          <span className="text-xs font-black text-purple-600">{perInfluencer.toLocaleString('ro-RO')} RON</span>
-                        </div>
-                      )}
-                    </div>
+                  <div className="nw-box" style={{ background: '#efeaff', borderColor: '#e0d6ff' }}>
+                    <span className="bu-label" style={{ color: '#4423c4' }}>Cum se distribuie bugetul</span>
+                    <div className="r"><span>Buget total</span><b>{finalBudget.toLocaleString('ro-RO')} RON</b></div>
+                    <div className="r bu-div" style={{ paddingTop: 8 }}><span style={{ fontWeight: 700, color: '#14123a' }}>Pentru influenceri</span><b style={{ color: '#14532d' }}>{influencerPool.toLocaleString('ro-RO')} RON</b></div>
+                    {form.influencer_count > 0 && (
+                      <div className="r"><span className="bu-sm">Per influencer (~)</span><b className="bu-sm" style={{ color: '#4423c4' }}>{perInfluencer.toLocaleString('ro-RO')} RON</b></div>
+                    )}
                   </div>
                 )}
+              </div>
 
-                {/* Influencer count + taxă AddFame */}
-                <div>
-                  <InfluencerSlotsSelector
-                    value={form.influencer_count}
-                    onChange={v => set({ influencer_count: v })}
-                  />
-                </div>
+              <div className="bu-card nw-card">
+                <InfluencerSlotsSelector value={form.influencer_count} onChange={v => set({ influencer_count: v })} />
+              </div>
 
-                {/* Timeline */}
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-3">
-                    Deadline campanie: <span className="text-purple-600">{form.deadline_days} zile</span>
-                  </label>
-                  <div className="flex gap-2">
+              <div className="bu-card nw-card">
+                <div className="nw-f">
+                  <label>Deadline campanie: <b style={{ color: '#5a35e6' }}>{form.deadline_days} zile</b></label>
+                  <div className="nw-tiles" style={{ gridTemplateColumns: 'repeat(4,minmax(0,1fr))' }}>
                     {[7, 14, 21, 30].map(d => (
-                      <button key={d} type="button"
-                        onClick={() => set({ deadline_days: d })}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-black border-2 transition ${form.deadline_days === d ? 'border-purple-400 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-purple-200'
-                          }`}>
-                        {d}z
+                      <button key={d} type="button" onClick={() => set({ deadline_days: d })}
+                        className={`nw-tile c ${form.deadline_days === d ? 'on' : ''}`} style={{ minHeight: 48, padding: '8px' }}>
+                        <b>{d}z</b>
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
 
           {/* ── STEP 4: Brief ── */}
           {step === 4 && (
-            <div>
-              <h2 className="text-xl font-black mb-1">Brief pentru influenceri</h2>
-              <p className="text-sm text-gray-400 mb-6">Ce vrei să transmită conținutul creat</p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">
-                    Mesaje cheie <span className="text-gray-400 font-normal">(ce trebuie menționat obligatoriu)</span>
-                  </label>
-                  <textarea
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition resize-none"
-                    rows={3}
+            <>
+              <div className="bu-card nw-card">
+                {head(4)}
+                <div className="nw-f">
+                  <label>Mesaje cheie <small>(ce trebuie menționat obligatoriu)</small></label>
+                  <textarea className="nw-in" rows={3}
                     placeholder="ex. Menționa că suntem deschiși L-V 9-21, prețurile pornesc de la 50 RON, oferim livrare gratuită..."
-                    value={form.key_messages}
-                    onChange={e => set({ key_messages: e.target.value })}
-                  />
+                    value={form.key_messages} onChange={e => set({ key_messages: e.target.value })} />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">
-                    Instrucțiuni conținut <span className="text-gray-400 font-normal">(opțional)</span>
-                  </label>
-                  <textarea
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition resize-none"
-                    rows={3}
+                <div className="nw-f">
+                  <label>Instrucțiuni conținut <small>(opțional)</small></label>
+                  <textarea className="nw-in" rows={3}
                     placeholder="ex. Vrem videoclipuri naturale, nu scriptate. Produsul să fie vizibil. Ton vesel și energic..."
-                    value={form.content_instructions}
-                    onChange={e => set({ content_instructions: e.target.value })}
-                  />
+                    value={form.content_instructions} onChange={e => set({ content_instructions: e.target.value })} />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">
-                    Ce să evite <span className="text-gray-400 font-normal">(opțional)</span>
-                  </label>
-                  <textarea
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition resize-none"
-                    rows={2}
+                <div className="nw-f">
+                  <label>Ce să evite <small>(opțional)</small></label>
+                  <textarea className="nw-in" rows={2}
                     placeholder="ex. Nu menționați concurenții, evitați limbajul vulgar..."
-                    value={form.forbidden_content}
-                    onChange={e => set({ forbidden_content: e.target.value })}
-                  />
-                </div>
-
-                {/* Summary */}
-                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-2 text-sm">
-                  <p className="font-black text-gray-700 mb-3">📋 Sumar campanie</p>
-                  <div className="flex justify-between"><span className="text-gray-500">Obiectiv</span><span className="font-bold capitalize">{OBJECTIVES.find(o => o.value === form.objective)?.label}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Platforme</span><span className="font-bold">{form.platforms.join(', ')}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Produs</span><span className="font-bold truncate max-w-[200px]">{form.product_name}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Buget total</span><span className="font-bold text-green-600">{finalBudget.toLocaleString('ro-RO')} RON</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Influenceri</span><span className="font-bold">{form.influencer_count}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Deadline</span><span className="font-bold">{form.deadline_days} zile</span></div>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
-                  <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-blue-700">
-                    <strong>Ce urmează:</strong> Echipa AddFame va analiza brief-ul în 24-48h și îți va trimite o listă cu influencerii propuși. Tu aprobi lista și noi ne ocupăm de tot.
-                  </p>
+                    value={form.forbidden_content} onChange={e => set({ forbidden_content: e.target.value })} />
                 </div>
               </div>
-            </div>
+
+              <div className="nw-note blue">
+                <Info size={16} style={{ flex: 'none', marginTop: 2 }} />
+                <span><strong>Ce urmează:</strong> Echipa AddFame va analiza brief-ul în 24-48h și îți va trimite o listă cu influencerii propuși. Tu aprobi lista și noi ne ocupăm de tot.</span>
+              </div>
+            </>
           )}
 
-          {/* Error */}
           {error && (
-            <div className="mt-4 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-600">
-              <span>⚠️</span> {error}
-            </div>
+            <div className="nw-note red"><AlertCircle size={16} style={{ flex: 'none', marginTop: 2 }} /><span>{error}</span></div>
           )}
+        </div>
 
-          {/* Navigation */}
-          <div className="flex gap-3 mt-6">
-            {step > 1 && (
-              <button type="button"
-                onClick={() => setStep(s => (s - 1) as Step)}
-                className="flex-1 py-3 rounded-2xl font-bold text-sm border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-                Înapoi
-              </button>
-            )}
-            {step < 4 ? (
-              <button type="button"
-                onClick={() => setStep(s => (s + 1) as Step)}
-                disabled={!canNext()}
-                className="flex-1 py-3 rounded-2xl font-black text-sm text-white transition flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 16px rgba(139,92,246,0.3)' }}>
-                Continuă <ArrowRight className="w-4 h-4" />
-              </button>
-            ) : (
-              <button type="button"
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex-1 py-3 rounded-2xl font-black text-sm text-white transition flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 16px rgba(139,92,246,0.3)' }}>
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Se trimite...</> : <><Sparkles className="w-4 h-4" /> Trimite campania</>}
-              </button>
-            )}
-          </div>
+        {/* Rezumat */}
+        <div className="bu-card nw-sum">
+          <h3><Target size={17} color="#5a35e6" /> Rezumat</h3>
+          <div className="row"><span>Tip</span><b>Managed</b></div>
+          <div className="row"><span>Obiectiv</span><b>{OBJECTIVES.find(o => o.value === form.objective)?.label || '—'}</b></div>
+          <div className="row"><span>Platforme</span><b>{form.platforms.length ? form.platforms.map(platLabel).join(', ') : '—'}</b></div>
+          <div className="row"><span>Produs</span><b>{form.product_name || '—'}</b></div>
+          <div className="row"><span>Influenceri</span><b>{form.influencer_count}</b></div>
+          <div className="row"><span>Deadline</span><b>{form.deadline_days} zile</b></div>
+          <div className="bu-div" />
+          <div className="row"><span>Buget total</span><b className="big" style={{ color: finalBudget > 0 ? '#14123a' : '#8783a8' }}>{finalBudget.toLocaleString('ro-RO')} RON</b></div>
+          {finalBudget > 0 && form.influencer_count > 0 && (
+            <div className="row"><span>Per influencer (~)</span><b>{perInfluencer.toLocaleString('ro-RO')} RON</b></div>
+          )}
+          <div className="bu-bar"><i style={{ width: `${(step / 4) * 100}%` }} /></div>
+          <p className="nw-hint">Pasul {step} din 4</p>
+        </div>
+      </div>
+
+      {/* Bară de acțiuni */}
+      <div className="nw-bar">
+        <span className="st">Pasul {step} din 4 — {STEPS[step - 1].label}</span>
+        <div className="acts">
+          {step > 1 && (
+            <button type="button" onClick={() => setStep(s => (s - 1) as Step)} className="bu-btn big">
+              <ArrowLeft size={16} /> Înapoi
+            </button>
+          )}
+          {step < 4 ? (
+            <button type="button" onClick={() => setStep(s => (s + 1) as Step)} disabled={!canNext()} className="bu-btn p big">
+              Continuă <ArrowRight size={16} />
+            </button>
+          ) : (
+            <button type="button" onClick={handleSubmit} disabled={loading} className="bu-btn p big">
+              {loading ? <><Loader2 size={16} className="nw-spin" /> Se trimite...</> : <><Sparkles size={16} /> Trimite campania</>}
+            </button>
+          )}
         </div>
       </div>
     </div>

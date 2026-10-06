@@ -1,0 +1,46 @@
+/* Sistem de design comun pentru paginile de brand ("Centrul de comandă") — prefix iu- */
+.iu { padding: 28px; max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; color: #14123a; font-family: var(--font-body, system-ui), system-ui, sans-serif; font-size: 15px; line-height: 1.5; min-width: 0; }
+.iu h1, .iu h2, .iu h3, .iu .iu-d { font-family: var(--font-display, system-ui), system-ui, sans-serif; }
+.iu h1 { margin: 0; font-weight: 800; font-size: 34px; letter-spacing: -0.03em; line-height: 1.1; }
+.iu h2 { margin: 0; font-weight: 700; font-size: 19px; letter-spacing: -0.01em; }
+.iu h3 { margin: 0; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; line-height: 1.25; }
+.iu-muted { color: #6a6690; }
+.iu-sm { font-size: 13px; }
+.iu-xs { font-size: 12px; }
+.iu-row { display: flex; align-items: center; }
+.iu-col { display: flex; flex-direction: column; }
+.iu > * { min-width: 0; }
+.iu-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.iu-card { background: #fff; border: 1px solid #e5e3f3; border-radius: 20px; min-width: 0; }
+.iu-card-pad { padding: 20px; }
+.iu-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 10px; border: 1.5px solid #d8d5ec; background: #fff; color: #14123a; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s; }
+.iu-btn:hover { background: #f6f1ff; border-color: #cdb8ff; }
+.iu-btn.p { background: #7040f0; border-color: #7040f0; color: #fff; box-shadow: 0 10px 22px -12px rgba(112,64,240,.7); }
+.iu-btn.p:hover { background: #5b2fd0; border-color: #5b2fd0; }
+.iu-btn.big { height: 46px; padding: 0 20px; border-radius: 12px; }
+.iu-btn.danger { color: #b42318; border-color: #f3c9c4; }
+.iu-btn.danger:hover { background: #fff4f2; }
+.iu-btn:disabled { opacity: .55; cursor: not-allowed; }
+.iu-chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.iu-pill { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; border: 1.5px solid #e5e3f3; color: #4a4770; font-weight: 600; font-size: 14px; white-space: nowrap; cursor: pointer; font-family: inherit; }
+.iu-pill.on { background: #14123a; border-color: #14123a; color: #fff; }
+.iu-pill .n { font-size: 12px; color: #8783a8; }
+.iu-pill.on .n { background: rgba(255,255,255,.18); color: #fff; border-radius: 99px; padding: 0 7px; }
+.iu-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.iu-input { height: 42px; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 0 14px; font: inherit; font-size: 14px; background: #fff; color: #14123a; outline: none; min-width: 0; box-sizing: border-box; }
+.iu-input:focus { border-color: #7040f0; box-shadow: 0 0 0 3px rgba(112,64,240,.1); }
+.iu-search { display: flex; align-items: center; gap: 10px; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 0 14px; height: 42px; background: #fff; color: #8783a8; box-sizing: border-box; }
+.iu-search input { border: 0; outline: 0; font: inherit; font-size: 14px; flex: 1; min-width: 0; color: #14123a; background: transparent; }
+.iu-ico { width: 40px; height: 40px; flex: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.iu-face { flex: none; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; border-radius: 50%; overflow: hidden; }
+.iu-bar { height: 6px; border-radius: 99px; background: #eeecf7; overflow: hidden; }
+.iu-bar > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #7040f0, #9030f0); }
+.iu-div { border-top: 1px solid #eeecf7; }
+.iu-label { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #8783a8; }
+.iu-grid { display: grid; gap: 18px; }
+@media (max-width: 767px) {
+  .iu { padding-bottom: 110px; }
+  .iu { padding: 18px 16px 28px; gap: 16px; font-size: 14px; }
+  .iu h1 { font-size: 28px; line-height: 1.12; }
+  .iu-btn.big { height: 50px; border-radius: 14px; }
+}

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Calendar, MapPin, Users, ArrowRight, Loader2, Megaphone } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 type OpenCall = {
@@ -62,7 +61,7 @@ export default function CastinguriPage() {
         .from('campaigns')
         .select(`
           id, title, description, banner_url, event_date, event_location,
-          min_followers, application_deadline, manual_registrations, platforms, created_at,
+          min_followers, application_deadline, manual_registrations, platforms, created_at, brand_id,
           brand:brands(name, logo, verification_status)
         `)
         .eq('campaign_type', 'OPEN_CALL')
@@ -70,6 +69,14 @@ export default function CastinguriPage() {
         .order('created_at', { ascending: false })
 
       if (!camps) { setLoading(false); return }
+
+      // Numele / logo-ul brandului din vederea publică
+      const castBrandIds = [...new Set(camps.map((c: any) => c.brand_id).filter(Boolean))]
+      if (castBrandIds.length) {
+        const { data: pubBrands } = await supabase.from('brands_public').select('id, name, logo, verification_status').in('id', castBrandIds as string[])
+        const bMap = Object.fromEntries((pubBrands || []).map((b: any) => [b.id, b]))
+        camps.forEach((c: any) => { if (bMap[c.brand_id]) c.brand = bMap[c.brand_id] })
+      }
 
       // Verificăm aplicațiile existente ale influencerului
       // Număr înscrieri pentru fiecare campanie
@@ -111,109 +118,101 @@ export default function CastinguriPage() {
     load()
   }, [])
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-    </div>
-  )
+  const appChip = (st: string) =>
+    st === 'approved' ? { bg: '#dcf5ec', fg: '#14532d', t: 'Aprobat' }
+    : st === 'rejected' ? { bg: '#fdeceb', fg: '#b42318', t: 'Respins' }
+    : { bg: '#fff1c2', fg: '#854d0e', t: 'Aplicație trimisă' }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 pb-20">
-      <div className="mb-6">
-        <h1 className="text-2xl font-black flex items-center gap-2">🎤 Castinguri & Open Call</h1>
-        <p className="text-sm text-muted-foreground mt-1">Brandurile organizează evenimente și castinguri. Aplică dacă vrei să participi!</p>
+    <div className="iu cs">
+      <style>{`
+        .cs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+        .cs-card { display: flex; flex-direction: column; overflow: hidden; text-decoration: none; color: inherit; transition: border-color .15s, box-shadow .15s, transform .15s; }
+        .cs-card:hover { border-color: #cdb8ff; box-shadow: 0 16px 34px -22px rgba(112,64,240,.5); transform: translateY(-2px); }
+        .cs-ban { position: relative; height: 160px; background: linear-gradient(135deg,#efeaff,#f6f1ff); display: flex; align-items: center; justify-content: center; color: #b9a3f7; }
+        .cs-ban img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .cs-body { padding: 18px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+        .cs-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .cs-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+        .cs-hot { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 12px; background: #fff1e6; color: #9a4206; font-size: 13px; font-weight: 700; }
+        .cs-dot { width: 8px; height: 8px; border-radius: 50%; background: #f97316; flex: none; }
+        .cs-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: auto; }
+        .cs-empty { text-align: center; padding: 56px 20px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        @media (max-width: 767px) { .cs-grid { grid-template-columns: 1fr; gap: 14px; } .cs-foot .iu-btn { width: 100%; height: 44px; } }
+      `}</style>
+
+      <div className="iu-head">
+        <div className="iu-col" style={{ gap: 6 }}>
+          <h1>Castinguri &amp; Open Call</h1>
+          <span className="iu-muted iu-sm">Brandurile organizează evenimente și castinguri. Aplică dacă vrei să participi!</span>
+        </div>
+        {!loading && campaigns.length > 0 && (
+          <span className="iu-chip" style={{ background: '#efeaff', color: '#5b2fd0' }}>{campaigns.length} {campaigns.length === 1 ? 'eveniment activ' : 'evenimente active'}</span>
+        )}
       </div>
 
-      {campaigns.length === 0 ? (
-        <div className="text-center py-16">
-          <Megaphone className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="font-bold text-lg">Niciun eveniment activ momentan</p>
-          <p className="text-sm text-muted-foreground mt-1">Revino în curând — brandurile postează constant evenimente și oportunități noi.</p>
+      {loading ? (
+        <div className="iu-card cs-empty"><Loader2 className="animate-spin" size={28} color="#7040f0" /><span className="iu-muted iu-sm">Se încarcă…</span></div>
+      ) : campaigns.length === 0 ? (
+        <div className="iu-card cs-empty">
+          <div className="iu-ico" style={{ background: '#efeaff', color: '#7040f0', width: 56, height: 56, borderRadius: 18 }}><Megaphone size={26} /></div>
+          <h3 style={{ marginTop: 8 }}>Niciun eveniment activ momentan</h3>
+          <p className="iu-muted iu-sm" style={{ margin: 0, maxWidth: 380 }}>Revino în curând — brandurile postează constant evenimente și oportunități noi.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="cs-grid">
           {campaigns.map(c => (
-            <Link key={c.id} href={`/influencer/castinguri/${c.id}`}>
-              <div className="rounded-2xl border border-border overflow-hidden hover:border-primary/40 hover:shadow-md transition cursor-pointer">
-                {/* Banner */}
-                {c.banner_url ? (
-                  <img src={c.banner_url} alt={c.title} className="w-full h-40 object-cover" />
-                ) : (
-                  <div className="w-full h-40 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                    <Megaphone className="w-12 h-12 text-primary/40" />
+            <Link key={c.id} href={`/influencer/castinguri/${c.id}`} className="iu-card cs-card">
+              <div className="cs-ban">
+                {c.banner_url ? <img src={c.banner_url} alt={c.title} /> : <Megaphone size={44} />}
+              </div>
+              <div className="cs-body">
+                <div className="iu-row" style={{ gap: 8, minWidth: 0 }}>
+                  {c.brand?.logo ? (
+                    <img src={c.brand.logo} alt={c.brand.name} style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'cover', flex: 'none' }} />
+                  ) : (
+                    <span className="iu-face" style={{ width: 26, height: 26, borderRadius: 8, background: '#efeaff', color: '#5b2fd0', fontSize: 12 }}>{c.brand?.name?.[0] || 'B'}</span>
+                  )}
+                  <span className="iu-xs iu-muted" style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.brand?.name}</span>
+                  {(c.brand as any)?.verification_status === 'verified' && <span className="iu-chip" style={{ background: '#e6f0ff', color: '#1d4fb8', height: 20, fontSize: 11, padding: '0 8px' }}>✓ Verificat</span>}
+                </div>
+
+                <h3 className="cs-title">{c.title}</h3>
+
+                <div className="cs-meta">
+                  {c.event_date && (
+                    <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}><Calendar size={12} /> {fmt(c.event_date)}</span>
+                  )}
+                  {c.event_location && (
+                    <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}><MapPin size={12} /> {c.event_location}</span>
+                  )}
+                  {c.min_followers > 0 && (
+                    <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}><Users size={12} /> Min {fmtNum(c.min_followers)} followeri</span>
+                  )}
+                  {c.platforms.map(p => (
+                    <span key={p} className="iu-chip" style={{ background: '#efeaff', color: '#5b2fd0' }}>{p}</span>
+                  ))}
+                </div>
+
+                {(c.registration_count || 0) > 0 && (
+                  <div className="cs-hot">
+                    <span className="cs-dot" />
+                    {c.registration_count} {c.registration_count === 1 ? 'influencer s-a înscris' : 'influenceri s-au înscris'} deja
                   </div>
                 )}
 
-                <div className="p-4">
-                  {/* Brand */}
-                  <div className="flex items-center gap-2 mb-2">
-                    {c.brand?.logo ? (
-                      <img src={c.brand.logo} alt={c.brand.name} className="w-6 h-6 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                        {c.brand?.name?.[0] || 'B'}
-                      </div>
-                    )}
-                    <span className="text-xs font-bold text-muted-foreground">{c.brand?.name}</span>
-                    {c.brand?.verification_status === 'verified' && <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">✓ Verificat</span>}
+                {c.my_application ? (
+                  <div className="cs-foot">
+                    <span className="iu-chip" style={{ background: appChip(c.my_application.status).bg, color: appChip(c.my_application.status).fg }}>{appChip(c.my_application.status).t}</span>
                   </div>
-
-                  <h2 className="font-black text-base mb-2 line-clamp-2">{c.title}</h2>
-
-                  {/* Meta */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {c.event_date && (
-                      <span className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full">
-                        <Calendar className="w-3 h-3" /> {fmt(c.event_date)}
-                      </span>
+                ) : (
+                  <div className="cs-foot">
+                    {c.application_deadline && (
+                      <span className="iu-xs iu-muted">Deadline: {fmt(c.application_deadline)}</span>
                     )}
-                    {c.event_location && (
-                      <span className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full">
-                        <MapPin className="w-3 h-3" /> {c.event_location}
-                      </span>
-                    )}
-                    {c.min_followers > 0 && (
-                      <span className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full">
-                        <Users className="w-3 h-3" /> Min {fmtNum(c.min_followers)} followers
-                      </span>
-                    )}
-                    {c.platforms.map(p => (
-                      <span key={p} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-bold">{p}</span>
-                    ))}
+                    <span className="iu-btn p" style={{ marginLeft: 'auto' }}>Aplică acum <ArrowRight size={14} /></span>
                   </div>
-
-                  {/* Status aplicație */}
-                  {/* Contor înscrieri */}
-                  {(c.registration_count || 0) > 0 && (
-                    <div className="flex items-center gap-1.5 mb-3 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2">
-                      <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse flex-shrink-0" />
-                      <p className="text-xs font-bold text-orange-700">
-                        🔥 {c.registration_count} {c.registration_count === 1 ? 'influencer s-a înscris' : 'influenceri s-au înscris'} deja
-                      </p>
-                    </div>
-                  )}
-
-                  {c.my_application ? (
-                    <div className={`text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1 ${
-                      c.my_application.status === 'approved' ? 'bg-green-100 text-green-700' :
-                      c.my_application.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {c.my_application.status === 'approved' ? '✅ Aprobat' :
-                       c.my_application.status === 'rejected' ? '❌ Respins' :
-                       '⏳ Aplicație trimisă'}
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      {c.application_deadline && (
-                        <p className="text-xs text-muted-foreground">Deadline: {fmt(c.application_deadline)}</p>
-                      )}
-                      <Button size="sm" className="ml-auto bg-gradient-to-r from-primary to-accent">
-                        Aplică acum <ArrowRight className="w-3 h-3 ml-1" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </Link>
           ))}

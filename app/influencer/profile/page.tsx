@@ -96,9 +96,9 @@ function PricingSection({ priceStory, setPriceStory, priceReel, setPriceReel, pr
   const setters: Record<string, (v: string) => void> = { story: setPriceStory, reel: setPriceReel, post: setPricePost, youtube: setPriceYoutube }
 
   return (
-    <div className="rounded-2xl border-2 border-gray-100 bg-white p-6" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+    <div className="iu-card iu-card-pad">
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }}>
           <span className="text-white font-black">RON</span>
         </div>
         <div>
@@ -498,13 +498,76 @@ export default function ProfilePage() {
   )
 
   return (
-    <div className="p-6 lg:p-8 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Profilul Tău</h1>
-      <p className="text-muted-foreground mb-8">Gestionează profilul tău public și conturile conectate</p>
+    <div className="iu pf">
+      <style>{`
+        .pf { max-width: 820px; }
+        .pf input:not([type=file]):not([type=checkbox]):not([type=radio]), .pf select { height: 44px; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 0 14px; background: #fff; color: #14123a; font-size: 14px; box-sizing: border-box; }
+        .pf textarea { border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 10px 14px; background: #fff; color: #14123a; font-size: 14px; }
+        .pf input:focus, .pf select:focus, .pf textarea:focus { border-color: #7040f0; outline: none; box-shadow: 0 0 0 3px rgba(112,64,240,.1); }
+        .pf input.pl-9:not([type=file]):not([type=checkbox]):not([type=radio]) { padding-left: 36px; }
+        .pf input.pl-7:not([type=file]):not([type=checkbox]):not([type=radio]) { padding-left: 46px; }
+        .pf label.block { font-size: 12px; font-weight: 700; color: #4a4770; }
+        .pf button.bg-gradient-to-r { min-height: 44px; border-radius: 12px; background: #7040f0; color: #fff; font-weight: 700; border: 0; box-shadow: 0 10px 22px -12px rgba(112,64,240,.7); }
+        .pf button.bg-gradient-to-r:hover { background: #5b2fd0; }
+        .pf button.bg-gradient-to-r:disabled { opacity: .55; }
+        .pf [data-slot=button], .pf button[class*="border-input"] { min-height: 44px; border-radius: 12px; }
+        .pf-slug { display: flex; align-items: center; border: 1.5px solid #e5e3f3; border-radius: 12px; overflow: hidden; background: #fff; }
+        .pf-slug:focus-within { border-color: #7040f0; box-shadow: 0 0 0 3px rgba(112,64,240,.1); }
+        .pf-slug > span { padding: 0 12px; height: 44px; display: flex; align-items: center; background: #f6f6fc; color: #6a6690; font-size: 14px; border-right: 1.5px solid #e5e3f3; }
+        .pf .pf-slug input:not([type=file]):not([type=checkbox]):not([type=radio]) { flex: 1; border: 0; border-radius: 0; box-shadow: none; min-width: 0; }
+        .pf-niche { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1.5px solid #e5e3f3; background: #fff; color: #4a4770; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .pf-niche.on { background: #7040f0; border-color: #7040f0; color: #fff; }
+        .pf-plat { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px; border: 1.5px solid #e5e3f3; border-radius: 16px; background: #fff; }
+        .pf-plat.on { background: #faf8ff; border-color: #d8ccff; }
+        .pf-save { position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: flex-end; padding: 14px 20px; margin: 0 -20px; background: rgba(246,246,252,.94); backdrop-filter: blur(6px); border-top: 1px solid #e5e3f3; }
+        .pf-msg { border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+        .pf-todo { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        @media (max-width: 767px) { .pf-save { margin: 0 -16px; padding: 12px 16px; bottom: 64px; } .pf-save button { width: 100%; } }
+      `}</style>
+      <div className="iu-head">
+        <div>
+          <div className="iu-label" style={{ marginBottom: 6 }}>Profil public</div>
+          <h1>Profilul Tău</h1>
+          <p className="iu-muted iu-sm" style={{ margin: '6px 0 0' }}>Gestionează profilul tău public și conturile conectate</p>
+        </div>
+        {slug && <a href={`/influencer/${slug}`} target="_blank" rel="noopener noreferrer" className="iu-btn"><ExternalLink size={15} /> Vezi profilul public</a>}
+      </div>
+
+      {/* ── Completitudine profil ───────────────────────────────────────── */}
+      {(() => {
+        const items = [
+          { label: 'Fotografie', done: !!(avatarPreview || avatar) },
+          { label: 'Nume', done: !!name.trim() },
+          { label: 'Bio', done: !!bio.trim() },
+          { label: 'Nișe', done: niches.length > 0 },
+          { label: 'Cont social', done: socialLinks.length > 0 || !!igData?.connected },
+        ]
+        const done = items.filter(i => i.done).length
+        const pct = Math.round((done / items.length) * 100)
+        return (
+          <div className="iu-card iu-card-pad">
+            <div className="iu-row" style={{ justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+              <div>
+                <div className="iu-label">Completitudine profil</div>
+                <h2 style={{ marginTop: 4 }}>{pct}% completat</h2>
+              </div>
+              <span className="iu-chip" style={pct === 100 ? { background: '#dcf5ec', color: '#14532d' } : { background: '#efeaff', color: '#5b2fd0' }}>{done}/{items.length}</span>
+            </div>
+            <div className="iu-bar" style={{ marginBottom: 14 }}><i style={{ width: `${pct}%` }} /></div>
+            <div className="iu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+              {items.map(i => (
+                <span key={i.label} className="pf-todo" style={i.done ? { background: '#dcf5ec', color: '#14532d' } : { background: '#f0eff7', color: '#4a4770' }}>
+                  {i.done ? <CheckCircle size={13} /> : <Plus size={13} />} {i.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Banner rezultat OAuth Instagram ─────────────────────────────── */}
       {igStatus === 'success' && (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+        <div className="pf-msg" style={{ background: "#dcf5ec", color: "#14532d", alignItems: "flex-start" }}>
           <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
           <div className="text-sm">
             <p className="font-semibold text-green-900">Instagram conectat cu succes!</p>
@@ -513,7 +576,7 @@ export default function ProfilePage() {
         </div>
       )}
       {igStatus === 'error' && (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+        <div className="pf-msg" style={{ background: "#fde8e6", color: "#b42318", alignItems: "flex-start" }}>
           <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
           <div className="text-sm">
             <p className="font-semibold text-red-900">Conectarea Instagram a eșuat</p>
@@ -522,11 +585,11 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-5">
 
         {/* Avatar */}
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h2 className="text-lg font-bold mb-5">Profile Photo</h2>
+        <div className="iu-card iu-card-pad">
+          <h2 className="mb-5">Fotografie de profil</h2>
           <div className="flex items-center gap-6">
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center overflow-hidden ring-4 ring-primary/20">
@@ -559,13 +622,13 @@ export default function ProfilePage() {
                 <Upload className="w-4 h-4 mr-2" />
                 {avatarUploading ? 'Se încarcă...' : 'Încarcă Fotografie'}
               </Button>
-              <p className="text-xs text-muted-foreground">JPG, PNG or WEBP. Max 5MB.</p>
+              <p className="text-xs text-muted-foreground">JPG, PNG sau WEBP. Max 5MB.</p>
               {avatarPreview && (
                 <button
                   onClick={() => { setAvatarPreview(null); setAvatar(null) }}
                   className="text-xs text-destructive hover:underline mt-1 block"
                 >
-                  Remove photo
+                  Șterge fotografia
                 </button>
               )}
             </div>
@@ -573,8 +636,8 @@ export default function ProfilePage() {
         </div>
 
         {/* Personal Info */}
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h2 className="text-lg font-bold mb-5">Informații Personale</h2>
+        <div className="iu-card iu-card-pad">
+          <h2 className="mb-5">Informații personale</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">Nume Complet</label>
@@ -582,12 +645,11 @@ export default function ProfilePage() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Nume utilizator / Slug</label>
-              <div className="flex items-center border border-input rounded-md overflow-hidden">
-                <span className="px-3 py-2 bg-muted text-muted-foreground text-sm border-r border-input">AddFame.ro/</span>
+              <div className="pf-slug">
+                <span>AddFame.ro/</span>
                 <input
                   value={slug}
                   onChange={e => setSlug(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-background text-sm outline-none"
                   placeholder="numeleTau"
                 />
               </div>
@@ -612,8 +674,8 @@ export default function ProfilePage() {
         </div>
 
         {/* Niches */}
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h2 className="text-lg font-bold mb-2">Nișe & Subiecte</h2>
+        <div className="iu-card iu-card-pad">
+          <h2 className="mb-2">Nișe & subiecte</h2>
           <p className="text-sm text-muted-foreground mb-4">Selectează subiectele care îți descriu cel mai bine conținutul</p>
           <div className="flex flex-wrap gap-2 mb-4">
             {NICHES_OPTIONS.map(niche => (
@@ -621,10 +683,7 @@ export default function ProfilePage() {
                 key={niche}
                 type="button"
                 onClick={() => niches.includes(niche) ? removeNiche(niche) : addNiche(niche)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${niches.includes(niche)
-                  ? 'bg-primary text-white'
-                  : 'bg-muted hover:bg-muted/80 text-foreground'
-                  }`}
+                className={`pf-niche${niches.includes(niche) ? ' on' : ''}`}
               >
                 {niche}
               </button>
@@ -644,7 +703,7 @@ export default function ProfilePage() {
           {niches.filter(n => !NICHES_OPTIONS.includes(n)).length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {niches.filter(n => !NICHES_OPTIONS.includes(n)).map(niche => (
-                <span key={niche} className="flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-full text-sm">
+                <span key={niche} className="pf-niche on" style={{ gap: 6, cursor: 'default' }}>
                   {niche}
                   <button onClick={() => removeNiche(niche)}><X className="w-3 h-3" /></button>
                 </span>
@@ -654,8 +713,8 @@ export default function ProfilePage() {
         </div>
 
         {/* Social Accounts */}
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h2 className="text-lg font-bold mb-2">Conturi Sociale</h2>
+        <div className="iu-card iu-card-pad">
+          <h2 className="mb-2">Conturi sociale</h2>
           <p className="text-sm text-muted-foreground mb-5">Conectează-ți profilurile sociale ca brandurile să te descopere</p>
 
           <div className="space-y-3">
@@ -663,7 +722,7 @@ export default function ProfilePage() {
               const Icon = platform.icon
               const connected = socialLinks.find(s => s.platform === platform.id)
               return (
-                <div key={platform.id} className={`flex items-center justify-between flex-wrap gap-3 p-4 rounded-xl border ${connected ? platform.border + ' bg-card' : 'border-border'}`}>
+                <div key={platform.id} className={`pf-plat${connected ? ' on' : ''}`}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${connected ? platform.bg : 'bg-muted'}`}>
                       <Icon className={`w-5 h-5 ${connected ? platform.color : 'text-muted-foreground'}`} />
@@ -704,16 +763,16 @@ export default function ProfilePage() {
                     {connected && (
                       <>
                         <a href={connected.url} target="_blank" rel="noopener noreferrer"
-                          className="p-1.5 rounded text-muted-foreground hover:text-foreground transition">
+                          className="text-muted-foreground hover:text-foreground transition" style={{ width: 44, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                           <ExternalLink className="w-4 h-4" />
                         </a>
                         <button onClick={() => removeSocial(platform.id)}
-                          className="p-1.5 rounded text-muted-foreground hover:text-destructive transition">
+                          className="text-muted-foreground hover:text-destructive transition" style={{ width: 44, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Trash2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => { setErCalcPlatform(platform.id); setErCalcOpen(true); setErResult(null) }}
-                          className="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-100 transition border border-purple-200"
+                          className="iu-btn" style={{ height: 44, padding: '0 12px', fontSize: 12, background: '#efeaff', color: '#5b2fd0', borderColor: '#d8ccff' }}
                           title="Calculează Engagement Rate"
                         >
                           ER %
@@ -806,21 +865,21 @@ export default function ProfilePage() {
 
         {/* Status messages */}
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-2 text-sm text-destructive">
+          <div className="pf-msg" style={{ background: "#fde8e6", color: "#b42318" }}>
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
           </div>
         )}
         {saved && (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 flex items-center gap-2 text-sm text-green-600">
+          <div className="pf-msg" style={{ background: "#dcf5ec", color: "#14532d" }}>
             <CheckCircle className="w-4 h-4 flex-shrink-0" />
-            Profile saved successfully!
+            Profilul a fost salvat!
           </div>
         )}
 
-        <div className="flex justify-end">
+        <div className="pf-save">
           <Button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-primary to-accent px-8">
-            {saving ? 'Saving...' : 'Save Profile'}
+            {saving ? 'Se salvează...' : 'Salvează profilul'}
           </Button>
         </div>
       </div>
@@ -925,7 +984,7 @@ export default function ProfilePage() {
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${platform.bg}`}>
                         <Icon className={`w-5 h-5 ${platform.color}`} />
                       </div>
-                      <h2 className="text-lg font-bold">Connect {platform.label}</h2>
+                      <h2 className="text-lg font-bold">Conectează {platform.label}</h2>
                     </div>
                     <button onClick={() => setAddingSocial(null)} className="text-muted-foreground hover:text-foreground">
                       <X className="w-5 h-5" />
@@ -934,7 +993,7 @@ export default function ProfilePage() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">Profile URL</label>
+                      <label className="block text-sm font-medium mb-2">URL profil</label>
                       <div className="relative">
                         <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
@@ -948,7 +1007,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Followers Count <span className="text-muted-foreground font-normal">(optional)</span></label>
+                      <label className="block text-sm font-medium mb-2">Număr followeri <span className="text-muted-foreground font-normal">(opțional)</span></label>
                       <Input
                         placeholder="ex. 45K, 1.2M"
                         value={socialFollowers}
@@ -957,7 +1016,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Engagement Rate % <span className="text-muted-foreground font-normal">(optional)</span></label>
+                      <label className="block text-sm font-medium mb-2">Engagement Rate % <span className="text-muted-foreground font-normal">(opțional)</span></label>
                       <Input
                         placeholder="ex. 3.5"
                         value={socialEngRate}
@@ -966,7 +1025,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Avg Views / Post <span className="text-muted-foreground font-normal">(optional)</span></label>
+                      <label className="block text-sm font-medium mb-2">Vizualizări medii / post <span className="text-muted-foreground font-normal">(opțional)</span></label>
                       <Input
                         placeholder="ex. 15K, 200K"
                         value={socialAvgViews}
@@ -979,7 +1038,7 @@ export default function ProfilePage() {
                       onClick={handleAddSocial}
                       disabled={!socialUrl.trim()}
                     >
-                      Save Account
+                      Salvează contul
                     </Button>
                   </div>
                 </>

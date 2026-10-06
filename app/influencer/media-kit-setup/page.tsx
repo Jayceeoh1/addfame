@@ -99,224 +99,231 @@ export default function MediaKitSetup() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <div className="w-10 h-10 rounded-full animate-spin" style={{ border: '3px solid #ede9fe', borderTopColor: '#8b5cf6' }} />
+    <div className="iu" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <div className="w-10 h-10 rounded-full animate-spin" style={{ border: '3px solid #efeaff', borderTopColor: '#7040f0' }} />
     </div>
   )
 
-  return (
-    <div style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif", background: '#f8f7ff', minHeight: '100vh', paddingBottom: 80 }}>
+  const doneCount = [
+    !!brandBio.trim(),
+    whyChooseMe.filter(w => w.trim()).length >= 2,
+    !!(priceReel || priceStory || pricePost),
+    recentPosts.filter(u => u.trim()).length >= 1,
+    portfolio.filter(u => u.trim()).length >= 1,
+  ].filter(Boolean).length
 
-      {/* Header */}
-      <div style={{ background: 'white', borderBottom: '1px solid #ede9fe', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 8, position: 'sticky', top: 0, zIndex: 10, flexWrap: 'nowrap' }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#6b7280', fontSize: 13, fontWeight: 600, padding: 0, fontFamily: 'inherit' }}>
-          <ArrowLeft size={16} /> Înapoi
-        </button>
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <p style={{ fontSize: 15, fontWeight: 900, color: '#111', margin: 0 }}>Setup Media Kit</p>
+  return (
+    <div className="iu mk">
+      <style>{`
+        .mk { max-width: 760px; }
+        .mk-in { width: 100%; height: 44px; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 0 14px; font: inherit; font-size: 14px; background: #fff; color: #14123a; outline: none; box-sizing: border-box; min-width: 0; }
+        .mk-in:focus, .mk-ta:focus { border-color: #7040f0; box-shadow: 0 0 0 3px rgba(112,64,240,.1); }
+        .mk-ta { width: 100%; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 14px; color: #14123a; outline: none; resize: none; box-sizing: border-box; background: #fff; }
+        .mk-in.num { text-align: right; font-weight: 700; }
+        .mk-rate { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #f6f6fc; border: 1px solid #eeecf7; border-radius: 14px; flex-wrap: wrap; }
+        .mk-rate > span { flex: 1; min-width: 140px; font-size: 14px; font-weight: 600; }
+        .mk-rate .w { display: flex; align-items: center; gap: 8px; }
+        .mk-rate .mk-in { width: 110px; }
+        .mk-line { display: flex; align-items: center; gap: 10px; }
+        .mk-n { width: 22px; flex: none; text-align: right; font-size: 12px; font-weight: 700; color: #8783a8; }
+        .mk-dot { width: 26px; height: 26px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1.5px solid #e5e3f3; background: #f6f6fc; color: #c4c1dc; }
+        .mk-dot.ok { background: #dcf5ec; border-color: #86e0b8; color: #14532d; }
+        .mk-x { width: 44px; height: 44px; flex: none; border: 0; background: transparent; color: #8783a8; cursor: pointer; font-size: 16px; border-radius: 10px; }
+        .mk-x:hover { background: #f6f6fc; color: #b42318; }
+        .mk-sum { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eeecf7; }
+        .mk-sum:last-child { border-bottom: 0; }
+        .mk-nav { position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: space-between; gap: 10px; padding: 12px 16px; margin: 0 -16px; background: rgba(246,246,252,.94); backdrop-filter: blur(6px); border-top: 1px solid #e5e3f3; }
+        @media (max-width: 767px) { .mk-nav { bottom: 64px; } .mk-nav .iu-btn { flex: 1; } .mk-rate .mk-in { width: 100%; flex: 1; } .mk-rate .w { flex: 1; } }
+      `}</style>
+
+      <div className="iu-head">
+        <div>
+          <button onClick={() => router.back()} className="iu-btn" style={{ height: 34, padding: '0 12px', marginBottom: 12, fontSize: 13 }}>
+            <ArrowLeft size={14} /> Înapoi
+          </button>
+          <div className="iu-label" style={{ marginBottom: 6 }}>Media kit · Pasul {step} din {STEPS.length}</div>
+          <h1>Setup Media Kit</h1>
+          <p className="iu-muted iu-sm" style={{ margin: '6px 0 0' }}>Completează informațiile pe care brandurile le văd în media kit-ul tău.</p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: saved ? '#16a34a' : 'linear-gradient(135deg,#8b5cf6,#9030f0)', color: 'white', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}
-        >
+        <button onClick={handleSave} disabled={saving} className="iu-btn p" style={saved ? { background: '#16a34a', borderColor: '#16a34a' } : undefined}>
           {saved ? <><Check size={14} /> Salvat!</> : saving ? 'Se salvează...' : <><Save size={14} /> Salvează</>}
         </button>
       </div>
 
-      {/* Progress steps */}
-      <div style={{ background: 'white', borderBottom: '1px solid #ede9fe', padding: '12px 16px' }}>
-        <div style={{ display: 'flex', gap: 4, maxWidth: 500, margin: '0 auto' }}>
-          {STEPS.map((s, i) => (
-            <button key={s.id} onClick={() => setStep(s.id)}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 4px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                background: step === s.id ? '#f5f3ff' : 'transparent',
-                opacity: step === s.id ? 1 : 0.5 }}>
-              <span style={{ fontSize: 18 }}>{s.icon}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: step === s.id ? '#7c3aed' : '#6b7280' }}>{s.label}</span>
-              {step === s.id && <div style={{ width: 24, height: 2, borderRadius: 2, background: '#7c3aed' }} />}
-            </button>
-          ))}
-        </div>
+      <div className="iu-tabs">
+        {STEPS.map(s => (
+          <button key={s.id} onClick={() => setStep(s.id)} className={`iu-pill${step === s.id ? ' on' : ''}`} style={{ minHeight: 44 }}>
+            <span>{s.icon}</span> {s.label}
+          </button>
+        ))}
       </div>
 
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '20px 16px' }}>
-
-        {/* PAS 1 — Prezentare */}
-        {step === 1 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #ede9fe' }}>
-              <p style={{ fontSize: 13, fontWeight: 900, color: '#4c1d95', margin: '0 0 4px' }}>💼 Bio pentru branduri</p>
-              <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 12px' }}>Prezintă-te brandurilor — cine ești, ce creezi, cui te adresezi.</p>
-              <textarea
-                value={brandBio}
-                onChange={e => setBrandBio(e.target.value)}
-                maxLength={600}
-                rows={5}
-                placeholder="Ex: Sunt creator de conținut beauty & lifestyle cu o audiență activă în România. Creez conținut autentic și estetic, potrivit pentru branduri care valorează calitatea..."
-                style={{ width: '100%', fontSize: 13, border: '1.5px solid #ede9fe', borderRadius: 12, padding: '10px 12px', outline: 'none', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
-              />
-              <p style={{ fontSize: 11, color: '#9ca3af', margin: '4px 0 0', textAlign: 'right' }}>{brandBio.length}/600</p>
-            </div>
-
-            <div style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #ede9fe' }}>
-              <p style={{ fontSize: 13, fontWeight: 900, color: '#4c1d95', margin: '0 0 4px' }}>⭐ De ce să colaboreze cu mine?</p>
-              <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 12px' }}>Adaugă minim 2 motive — vor apărea în media kit-ul tău.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {whyChooseMe.map((item, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: item.trim() ? '#f0fdf4' : '#f9fafb', border: `1.5px solid ${item.trim() ? '#22c55e' : '#e5e7eb'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Check size={12} color={item.trim() ? '#22c55e' : '#d1d5db'} />
-                    </div>
-                    <input
-                      type="text"
-                      value={item}
-                      onChange={e => { const u = [...whyChooseMe]; u[i] = e.target.value; setWhyChooseMe(u) }}
-                      maxLength={120}
-                      placeholder={['Conținut autentic și estetic', 'Livrare în termen, profesionalism', 'Audiență activă în România', 'Experiență cu branduri din nișa ta'][i]}
-                      style={{ flex: 1, fontSize: 13, border: '1.5px solid #ede9fe', borderRadius: 10, padding: '8px 12px', outline: 'none', fontFamily: 'inherit' }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+      {/* PAS 1 — Prezentare */}
+      {step === 1 && (
+        <>
+          <div className="iu-card iu-card-pad">
+            <h3>💼 Bio pentru branduri</h3>
+            <p className="iu-muted iu-sm" style={{ margin: '4px 0 14px' }}>Prezintă-te brandurilor — cine ești, ce creezi, cui te adresezi.</p>
+            <textarea
+              className="mk-ta"
+              value={brandBio}
+              onChange={e => setBrandBio(e.target.value)}
+              maxLength={600}
+              rows={5}
+              placeholder="Ex: Sunt creator de conținut beauty & lifestyle cu o audiență activă în România. Creez conținut autentic și estetic, potrivit pentru branduri care valorează calitatea..."
+            />
+            <p className="iu-muted iu-xs" style={{ margin: '4px 0 0', textAlign: 'right' }}>{brandBio.length}/600</p>
           </div>
-        )}
 
-        {/* PAS 2 — Tarife */}
-        {step === 2 && (
-          <div style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #ede9fe' }}>
-            <p style={{ fontSize: 13, fontWeight: 900, color: '#4c1d95', margin: '0 0 4px' }}>💰 Tarifele mele</p>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 16px' }}>Prețuri orientative — brandurile le văd pe profilul tău și în media kit.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[
-                { label: 'Story Instagram', value: priceStory, set: setPriceStory, placeholder: 'ex. 150' },
-                { label: 'Reel / TikTok Video', value: priceReel, set: setPriceReel, placeholder: 'ex. 300' },
-                { label: 'Post feed', value: pricePost, set: setPricePost, placeholder: 'ex. 200' },
-                { label: 'Video YouTube', value: priceYoutube, set: setPriceYoutube, placeholder: 'ex. 500' },
-                { label: 'Minim per campanie', value: priceMin, set: setPriceMin, placeholder: 'ex. 100' },
-              ].map(f => (
-                <div key={f.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 14px', background: '#fafafa', borderRadius: 12, border: '1px solid #f0f0f0' }}>
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>{f.label}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <input
-                      type="number"
-                      min={0}
-                      value={f.value}
-                      onChange={e => f.set(e.target.value)}
-                      placeholder={f.placeholder}
-                      style={{ width: 80, fontSize: 13, fontWeight: 700, border: '1.5px solid #ede9fe', borderRadius: 8, padding: '6px 10px', outline: 'none', textAlign: 'right', fontFamily: 'inherit' }}
-                    />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#6b7280' }}>RON</span>
-                  </div>
+          <div className="iu-card iu-card-pad">
+            <h3>⭐ De ce să colaboreze cu mine?</h3>
+            <p className="iu-muted iu-sm" style={{ margin: '4px 0 14px' }}>Adaugă minim 2 motive — vor apărea în media kit-ul tău.</p>
+            <div className="iu-col" style={{ gap: 10 }}>
+              {whyChooseMe.map((item, i) => (
+                <div key={i} className="mk-line">
+                  <div className={`mk-dot${item.trim() ? ' ok' : ''}`}><Check size={13} /></div>
+                  <input
+                    className="mk-in"
+                    type="text"
+                    value={item}
+                    onChange={e => { const u = [...whyChooseMe]; u[i] = e.target.value; setWhyChooseMe(u) }}
+                    maxLength={120}
+                    placeholder={['Conținut autentic și estetic', 'Livrare în termen, profesionalism', 'Audiență activă în România', 'Experiență cu branduri din nișa ta'][i]}
+                  />
                 </div>
               ))}
             </div>
           </div>
-        )}
+        </>
+      )}
 
-        {/* PAS 3 — Conținut */}
-        {step === 3 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #ede9fe' }}>
-              <p style={{ fontSize: 13, fontWeight: 900, color: '#4c1d95', margin: '0 0 4px' }}>📸 Postări recente</p>
-              <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 12px' }}>Adaugă 3–6 linkuri la postările tale recente de pe Instagram sau TikTok.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {recentPosts.map((url, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', width: 16, textAlign: 'right', flexShrink: 0 }}>{i + 1}</span>
-                    <input
-                      type="url"
-                      value={url}
-                      onChange={e => { const u = [...recentPosts]; u[i] = e.target.value; setRecentPosts(u) }}
-                      placeholder={i === 0 ? 'https://www.instagram.com/p/...' : 'Link Instagram sau TikTok...'}
-                      style={{ flex: 1, fontSize: 13, border: '1.5px solid #ede9fe', borderRadius: 10, padding: '8px 12px', outline: 'none', fontFamily: 'inherit' }}
-                    />
-                    {url && <button onClick={() => { const u = [...recentPosts]; u[i] = ''; setRecentPosts(u) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#d1d5db', fontSize: 16, padding: 0, lineHeight: 1 }}>✕</button>}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #ede9fe' }}>
-              <p style={{ fontSize: 13, fontWeight: 900, color: '#4c1d95', margin: '0 0 4px' }}>🎬 Portfolio clipuri</p>
-              <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 12px' }}>Adaugă 3–5 clipuri reprezentative — cele mai bune colaborări ale tale.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {portfolio.map((url, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', width: 16, textAlign: 'right', flexShrink: 0 }}>{i + 1}</span>
-                    <input
-                      type="url"
-                      value={url}
-                      onChange={e => { const u = [...portfolio]; u[i] = e.target.value; setPortfolio(u) }}
-                      placeholder={i === 0 ? 'https://www.tiktok.com/@user/video/...' : 'Link TikTok sau Instagram Reel...'}
-                      style={{ flex: 1, fontSize: 13, border: '1.5px solid #ede9fe', borderRadius: 10, padding: '8px 12px', outline: 'none', fontFamily: 'inherit' }}
-                    />
-                    {url && <button onClick={() => { const u = [...portfolio]; u[i] = ''; setPortfolio(u) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#d1d5db', fontSize: 16, padding: 0, lineHeight: 1 }}>✕</button>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* PAS 4 — Preview */}
-        {step === 4 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #ede9fe', textAlign: 'center' }}>
-              <p style={{ fontSize: 32, margin: '0 0 8px' }}>🎉</p>
-              <p style={{ fontSize: 16, fontWeight: 900, color: '#111', margin: '0 0 6px' }}>Media kit-ul tău e gata!</p>
-              <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 20px', lineHeight: 1.6 }}>
-                Salvează și previzualizează cum îl văd brandurile.
-                Îl poți actualiza oricând.
-              </p>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button
-                  onClick={async () => { await handleSave(); if (slug) window.open(`/influencer/media-kit/${slug}`, '_blank') }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#8b5cf6,#9030f0)', color: 'white', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  <Eye size={16} /> Salvează și previzualizează
-                </button>
-              </div>
-            </div>
-
-            {/* Sumar ce a completat */}
-            <div style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #ede9fe' }}>
-              <p style={{ fontSize: 13, fontWeight: 900, color: '#4c1d95', margin: '0 0 12px' }}>Rezumat completare</p>
-              {[
-                { label: 'Bio pentru branduri', done: !!brandBio.trim() },
-                { label: 'Motive colaborare', done: whyChooseMe.filter(w => w.trim()).length >= 2 },
-                { label: 'Tarife setate', done: !!(priceReel || priceStory || pricePost) },
-                { label: 'Postări recente', done: recentPosts.filter(u => u.trim()).length >= 1 },
-                { label: 'Portfolio clipuri', done: portfolio.filter(u => u.trim()).length >= 1 },
-              ].map(item => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
-                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: item.done ? '#f0fdf4' : '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Check size={12} color={item.done ? '#22c55e' : '#fca5a5'} />
-                  </div>
-                  <span style={{ fontSize: 13, color: item.done ? '#374151' : '#9ca3af', flex: 1 }}>{item.label}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: item.done ? '#22c55e' : '#f87171' }}>{item.done ? '✓ Completat' : '✗ Lipsă'}</span>
+      {/* PAS 2 — Tarife */}
+      {step === 2 && (
+        <div className="iu-card iu-card-pad">
+          <h3>💰 Tarifele mele</h3>
+          <p className="iu-muted iu-sm" style={{ margin: '4px 0 16px' }}>Prețuri orientative — brandurile le văd pe profilul tău și în media kit.</p>
+          <div className="iu-col" style={{ gap: 10 }}>
+            {[
+              { label: 'Story Instagram', value: priceStory, set: setPriceStory, placeholder: 'ex. 150' },
+              { label: 'Reel / TikTok Video', value: priceReel, set: setPriceReel, placeholder: 'ex. 300' },
+              { label: 'Post feed', value: pricePost, set: setPricePost, placeholder: 'ex. 200' },
+              { label: 'Video YouTube', value: priceYoutube, set: setPriceYoutube, placeholder: 'ex. 500' },
+              { label: 'Minim per campanie', value: priceMin, set: setPriceMin, placeholder: 'ex. 100' },
+            ].map(f => (
+              <div key={f.label} className="mk-rate">
+                <span>{f.label}</span>
+                <div className="w">
+                  <input
+                    className="mk-in num"
+                    type="number"
+                    min={0}
+                    value={f.value}
+                    onChange={e => f.set(e.target.value)}
+                    placeholder={f.placeholder}
+                  />
+                  <span className="iu-muted" style={{ fontSize: 13, fontWeight: 700, flex: 'none', minWidth: 0 }}>RON</span>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* Navigation buttons */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-          {step > 1
-            ? <button onClick={() => setStep(s => s - 1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 12, border: '1.5px solid #ede9fe', background: 'white', color: '#6b7280', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                <ArrowLeft size={14} /> Înapoi
-              </button>
-            : <div />
-          }
-          {step < 4
-            ? <button onClick={async () => { await handleSave(); setStep(s => s + 1) }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#8b5cf6,#9030f0)', color: 'white', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                Salvează și continuă <ArrowRight size={14} />
-              </button>
-            : null
-          }
         </div>
+      )}
+
+      {/* PAS 3 — Conținut */}
+      {step === 3 && (
+        <>
+          <div className="iu-card iu-card-pad">
+            <h3>📸 Postări recente</h3>
+            <p className="iu-muted iu-sm" style={{ margin: '4px 0 14px' }}>Adaugă 3–6 linkuri la postările tale recente de pe Instagram sau TikTok.</p>
+            <div className="iu-col" style={{ gap: 8 }}>
+              {recentPosts.map((url, i) => (
+                <div key={i} className="mk-line" style={{ gap: 6 }}>
+                  <span className="mk-n">{i + 1}</span>
+                  <input
+                    className="mk-in"
+                    type="url"
+                    value={url}
+                    onChange={e => { const u = [...recentPosts]; u[i] = e.target.value; setRecentPosts(u) }}
+                    placeholder={i === 0 ? 'https://www.instagram.com/p/...' : 'Link Instagram sau TikTok...'}
+                  />
+                  {url ? <button className="mk-x" aria-label="Șterge" onClick={() => { const u = [...recentPosts]; u[i] = ''; setRecentPosts(u) }}>✕</button> : <span style={{ width: 44, flex: 'none' }} />}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="iu-card iu-card-pad">
+            <h3>🎬 Portfolio clipuri</h3>
+            <p className="iu-muted iu-sm" style={{ margin: '4px 0 14px' }}>Adaugă 3–5 clipuri reprezentative — cele mai bune colaborări ale tale.</p>
+            <div className="iu-col" style={{ gap: 8 }}>
+              {portfolio.map((url, i) => (
+                <div key={i} className="mk-line" style={{ gap: 6 }}>
+                  <span className="mk-n">{i + 1}</span>
+                  <input
+                    className="mk-in"
+                    type="url"
+                    value={url}
+                    onChange={e => { const u = [...portfolio]; u[i] = e.target.value; setPortfolio(u) }}
+                    placeholder={i === 0 ? 'https://www.tiktok.com/@user/video/...' : 'Link TikTok sau Instagram Reel...'}
+                  />
+                  {url ? <button className="mk-x" aria-label="Șterge" onClick={() => { const u = [...portfolio]; u[i] = ''; setPortfolio(u) }}>✕</button> : <span style={{ width: 44, flex: 'none' }} />}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* PAS 4 — Preview */}
+      {step === 4 && (
+        <>
+          <div className="iu-card iu-card-pad" style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 36, margin: '0 0 8px' }}>🎉</p>
+            <h2 style={{ margin: '0 0 6px' }}>Media kit-ul tău e gata!</h2>
+            <p className="iu-muted iu-sm" style={{ margin: '0 0 18px', lineHeight: 1.6 }}>
+              Salvează și previzualizează cum îl văd brandurile. Îl poți actualiza oricând.
+            </p>
+            <button
+              className="iu-btn p big"
+              onClick={async () => { await handleSave(); if (slug) window.open(`/influencer/media-kit/${slug}`, '_blank') }}
+            >
+              <Eye size={16} /> Salvează și previzualizează
+            </button>
+          </div>
+
+          <div className="iu-card iu-card-pad">
+            <div className="iu-row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
+              <h3>Rezumat completare</h3>
+              <span className="iu-chip" style={{ background: doneCount === 5 ? '#dcf5ec' : '#efeaff', color: doneCount === 5 ? '#14532d' : '#5b2fd0' }}>{doneCount}/5</span>
+            </div>
+            <div className="iu-bar" style={{ marginBottom: 6 }}><i style={{ width: `${doneCount * 20}%` }} /></div>
+            {[
+              { label: 'Bio pentru branduri', done: !!brandBio.trim() },
+              { label: 'Motive colaborare', done: whyChooseMe.filter(w => w.trim()).length >= 2 },
+              { label: 'Tarife setate', done: !!(priceReel || priceStory || pricePost) },
+              { label: 'Postări recente', done: recentPosts.filter(u => u.trim()).length >= 1 },
+              { label: 'Portfolio clipuri', done: portfolio.filter(u => u.trim()).length >= 1 },
+            ].map(item => (
+              <div key={item.label} className="mk-sum">
+                <div className={`mk-dot${item.done ? ' ok' : ''}`} style={{ width: 22, height: 22 }}><Check size={12} /></div>
+                <span style={{ fontSize: 14, flex: 1, color: item.done ? '#14123a' : '#8783a8' }}>{item.label}</span>
+                <span className="iu-chip" style={item.done ? { background: '#dcf5ec', color: '#14532d' } : { background: '#f0eff7', color: '#4a4770' }}>{item.done ? 'Completat' : 'Lipsă'}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Navigation buttons */}
+      <div className="mk-nav">
+        {step > 1
+          ? <button className="iu-btn" onClick={() => setStep(s => s - 1)}><ArrowLeft size={14} /> Înapoi</button>
+          : <div />
+        }
+        {step < 4
+          ? <button className="iu-btn p" onClick={async () => { await handleSave(); setStep(s => s + 1) }}>Salvează și continuă <ArrowRight size={14} /></button>
+          : null
+        }
       </div>
     </div>
   )

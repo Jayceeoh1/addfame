@@ -160,7 +160,9 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${checked ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+      role="switch" aria-checked={checked}
+      className="is-tg relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0"
+      style={{ background: checked ? '#7040f0' : '#d8d5ec' }}
     >
       <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
     </button>
@@ -251,7 +253,7 @@ function BadgeStripeForm({ onSuccess, onCancel }: { onSuccess: () => void; onCan
         </button>
         <button onClick={handlePay} disabled={loading || !stripe}
           className="flex-1 py-3 rounded-xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+          style={{ background: 'linear-gradient(135deg,#7040f0,#9030f0)' }}>
           {loading
             ? <><Loader2 className="w-4 h-4 animate-spin" /> Se procesează…</>
             : <><CreditCard className="w-4 h-4" /> Plătește 50 RON</>
@@ -641,55 +643,74 @@ function SettingsPageInner() {
   )
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Settings</h1>
-      <p className="text-muted-foreground mb-8">Gestionează preferințele contului și securitatea</p>
+    <div className="iu is">
+      <style>{`
+        .is input:not([type=file]):not([type=checkbox]):not([type=radio]), .is select { height: 44px; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 0 14px; background: #fff; color: #14123a; font-size: 14px; box-sizing: border-box; }
+        .is textarea { border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 10px 14px; background: #fff; color: #14123a; font-size: 14px; }
+        .is input:disabled { background: #f6f6fc; color: #8783a8; }
+        .is input:focus, .is select:focus, .is textarea:focus { border-color: #7040f0; outline: none; box-shadow: 0 0 0 3px rgba(112,64,240,.1); }
+        .is input.pl-9:not([type=file]):not([type=checkbox]):not([type=radio]) { padding-left: 36px; }
+        .is input.pr-10:not([type=file]):not([type=checkbox]):not([type=radio]) { padding-right: 44px; }
+        .is input.pr-8:not([type=file]):not([type=checkbox]):not([type=radio]) { padding-right: 34px; }
+        .is input.pl-9.pr-8:not([type=file]):not([type=checkbox]):not([type=radio]) { padding-left: 36px; padding-right: 34px; }
+        .is label.block { font-size: 12px; font-weight: 700; color: #4a4770; }
+        .is button.bg-gradient-to-r, .is a.is-p { min-height: 44px; border-radius: 12px; background: #7040f0; color: #fff; font-weight: 700; border: 0; box-shadow: 0 10px 22px -12px rgba(112,64,240,.7); }
+        .is button.bg-gradient-to-r:hover { background: #5b2fd0; }
+        .is button.bg-gradient-to-r:disabled { opacity: .55; }
+        .is [data-slot=button], .is button[class*="border-input"], .is button[class*="bg-destructive"] { min-height: 44px; border-radius: 12px; }
+        .is-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+        .is-tab { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid #e5e3f3; background: #fff; color: #4a4770; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+        .is-tab.on { background: #14123a; border-color: #14123a; color: #fff; }
+        .is-tab.dg { color: #b42318; border-color: #f3c9c4; } .is-tab.dg.on { background: #b42318; border-color: #b42318; color: #fff; }
+        .is-save { position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: flex-end; margin: 24px -20px -20px; padding: 14px 20px; background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border-top: 1px solid #eeecf7; border-radius: 0 0 20px 20px; }
+        .is-tg { position: relative; } .is-tg::after { content: ''; position: absolute; inset: -10px -4px; }
+        .is-msg { border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+        .is-dr { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 16px; border: 1px solid #e5e3f3; border-radius: 16px; background: #fff; }
+        .is [class*="rounded-2xl"].border-2 { border-radius: 20px; }
+        @media (max-width: 767px) { .is-save { margin: 20px -16px -16px; padding: 12px 16px; } .is-save button { width: 100%; } .is-tab { padding: 0 14px; } .is-dr button { width: 100%; } }
+      `}</style>
+      <div className="iu-head">
+        <div>
+          <div className="iu-label" style={{ marginBottom: 6 }}>Cont</div>
+          <h1>Setări</h1>
+          <p className="iu-muted iu-sm" style={{ margin: '6px 0 0' }}>Gestionează preferințele contului și securitatea</p>
+        </div>
+      </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar Tabs */}
-        <div className="lg:w-56 flex-shrink-0">
-          <nav className="space-y-1">
+      <div className="flex flex-col gap-5">
+        <div>
+          <nav className="is-nav">
             {tabs.map(tab => {
               const Icon = tab.icon
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition text-left ${activeTab === tab.id
-                    ? 'bg-primary text-white'
-                    : tab.id === 'danger'
-                      ? 'text-destructive hover:bg-destructive/10'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
+                  className={`is-tab${activeTab === tab.id ? ' on' : ''}${tab.id === 'danger' ? ' dg' : ''}`}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
                   {tab.label}
                 </button>
               )
             })}
-            <div className="pt-2 border-t border-border mt-2">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </button>
-            </div>
+            <button onClick={handleLogout} className="is-tab">
+              <LogOut className="w-4 h-4" />
+              Deconectare
+            </button>
           </nav>
         </div>
 
         {/* Content */}
-        <div className="flex-1 space-y-5">
+        <div className="space-y-5 min-w-0" style={{ maxWidth: 860 }}>
 
           {/* Status messages */}
           {saveSuccess && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-2 text-sm text-green-600">
-              <CheckCircle className="w-4 h-4" /> Settings saved successfully.
+            <div className="is-msg" style={{ background: "#dcf5ec", color: "#14532d" }}>
+              <CheckCircle className="w-4 h-4" /> Setările au fost salvate.
             </div>
           )}
           {saveError && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2 text-sm text-destructive">
+            <div className="is-msg" style={{ background: "#fde8e6", color: "#b42318" }}>
               <AlertCircle className="w-4 h-4" /> {saveError}
             </div>
           )}
@@ -697,8 +718,8 @@ function SettingsPageInner() {
           {/* ACCOUNT TAB */}
           {activeTab === 'account' && (
             <>
-              <div className="bg-card border border-border rounded-xl p-6">
-                <h2 className="font-bold text-lg mb-5 flex items-center gap-2"><User className="w-5 h-5" /> Account Information</h2>
+              <div className="iu-card iu-card-pad">
+                <h2 className="font-bold text-lg mb-5 flex items-center gap-2"><User className="w-5 h-5" /> Informații cont</h2>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Email Curent</label>
@@ -706,7 +727,7 @@ function SettingsPageInner() {
                     <p className="text-xs text-muted-foreground mt-1">Pentru a schimba emailul, folosește tab-ul Securitate.</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Phone Number</label>
+                    <label className="block text-sm font-medium mb-2">Număr de telefon</label>
                     <div className="relative">
                       <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
@@ -730,26 +751,26 @@ function SettingsPageInner() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2 flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> Language</label>
+                      <label className="block text-sm font-medium mb-2 flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> Limbă</label>
                       <select
                         value={language}
                         onChange={e => setLanguage(e.target.value)}
-                        className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
+                        className="w-full"
                       >
-                        <option value="en">English</option>
-                        <option value="ro">Romanian</option>
-                        <option value="de">German</option>
-                        <option value="fr">French</option>
-                        <option value="es">Spanish</option>
-                        <option value="it">Italian</option>
+                        <option value="en">Engleză</option>
+                        <option value="ro">Română</option>
+                        <option value="de">Germană</option>
+                        <option value="fr">Franceză</option>
+                        <option value="es">Spaniolă</option>
+                        <option value="it">Italiană</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2 flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" /> Currency</label>
+                      <label className="block text-sm font-medium mb-2 flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" /> Monedă</label>
                       <select
                         value={currency}
                         onChange={e => setCurrency(e.target.value)}
-                        className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
+                        className="w-full"
                       >
                         <option value="RON">RON</option>
                         <option value="USD">USD ($)</option>
@@ -760,14 +781,14 @@ function SettingsPageInner() {
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end mt-6">
+                <div className="is-save">
                   <Button onClick={() => saveSettings('account')} disabled={saving} className="bg-gradient-to-r from-primary to-accent">
-                    {saving ? 'Saving...' : 'Save Changes'}
+                    {saving ? 'Se salvează...' : 'Salvează modificările'}
                   </Button>
                 </div>
               </div>
 
-              <div className="bg-card border border-border rounded-xl p-6">
+              <div className="iu-card iu-card-pad">
                 <h2 className="font-bold text-lg mb-2 flex items-center gap-2"><Download className="w-5 h-5" /> Exportă Datele Mele</h2>
                 <p className="text-sm text-muted-foreground mb-4">Descarcă toate datele profilului, tranzacțiile și setările ca fișier JSON.</p>
                 <Button variant="outline" onClick={handleExportData}>
@@ -779,18 +800,18 @@ function SettingsPageInner() {
 
           {/* NOTIFICATIONS TAB */}
           {activeTab === 'notifications' && (
-            <div className="bg-card border border-border rounded-xl p-6">
-              <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Bell className="w-5 h-5" /> Notification Preferences</h2>
+            <div className="iu-card iu-card-pad">
+              <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Bell className="w-5 h-5" /> Preferințe notificări</h2>
               <p className="text-sm text-muted-foreground mb-5">Alege despre ce vrei să fii notificat.</p>
 
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Channels</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Canale</p>
                 <div className="divide-y divide-border">
                   <SettingRow label="Notificări Email" description="Primește notificări prin email" checked={notifications.email_notifications} onChange={v => setNotifications(p => ({ ...p, email_notifications: v }))} />
                   <SettingRow label="Notificări Push" description="Notificări push în browser" checked={notifications.push_notifications} onChange={v => setNotifications(p => ({ ...p, push_notifications: v }))} />
                 </div>
 
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-5 mb-2">Activity</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-5 mb-2">Activitate</p>
                 <div className="divide-y divide-border">
                   <SettingRow label="Oportunități Campanii" description="Campanii noi care se potrivesc nișei tale" checked={notifications.campaign_opportunities} onChange={v => setNotifications(p => ({ ...p, campaign_opportunities: v }))} />
                   <SettingRow label="Mesaje de la Branduri" description="Când un brand îți trimite un mesaj" checked={notifications.messages_from_brands} onChange={v => setNotifications(p => ({ ...p, messages_from_brands: v }))} />
@@ -800,9 +821,9 @@ function SettingsPageInner() {
                 </div>
               </div>
 
-              <div className="flex justify-end mt-6">
+              <div className="is-save">
                 <Button onClick={() => saveSettings('notifications')} disabled={saving} className="bg-gradient-to-r from-primary to-accent">
-                  {saving ? 'Saving...' : 'Save Preferences'}
+                  {saving ? 'Se salvează...' : 'Salvează preferințele'}
                 </Button>
               </div>
             </div>
@@ -810,8 +831,8 @@ function SettingsPageInner() {
 
           {/* PRIVACY TAB */}
           {activeTab === 'privacy' && (
-            <div className="bg-card border border-border rounded-xl p-6">
-              <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Shield className="w-5 h-5" /> Privacy Settings</h2>
+            <div className="iu-card iu-card-pad">
+              <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Shield className="w-5 h-5" /> Setări confidențialitate</h2>
               <p className="text-sm text-muted-foreground mb-5">Controlează cine îți poate vedea profilul și cum te găsesc brandurile.</p>
 
               <div className="divide-y divide-border">
@@ -822,9 +843,9 @@ function SettingsPageInner() {
                 <SettingRow label="Afișează Câștiguri" description="Afișează câștigurile totale pe profil" checked={privacy.show_earnings} onChange={v => setPrivacy(p => ({ ...p, show_earnings: v }))} />
               </div>
 
-              <div className="flex justify-end mt-6">
+              <div className="is-save">
                 <Button onClick={() => saveSettings('privacy')} disabled={saving} className="bg-gradient-to-r from-primary to-accent">
-                  {saving ? 'Saving...' : 'Save Settings'}
+                  {saving ? 'Se salvează...' : 'Salvează setările'}
                 </Button>
               </div>
             </div>
@@ -833,18 +854,18 @@ function SettingsPageInner() {
           {/* SECURITY TAB */}
           {activeTab === 'security' && (
             <>
-              {/* Change Email */}
-              <div className="bg-card border border-border rounded-xl p-6">
-                <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Mail className="w-5 h-5" /> Change Email</h2>
+              {/* Schimbă emailul */}
+              <div className="iu-card iu-card-pad">
+                <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Mail className="w-5 h-5" /> Schimbă emailul</h2>
                 <p className="text-sm text-muted-foreground mb-5">O confirmare va fi trimisă la noua ta adresă de email.</p>
 
                 {emailSuccess && (
-                  <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-2 text-sm text-green-600 mb-4">
-                    <CheckCircle className="w-4 h-4" /> Confirmation email sent! Check your inbox.
+                  <div className="is-msg mb-4" style={{ background: "#dcf5ec", color: "#14532d" }}>
+                    <CheckCircle className="w-4 h-4" /> Email de confirmare trimis! Verifică inboxul.
                   </div>
                 )}
                 {emailError && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2 text-sm text-destructive mb-4">
+                  <div className="is-msg mb-4" style={{ background: "#fde8e6", color: "#b42318" }}>
                     <AlertCircle className="w-4 h-4" /> {emailError}
                   </div>
                 )}
@@ -864,23 +885,23 @@ function SettingsPageInner() {
                     />
                   </div>
                   <Button onClick={handleChangeEmail} disabled={emailSaving || !newEmail} className="bg-gradient-to-r from-primary to-accent">
-                    {emailSaving ? 'Sending...' : 'Update Email'}
+                    {emailSaving ? 'Se trimite...' : 'Actualizează emailul'}
                   </Button>
                 </div>
               </div>
 
-              {/* Change Password */}
-              <div className="bg-card border border-border rounded-xl p-6">
-                <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Lock className="w-5 h-5" /> Change Password</h2>
-                <p className="text-sm text-muted-foreground mb-5">Use a strong password with at least 8 characters, uppercase, numbers and special characters.</p>
+              {/* Schimbă parola */}
+              <div className="iu-card iu-card-pad">
+                <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Lock className="w-5 h-5" /> Schimbă parola</h2>
+                <p className="text-sm text-muted-foreground mb-5">Folosește o parolă puternică: minim 8 caractere, majuscule, cifre și caractere speciale.</p>
 
                 {passwordSuccess && (
-                  <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-center gap-2 text-sm text-green-600 mb-4">
-                    <CheckCircle className="w-4 h-4" /> Password changed successfully!
+                  <div className="is-msg mb-4" style={{ background: "#dcf5ec", color: "#14532d" }}>
+                    <CheckCircle className="w-4 h-4" /> Parola a fost schimbată!
                   </div>
                 )}
                 {passwordError && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2 text-sm text-destructive mb-4">
+                  <div className="is-msg mb-4" style={{ background: "#fde8e6", color: "#b42318" }}>
                     <AlertCircle className="w-4 h-4" /> {passwordError}
                   </div>
                 )}
@@ -938,7 +959,7 @@ function SettingsPageInner() {
                     disabled={passwordSaving || !currentPassword || !newPassword || !confirmPassword}
                     className="bg-gradient-to-r from-primary to-accent"
                   >
-                    {passwordSaving ? 'Updating...' : 'Update Password'}
+                    {passwordSaving ? 'Se actualizează...' : 'Actualizează parola'}
                   </Button>
                 </div>
               </div>
@@ -949,7 +970,7 @@ function SettingsPageInner() {
           {/* TELEGRAM TAB */}
           {activeTab === 'telegram' && (
             <div className="space-y-5">
-              <div className="bg-card border border-border rounded-xl p-6">
+              <div className="iu-card iu-card-pad">
                 <h2 className="font-bold text-lg mb-1 flex items-center gap-2">
                   <Send className="w-5 h-5 text-blue-500" /> Notificări Telegram
                 </h2>
@@ -1026,7 +1047,7 @@ function SettingsPageInner() {
               </div>
 
               {/* Commands info */}
-              <div className="bg-card border border-border rounded-xl p-6">
+              <div className="iu-card iu-card-pad">
                 <h3 className="font-bold mb-3 flex items-center gap-2">
                   🤖 Comenzi disponibile în bot
                 </h3>
@@ -1177,7 +1198,7 @@ function SettingsPageInner() {
 
               {/* Stats card */}
               {stats && (
-                <div className="bg-card border border-border rounded-xl p-6">
+                <div className="iu-card iu-card-pad">
                   <h3 className="font-bold mb-4 flex items-center gap-2"><Award className="w-4 h-4 text-primary" /> Statisticile tale de performanță</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
@@ -1292,7 +1313,7 @@ function SettingsPageInner() {
                   <a
                     href="/influencer/verify"
                     className="w-full py-3.5 rounded-xl font-black text-sm text-white flex items-center justify-center gap-2 transition hover:opacity-90"
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                    style={{ background: 'linear-gradient(135deg, #7040f0, #9030f0)' }}
                   >
                     <Shield className="w-4 h-4" /> Începe verificarea
                   </a>
@@ -1305,14 +1326,14 @@ function SettingsPageInner() {
           {activeTab === 'danger' && (
             <div style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
               {/* Dezactivare temporară */}
-              <div style={{ background: 'white', border: '1.5px solid #f0f0f0', borderRadius: 16, padding: '20px', marginBottom: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+              <div className="iu-card iu-card-pad" style={{ marginBottom: 12 }}>
+                <div className="is-dr" style={{ padding: 0, border: 0, background: 'transparent' }}>
                   <div>
-                    <p style={{ fontSize: 14, fontWeight: 800, color: '#374151', margin: '0 0 4px' }}>Dezactivează profilul temporar</p>
-                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0, lineHeight: 1.5 }}>Profilul tău devine invizibil pentru branduri. Poți reactiva oricând din Settings.</p>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: '#14123a', margin: '0 0 4px' }}>Dezactivează profilul temporar</p>
+                    <p style={{ fontSize: 13, color: '#6a6690', margin: 0, lineHeight: 1.5 }}>Profilul tău devine invizibil pentru branduri. Poți reactiva oricând din Settings.</p>
                   </div>
                   <button
-                    style={{ flexShrink: 0, padding: '8px 16px', borderRadius: 10, border: '1.5px solid #e5e7eb', background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#374151', fontFamily: 'inherit' }}
+                    className="iu-btn"
                     onClick={async () => {
                       const supabase = createClient()
                       const { data: { user } } = await supabase.auth.getUser()
@@ -1327,14 +1348,14 @@ function SettingsPageInner() {
               </div>
 
               {/* Ștergere cont */}
-              <div style={{ background: '#fff5f5', border: '1.5px solid #fecaca', borderRadius: 16, padding: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+              <div className="iu-card iu-card-pad" style={{ borderColor: '#f3c9c4', background: '#fff8f7' }}>
+                <div className="is-dr" style={{ padding: 0, border: 0, background: 'transparent' }}>
                   <div>
-                    <p style={{ fontSize: 14, fontWeight: 800, color: '#b91c1c', margin: '0 0 4px' }}>Șterge contul definitiv</p>
-                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0, lineHeight: 1.5 }}>Toate datele tale, profilul și istoricul vor fi șterse permanent. Această acțiune nu poate fi anulată.</p>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: '#b42318', margin: '0 0 4px' }}>Șterge contul definitiv</p>
+                    <p style={{ fontSize: 13, color: '#6a6690', margin: 0, lineHeight: 1.5 }}>Toate datele tale, profilul și istoricul vor fi șterse permanent. Această acțiune nu poate fi anulată.</p>
                   </div>
                   <button
-                    style={{ flexShrink: 0, padding: '8px 16px', borderRadius: 10, border: 'none', background: '#ef4444', fontSize: 13, fontWeight: 800, cursor: 'pointer', color: 'white', fontFamily: 'inherit' }}
+                    className="iu-btn" style={{ background: '#b42318', borderColor: '#b42318', color: '#fff' }}
                     onClick={() => setShowDeleteModal(true)}>
                     Șterge contul
                   </button>
@@ -1488,7 +1509,7 @@ function SettingsPageInner() {
                   </div>
 
                   {badgeError && (
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2 text-sm text-destructive">
+                    <div className="is-msg" style={{ background: "#fde8e6", color: "#b42318" }}>
                       <AlertCircle className="w-4 h-4 flex-shrink-0" /> {badgeError}
                     </div>
                   )}
@@ -1550,7 +1571,7 @@ function SettingsPageInner() {
                   </div>
 
                   {badgeError && (
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2 text-sm text-destructive">
+                    <div className="is-msg" style={{ background: "#fde8e6", color: "#b42318" }}>
                       <AlertCircle className="w-4 h-4 flex-shrink-0" /> {badgeError}
                     </div>
                   )}

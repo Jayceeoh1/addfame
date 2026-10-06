@@ -1,0 +1,45 @@
+/* Sistem de design comun pentru paginile de brand ("Centrul de comandă") — prefix bu- */
+.bu { padding: 28px; max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; color: #14123a; font-family: var(--font-body, system-ui), system-ui, sans-serif; font-size: 15px; line-height: 1.5; min-width: 0; }
+.bu h1, .bu h2, .bu h3, .bu .bu-d { font-family: var(--font-display, system-ui), system-ui, sans-serif; }
+.bu h1 { margin: 0; font-weight: 800; font-size: 34px; letter-spacing: -0.03em; line-height: 1.1; }
+.bu h2 { margin: 0; font-weight: 700; font-size: 19px; letter-spacing: -0.01em; }
+.bu h3 { margin: 0; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; line-height: 1.25; }
+.bu-muted { color: #6a6690; }
+.bu-sm { font-size: 13px; }
+.bu-xs { font-size: 12px; }
+.bu-row { display: flex; align-items: center; }
+.bu-col { display: flex; flex-direction: column; }
+.bu > * { min-width: 0; }
+.bu-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.bu-card { background: #fff; border: 1px solid #e5e3f3; border-radius: 20px; min-width: 0; }
+.bu-card-pad { padding: 20px; }
+.bu-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 10px; border: 1.5px solid #d8d5ec; background: #fff; color: #14123a; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s; }
+.bu-btn:hover { background: #f7f4ff; border-color: #c9b9fb; }
+.bu-btn.p { background: #5a35e6; border-color: #5a35e6; color: #fff; box-shadow: 0 10px 22px -12px rgba(90,53,230,.7); }
+.bu-btn.p:hover { background: #4423c4; border-color: #4423c4; }
+.bu-btn.big { height: 46px; padding: 0 20px; border-radius: 12px; }
+.bu-btn.danger { color: #b42318; border-color: #f3c9c4; }
+.bu-btn.danger:hover { background: #fff4f2; }
+.bu-btn:disabled { opacity: .55; cursor: not-allowed; }
+.bu-chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.bu-pill { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; border: 1.5px solid #e5e3f3; color: #4a4770; font-weight: 600; font-size: 14px; white-space: nowrap; cursor: pointer; font-family: inherit; }
+.bu-pill.on { background: #14123a; border-color: #14123a; color: #fff; }
+.bu-pill .n { font-size: 12px; color: #8783a8; }
+.bu-pill.on .n { background: rgba(255,255,255,.18); color: #fff; border-radius: 99px; padding: 0 7px; }
+.bu-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.bu-input { height: 42px; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 0 14px; font: inherit; font-size: 14px; background: #fff; color: #14123a; outline: none; min-width: 0; box-sizing: border-box; }
+.bu-input:focus { border-color: #5a35e6; box-shadow: 0 0 0 3px rgba(90,53,230,.1); }
+.bu-search { display: flex; align-items: center; gap: 10px; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 0 14px; height: 42px; background: #fff; color: #8783a8; box-sizing: border-box; }
+.bu-search input { border: 0; outline: 0; font: inherit; font-size: 14px; flex: 1; min-width: 0; color: #14123a; background: transparent; }
+.bu-ico { width: 40px; height: 40px; flex: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.bu-face { flex: none; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; border-radius: 50%; overflow: hidden; }
+.bu-bar { height: 6px; border-radius: 99px; background: #eeecf7; overflow: hidden; }
+.bu-bar > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #2f6fe0, #5a35e6); }
+.bu-div { border-top: 1px solid #eeecf7; }
+.bu-label { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #8783a8; }
+.bu-grid { display: grid; gap: 18px; }
+@media (max-width: 767px) {
+  .bu { padding: 18px 16px 28px; gap: 16px; font-size: 14px; }
+  .bu h1 { font-size: 28px; line-height: 1.12; }
+  .bu-btn.big { height: 50px; border-radius: 14px; }
+}

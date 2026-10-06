@@ -109,103 +109,114 @@ export default function BrandVerifyPage() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+    <div className="bu"><div className="bu-card" style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
       <div className="w-10 h-10 rounded-full border-t-violet-400 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
-    </div>
+    </div></div>
   )
 
   const status = brand?.verification_status || 'unverified'
+  // Stepper: 0 = detalii, 1 = în analiză, 2 = verificat
+  const stepIdx = status === 'verified' ? 2 : status === 'pending' ? 1 : 0
+  const steps = ['Trimite detalii', 'În analiză (24h)', 'Verificat']
+  const banner = status === 'pending'
+    ? { bg: '#fff8dc', bd: '#f3dc8a', fg: '#854d0e', ibg: '#fff1c2', Icon: Clock, title: 'Verificare în analiză', body: 'Îți analizăm cererea. Durează de obicei 24 de ore. Vei fi notificat când este aprobată.' }
+    : status === 'verified'
+    ? { bg: '#effaf5', bd: '#bfe9d6', fg: '#14532d', ibg: '#dcf5ec', Icon: CheckCircle, title: 'Brand verificat ✓', body: 'Brandul tău este verificat. Poți publica campanii și lucra cu influencerii.' }
+    : status === 'rejected'
+    ? { bg: '#fff4f2', bd: '#f3c9c4', fg: '#b42318', ibg: '#fde8e6', Icon: XCircle, title: 'Verificare respinsă', body: brand?.verification_rejection_reason ? `Motiv: ${brand.verification_rejection_reason}` : '' }
+    : null
 
   return (
-    <div className="p-6 lg:p-8 max-w-3xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+    <div className="bu bv" style={{ maxWidth: 760 }}>
       <style>{`
-        
-        .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
-        .brand-grad { background:linear-gradient(135deg,#2f6fe0, #5a35e6); }
-        .field { width:100%;padding:11px 16px;border:2px solid #f0f0f0;border-radius:12px;font-size:14px;font-weight:500;outline:none;background:white;transition:border-color .2s;font-family:inherit;color:#111; }
-        .field:focus { border-color:#5a35e6;box-shadow:0 0 0 3px rgba(90,53,230,.08); }
-        .field::placeholder { color:#9ca3af;font-weight:400; }
-        textarea.field { resize:vertical;min-height:90px; }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .fade-up { animation:fadeUp .35s ease both; }
-        @keyframes slideD { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-        .toast-anim { animation:slideD .3s ease; }
+        .bv-field { width:100%; height:46px; padding:0 14px; border:1.5px solid #e5e3f3; border-radius:12px; font-size:14px; outline:none; background:#fff; font-family:inherit; color:#14123a; box-sizing:border-box; transition:border-color .2s; }
+        .bv-field:focus { border-color:#5a35e6; box-shadow:0 0 0 3px rgba(90,53,230,.1); }
+        .bv-field::placeholder { color:#a5a2c0; }
+        textarea.bv-field { height:auto; padding:12px 14px; resize:vertical; min-height:96px; }
+        .bv-lbl { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12px; font-weight:800; color:#4a4770; margin-bottom:8px; }
+        .bv-lbl small { font-weight:500; color:#8783a8; font-size:12px; }
+        .bv-steps { display:flex; align-items:flex-start; }
+        .bv-step { flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; text-align:center; font-size:12px; font-weight:700; color:#8783a8; min-width:0; }
+        .bv-step:not(:last-child)::after { content:''; position:absolute; top:16px; left:calc(50% + 20px); right:calc(-50% + 20px); height:2px; background:#e5e3f3; }
+        .bv-step.done:not(:last-child)::after { background:#5a35e6; }
+        .bv-dot { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#f0eff7; color:#8783a8; font-weight:800; font-size:13px; }
+        .bv-step.done .bv-dot { background:#5a35e6; color:#fff; }
+        .bv-step.cur .bv-dot { background:#14123a; color:#fff; box-shadow:0 0 0 4px rgba(90,53,230,.15); }
+        .bv-step.cur, .bv-step.done { color:#14123a; }
+        .bv-why { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+        .bv-why > div { background:#f6f6fc; border-radius:16px; padding:14px; }
+        .bv-toast { position:fixed; top:16px; right:16px; left:16px; margin-left:auto; max-width:380px; z-index:50; display:flex; align-items:center; gap:10px; padding:14px 16px; border-radius:16px; background:#fff; font-size:14px; font-weight:700; box-shadow:0 18px 40px -16px rgba(20,18,58,.35); }
+        .bv-drop { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px 16px; border:2px dashed #d8d5ec; border-radius:16px; cursor:pointer; text-align:center; transition:all .15s; }
+        .bv-drop:hover { border-color:#5a35e6; background:#faf8ff; }
+        @media (max-width:560px) { .bv-why { grid-template-columns:minmax(0,1fr); } .bv-step { font-size:11px; } }
       `}</style>
 
       {toast && (
-        <div className={`toast-anim fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold max-w-sm ${toast.ok ? 'bg-white border-2 border-green-200 text-green-700' : 'bg-white border-2 border-red-200 text-red-600'}`}>
+        <div className="bv-toast" style={{ border: `1.5px solid ${toast.ok ? '#bfe9d6' : '#f3c9c4'}`, color: toast.ok ? '#14532d' : '#b42318' }}>
           {toast.ok ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
           {toast.msg}
         </div>
       )}
 
       {/* Header */}
-      <div className="mb-7 fade-up">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 brand-grad rounded-2xl flex items-center justify-center" style={{ boxShadow: '0 4px 14px rgba(90,53,230,.3)' }}>
-            <Shield className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900">Brand Verification</h1>
-            <p className="text-sm text-gray-400">Verifică-ți brandul pentru a publica campanii</p>
-          </div>
+      <div className="bu-head">
+        <div>
+          <div className="bu-label" style={{ marginBottom: 6 }}>Cont</div>
+          <h1>Verificare brand</h1>
+          <p className="bu-muted bu-sm" style={{ margin: '6px 0 0' }}>Verifică-ți brandul pentru a publica campanii</p>
+        </div>
+        <span className="bu-chip" style={{
+          background: status === 'verified' ? '#dcf5ec' : status === 'pending' ? '#fff1c2' : status === 'rejected' ? '#fde8e6' : '#f0eff7',
+          color: status === 'verified' ? '#14532d' : status === 'pending' ? '#854d0e' : status === 'rejected' ? '#b42318' : '#4a4770',
+        }}>
+          <Shield className="w-3 h-3" />
+          {status === 'verified' ? 'Verificat' : status === 'pending' ? 'În analiză' : status === 'rejected' ? 'Respins' : 'Neverificat'}
+        </span>
+      </div>
+
+      {/* Stepper */}
+      <div className="bu-card bu-card-pad">
+        <div className="bv-steps">
+          {steps.map((label, i) => (
+            <div key={label} className={`bv-step${i < stepIdx || (i === 2 && stepIdx === 2) ? ' done' : i === stepIdx ? ' cur' : ''}`}>
+              <div className="bv-dot">{i < stepIdx || (i === 2 && stepIdx === 2) ? <CheckCircle className="w-4 h-4" /> : i + 1}</div>
+              <span>{label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Status banner */}
-      {status === 'pending' && (
-        <div className="card p-5 mb-6 fade-up flex items-start gap-4" style={{ animationDelay: '.04s', borderColor: '#fde68a', background: '#fffbeb' }}>
-          <div className="w-10 h-10 bg-amber-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <Clock className="w-5 h-5 text-amber-500" />
-          </div>
-          <div>
-            <p className="font-black text-amber-800">Verification under review</p>
-            <p className="text-sm text-amber-600 mt-0.5">We're reviewing your submission. This usually takes 24 hours. You'll be notified once approved.</p>
-          </div>
-        </div>
-      )}
-
-      {status === 'verified' && (
-        <div className="card p-5 mb-6 fade-up flex items-start gap-4" style={{ animationDelay: '.04s', borderColor: '#bbf7d0', background: '#f0fdf4' }}>
-          <div className="w-10 h-10 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <CheckCircle className="w-5 h-5 text-green-500" />
-          </div>
-          <div>
-            <p className="font-black text-green-800">Brand verified ✓</p>
-            <p className="text-sm text-green-600 mt-0.5">Brandul tău este verificat. Poți publica campanii și lucra cu influencerii.</p>
-          </div>
-        </div>
-      )}
-
-      {status === 'rejected' && (
-        <div className="card p-5 mb-6 fade-up flex items-start gap-4" style={{ animationDelay: '.04s', borderColor: '#fecaca', background: '#fff5f5' }}>
-          <div className="w-10 h-10 bg-red-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <XCircle className="w-5 h-5 text-red-500" />
-          </div>
-          <div>
-            <p className="font-black text-red-800">Verification rejected</p>
-            {brand?.verification_rejection_reason && (
-              <p className="text-sm text-red-600 mt-0.5">Reason: {brand.verification_rejection_reason}</p>
+      {banner && (
+        <div className="bu-card bu-card-pad" style={{ display: 'flex', alignItems: 'flex-start', gap: 14, background: banner.bg, borderColor: banner.bd }}>
+          <div className="bu-ico" style={{ background: banner.ibg, color: banner.fg }}><banner.Icon className="w-5 h-5" /></div>
+          <div style={{ minWidth: 0, color: banner.fg }}>
+            <p style={{ margin: 0, fontWeight: 800 }}>{banner.title}</p>
+            {banner.body && <p className="bu-sm" style={{ margin: '4px 0 0' }}>{banner.body}</p>}
+            {status === 'rejected' && <p className="bu-sm" style={{ margin: '4px 0 0' }}>Te rugăm să actualizezi detaliile și să retrimiți mai jos.</p>}
+            {status === 'verified' && (
+              <button onClick={() => router.push('/brand/dashboard')} className="bu-btn p big" style={{ marginTop: 14 }}>
+                Mergi la dashboard <ArrowRight className="w-4 h-4" />
+              </button>
             )}
-            <p className="text-sm text-red-500 mt-1">Te rugăm să actualizezi detaliile și să retrimite mai jos.</p>
           </div>
         </div>
       )}
 
       {/* Why verify */}
       {status === 'unverified' && (
-        <div className="card p-5 mb-6 fade-up" style={{ animationDelay: '.04s' }}>
-          <h2 className="font-black text-gray-900 mb-3">Why verify?</h2>
-          <div className="grid sm:grid-cols-3 gap-3">
+        <div className="bu-card bu-card-pad">
+          <h2 style={{ marginBottom: 14 }}>De ce să verifici?</h2>
+          <div className="bv-why">
             {[
               { icon: '🚀', title: 'Publică campanii', desc: 'Necesar pentru a face campaniile vizibile influencerilor' },
               { icon: '🤝', title: 'Construiește încredere', desc: 'Insigna de verificat este afișată influencerilor pe profilul tău' },
               { icon: '⚡', title: 'Proces rapid', desc: 'De obicei aprobat în 24 de ore' },
             ].map(f => (
-              <div key={f.title} className="bg-gray-50 rounded-2xl p-4">
-                <p className="text-2xl mb-2">{f.icon}</p>
-                <p className="font-black text-gray-800 text-sm">{f.title}</p>
-                <p className="text-xs text-gray-400 mt-1">{f.desc}</p>
+              <div key={f.title}>
+                <p style={{ fontSize: 22, margin: '0 0 6px' }}>{f.icon}</p>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: 14 }}>{f.title}</p>
+                <p className="bu-xs bu-muted" style={{ margin: '4px 0 0' }}>{f.desc}</p>
               </div>
             ))}
           </div>
@@ -214,87 +225,60 @@ export default function BrandVerifyPage() {
 
       {/* Submission form */}
       {(status === 'unverified' || status === 'rejected') && (
-        <form onSubmit={handleSubmit} className="space-y-5 fade-up" style={{ animationDelay: '.1s' }}>
-          <div className="card p-6">
-            <h2 className="font-black text-gray-900 mb-5">Detaliile tale</h2>
+        <form onSubmit={handleSubmit} className="bu-col" style={{ gap: 18 }}>
+          <div className="bu-card bu-card-pad">
+            <h2 style={{ marginBottom: 18 }}>Detaliile tale</h2>
 
-            {/* Website */}
-            <div className="mb-4">
-              <label className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-orange-400" /> Company Website
-              </label>
-              <input type="url" className="field" placeholder="https://yourbrand.com"
+            <div style={{ marginBottom: 16 }}>
+              <label className="bv-lbl"><Globe className="w-3.5 h-3.5" style={{ color: '#5a35e6' }} /> Website companie</label>
+              <input type="url" className="bv-field" placeholder="https://yourbrand.com"
                 value={website} onChange={e => setWebsite(e.target.value)} />
             </div>
 
-            {/* LinkedIn */}
-            <div className="mb-4">
-              <label className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Linkedin className="w-3.5 h-3.5 text-blue-500" /> LinkedIn Company Page
-                <span className="text-gray-400 font-normal normal-case tracking-normal">(recommended)</span>
-              </label>
-              <input type="url" className="field" placeholder="https://linkedin.com/company/yourbrand"
+            <div style={{ marginBottom: 16 }}>
+              <label className="bv-lbl"><Linkedin className="w-3.5 h-3.5" style={{ color: '#1d4fb8' }} /> Pagina LinkedIn a companiei <small>(recomandat)</small></label>
+              <input type="url" className="bv-field" placeholder="https://linkedin.com/company/yourbrand"
                 value={linkedin} onChange={e => setLinkedin(e.target.value)} />
             </div>
 
-            {/* Document upload */}
-            <div className="mb-4">
-              <label className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-orange-400" /> Business Document
-                <span className="text-gray-400 font-normal normal-case tracking-normal">(optional but speeds up review)</span>
-              </label>
-              <p className="text-xs text-gray-400 mb-3">Business registration, VAT certificate, or any official document. PDF, JPG or PNG, max 3MB.</p>
+            <div style={{ marginBottom: 16 }}>
+              <label className="bv-lbl"><FileText className="w-3.5 h-3.5" style={{ color: '#5a35e6' }} /> Document de business <small>(opțional, dar accelerează analiza)</small></label>
+              <p className="bu-xs bu-muted" style={{ margin: '0 0 10px' }}>Certificat de înregistrare, certificat TVA sau orice document oficial. PDF, JPG sau PNG, max 3MB.</p>
 
               {docFile || docPreview ? (
-                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-orange-50 border-2 border-orange-200">
-                  <FileText className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                  <p className="text-sm font-bold text-orange-700 flex-1 truncate">
+                <div className="bu-row" style={{ gap: 12, padding: 14, borderRadius: 16, background: '#efeaff', border: '1.5px solid #d9ccff' }}>
+                  <FileText className="w-5 h-5 flex-shrink-0" style={{ color: '#4423c4' }} />
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#4423c4', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {docFile ? docFile.name : 'Document încărcat anterior'}
                   </p>
-                  <button type="button" onClick={() => { setDocFile(null); setDocPreview(null) }}
-                    className="w-6 h-6 rounded-full bg-orange-200 flex items-center justify-center hover:bg-orange-300 transition">
-                    <X className="w-3 h-3 text-orange-700" />
+                  <button type="button" aria-label="Elimină documentul" onClick={() => { setDocFile(null); setDocPreview(null) }}
+                    style={{ width: 44, height: 44, margin: '-8px -8px -8px 0', border: 0, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#4423c4' }}>
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-orange-300 hover:bg-orange-50 transition">
-                  <Upload className="w-8 h-8 text-gray-300 mb-2" />
-                  <p className="text-sm font-bold text-gray-400">Click pentru a încărca documentul</p>
-                  <p className="text-xs text-gray-300 mt-1">PDF, JPG, PNG — max 3MB</p>
+                <label className="bv-drop">
+                  <div className="bu-ico" style={{ background: '#efeaff', color: '#4423c4', marginBottom: 10 }}><Upload className="w-5 h-5" /></div>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Apasă pentru a încărca documentul</p>
+                  <p className="bu-xs bu-muted" style={{ margin: '4px 0 0' }}>PDF, JPG, PNG — max 3MB</p>
                   <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={handleFileChange} />
                 </label>
               )}
             </div>
 
-            {/* Notes */}
             <div>
-              <label className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2">
-                Additional notes <span className="text-gray-400 font-normal normal-case tracking-normal">(optional)</span>
-              </label>
-              <textarea className="field" placeholder="Tell us about your brand, what you sell, and how you plan to use AddFame…"
+              <label className="bv-lbl">Note suplimentare <small>(opțional)</small></label>
+              <textarea className="bv-field" placeholder="Spune-ne despre brandul tău, ce vinzi și cum plănuiești să folosești AddFame…"
                 value={notes} onChange={e => setNotes(e.target.value)} />
             </div>
           </div>
 
-          <button type="submit" disabled={saving}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-white text-sm transition disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 4px 16px rgba(90,53,230,.3)' }}>
+          <button type="submit" disabled={saving} className="bu-btn p big" style={{ width: '100%', height: 52 }}>
             {saving
-              ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> {uploading ? 'Uploading document…' : 'Submitting…'}</>
-              : <><Shield className="w-4 h-4" /> Submit for Verification <ArrowRight className="w-4 h-4" /></>}
+              ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> {uploading ? 'Se încarcă documentul…' : 'Se trimite…'}</>
+              : <><Shield className="w-4 h-4" /> Trimite spre verificare <ArrowRight className="w-4 h-4" /></>}
           </button>
         </form>
-      )}
-
-      {/* Already verified — redirect */}
-      {status === 'verified' && (
-        <div className="text-center fade-up" style={{ animationDelay: '.1s' }}>
-          <button onClick={() => router.push('/brand/dashboard')}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm text-white brand-grad"
-            style={{ boxShadow: '0 4px 14px rgba(90,53,230,.3)' }}>
-            Go to Dashboard <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
       )}
     </div>
   )

@@ -7,9 +7,10 @@ import { createClient } from '@/lib/supabase/client'
 import { updateCampaignStatus, deleteCampaign, getCampaignFeeInfo } from '@/app/actions/campaigns'
 import { VerificationBanner } from '@/components/shared/verification-banner'
 import {
-  Plus, Search, Briefcase, Clock, Users, TrendingUp,
-  CheckCircle, AlertCircle, Eye, EyeOff, Globe, Lock,
-  ChevronRight, Zap, MoreHorizontal, Play, Pause, Archive, ArrowRight, X, Trash2
+  Plus, Search, Briefcase, Clock, Users,
+  CheckCircle, AlertCircle, EyeOff, Lock,
+  MoreHorizontal, Play, Pause, Archive, X, Trash2,
+  Wallet, Gift, Megaphone, Sparkles, Hourglass
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -35,13 +36,24 @@ const fmt = (n: number) => `${(n || 0).toLocaleString('ro-RO', { minimumFraction
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 const daysLeft = (d: string) => Math.ceil((new Date(d).getTime() - Date.now()) / 864e5)
 
-const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  DRAFT: { label: 'Draft', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
-  PENDING_REVIEW: { label: 'În aprobare', bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-400' },
-  ACTIVE: { label: 'Active', bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500' },
-  PAUSED: { label: 'Paused', bg: 'bg-gray-100', text: 'text-gray-500', dot: 'bg-gray-400' },
-  COMPLETED: { label: 'Completed', bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-400' },
-  REJECTED: { label: 'Respinsă', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-400' },
+const STATUS_CONFIG: Record<string, { label: string; bg: string; fg: string }> = {
+  DRAFT: { label: 'Ciornă', bg: '#f0eff7', fg: '#4a4770' },
+  PENDING_REVIEW: { label: 'În aprobare', bg: '#fff1c2', fg: '#854d0e' },
+  ACTIVE: { label: 'Activă', bg: '#dcf5ec', fg: '#14532d' },
+  PAUSED: { label: 'În pauză', bg: '#e6f0ff', fg: '#1d4fb8' },
+  COMPLETED: { label: 'Finalizată', bg: '#efeaff', fg: '#4423c4' },
+  REJECTED: { label: 'Respinsă', bg: '#fde8e6', fg: '#b42318' },
+}
+
+const TYPE_CONFIG: Record<string, { label: string; cover: string }> = {
+  PAID: { label: 'Plătită', cover: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' },
+  BARTER: { label: 'Barter', cover: 'linear-gradient(135deg,#7040f0,#9030f0)' },
+  OPEN_CALL: { label: 'Open Call', cover: 'linear-gradient(135deg,#22c8f0,#3090f0)' },
+  MANAGED: { label: 'Managed', cover: 'linear-gradient(135deg,#14123a,#3a2f8f)' },
+}
+
+const TAB_LABEL: Record<string, string> = {
+  'All': 'Toate', 'În aprobare': 'În aprobare', 'Active': 'Active', 'Draft': 'Ciorne', 'Paused': 'Pauză', 'Completed': 'Finalizate',
 }
 
 const TABS = ['All', 'În aprobare', 'Active', 'Draft', 'Paused', 'Completed'] as const
@@ -70,6 +82,7 @@ export default function BrandCampaignsPage() {
   const [brandVerification, setBrandVerification] = useState<{ status: string; reason?: string | null }>({ status: 'unverified' })
   const [canCreateCampaign, setCanCreateCampaign] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [feeInfo, setFeeInfo] = useState<{ price?: number } | null>(null)
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type })
@@ -119,6 +132,10 @@ export default function BrandCampaignsPage() {
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
   }, [fetchCampaigns])
+
+  useEffect(() => {
+    getCampaignFeeInfo().then((i: any) => { if (i) setFeeInfo(i) }).catch(() => {})
+  }, [])
 
   async function handleStatusChange(campaignId: string, newStatus: 'ACTIVE' | 'DRAFT' | 'PAUSED' | 'COMPLETED') {
     if (newStatus === 'ACTIVE' && brandVerification.status !== 'verified') {
@@ -199,429 +216,348 @@ export default function BrandCampaignsPage() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <div className="w-10 h-10 rounded-full border-t-violet-500 border-violet-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
+    <div className="bu" style={{ minHeight: '60vh', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #e5e3f3', borderTopColor: '#5a35e6', animation: 'cpSpin .8s linear infinite' }} />
+      <style>{`@keyframes cpSpin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 
+  const TILES = [
+    { name: 'Plătită', desc: 'Plătești creatorul direct pentru postare.', Icon: Wallet, bg: '#e6f0ff', fg: '#1d4fb8', href: '/brand/campaigns/new/wizard?type=PAID' },
+    { name: 'Barter', desc: 'Trimiți produsul, primești conținut.', Icon: Gift, bg: '#efeaff', fg: '#4423c4', href: '/brand/campaigns/new/barter', note: 'Taxă publicare: 149 RON' },
+    { name: 'Open Call', desc: 'Oricine se potrivește poate aplica.', Icon: Megaphone, bg: '#dff4fd', fg: '#0c4a6e', href: '/brand/campaigns/new/opencall' },
+    { name: 'Managed', desc: 'Echipa AddFame o rulează pentru tine.', Icon: Sparkles, bg: '#14123a', fg: '#ffffff', href: '/brand/campaigns/new/managed' },
+  ]
+
+  const newBtn = (extra = '') => canCreateCampaign ? (
+    <button onClick={() => setShowSheet(true)} className={`bu-btn p big ${extra}`}><Plus size={16} strokeWidth={2.4} /> Campanie nouă</button>
+  ) : (
+    <Link href="/brand/wallet" className={`bu-btn big ${extra}`} title="Ai nevoie de minimum 250 RON credite sau aprobare admin pentru a crea campanii"><Lock size={16} /> Campanie nouă</Link>
+  )
+
   return (
-    <div className="p-5 lg:p-8 max-w-6xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+    <div className="bu">
       <style>{`
-        .brand-grad { background: linear-gradient(135deg, #2f6fe0, #5a35e6); }
-        .card { background: white; border: 1.5px solid #f0f0f0; border-radius: 20px; }
-        .campaign-card { background: white; border: 1.5px solid #f0f0f0; border-radius: 20px; transition: all .2s ease; }
-        .campaign-card:hover { border-color: #ddd6fe; box-shadow: 0 10px 28px rgba(90,53,230,0.08); }
-        .tab-btn { padding:7px 16px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .18s;white-space:nowrap;font-family:inherit; }
-        .tab-btn.active { background:linear-gradient(135deg,#2f6fe0, #5a35e6);color:white;box-shadow:0 4px 12px rgba(90,53,230,0.3); }
-        .tab-btn:not(.active) { background:#f3f4f6;color:#6b7280; }
-        .tab-btn:not(.active):hover { background:#f5f3ff;color:#5a35e6; }
-        .search-box { width:100%;padding:10px 16px 10px 42px;border:2px solid #e5e7eb;border-radius:12px;font-size:14px;font-weight:500;outline:none;transition:all .2s;font-family:inherit;background:white; }
-        .search-box:focus { border-color:#5a35e6;box-shadow:0 0 0 4px rgba(90,53,230,0.08); }
-        .search-box::placeholder { color:#9ca3af;font-weight:400; }
-        .btn-publish { display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:11px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#2f6fe0, #5a35e6);color:white;border:none;cursor:pointer;transition:all .18s;font-family:inherit; }
-        .btn-publish:hover:not(:disabled) { transform:translateY(-1px);box-shadow:0 5px 16px rgba(90,53,230,0.38); }
-        .btn-publish:disabled { opacity:.6;cursor:not-allowed;transform:none; }
-        .btn-unpublish { display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:11px;font-size:13px;font-weight:700;background:white;color:#6b7280;border:2px solid #e5e7eb;cursor:pointer;transition:all .18s;font-family:inherit; }
-        .btn-unpublish:hover:not(:disabled) { border-color:#d1d5db;color:#374151;background:#f9fafb; }
-        .btn-unpublish:disabled { opacity:.6;cursor:not-allowed; }
-        .menu-btn { display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:#f3f4f6;border:none;cursor:pointer;transition:background .15s;flex-shrink:0; }
-        .menu-btn:hover { background:#e5e7eb; }
-        .dropdown { position:absolute;right:0;top:calc(100% + 6px);background:white;border:1.5px solid #f0f0f0;border-radius:14px;padding:6px;z-index:50;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.12); }
-        .dropdown-item { display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;transition:background .12s;font-family:inherit;color:#374151; }
-        .dropdown-item:hover { background:#f9fafb; }
-        .dropdown-item.danger { color:#ef4444; }
-        .dropdown-item.danger:hover { background:#fef2f2; }
-        @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-        .toast-anim { animation: slideDown .3s ease; }
-        .dropdown-anim { animation: slideDown .2s ease; }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .card-enter { animation: fadeUp .35s ease both; }
+        .cp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:18px; align-items:stretch; }
+        .cp-card { background:#fff; border:1px solid #e5e3f3; border-radius:20px; display:flex; flex-direction:column; min-width:0; transition:box-shadow .2s, border-color .2s; }
+        .cp-card:hover { border-color:#cfc6f5; box-shadow:0 14px 30px -18px rgba(90,53,230,.35); }
+        .cp-cover { height:76px; position:relative; display:flex; align-items:flex-start; justify-content:space-between; padding:12px 14px; border-radius:20px 20px 0 0; gap:8px; }
+        .cp-cover-clip { position:absolute; inset:0; overflow:hidden; border-radius:20px 20px 0 0; pointer-events:none; }
+        .cp-cover-clip i { position:absolute; right:-30px; bottom:-60px; width:150px; height:150px; border-radius:50%; background:rgba(255,255,255,.14); }
+        .cp-tchip { position:relative; display:inline-flex; align-items:center; height:24px; padding:0 10px; border-radius:999px; background:rgba(255,255,255,.2); color:#fff; font-size:12px; font-weight:700; backdrop-filter:blur(4px); }
+        .cp-body { padding:16px 18px 18px; display:flex; flex-direction:column; gap:12px; flex:1; min-width:0; }
+        .cp-title { font-family:var(--font-display,system-ui),system-ui,sans-serif; font-weight:700; font-size:18px; letter-spacing:-.01em; line-height:1.25; color:#14123a; text-decoration:none; overflow-wrap:anywhere; }
+        .cp-title:hover { color:#5a35e6; }
+        .cp-stat { display:flex; gap:6px; padding:12px 0; border-top:1px solid #eeecf7; border-bottom:1px solid #eeecf7; }
+        .cp-stat > div { flex:1; min-width:0; display:flex; flex-direction:column; }
+        .cp-stat b { font-family:var(--font-display,system-ui),system-ui,sans-serif; font-size:18px; line-height:1.1; }
+        .cp-stat span { font-size:12px; color:#6a6690; }
+        .cp-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:auto; flex-wrap:wrap; }
+        .cp-notice { display:flex; flex-direction:column; gap:8px; padding:12px 14px; border-radius:14px; }
+        .cp-new-tile { min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; border:2px dashed #cfc8ee; border-radius:20px; color:#5a35e6; text-decoration:none; font-weight:800; background:rgba(255,255,255,.5); cursor:pointer; font-family:inherit; font-size:15px; padding:0; }
+        .cp-new-tile:hover { background:#f7f4ff; }
+        .cp-new-tile span.i { width:46px; height:46px; border-radius:14px; background:#efeaff; display:flex; align-items:center; justify-content:center; }
+        .cp-menu-btn { position:relative; width:32px; height:32px; border-radius:10px; border:0; background:rgba(255,255,255,.22); color:#fff; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
+        .cp-menu-btn:hover { background:rgba(255,255,255,.34); }
+        .cp-dd { position:absolute; right:0; top:calc(100% + 6px); background:#fff; border:1px solid #e5e3f3; border-radius:14px; padding:6px; z-index:60; min-width:200px; box-shadow:0 12px 32px rgba(20,18,58,.16); }
+        .cp-dd button { display:flex; align-items:center; gap:8px; padding:0 12px; min-height:44px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; border:0; background:transparent; width:100%; text-align:left; font-family:inherit; color:#14123a; }
+        .cp-dd button:hover { background:#f7f4ff; }
+        .cp-dd button.danger { color:#b42318; }
+        .cp-dd button.danger:hover { background:#fff4f2; }
+        .cp-toast { position:fixed; top:20px; right:20px; z-index:90; display:flex; align-items:center; gap:10px; padding:14px 18px; border-radius:16px; background:#fff; font-size:14px; font-weight:700; max-width:380px; box-shadow:0 16px 40px -12px rgba(20,18,58,.3); animation:cpIn .3s ease; }
+        @keyframes cpIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:none} }
+        .cp-overlay { position:fixed; inset:0; z-index:80; background:rgba(20,18,58,.5); display:flex; align-items:center; justify-content:center; padding:16px; }
+        .cp-overlay.sheet { align-items:center; }
+        .cp-sheet { background:#fff; border-radius:24px; padding:22px; width:100%; max-width:640px; max-height:92vh; overflow-y:auto; position:relative; }
+        .cp-tiles { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .cp-tile { display:flex; flex-direction:column; gap:10px; padding:16px; border-radius:16px; border:1.5px solid #e5e3f3; background:#fff; text-align:left; cursor:pointer; font-family:inherit; color:#14123a; min-height:44px; transition:border-color .15s, background .15s; }
+        .cp-tile:hover { border-color:#b9a5f5; background:#faf8ff; }
+        .cp-tile .ti { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; }
+        .cp-tile b { font-family:var(--font-display,system-ui),system-ui,sans-serif; font-size:17px; }
+        .cp-x { width:44px; height:44px; border-radius:12px; border:0; background:#f0eff7; color:#4a4770; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
+        .cp-toolbar { min-width:0; display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; }
+        @media (max-width:767px) {
+          .cp-grid { grid-template-columns:1fr; gap:14px; }
+          .cp-cover { height:64px; }
+          .cp-body { padding:14px; }
+          .cp-title { font-size:17px; }
+          .cp-toolbar { flex-direction:column; align-items:stretch; }
+          .cp-tabs { min-width:0; max-width:calc(100% + 32px); flex-wrap:nowrap !important; overflow-x:auto; margin:0 -16px; padding:0 16px; scrollbar-width:none; }
+          .cp-tabs::-webkit-scrollbar { display:none; }
+          .cp-tabs .bu-pill { min-height:44px; flex:none; }
+          .cp-overlay { align-items:flex-end; padding:0; }
+          .cp-sheet { border-radius:24px 24px 0 0; max-width:none; padding:18px 16px 28px; }
+          .cp-tiles { gap:10px; }
+          .cp-tile { padding:12px; }
+          .cp-tile b { font-size:15px; }
+          .cp-toast { left:16px; right:16px; top:12px; max-width:none; }
+          .cp-new-tile { min-height:120px; }
+          .cp-foot .bu-btn { min-height:44px; }
+        }
       `}</style>
 
       {/* Toast */}
       {toast && (
-        <div className={`toast-anim fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold max-w-sm ${toast.type === 'success' ? 'bg-white border-2 border-green-200 text-green-700' : 'bg-white border-2 border-red-200 text-red-600'
-          }`}>
-          {toast.type === 'success' ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+        <div className="cp-toast" style={{ border: `1.5px solid ${toast.type === 'success' ? '#a7e3cb' : '#f3c9c4'}`, color: toast.type === 'success' ? '#14532d' : '#b42318' }}>
+          {toast.type === 'success' ? <CheckCircle size={16} style={{ flex: 'none' }} /> : <AlertCircle size={16} style={{ flex: 'none' }} />}
           {toast.msg}
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">Campaigns</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {campaigns.length} total · <span className="text-green-600 font-bold">{counts.Active} active</span>
-            {counts.Draft > 0 && <> · <span className="text-amber-600 font-bold">{counts.Draft} draft</span></>}
+      <section className="bu-head">
+        <div className="bu-col" style={{ gap: 4 }}>
+          <h1>Campanii</h1>
+          <p style={{ margin: 0, color: '#4a4770' }}>
+            {campaigns.length} {campaigns.length === 1 ? 'campanie' : 'campanii'} · <b style={{ color: '#5a35e6' }}>{counts.Active} {counts.Active === 1 ? 'activă' : 'active'}</b> acum
+            {counts.Draft > 0 && <> · {counts.Draft} {counts.Draft === 1 ? 'ciornă' : 'ciorne'}</>}
           </p>
         </div>
-        {canCreateCampaign ? (
-          <button
-            onClick={() => setShowSheet(true)}
-            className="inline-flex items-center gap-2 brand-grad text-white font-bold text-sm px-5 py-2.5 rounded-xl hover:-translate-y-0.5 transition flex-shrink-0"
-            style={{ boxShadow: '0 4px 14px rgba(90,53,230,0.35)' }}
-          >
-            <Plus className="w-4 h-4" /> New Campaign
-          </button>
-        ) : (
-          <Link
-            href="/brand/wallet"
-            className="inline-flex items-center gap-2 bg-gray-100 text-gray-500 font-bold text-sm px-5 py-2.5 rounded-xl transition flex-shrink-0 border border-gray-200"
-            title="Ai nevoie de minimum 250 RON credite sau aprobare admin pentru a crea campanii"
-          >
-            <Lock className="w-4 h-4" /> New Campaign
-          </Link>
-        )}
-      </div>
+        {newBtn()}
+      </section>
 
       {/* Verification banner */}
       {brandVerification.status !== 'verified' && (
-        <div className="mb-4">
-          <VerificationBanner status={brandVerification.status as any} rejectionReason={brandVerification.reason} compact />
-        </div>
-      )}
-
-      {/* Draft notice */}
-      {counts.Draft > 0 && (
-        <div className="mb-5 flex items-start gap-3 bg-amber-50 border-2 border-amber-200 rounded-2xl p-4">
-          <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-black text-amber-800">
-              {counts.Draft} campaign{counts.Draft > 1 ? 's are' : ' is'} in draft
-            </p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              Campaniile Draft <strong>nu sunt vizibile</strong> influencerilor. Apasă <strong>Publică</strong> pe o campanie pentru a o lansa.
-            </p>
-          </div>
-        </div>
+        <VerificationBanner status={brandVerification.status as any} rejectionReason={brandVerification.reason} compact />
       )}
 
       {/* Filters */}
-      <div className="card p-4 mb-5">
-        <div className="relative mb-4">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input className="search-box" placeholder="Search campaigns…" value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+      <section className="cp-toolbar">
+        <div className="bu-tabs cp-tabs">
           {TABS.map(tab => (
-            <button key={tab} className={`tab-btn ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
-              {tab}
-              {counts[tab] > 0 && (
-                <span className={`ml-1.5 text-[11px] font-black px-1.5 py-0.5 rounded-full ${activeTab === tab ? 'bg-white/25' : 'bg-gray-200 text-gray-500'}`}>
-                  {counts[tab]}
-                </span>
-              )}
+            <button key={tab} className={`bu-pill ${activeTab === tab ? 'on' : ''}`} onClick={() => setActiveTab(tab)}>
+              {TAB_LABEL[tab]}<span className="n">{counts[tab]}</span>
             </button>
           ))}
         </div>
-      </div>
+        <label className="bu-search" style={{ width: 260, maxWidth: '100%' }}>
+          <Search size={16} />
+          <input placeholder="Caută o campanie…" value={search} onChange={e => setSearch(e.target.value)} />
+        </label>
+      </section>
 
       {/* Campaign list */}
       {filtered.length === 0 ? (
-        <div className="card p-16 text-center">
-          <div className="w-16 h-16 rounded-2xl brand-grad flex items-center justify-center mx-auto mb-4"
-            style={{ boxShadow: '0 4px 16px rgba(90,53,230,0.25)' }}>
-            <Briefcase className="w-8 h-8 text-white" />
+        <div className="bu-card" style={{ padding: '56px 20px', textAlign: 'center' }}>
+          <div className="bu-ico" style={{ width: 56, height: 56, margin: '0 auto 16px', background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', color: '#fff' }}>
+            <Briefcase size={26} />
           </div>
-          <p className="font-black text-gray-700 text-lg mb-2">No campaigns yet</p>
-          <p className="text-sm text-gray-400 mb-6 max-w-xs mx-auto">
+          <h2 style={{ marginBottom: 6 }}>Nicio campanie încă</h2>
+          <p className="bu-muted" style={{ margin: '0 auto 20px', maxWidth: 320 }}>
             {campaigns.length === 0
               ? 'Creează prima ta campanie pentru a găsi influencerii potriviți.'
-              : `No ${activeTab.toLowerCase()} campaigns found.`}
+              : `Nu există campanii în categoria „${TAB_LABEL[activeTab]}”.`}
           </p>
           {campaigns.length === 0 && (
             canCreateCampaign ? (
-              <button
-                onClick={() => setShowSheet(true)}
-                className="inline-flex items-center gap-2 brand-grad text-white font-bold text-sm px-6 py-3 rounded-xl"
-                style={{ boxShadow: '0 4px 14px rgba(90,53,230,0.3)' }}>
-                <Plus className="w-4 h-4" /> Create Campaign
-              </button>
+              <button onClick={() => setShowSheet(true)} className="bu-btn p big"><Plus size={16} /> Creează campania</button>
             ) : (
-              <div className="text-center">
-                <Link href="/brand/wallet" className="inline-flex items-center gap-2 bg-violet-600 text-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-violet-700 transition">
-                  <Lock className="w-4 h-4" /> Adaugă 250 RON pentru a crea campanii
-                </Link>
-              </div>
+              <Link href="/brand/wallet" className="bu-btn p big"><Lock size={16} /> Adaugă 250 RON pentru a crea campanii</Link>
             )
           )}
         </div>
       ) : (
-        <div className="space-y-4">
-          {filtered.map((c, i) => {
+        <section className="cp-grid">
+          {filtered.map((c) => {
             const cfg = STATUS_CONFIG[c.status] ?? STATUS_CONFIG.DRAFT
-            const days = daysLeft(c.deadline)
-            const expired = days < 0
-            const urgent = days >= 0 && days <= 3
+            const tcfg = TYPE_CONFIG[(c as any).campaign_type] ?? { label: 'Campanie', cover: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }
+            const days = c.deadline ? daysLeft(c.deadline) : null
+            const expired = days !== null && days < 0
+            const urgent = days !== null && days >= 0 && days <= 3
             const isLoading = actionLoading === c.id
             const collabs = collabCounts[c.id] || 0
+            const slotsTotal = c.max_influencers || 0
+            const slotsUsed = Array.isArray(c.accepted_influencers) ? c.accepted_influencers.length : 0
+            const pct = slotsTotal > 0 ? Math.min(100, Math.round((slotsUsed / slotsTotal) * 100)) : 0
+            const isDraft = c.status === 'DRAFT'
+            const isLive = c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'COMPLETED'
+            const dl = days === null || c.status === 'COMPLETED' ? null
+              : expired ? { t: 'Expirat', bg: '#f0eff7', fg: '#4a4770' }
+              : urgent ? { t: days === 0 ? 'Ultima zi' : days === 1 ? 'Se închide mâine' : `Se închide în ${days} zile`, bg: '#fff1e6', fg: '#9a4206' }
+              : { t: `${days} ${days === 1 ? 'zi rămasă' : 'zile rămase'}`, bg: '#f0eff7', fg: '#4a4770' }
+            const platforms = (c.platforms || []).slice(0, 3).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(', ')
+            const fee = feeInfo?.price ? feeInfo.price * (c.max_influencers || 1) : null
 
             return (
-              <div key={c.id} className="campaign-card card-enter p-5" style={{ animationDelay: `${Math.min(i, 6) * 0.05}s` }}>
-                <div className="flex items-start gap-4">
-                  {/* Icon */}
-                  <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Briefcase className="w-5 h-5 text-violet-600" />
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <Link href={`/brand/campaigns/${c.id}`} className="font-black text-gray-900 text-base hover:text-orange-600 transition truncate">
-                            {c.title}
-                          </Link>
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black ${cfg.bg} ${cfg.text}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                            {cfg.label}
-                          </span>
-                        </div>
-                        {c.description && (
-                          <p className="text-sm text-gray-500 leading-relaxed line-clamp-1">{c.description}</p>
-                        )}
-                      </div>
-
-                      {/* Menu */}
-                      <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
-                        <button className="menu-btn" onClick={() => setOpenMenu(openMenu === c.id ? null : c.id)}>
-                          <MoreHorizontal className="w-4 h-4 text-gray-500" />
-                        </button>
-                        {openMenu === c.id && (
-                          <div className="dropdown dropdown-anim">
-                            {c.status === 'DRAFT' && (
-                              <button className="dropdown-item" onClick={() => handleStatusChange(c.id, 'ACTIVE')}>
-                                <Play className="w-4 h-4 text-green-500" /> Publish campaign
-                              </button>
-                            )}
-                            {c.status === 'ACTIVE' && (
-                              <button className="dropdown-item" onClick={() => handleStatusChange(c.id, 'PAUSED')}>
-                                <Pause className="w-4 h-4 text-gray-500" /> Pause campaign
-                              </button>
-                            )}
-                            {c.status === 'PAUSED' && (
-                              <button className="dropdown-item" onClick={() => handleStatusChange(c.id, 'ACTIVE')}>
-                                <Play className="w-4 h-4 text-green-500" /> Resume campaign
-                              </button>
-                            )}
-                            {(c.status === 'ACTIVE' || c.status === 'PAUSED') && (
-                              <button className="dropdown-item" onClick={() => handleStatusChange(c.id, 'DRAFT')}>
-                                <EyeOff className="w-4 h-4 text-amber-500" /> Move to draft
-                              </button>
-                            )}
-                            {c.status !== 'COMPLETED' && (
-                              <button className="dropdown-item danger" onClick={() => handleStatusChange(c.id, 'COMPLETED')}>
-                                <Archive className="w-4 h-4" /> Mark completed
-                              </button>
-                            )}
-                            {(c.status === 'DRAFT' || c.status === 'REJECTED') && (
-                              <>
-                                <div style={{ height: 1, background: '#fee2e2', margin: '4px 0' }} />
-                                <button className="dropdown-item danger" onClick={() => { setConfirmDelete(c.id); setOpenMenu(null) }}>
-                                  <Trash2 className="w-4 h-4" /> Șterge campania
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Meta row */}
-                    <div className="flex flex-wrap items-center gap-4 mt-3 pt-3 border-t border-gray-100">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500">
-                        <TrendingUp className="w-3.5 h-3.5 text-green-500" />
-                        <span className="font-black text-gray-900">{fmt(c.budget)}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500">
-                        <Users className="w-3.5 h-3.5 text-purple-400" />
-                        {collabs} applicant{collabs !== 1 ? 's' : ''}
-                      </div>
-                      <div className={`flex items-center gap-1.5 text-xs font-semibold ${expired ? 'text-red-500' : urgent ? 'text-orange-500' : 'text-gray-400'}`}>
-                        <Clock className="w-3.5 h-3.5" />
-                        {expired ? 'Expirat' : days === 0 ? 'Ultima zi' : `${days}z rămase`}
-                        {urgent && !expired && <span className="bg-orange-100 text-orange-600 text-[10px] font-black px-1.5 py-0.5 rounded-full">URGENT</span>}
-                      </div>
-                      {c.platforms?.length > 0 && (
-                        <div className="flex gap-1">
-                          {c.platforms.slice(0, 3).map(p => (
-                            <span key={p} className="text-[11px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full capitalize">
-                              {p.toLowerCase()}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Action buttons */}
-                      <div className="ml-auto flex items-center gap-2">
-                        <Link href={`/brand/campaigns/${c.id}`}
-                          className="text-xs font-bold text-orange-600 hover:text-orange-800 transition flex items-center gap-1">
-                          View <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
+              <article key={c.id} className="cp-card">
+                <div className="cp-cover" style={{ background: tcfg.cover }}>
+                  <span className="cp-cover-clip"><i /></span>
+                  <span className="cp-tchip">{tcfg.label}</span>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }} onClick={e => e.stopPropagation()}>
+                    <span className="bu-chip" style={{ background: cfg.bg, color: cfg.fg }}>{cfg.label}</span>
+                    <button className="cp-menu-btn" aria-label="Acțiuni" onClick={() => setOpenMenu(openMenu === c.id ? null : c.id)}>
+                      <MoreHorizontal size={16} />
+                    </button>
+                    {openMenu === c.id && (
+                      <div className="cp-dd">
                         {c.status === 'DRAFT' && (
-                          <button
-                            className="btn-publish"
-                            onClick={() => handleStatusChange(c.id, 'ACTIVE')}
-                            disabled={isLoading}
-                            style={{ boxShadow: '0 3px 10px rgba(90,53,230,0.3)' }}
-                          >
-                            {isLoading
-                              ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                              : <Eye className="w-3.5 h-3.5" />
-                            }
-                            Publish
-                          </button>
+                          <button onClick={() => handleStatusChange(c.id, 'ACTIVE')}><Play size={16} color="#14532d" /> Publică campania</button>
                         )}
                         {c.status === 'ACTIVE' && (
-                          <button
-                            className="btn-unpublish"
-                            onClick={() => handleStatusChange(c.id, 'PAUSED')}
-                            disabled={isLoading}
-                          >
-                            {isLoading
-                              ? <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" />
-                              : <Pause className="w-3.5 h-3.5" />
-                            }
-                            Pause
-                          </button>
+                          <button onClick={() => handleStatusChange(c.id, 'PAUSED')}><Pause size={16} color="#6a6690" /> Pune pe pauză</button>
                         )}
                         {c.status === 'PAUSED' && (
-                          <button
-                            className="btn-publish"
-                            onClick={() => handleStatusChange(c.id, 'ACTIVE')}
-                            disabled={isLoading}
-                          >
-                            {isLoading
-                              ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                              : <Play className="w-3.5 h-3.5" />
-                            }
-                            Resume
-                          </button>
+                          <button onClick={() => handleStatusChange(c.id, 'ACTIVE')}><Play size={16} color="#14532d" /> Reia campania</button>
+                        )}
+                        {(c.status === 'ACTIVE' || c.status === 'PAUSED') && (
+                          <button onClick={() => handleStatusChange(c.id, 'DRAFT')}><EyeOff size={16} color="#854d0e" /> Mută în ciorne</button>
+                        )}
+                        {c.status !== 'COMPLETED' && (
+                          <button className="danger" onClick={() => handleStatusChange(c.id, 'COMPLETED')}><Archive size={16} /> Marchează finalizată</button>
+                        )}
+                        {(c.status === 'DRAFT' || c.status === 'REJECTED') && (
+                          <>
+                            <div style={{ height: 1, background: '#eeecf7', margin: '4px 0' }} />
+                            <button className="danger" onClick={() => { setConfirmDelete(c.id); setOpenMenu(null) }}><Trash2 size={16} /> Șterge campania</button>
+                          </>
                         )}
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
-              </div>
+
+                <div className="cp-body">
+                  <div className="bu-col" style={{ gap: 2 }}>
+                    <Link href={`/brand/campaigns/${c.id}`} className="cp-title">{c.title}</Link>
+                    <span className="bu-sm bu-muted">
+                      {[platforms, c.budget ? fmt(c.budget) : null].filter(Boolean).join(' · ') || ' '}
+                    </span>
+                  </div>
+
+                  {/* Status-specific body */}
+                  {isDraft && (
+                    <div className="cp-notice" style={{ background: '#f7f4ff', border: '1px dashed #b9a5f5' }}>
+                      <div className="bu-row" style={{ justifyContent: 'space-between', gap: 10 }}>
+                        <b className="bu-sm" style={{ color: '#4423c4' }}>Taxă de publicare</b>
+                        <b className="bu-d" style={{ fontSize: 20, color: '#4423c4' }}>
+                          {(c as any).campaign_type === 'BARTER' ? '149 RON' : fee ? fmt(fee) : '—'}
+                        </b>
+                      </div>
+                      <span className="bu-xs bu-muted">
+                        {fee && (c as any).campaign_type !== 'BARTER'
+                          ? `${c.max_influencers || 1} × ${feeInfo?.price} RON. `
+                          : ''}
+                        Se plătește la publicare. Creatorii nu văd campania până atunci.
+                      </span>
+                    </div>
+                  )}
+                  {c.status === 'PENDING_REVIEW' && (
+                    <div className="cp-notice" style={{ background: '#fffbea', border: '1px solid #f6e7a6', gap: 4 }}>
+                      <b className="bu-sm" style={{ color: '#854d0e' }}>Echipa AddFame o verifică</b>
+                      <span className="bu-xs" style={{ color: '#854d0e' }}>De obicei durează sub 24 h. Te anunțăm când e publicată.</span>
+                    </div>
+                  )}
+                  {c.status === 'REJECTED' && (
+                    <div className="cp-notice" style={{ background: '#fff4f2', border: '1px solid #f3c9c4', gap: 4 }}>
+                      <b className="bu-sm" style={{ color: '#b42318' }}>Campania a fost respinsă</b>
+                      <span className="bu-xs" style={{ color: '#b42318' }}>Deschide campania pentru detalii, apoi o poți retrimite.</span>
+                    </div>
+                  )}
+                  {isLive && (
+                    <>
+                      <div className="cp-stat">
+                        <div><b>{collabs}</b><span>{collabs === 1 ? 'colaborare' : 'colaborări'}</span></div>
+                        {slotsTotal > 0 && <div><b>{slotsUsed}</b><span>selectați</span></div>}
+                      </div>
+                      {slotsTotal > 0 && (
+                        <div className="bu-col" style={{ gap: 6 }}>
+                          <div className="bu-row" style={{ justifyContent: 'space-between' }}>
+                            <span className="bu-xs bu-muted" style={{ fontWeight: 600 }}>Locuri ocupate</span>
+                            <b className="bu-xs">{slotsUsed} din {slotsTotal}</b>
+                          </div>
+                          <div className="bu-bar"><i style={{ width: `${pct}%` }} /></div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Footer */}
+                  <div className="cp-foot">
+                    {isDraft ? (
+                      <>
+                        <Link href={`/brand/campaigns/${c.id}`} className="bu-btn" style={{ flex: 1 }}>Continuă editarea</Link>
+                        <button className="bu-btn p" style={{ flex: 1 }} onClick={() => handleStatusChange(c.id, 'ACTIVE')} disabled={isLoading}>
+                          {isLoading ? '...' : 'Publică'}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {dl ? (
+                          <span className="bu-chip" style={{ background: dl.bg, color: dl.fg }}><Clock size={13} strokeWidth={2.2} />{dl.t}</span>
+                        ) : c.status === 'PENDING_REVIEW' ? (
+                          <span className="bu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Hourglass size={13} strokeWidth={2.2} />În așteptare</span>
+                        ) : <span />}
+                        <div className="bu-row" style={{ gap: 8 }}>
+                          {c.status === 'ACTIVE' && (
+                            <button className="bu-btn" onClick={() => handleStatusChange(c.id, 'PAUSED')} disabled={isLoading}>
+                              <Pause size={14} /> {isLoading ? '...' : 'Pauză'}
+                            </button>
+                          )}
+                          {c.status === 'PAUSED' && (
+                            <button className="bu-btn p" onClick={() => handleStatusChange(c.id, 'ACTIVE')} disabled={isLoading}>
+                              <Play size={14} /> {isLoading ? '...' : 'Reia'}
+                            </button>
+                          )}
+                          <Link href={`/brand/campaigns/${c.id}`} className="bu-btn">Deschide</Link>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </article>
             )
           })}
-        </div>
+          {canCreateCampaign ? (
+            <button className="cp-new-tile" onClick={() => setShowSheet(true)}>
+              <span className="i"><Plus size={22} strokeWidth={2.4} /></span>Campanie nouă
+            </button>
+          ) : (
+            <Link href="/brand/wallet" className="cp-new-tile">
+              <span className="i"><Lock size={20} /></span>Adaugă credite pentru a crea campanii
+            </Link>
+          )}
+        </section>
       )}
 
-      {/* ── Campaign type bottom sheet ─────────────────────────────────────── */}
+      {/* ── Campaign type chooser ─────────────────────────────────────── */}
       {showSheet && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={() => setShowSheet(false)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div
-            className="relative bg-white rounded-t-3xl border-t border-gray-100 px-4 pt-4 pb-12 animate-in slide-in-from-bottom-4 duration-300"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Handle */}
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-
-            <div className="flex items-center justify-between mb-4 px-1">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Alege tipul campaniei</p>
-              <button onClick={() => setShowSheet(false)} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition">
-                <X className="w-3.5 h-3.5 text-gray-500" />
-              </button>
+        <div className="cp-overlay sheet" onClick={() => setShowSheet(false)}>
+          <div className="cp-sheet" onClick={e => e.stopPropagation()}>
+            <div className="bu-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
+              <div className="bu-col" style={{ gap: 2 }}>
+                <h2 style={{ fontSize: 20 }}>Ce fel de campanie vrei să pornești?</h2>
+                <span className="bu-sm bu-muted">Taxa de publicare e 149 RON pentru Barter.</span>
+              </div>
+              <button className="cp-x" aria-label="Închide" onClick={() => setShowSheet(false)}><X size={18} /></button>
             </div>
-
-            {/* Free Offer / Barter */}
-            <button
-              onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/barter') }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-violet-200 hover:bg-violet-50/50 transition mb-3 text-left group"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center flex-shrink-0 text-3xl group-hover:scale-105 transition">
-                🎁
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-black text-gray-900 text-base">Free Offer / Barter</p>
-                <p className="text-sm text-gray-500 mt-0.5">Produs sau serviciu gratuit în schimbul postărilor</p>
-                <span className="inline-block mt-1.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">Taxă publicare: 149 RON</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-orange-400 group-hover:translate-x-0.5 transition flex-shrink-0" />
-            </button>
-
-            {/* Campanie Plătită */}
-            <button
-              onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/wizard?type=PAID') }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-green-200 hover:bg-green-50/50 transition mb-3 text-left group"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-green-50 border border-green-100 flex items-center justify-center flex-shrink-0 text-3xl group-hover:scale-105 transition">
-                💰
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-black text-gray-900 text-base">Campanie Plătită</p>
-                <p className="text-sm text-gray-500 mt-0.5">Plătești influencerii cash — sumă fixă sau de discutat</p>
-                <span className="inline-block mt-1.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-green-100 text-green-700">Preț fix / influencer</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-green-400 group-hover:translate-x-0.5 transition flex-shrink-0" />
-            </button>
-
-            {/* Campanie Managed */}
-            <button
-              onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/managed') }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-purple-200 hover:bg-purple-50/50 transition text-left group"
-            >
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-3xl group-hover:scale-105 transition"
-                style={{ background: 'linear-gradient(135deg,#f3e8ff,#e0f2fe)' }}>✨</div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-black text-gray-900 text-base">Campanie Managed</p>
-                  <span className="text-[9px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded-full">NOU</span>
-                </div>
-                <p className="text-sm text-gray-500 mt-0.5">Noi selectăm influencerii și gestionăm campania</p>
-                <span className="inline-block mt-1.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Full service · preț fix sau de discutat</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-purple-400 group-hover:translate-x-0.5 transition flex-shrink-0" />
-            </button>
-
-            {/* Open Call / Casting */}
-            <button
-              onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/opencall') }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-pink-200 hover:bg-pink-50/50 transition mt-3 text-left group"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-pink-50 border border-pink-100 flex items-center justify-center flex-shrink-0 text-3xl group-hover:scale-105 transition">
-                🎤
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-black text-gray-900 text-base">Open Call / Casting</p>
-                  <span className="text-[9px] font-black bg-pink-500 text-white px-1.5 py-0.5 rounded-full">NOU</span>
-                </div>
-                <p className="text-sm text-gray-500 mt-0.5">Publică un anunț — influencerii se înscriu singuri</p>
-                <span className="inline-block mt-1.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700">Ideal pentru evenimente & castinguri</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-pink-400 group-hover:translate-x-0.5 transition flex-shrink-0" />
-            </button>
+            <div className="cp-tiles">
+              {TILES.map(t => (
+                <button key={t.name} className="cp-tile" onClick={() => { setShowSheet(false); router.push(t.href) }}>
+                  <span className="ti" style={{ background: t.bg, color: t.fg }}><t.Icon size={20} /></span>
+                  <b>{t.name}</b>
+                  <span className="bu-sm bu-muted">{t.desc}</span>
+                  {t.note && <span className="bu-chip" style={{ background: '#fff1e6', color: '#9a4206', alignSelf: 'flex-start', height: 22, fontSize: 11 }}>{t.note}</span>}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {/* Confirm Delete Dialog */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 mx-auto">
-              <Trash2 className="w-6 h-6 text-red-500" />
+        <div className="cp-overlay" style={{ alignItems: 'center' }}>
+          <div className="bu-card" style={{ padding: 24, maxWidth: 380, width: '100%', boxShadow: '0 24px 60px -20px rgba(20,18,58,.5)' }}>
+            <div className="bu-ico" style={{ width: 48, height: 48, borderRadius: '50%', background: '#fde8e6', color: '#b42318', margin: '0 auto 14px' }}>
+              <Trash2 size={22} />
             </div>
-            <h3 className="text-lg font-black text-gray-900 text-center mb-2">Ștergi campania?</h3>
-            <p className="text-sm text-gray-500 text-center mb-6">
+            <h3 style={{ textAlign: 'center', marginBottom: 8, fontSize: 19 }}>Ștergi campania?</h3>
+            <p className="bu-sm bu-muted" style={{ textAlign: 'center', margin: '0 0 20px' }}>
               Campania va fi mutată în arhivă și poate fi recuperată în termen de 30 de zile de echipa AddFame.
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition"
-              >
-                Anulează
-              </button>
-              <button
-                onClick={() => handleDelete(confirmDelete)}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition"
-                disabled={!!actionLoading}
-              >
+            <div className="bu-row" style={{ gap: 10 }}>
+              <button onClick={() => setConfirmDelete(null)} className="bu-btn" style={{ flex: 1, height: 46 }}>Anulează</button>
+              <button onClick={() => handleDelete(confirmDelete)} className="bu-btn danger" style={{ flex: 1, height: 46, background: '#b42318', color: '#fff', borderColor: '#b42318' }} disabled={!!actionLoading}>
                 {actionLoading ? '...' : 'Șterge'}
               </button>
             </div>

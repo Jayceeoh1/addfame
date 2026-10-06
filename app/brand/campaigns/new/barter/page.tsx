@@ -92,6 +92,113 @@ interface WizardData {
   deadline?: string
 }
 
+// ─── Stiluri pagină (prefix bz-) ─────────────────────────────────────────────
+
+const BZ_CSS = `
+.bz-layout { display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 22px; align-items: start; }
+.bz-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.bz-side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.bz-stepper { display: flex; align-items: center; gap: 0; padding: 14px 18px; }
+.bz-st { display: flex; align-items: center; flex: 1; min-width: 0; }
+.bz-st:last-child { flex: none; }
+.bz-dot { width: 30px; height: 30px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; background: #f0eff7; color: #6a6690; }
+.bz-dot.cur { background: #5a35e6; color: #fff; box-shadow: 0 0 0 4px rgba(90,53,230,.16); }
+.bz-dot.ok { background: #14123a; color: #fff; }
+.bz-line { flex: 1; height: 2px; margin: 0 6px; background: #e5e3f3; border-radius: 2px; }
+.bz-line.ok { background: #14123a; }
+.bz-badge { width: 32px; height: 32px; flex: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff; background: linear-gradient(135deg,#2f6fe0,#5a35e6); font-family: var(--font-display, system-ui), system-ui, sans-serif; }
+.bz-sec { padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+.bz-sec-h { display: flex; align-items: flex-start; gap: 12px; }
+.bz-sec-h p { margin: 2px 0 0; font-size: 13px; color: #6a6690; }
+.bz-f { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.bz-f > label, .bz-lbl { font-size: 13px; font-weight: 700; color: #14123a; }
+.bz-f > label small, .bz-lbl small { font-weight: 500; color: #8783a8; font-size: 12px; }
+.bz-hint { font-size: 12px; color: #6a6690; margin: 0; }
+.bz-input { width: 100%; height: 46px; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 0 14px; font: inherit; font-size: 14px; background: #fff; color: #14123a; outline: none; box-sizing: border-box; min-width: 0; }
+.bz-input:focus { border-color: #5a35e6; box-shadow: 0 0 0 3px rgba(90,53,230,.1); }
+textarea.bz-input { height: auto; padding: 12px 14px; line-height: 1.5; resize: vertical; }
+.bz-adorn { position: relative; }
+.bz-adorn > span { position: absolute; top: 50%; transform: translateY(-50%); font-size: 13px; font-weight: 800; color: #8783a8; pointer-events: none; }
+.bz-adorn > span.l { left: 14px; } .bz-adorn > span.r { right: 14px; }
+.bz-adorn > input.pl { padding-left: 52px; } .bz-adorn > input.pr { padding-right: 56px; }
+.bz-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bz-opt { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 14px 16px; border-radius: 16px; border: 1.5px solid #e5e3f3; background: #fff; text-align: left; cursor: pointer; font: inherit; color: #14123a; position: relative; transition: border-color .15s, background .15s; box-sizing: border-box; }
+.bz-opt:hover { border-color: #c9b9fb; background: #faf8ff; }
+.bz-opt.on { border-color: #5a35e6; background: #f5f2ff; box-shadow: 0 0 0 3px rgba(90,53,230,.08); }
+.bz-opt.ctr { flex-direction: column; justify-content: center; text-align: center; gap: 4px; }
+.bz-opt b { font-size: 14px; font-weight: 700; display: block; }
+.bz-opt small { font-size: 12px; color: #6a6690; display: block; margin-top: 1px; }
+.bz-tick { margin-left: auto; width: 22px; height: 22px; flex: none; border-radius: 50%; background: #5a35e6; color: #fff; display: flex; align-items: center; justify-content: center; }
+.bz-box { width: 22px; height: 22px; flex: none; border-radius: 7px; border: 2px solid #cfcbe6; display: flex; align-items: center; justify-content: center; color: #fff; background: #fff; }
+.bz-opt.on .bz-box { background: #5a35e6; border-color: #5a35e6; }
+.bz-emoji { font-size: 28px; line-height: 1; flex: none; width: 44px; height: 44px; border-radius: 12px; background: #f0eff7; display: flex; align-items: center; justify-content: center; }
+.bz-opt.on .bz-emoji { background: #efeaff; }
+.bz-task { border: 1.5px solid #e5e3f3; border-radius: 16px; background: #fff; overflow: hidden; }
+.bz-task.on { border-color: #5a35e6; background: #f5f2ff; }
+.bz-task > button { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 12px 16px; background: transparent; border: 0; text-align: left; cursor: pointer; font: inherit; color: #14123a; }
+.bz-task > button b { font-size: 14px; font-weight: 700; display: block; }
+.bz-task > button small { font-size: 12px; color: #6a6690; }
+.bz-task.on .bz-box { background: #5a35e6; border-color: #5a35e6; }
+.bz-task-x { padding: 0 16px 14px 50px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #6a6690; }
+.bz-task-x .bz-input { width: 84px; height: 40px; }
+.bz-plat { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+.bz-plat button { position: relative; min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border-radius: 16px; border: 1.5px solid #e5e3f3; background: #fff; cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; color: #6a6690; padding: 8px 4px; }
+.bz-plat button.on { border-color: #5a35e6; background: #f5f2ff; color: #4423c4; }
+.bz-plat i { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.bz-plat em { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: #16a34a; border: 2px solid #fff; color: #fff; display: flex; align-items: center; justify-content: center; }
+.bz-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.bz-chipb { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid #e5e3f3; background: #fff; color: #4a4770; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.bz-chipb.on { background: #14123a; border-color: #14123a; color: #fff; }
+.bz-sub { background: #f6f6fc; border: 1px solid #eeecf7; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.bz-note { border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.45; }
+.bz-note.green { background: #dcf5ec; color: #14532d; } .bz-note.amber { background: #fff1c2; color: #854d0e; } .bz-note.blue { background: #e6f0ff; color: #1d4fb8; } .bz-note.red { background: #fde8e6; color: #b42318; }
+.bz-note a.bz-lnk { text-decoration: underline; font-weight: 700; color: inherit; }
+.bz-drop { width: 100%; min-height: 190px; border-radius: 18px; border: 2px dashed #cfcbe6; background: #faf9ff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #6a6690; cursor: pointer; font: inherit; padding: 20px; text-align: center; }
+.bz-drop:hover { border-color: #5a35e6; background: #f5f2ff; }
+.bz-thumbs { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.bz-thumb { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid #e5e3f3; aspect-ratio: 1; }
+.bz-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bz-thumb button.x { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(20,18,58,.7); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.bz-thumb .pr { position: absolute; left: 6px; bottom: 6px; font-size: 10px; font-weight: 800; background: #5a35e6; color: #fff; border-radius: 99px; padding: 2px 8px; }
+.bz-thumbs .bz-drop { min-height: 0; aspect-ratio: 1; padding: 6px; gap: 2px; border-radius: 14px; font-size: 11px; }
+.bz-cnt { display: flex; align-items: center; justify-content: center; gap: 22px; }
+.bz-cnt button { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid #5a35e6; background: #fff; color: #5a35e6; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.bz-cnt button:disabled { opacity: .35; cursor: not-allowed; }
+.bz-cnt span { font-family: var(--font-display, system-ui), system-ui, sans-serif; font-size: 36px; font-weight: 800; color: #5a35e6; min-width: 56px; text-align: center; }
+.bz-loc { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1.5px solid #5a35e6; background: #f5f2ff; border-radius: 16px; }
+.bz-link { background: none; border: 0; padding: 8px 0; min-height: 36px; color: #5a35e6; font: inherit; font-size: 13px; font-weight: 700; text-decoration: underline; cursor: pointer; text-align: left; }
+.bz-dd { position: absolute; top: 100%; left: 0; right: 0; z-index: 50; background: #fff; border: 1px solid #e5e3f3; border-radius: 14px; box-shadow: 0 18px 40px -18px rgba(20,18,58,.35); overflow: hidden; margin-top: 4px; }
+.bz-dd button { width: 100%; display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; min-height: 48px; background: #fff; border: 0; border-bottom: 1px solid #f0eff7; text-align: left; cursor: pointer; font: inherit; color: #14123a; }
+.bz-dd button:hover { background: #f7f4ff; }
+.bz-rv h3 { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #8783a8; font-family: inherit; margin-bottom: 4px; }
+.bz-rf { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid #eeecf7; font-size: 14px; }
+.bz-rf:last-child { border-bottom: 0; }
+.bz-rf span:first-child { color: #6a6690; flex: none; } .bz-rf span:last-child { font-weight: 600; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.bz-sum { padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+.bz-sum-fee { margin-top: 10px; border-radius: 16px; padding: 14px 16px; background: #fff1c2; color: #854d0e; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bz-sum-fee b { font-family: var(--font-display, system-ui), system-ui, sans-serif; font-size: 22px; font-weight: 800; white-space: nowrap; }
+.bz-foot { position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 16px; background: rgba(255,255,255,.95); backdrop-filter: blur(8px); border: 1px solid #e5e3f3; border-radius: 18px; box-shadow: 0 -10px 30px -18px rgba(20,18,58,.35); }
+.bz-foot .grp { display: flex; gap: 10px; align-items: center; }
+.bz-foot .bu-btn { height: 46px; }
+.bz-foot .bu-btn.ok { color: #14532d; background: #dcf5ec; border-color: #a7e3cc; }
+.bz-spin { width: 32px; height: 32px; border: 4px solid #e5e3f3; border-top-color: #5a35e6; border-radius: 50%; animation: bzspin .8s linear infinite; }
+@keyframes bzspin { to { transform: rotate(360deg); } }
+@media (max-width: 1023px) { .bz-layout { grid-template-columns: minmax(0,1fr); } .bz-side { display: none; } }
+@media (max-width: 767px) {
+  .bz-sec { padding: 18px 16px; }
+  .bz-stepper { padding: 12px 14px; }
+  .bz-dot { width: 26px; height: 26px; font-size: 11px; }
+  .bz-line { margin: 0 3px; }
+  .bz-grid2 { grid-template-columns: 1fr; }
+  .bz-grid2.keep { grid-template-columns: 1fr 1fr; }
+  .bz-foot { padding: 10px 12px; border-radius: 16px; }
+  .bz-foot .grp { width: 100%; }
+  .bz-foot .grp .bu-btn { flex: 1; }
+  .bz-foot .grp .bu-btn.p { flex: 2; }
+  .bz-plat { gap: 6px; }
+}
+`
+
 // ─── Progress bar ─────────────────────────────────────────────────────────────
 
 const STEPS = [
@@ -106,51 +213,59 @@ const STEPS = [
 ]
 
 function ProgressBar({ current }: { current: number }) {
-
   return (
-    <div className="mb-8">
-      <div className="flex items-center gap-0">
+    <div className="bu-card">
+      <div className="bz-stepper">
         {STEPS.map((s, i) => (
-          <div key={i} className="flex items-center flex-1 last:flex-none">
-            <div className={`
-              w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all
-              ${i < current ? 'bg-primary text-primary-foreground' : i === current ? 'bg-primary text-primary-foreground ring-4 ring-primary/20' : 'bg-muted text-muted-foreground'}
-            `}>
+          <div key={i} className="bz-st">
+            <div className={`bz-dot${i < current ? ' ok' : i === current ? ' cur' : ''}`} title={s.label}>
               {i < current ? <Check className="w-3.5 h-3.5" /> : i + 1}
             </div>
-            {i < STEPS.length - 1 && (
-              <div className={`h-0.5 flex-1 mx-1 transition-all ${i < current ? 'bg-primary' : 'bg-border'}`} />
-            )}
+            {i < STEPS.length - 1 && <div className={`bz-line${i < current ? ' ok' : ''}`} />}
           </div>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground mt-3 text-center font-medium">
-        Pasul {current + 1} din {STEPS.length} — <span className="text-foreground">{STEPS[current]?.label}</span>
+      <div className="bu-bar" style={{ borderRadius: 0 }}><i style={{ width: `${((current + 1) / STEPS.length) * 100}%` }} /></div>
+      <p className="bu-sm bu-muted" style={{ margin: 0, padding: '10px 18px', fontWeight: 600 }}>
+        Pasul {current + 1} din {STEPS.length} — <span style={{ color: '#14123a' }}>{STEPS[current]?.label}</span>
       </p>
     </div>
   )
 }
 
-// ─── Option card ─────────────────────────────────────────────────────────────
+// ─── Section card ────────────────────────────────────────────────────────────
 
-function OptionCard({ selected, onClick, children }: {
-  selected: boolean; onClick: () => void; children: React.ReactNode
+function Section({ badge, title, sub, children }: {
+  badge: React.ReactNode; title: string; sub?: string; children: React.ReactNode
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`
-        w-full p-5 rounded-2xl border-2 text-left transition-all
-        ${selected
-          ? 'border-primary bg-primary/5 shadow-sm'
-          : 'border-border hover:border-primary/40 hover:bg-muted/30'
-        }
-      `}
-    >
+    <section className="bu-card bz-sec">
+      <div className="bz-sec-h">
+        <div className="bz-badge">{badge}</div>
+        <div style={{ minWidth: 0 }}>
+          <h2>{title}</h2>
+          {sub && <p>{sub}</p>}
+        </div>
+      </div>
+      {children}
+    </section>
+  )
+}
+
+// ─── Option card ─────────────────────────────────────────────────────────────
+
+function OptionCard({ selected, onClick, children, center }: {
+  selected: boolean; onClick: () => void; children: React.ReactNode; center?: boolean
+}) {
+  return (
+    <button type="button" onClick={onClick} className={`bz-opt${selected ? ' on' : ''}${center ? ' ctr' : ''}`}>
       {children}
     </button>
   )
+}
+
+function Tick() {
+  return <span className="bz-tick"><Check className="w-3 h-3" /></span>
 }
 
 // ─── Counter ─────────────────────────────────────────────────────────────────
@@ -159,22 +274,12 @@ function Counter({ value, onChange, min = 1, max = 100 }: {
   value: number; onChange: (v: number) => void; min?: number; max?: number
 }) {
   return (
-    <div className="flex items-center justify-center gap-6">
-      <button
-        type="button"
-        onClick={() => onChange(Math.max(min, value - 1))}
-        disabled={value <= min}
-        className="w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
-      >
+    <div className="bz-cnt">
+      <button type="button" aria-label="Scade" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}>
         <Minus className="w-4 h-4" />
       </button>
-      <span className="text-4xl font-black text-primary w-16 text-center">{value}</span>
-      <button
-        type="button"
-        onClick={() => onChange(Math.min(max, value + 1))}
-        disabled={value >= max}
-        className="w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
-      >
+      <span>{value}</span>
+      <button type="button" aria-label="Crește" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}>
         <Plus className="w-4 h-4" />
       </button>
     </div>
@@ -188,26 +293,30 @@ function CheckRow({ checked, onChange, icon: Icon, label, sub }: {
   icon: any; label: string; sub?: string
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={`
-        w-full flex items-center gap-3 p-3.5 rounded-xl border transition text-left
-        ${checked ? 'border-primary/40 bg-primary/5' : 'border-border hover:border-primary/20 hover:bg-muted/20'}
-      `}
-    >
-      <div className={`
-        w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition
-        ${checked ? 'bg-primary border-primary' : 'border-muted-foreground/40'}
-      `}>
-        {checked && <Check className="w-3 h-3 text-white" />}
-      </div>
-      <Icon className="w-4 h-4 text-primary flex-shrink-0" />
+    <button type="button" onClick={() => onChange(!checked)} className={`bz-opt${checked ? ' on' : ''}`}>
+      <span className="bz-box">{checked && <Check className="w-3.5 h-3.5" />}</span>
+      <Icon className="w-4 h-4 flex-shrink-0" style={{ color: '#5a35e6' }} />
       <div>
-        <p className="text-sm font-medium">{label}</p>
-        {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+        <b>{label}</b>
+        {sub && <small>{sub}</small>}
       </div>
     </button>
+  )
+}
+
+// ─── Task tile (platform content type) ───────────────────────────────────────
+
+function TaskTile({ on, onClick, label, desc, children }: {
+  on: boolean; onClick: () => void; label: string; desc?: string; children?: React.ReactNode
+}) {
+  return (
+    <div className={`bz-task${on ? ' on' : ''}`}>
+      <button type="button" onClick={onClick}>
+        <span className="bz-box">{on && <Check className="w-3.5 h-3.5" />}</span>
+        <div style={{ flex: 1, minWidth: 0 }}><b>{label}</b>{desc && <small>{desc}</small>}</div>
+      </button>
+      {children}
+    </div>
   )
 }
 
@@ -248,35 +357,38 @@ function MultiImageUploader({ values, onChange }: { values: string[]; onChange: 
   }, [values, onChange])
 
   return (
-    <div className="space-y-3">
+    <div className="bz-f">
       {values.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="bz-thumbs">
           {values.map((url, idx) => (
-            <div key={idx} className="relative rounded-xl overflow-hidden border border-border aspect-square">
-              <img src={url} alt={`Imagine ${idx + 1}`} className="w-full h-full object-cover" />
-              <button type="button" onClick={() => onChange(values.filter((_, i) => i !== idx))}
-                className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-black/80 transition">
-                <X className="w-3 h-3" />
+            <div key={idx} className="bz-thumb">
+              <img src={url} alt={`Imagine ${idx + 1}`} />
+              <button type="button" className="x" aria-label="Șterge imaginea" onClick={() => onChange(values.filter((_, i) => i !== idx))}>
+                <X className="w-3.5 h-3.5" />
               </button>
-              {idx === 0 && <span className="absolute bottom-1.5 left-1.5 text-[10px] font-black bg-violet-600 text-white px-1.5 py-0.5 rounded-full">Principală</span>}
+              {idx === 0 && <span className="pr">Principală</span>}
             </div>
           ))}
           {values.length < 5 && (
-            <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
-              className="aspect-square rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/20 transition flex flex-col items-center justify-center gap-1 text-muted-foreground">
-              {uploading ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : <><Plus className="w-5 h-5" /><span className="text-[10px] font-medium">{5 - values.length} rămase</span></>}
+            <button type="button" className="bz-drop" onClick={() => inputRef.current?.click()} disabled={uploading}>
+              {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#5a35e6' }} /> : <><Plus className="w-5 h-5" /><span style={{ fontWeight: 700 }}>{5 - values.length} rămase</span></>}
             </button>
           )}
         </div>
       )}
       {values.length === 0 && (
-        <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
-          className="w-full h-48 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/20 transition flex flex-col items-center justify-center gap-3 text-muted-foreground">
-          {uploading ? <Loader2 className="w-8 h-8 animate-spin text-primary" /> : <><Upload className="w-8 h-8" /><p className="text-sm font-medium">Click pentru upload</p><p className="text-xs">JPG, PNG · max 5MB · până la 5 imagini</p></>}
+        <button type="button" className="bz-drop" onClick={() => inputRef.current?.click()} disabled={uploading}>
+          {uploading
+            ? <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#5a35e6' }} />
+            : <>
+                <span className="bu-ico" style={{ background: '#efeaff', color: '#4423c4' }}><Upload className="w-5 h-5" /></span>
+                <b style={{ color: '#14123a', fontSize: 14 }}>Apasă pentru a încărca imagini</b>
+                <span className="bu-xs">JPG, PNG · max 5MB · până la 5 imagini</span>
+              </>}
         </button>
       )}
-      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
-      <p className="text-xs text-muted-foreground">{values.length}/5 imagini · Prima imagine va fi cea principală</p>
+      {error && <p className="bz-hint" style={{ color: '#b42318', fontWeight: 600 }}>{error}</p>}
+      <p className="bz-hint">{values.length}/5 imagini · Prima imagine va fi cea principală</p>
       <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
         onChange={e => { if (e.target.files?.length) handleFiles(e.target.files); e.target.value = '' }} />
     </div>
@@ -376,23 +488,21 @@ function LocationPicker({ name, address, onSelect }: {
   // Dacă avem deja o locație selectată, afișăm preview + buton schimbare
   if (name && address && !manualMode) {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-primary bg-primary/5">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <MapPin className="w-4 h-4 text-primary" />
+      <div className="bz-f">
+        <div className="bz-loc">
+          <span className="bu-ico" style={{ background: '#efeaff', color: '#4423c4', width: 36, height: 36 }}>
+            <MapPin className="w-4 h-4" />
+          </span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: 14 }} className="truncate">{name}</p>
+            <p className="bz-hint truncate">{address}</p>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-bold text-sm truncate">{name}</p>
-            <p className="text-xs text-muted-foreground truncate">{address}</p>
-          </div>
-          <div className="ml-auto w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-            <Check className="w-3 h-3 text-white" />
-          </div>
+          <Tick />
         </div>
         <button
           type="button"
           onClick={() => { setQuery(''); onSelect('', ''); setShowResults(false) }}
-          className="text-xs text-primary underline"
+          className="bz-link"
         >
           Schimbă locația
         </button>
@@ -402,10 +512,10 @@ function LocationPicker({ name, address, onSelect }: {
 
   if (manualMode) {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-xs font-bold text-muted-foreground">Completează manual</p>
-          <button type="button" onClick={() => setManualMode(false)} className="text-xs text-primary underline">
+      <div className="bz-f" style={{ gap: 12 }}>
+        <div className="bu-row" style={{ justifyContent: 'space-between' }}>
+          <p className="bz-lbl" style={{ margin: 0 }}>Completează manual</p>
+          <button type="button" onClick={() => setManualMode(false)} className="bz-link">
             ← Înapoi la căutare
           </button>
         </div>
@@ -414,21 +524,21 @@ function LocationPicker({ name, address, onSelect }: {
           placeholder="Numele locației (ex. Salon TopFace)"
           value={manualName}
           onChange={e => setManualName(e.target.value)}
-          className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="bz-input"
         />
         <input
           type="text"
           placeholder="Adresa completă (ex. Str. Națională nr. 5, Iași)"
           value={manualAddress}
           onChange={e => setManualAddress(e.target.value)}
-          className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="bz-input"
         />
         <button
           type="button"
           onClick={handleManualSave}
           disabled={!manualName.trim() || !manualAddress.trim()}
-          className="w-full py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition"
-          style={{ background: 'linear-gradient(135deg, #2f6fe0, #5a35e6)' }}
+          className="bu-btn p big"
+          style={{ width: '100%' }}
         >
           Confirmă locația
         </button>
@@ -437,35 +547,33 @@ function LocationPicker({ name, address, onSelect }: {
   }
 
   return (
-    <div ref={wrapperRef} className="relative space-y-2">
+    <div ref={wrapperRef} className="bz-f" style={{ position: 'relative' }}>
       {/* Search input */}
-      <div className="relative">
-        <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      <div className="bu-search">
+        <MapPin className="w-4 h-4 flex-shrink-0" />
         <input
           type="text"
           placeholder="Caută afacerea ta (ex. Salon TopFace Iași)..."
           value={query}
           onChange={e => handleQueryChange(e.target.value)}
           onFocus={() => results.length > 0 && setShowResults(true)}
-          className="w-full pl-10 pr-10 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
-        {searching && (
-          <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-        )}
+        {searching && <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />}
         {query && !searching && (
           <button
             type="button"
+            aria-label="Șterge"
             onClick={() => { setQuery(''); setResults([]); setShowResults(false) }}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2"
+            style={{ background: 'none', border: 0, padding: 8, margin: -8, cursor: 'pointer', color: 'inherit', display: 'flex' }}
           >
-            <X className="w-4 h-4 text-muted-foreground" />
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
       {/* Results dropdown */}
       {showResults && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-xl shadow-lg overflow-hidden mt-1">
+        <div className="bz-dd" style={{ top: 48 }}>
           {results.map(r => {
             const a = r.address
             const city = a.city || a.town || a.village || ''
@@ -475,12 +583,11 @@ function LocationPicker({ name, address, onSelect }: {
                 key={r.place_id}
                 type="button"
                 onClick={() => handleSelect(r)}
-                className="w-full flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition text-left border-b border-border last:border-0"
               >
-                <MapPin className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#5a35e6' }} />
                 <div className="min-w-0">
-                  <p className="text-sm font-bold truncate">{r.name || street || r.display_name.split(',')[0]}</p>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 14 }} className="truncate">{r.name || street || r.display_name.split(',')[0]}</p>
+                  <p className="bz-hint truncate">
                     {[street, city].filter(Boolean).join(', ') || r.display_name.split(',').slice(0, 3).join(',')}
                   </p>
                 </div>
@@ -495,13 +602,13 @@ function LocationPicker({ name, address, onSelect }: {
         <button
           type="button"
           onClick={() => { setManualMode(true); setManualName(query); setShowResults(false) }}
-          className="text-xs text-primary underline"
+          className="bz-link"
         >
           Nu găsesc afacerea mea → completez manual
         </button>
       )}
 
-      <p className="text-xs text-muted-foreground">
+      <p className="bz-hint">
         Powered by OpenStreetMap · caută în română pentru rezultate mai bune
       </p>
     </div>
@@ -512,9 +619,9 @@ function LocationPicker({ name, address, onSelect }: {
 
 function ReviewField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-start py-3 border-b border-border last:border-0">
-      <span className="text-sm text-muted-foreground flex-shrink-0 mr-4">{label}</span>
-      <span className="text-sm font-medium text-right">{value}</span>
+    <div className="bz-rf">
+      <span>{label}</span>
+      <span>{value}</span>
     </div>
   )
 }
@@ -581,7 +688,7 @@ const INITIAL: WizardData = {
 
 export default function BarterCampaignWizard() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-violet-200 border-t-violet-500 rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<div className="bu" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><style>{BZ_CSS}</style><div className="bz-spin" /></div>}>
       <BarterCampaignWizardContent />
     </Suspense>
   )
@@ -943,9 +1050,10 @@ function BarterCampaignWizardContent() {
   // ── Done screen ────────────────────────────────────────────────────────────
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="text-center max-w-sm">
-          <div className="w-24 h-24 mx-auto mb-6 relative">
+      <div className="bu" style={{ minHeight: '70vh', justifyContent: 'center', alignItems: 'center' }}>
+        <style>{BZ_CSS}</style>
+        <div className="bu-card" style={{ padding: 32, maxWidth: 440, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 88, height: 88 }}>
             {/* Hourglass SVG */}
             <svg viewBox="0 0 96 120" className="w-full h-full">
               <rect x="12" y="4" width="72" height="16" rx="6" fill="#9FE1CB" />
@@ -955,15 +1063,15 @@ function BarterCampaignWizardContent() {
               <circle cx="48" cy="60" r="9" fill="#1D9E75" />
             </svg>
           </div>
-          <h1 className="text-2xl font-black mb-2">Oferta ta e în review!</h1>
-          <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
+          <h1 style={{ fontSize: 26 }}>Oferta ta e în review!</h1>
+          <p className="bu-muted" style={{ margin: 0, lineHeight: 1.6 }}>
             Echipa AddFame verifică campania înainte de a o face vizibilă influencerilor locali.
             Vei primi o notificare când e aprobată.
           </p>
           <button
             onClick={() => router.push('/brand/campaigns')}
-            className="w-full py-3.5 rounded-2xl font-bold text-white text-sm"
-            style={{ background: 'linear-gradient(135deg, #2f6fe0, #5a35e6)' }}
+            className="bu-btn p big"
+            style={{ width: '100%', marginTop: 8 }}
           >
             Văd campaniile mele
           </button>
@@ -973,278 +1081,237 @@ function BarterCampaignWizardContent() {
   }
 
   const offerLabel = data.offer_type === 'product' ? 'Produs' : 'Serviciu'
+  const activePlatforms = platformTabs.filter(p => p.active).map(p => p.label)
+  const feeTotal = feeInfo ? data.offer_count * feeInfo.price : null
+  const ronFmt = (n: number) => `${n.toLocaleString('ro-RO')} RON`
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-lg mx-auto px-4 py-6 pb-32">
+    <div className="bu">
+      <style>{BZ_CSS}</style>
 
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+      {/* Header */}
+      <div className="bu-head">
+        <div className="bu-row" style={{ gap: 14 }}>
           <button
             type="button"
+            aria-label="Înapoi"
             onClick={step === 0 ? () => router.back() : back}
-            className="w-9 h-9 rounded-xl border border-border flex items-center justify-center hover:bg-muted/50 transition"
+            className="bu-btn"
+            style={{ width: 44, height: 44, padding: 0 }}
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="font-black text-lg">Campanie Barter</h1>
-            <p className="text-xs text-muted-foreground">Ofertă gratuită pentru influenceri locali</p>
+            <p className="bu-label" style={{ margin: 0 }}>Campanie nouă</p>
+            <h1>Campanie Barter</h1>
+            <p className="bu-muted bu-sm" style={{ margin: '4px 0 0' }}>Ofertă gratuită pentru influenceri locali</p>
           </div>
         </div>
+      </div>
 
-        <ProgressBar current={step} />
+      <ProgressBar current={step} />
 
-        {savedDraftNotice && (
-          <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-5">
-            <p className="text-sm font-black text-amber-800 mb-1">💾 Campania a fost salvată ca draft</p>
-            <p className="text-xs text-amber-700 leading-relaxed mb-3">{savedDraftNotice}</p>
-            <div className="flex flex-wrap gap-2">
-              <a href="/brand/wallet" className="px-4 py-2 rounded-xl text-xs font-black text-white" style={{ background: 'linear-gradient(135deg, #2f6fe0, #5a35e6)' }}>
-                Adaugă credite
-              </a>
-              <a href="/brand/campaigns" className="px-4 py-2 rounded-xl text-xs font-bold border-2 border-amber-300 text-amber-800 bg-white">
-                Vezi campaniile mele
-              </a>
-            </div>
+      {savedDraftNotice && (
+        <div className="bz-note amber" style={{ flexDirection: 'column', padding: 16 }}>
+          <b style={{ fontSize: 14 }}>💾 Campania a fost salvată ca draft</b>
+          <span>{savedDraftNotice}</span>
+          <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <a href="/brand/wallet" className="bu-btn p">Adaugă credite</a>
+            <a href="/brand/campaigns" className="bu-btn">Vezi campaniile mele</a>
           </div>
-        )}
+        </div>
+      )}
 
-        {error && (
-          <div className="flex items-start gap-3 bg-destructive/10 border border-destructive/20 rounded-xl p-4 mb-5">
-            <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-destructive">{error}</p>
-          </div>
-        )}
+      {error && (
+        <div className="bz-note red" role="alert">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span style={{ fontWeight: 600 }}>{error}</span>
+        </div>
+      )}
+
+      <div className="bz-layout">
+        <div className="bz-main">
 
         {/* ── STEP 0: Tip ofertă ──────────────────────────────────── */}
         {step === 0 && (
-          <div>
-            <h2 className="text-xl font-black mb-1">Ce oferi gratuit influencerilor locali?</h2>
-            <p className="text-sm text-muted-foreground mb-6">Alege tipul ofertei tale</p>
-            <div className="space-y-3">
+          <Section badge={1} title="Ce oferi gratuit influencerilor locali?" sub="Alege tipul ofertei tale">
+            <div className="bz-f" style={{ gap: 12 }}>
               <OptionCard selected={data.offer_type === 'product'} onClick={() => set({ offer_type: 'product' })}>
-                <div className="flex items-start gap-4">
-                  <div className="text-3xl">🍕</div>
-                  <div>
-                    <p className="font-black text-base mb-0.5">Free Product</p>
-                    <p className="text-sm text-muted-foreground">cafea, pizza, burger, cocktail, etc.</p>
-                  </div>
-                  {data.offer_type === 'product' && (
-                    <div className="ml-auto w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  )}
+                <span className="bz-emoji">🍕</span>
+                <div>
+                  <b style={{ fontSize: 16 }}>Free Product</b>
+                  <small>cafea, pizza, burger, cocktail, etc.</small>
                 </div>
+                {data.offer_type === 'product' && <Tick />}
               </OptionCard>
               <OptionCard selected={data.offer_type === 'service'} onClick={() => set({ offer_type: 'service' })}>
-                <div className="flex items-start gap-4">
-                  <div className="text-3xl">✂️</div>
-                  <div>
-                    <p className="font-black text-base mb-0.5">Free Service</p>
-                    <p className="text-sm text-muted-foreground">gym, frizerie, salon de înfrumusețare, etc.</p>
-                  </div>
-                  {data.offer_type === 'service' && (
-                    <div className="ml-auto w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  )}
+                <span className="bz-emoji">✂️</span>
+                <div>
+                  <b style={{ fontSize: 16 }}>Free Service</b>
+                  <small>gym, frizerie, salon de înfrumusețare, etc.</small>
                 </div>
+                {data.offer_type === 'service' && <Tick />}
               </OptionCard>
             </div>
-          </div>
+          </Section>
         )}
 
         {/* ── STEP 1: Name & Value ────────────────────────────────── */}
         {step === 1 && (
-          <div>
-            <h2 className="text-xl font-black mb-1">Ce {offerLabel.toLowerCase()} oferi?</h2>
-            <p className="text-sm text-muted-foreground mb-6">Completează detaliile ofertei</p>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold mb-2">
-                  Numele {data.offer_type === 'product' ? 'produsului' : 'serviciului'} *
-                </label>
-                <input
-                  type="text"
-                  placeholder={data.offer_type === 'product' ? 'ex. Meniu Dublu Quesadilla' : 'ex. Abonament sala lunar'}
-                  value={data.offer_name}
-                  onChange={e => set({ offer_name: e.target.value })}
-                  maxLength={100}
-                  className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold mb-2">
-                  Valoarea {data.offer_type === 'product' ? 'produsului' : 'serviciului'} (RON) *
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">RON</span>
-                  <input
-                    type="number"
-                    placeholder="ex: 200"
-                    value={data.offer_value}
-                    onChange={e => set({ offer_value: e.target.value })}
-                    min="1"
-                    className="w-full pl-14 pr-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
-                  />
-                </div>
-                {data.offer_value && !(parseFloat(data.offer_value) > 0) && (
-                  <p className="text-xs text-red-500 font-bold mt-1">Introdu o valoare numerică (ex: 200). Nu se acceptă intervale.</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-bold mb-2">
-                  Descriere <span className="font-normal text-muted-foreground">(opțional)</span>
-                </label>
-                <textarea
-                  placeholder={`ex. ${data.offer_type === 'product' ? 'One of the best quesadilla in town 🌮' : 'Timp de 30 de zile ești invitatul nostru 😊'}`}
-                  value={data.offer_description}
-                  onChange={e => set({ offer_description: e.target.value })}
-                  rows={8}
-                  maxLength={1000}
-                  className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
-                />
-              </div>
-
-              <div className="pt-2">
-                <p className="text-sm font-bold mb-3">Influencerul trebuie să sune pentru rezervare?</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <OptionCard selected={!data.reservation_required} onClick={() => set({ reservation_required: false })}>
-                    <div className="text-center">
-                      <p className="font-bold text-sm">Nu, nu e nevoie</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Vine direct</p>
-                    </div>
-                  </OptionCard>
-                  <OptionCard selected={data.reservation_required} onClick={() => set({ reservation_required: true })}>
-                    <div className="text-center">
-                      <p className="font-bold text-sm">Da, sună întâi</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Rezervare necesară</p>
-                    </div>
-                  </OptionCard>
-                </div>
-              </div>
-
-              {/* Durata campaniei */}
-              <div className="pt-2">
-                <p className="text-sm font-bold mb-1">Durata campaniei *</p>
-                <p className="text-xs text-muted-foreground mb-3">Câte zile rulează campania de la aprobare</p>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="7"
-                    max="365"
-                    placeholder="ex. 30"
-                    value={data.duration_days || ''}
-                    onChange={e => {
-                      const days = parseInt(e.target.value)
-                      if (days > 0) {
-                        const deadline = new Date(Date.now() + days * 86400000).toISOString().split('T')[0]
-                        set({ duration_days: days, deadline })
-                      } else {
-                        set({ duration_days: undefined, deadline: '' })
-                      }
-                    }}
-                    className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 pr-16"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">zile</span>
-                </div>
-                {/* Sugestii rapide */}
-                <div className="flex gap-2 mt-2">
-                  {[14, 30, 60, 90].map(d => (
-                    <button key={d} type="button"
-                      onClick={() => {
-                        const deadline = new Date(Date.now() + d * 86400000).toISOString().split('T')[0]
-                        set({ duration_days: d, deadline })
-                      }}
-                      className={`text-xs px-3 py-1.5 rounded-full border font-bold transition ${data.duration_days === d ? 'bg-primary text-white border-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}>
-                      {d} zile
-                    </button>
-                  ))}
-                </div>
-                {data.deadline && (
-                  <p className="text-xs text-primary font-bold mt-2">
-                    ✓ Campania se încheie pe {new Date(data.deadline).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </p>
-                )}
-              </div>
-
+          <Section badge={2} title={`Ce ${offerLabel.toLowerCase()} oferi?`} sub="Completează detaliile ofertei">
+            <div className="bz-f">
+              <label>Numele {data.offer_type === 'product' ? 'produsului' : 'serviciului'} *</label>
+              <input
+                type="text"
+                placeholder={data.offer_type === 'product' ? 'ex. Meniu Dublu Quesadilla' : 'ex. Abonament sala lunar'}
+                value={data.offer_name}
+                onChange={e => set({ offer_name: e.target.value })}
+                maxLength={100}
+                className="bz-input"
+              />
             </div>
-          </div>
+            <div className="bz-f">
+              <label>Valoarea {data.offer_type === 'product' ? 'produsului' : 'serviciului'} (RON) *</label>
+              <div className="bz-adorn">
+                <span className="l">RON</span>
+                <input
+                  type="number"
+                  placeholder="ex: 200"
+                  value={data.offer_value}
+                  onChange={e => set({ offer_value: e.target.value })}
+                  min="1"
+                  className="bz-input pl"
+                />
+              </div>
+              {data.offer_value && !(parseFloat(data.offer_value) > 0) && (
+                <p className="bz-hint" style={{ color: '#b42318', fontWeight: 700 }}>Introdu o valoare numerică (ex: 200). Nu se acceptă intervale.</p>
+              )}
+            </div>
+            <div className="bz-f">
+              <label>Descriere <small>(opțional)</small></label>
+              <textarea
+                placeholder={`ex. ${data.offer_type === 'product' ? 'One of the best quesadilla in town 🌮' : 'Timp de 30 de zile ești invitatul nostru 😊'}`}
+                value={data.offer_description}
+                onChange={e => set({ offer_description: e.target.value })}
+                rows={6}
+                maxLength={1000}
+                className="bz-input"
+              />
+            </div>
+
+            <div className="bz-f">
+              <p className="bz-lbl" style={{ margin: 0 }}>Influencerul trebuie să sune pentru rezervare?</p>
+              <div className="bz-grid2 keep">
+                <OptionCard center selected={!data.reservation_required} onClick={() => set({ reservation_required: false })}>
+                  <b>Nu, nu e nevoie</b>
+                  <small>Vine direct</small>
+                </OptionCard>
+                <OptionCard center selected={data.reservation_required} onClick={() => set({ reservation_required: true })}>
+                  <b>Da, sună întâi</b>
+                  <small>Rezervare necesară</small>
+                </OptionCard>
+              </div>
+            </div>
+
+            {/* Durata campaniei */}
+            <div className="bz-f">
+              <p className="bz-lbl" style={{ margin: 0 }}>Durata campaniei *</p>
+              <p className="bz-hint">Câte zile rulează campania de la aprobare</p>
+              <div className="bz-adorn">
+                <input
+                  type="number"
+                  min="7"
+                  max="365"
+                  placeholder="ex. 30"
+                  value={data.duration_days || ''}
+                  onChange={e => {
+                    const days = parseInt(e.target.value)
+                    if (days > 0) {
+                      const deadline = new Date(Date.now() + days * 86400000).toISOString().split('T')[0]
+                      set({ duration_days: days, deadline })
+                    } else {
+                      set({ duration_days: undefined, deadline: '' })
+                    }
+                  }}
+                  className="bz-input pr"
+                />
+                <span className="r">zile</span>
+              </div>
+              {/* Sugestii rapide */}
+              <div className="bz-chips">
+                {[14, 30, 60, 90].map(d => (
+                  <button key={d} type="button"
+                    onClick={() => {
+                      const deadline = new Date(Date.now() + d * 86400000).toISOString().split('T')[0]
+                      set({ duration_days: d, deadline })
+                    }}
+                    className={`bz-chipb${data.duration_days === d ? ' on' : ''}`}>
+                    {d} zile
+                  </button>
+                ))}
+              </div>
+              {data.deadline && (
+                <p className="bz-hint" style={{ color: '#14532d', fontWeight: 700 }}>
+                  ✓ Campania se încheie pe {new Date(data.deadline).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              )}
+            </div>
+          </Section>
         )}
 
         {/* ── STEP 2: Photo & Number ──────────────────────────────── */}
         {step === 2 && (
-          <div>
-            <h2 className="text-xl font-black mb-1">Foto & număr de influenceri</h2>
-            <p className="text-sm text-muted-foreground mb-6">Adaugă o imagine și setează câți primesc oferta</p>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold mb-3">
-                  Imaginea {data.offer_type === 'product' ? 'produsului' : 'serviciului'}
-                </label>
+          <>
+            <Section badge={3} title="Imagini" sub="Adaugă imagini cu oferta ta (opțional)">
+              <div className="bz-f">
+                <label>Imaginea {data.offer_type === 'product' ? 'produsului' : 'serviciului'}</label>
                 <MultiImageUploader values={data.offer_image_urls} onChange={urls => set({ offer_image_urls: urls })} />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground text-center mb-3">Odată atins numărul, oferta se închide automat</p>
-                <InfluencerSlotsSelector
-                  value={data.offer_count}
-                  onChange={v => set({ offer_count: v })}
-                  min={1}
-                  max={500}
-                  label={`La câți influenceri vrei să dai ${data.offer_type === 'product' ? 'acest produs' : 'acest serviciu'} gratuit?`}
-                  onInfo={setFeeInfo}
-                />
-              </div>
-            </div>
-          </div>
+            </Section>
+            <Section badge={<Users className="w-4 h-4" />} title="Număr de influenceri" sub="Odată atins numărul, oferta se închide automat">
+              <InfluencerSlotsSelector
+                value={data.offer_count}
+                onChange={v => set({ offer_count: v })}
+                min={1}
+                max={500}
+                label={`La câți influenceri vrei să dai ${data.offer_type === 'product' ? 'acest produs' : 'acest serviciu'} gratuit?`}
+                onInfo={setFeeInfo}
+              />
+            </Section>
+          </>
         )}
 
         {/* ── STEP 3: Location ────────────────────────────────────── */}
         {step === 3 && (
-          <div>
-            <h2 className="text-xl font-black mb-1">Cum va primi influencerul oferta?</h2>
-            <p className="text-sm text-muted-foreground mb-6">Alege modul de livrare</p>
-            <div className="space-y-3 mb-6">
+          <Section badge={4} title="Cum va primi influencerul oferta?" sub="Alege modul de livrare">
+            <div className="bz-f" style={{ gap: 12 }}>
               <OptionCard
                 selected={data.delivery_method === 'delivery'}
                 onClick={() => set({ delivery_method: 'delivery' })}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🚚</span>
-                  <div>
-                    <p className="font-black text-sm">Livrare la domiciliul influencerului</p>
-                    <p className="text-xs text-muted-foreground">Tu trimiți produsul la adresa lor</p>
-                  </div>
-                  {data.delivery_method === 'delivery' && (
-                    <div className="ml-auto w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  )}
+                <span className="bz-emoji">🚚</span>
+                <div>
+                  <b>Livrare la domiciliul influencerului</b>
+                  <small>Tu trimiți produsul la adresa lor</small>
                 </div>
+                {data.delivery_method === 'delivery' && <Tick />}
               </OptionCard>
               <OptionCard
                 selected={data.delivery_method === 'pickup'}
                 onClick={() => { set({ delivery_method: 'pickup' }); loadBrandLocations() }}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">📍</span>
-                  <div>
-                    <p className="font-black text-sm">Ridicare personală din locația noastră</p>
-                    <p className="text-xs text-muted-foreground">Influencerul vine la tine</p>
-                  </div>
-                  {data.delivery_method === 'pickup' && (
-                    <div className="ml-auto w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  )}
+                <span className="bz-emoji">📍</span>
+                <div>
+                  <b>Ridicare personală din locația noastră</b>
+                  <small>Influencerul vine la tine</small>
                 </div>
+                {data.delivery_method === 'pickup' && <Tick />}
               </OptionCard>
             </div>
 
             {data.delivery_method === 'pickup' && (
-              <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-4">
-                <p className="text-sm font-bold">De unde va ridica influencerul oferta?</p>
+              <div className="bz-f animate-in fade-in slide-in-from-bottom-2 duration-200" style={{ gap: 12 }}>
+                <p className="bz-lbl" style={{ margin: 0 }}>De unde va ridica influencerul oferta?</p>
                 <LocationPicker
                   name={data.pickup_location_name}
                   address={data.pickup_location_address}
@@ -1252,15 +1319,13 @@ function BarterCampaignWizardContent() {
                 />
               </div>
             )}
-          </div>
+          </Section>
         )}
 
         {/* ── STEP 4: Details / Brief ─────────────────────────────── */}
         {step === 4 && (
-          <div>
-            <h2 className="text-xl font-black mb-1">Ce vrei să includă influencerul în stories?</h2>
-            <p className="text-sm text-muted-foreground mb-6">Brief-ul campaniei</p>
-            <div className="space-y-2.5 mb-5">
+          <Section badge={5} title="Ce vrei să includă influencerul în stories?" sub="Brief-ul campaniei">
+            <div className="bz-f" style={{ gap: 10 }}>
               <CheckRow
                 checked={data.story_include_instagram}
                 onChange={v => set({ story_include_instagram: v })}
@@ -1284,69 +1349,53 @@ function BarterCampaignWizardContent() {
               />
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-bold mb-2">
-                Instrucțiuni suplimentare <span className="font-normal text-muted-foreground">(opțional)</span>
-              </label>
+            <div className="bz-f">
+              <label>Instrucțiuni suplimentare <small>(opțional)</small></label>
               <textarea
                 placeholder="ex. Vreau să vorbești despre site-ul nostru, să menționezi că avem reducere 20% săptămâna asta..."
                 value={data.story_instructions}
                 onChange={e => set({ story_instructions: e.target.value })}
-                rows={8}
+                rows={6}
                 maxLength={2000}
-                className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+                className="bz-input"
               />
             </div>
 
-            <div>
-              <p className="text-sm font-bold mb-3">Influencerii pot accepta oferta imediat?</p>
-              <div className="grid grid-cols-2 gap-3">
-                <OptionCard selected={data.auto_accept_influencers} onClick={() => set({ auto_accept_influencers: true })}>
-                  <div className="text-center">
-                    <div className="text-xl mb-1">👍</div>
-                    <p className="font-bold text-sm">Da, sigur!</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Accept automat toți</p>
-                  </div>
+            <div className="bz-f">
+              <p className="bz-lbl" style={{ margin: 0 }}>Influencerii pot accepta oferta imediat?</p>
+              <div className="bz-grid2 keep">
+                <OptionCard center selected={data.auto_accept_influencers} onClick={() => set({ auto_accept_influencers: true })}>
+                  <span style={{ fontSize: 22 }}>👍</span>
+                  <b>Da, sigur!</b>
+                  <small>Accept automat toți</small>
                 </OptionCard>
-                <OptionCard selected={!data.auto_accept_influencers} onClick={() => set({ auto_accept_influencers: false })}>
-                  <div className="text-center">
-                    <div className="text-xl mb-1">👎</div>
-                    <p className="font-bold text-sm">Nu, verific eu</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Aprob manual fiecare</p>
-                  </div>
+                <OptionCard center selected={!data.auto_accept_influencers} onClick={() => set({ auto_accept_influencers: false })}>
+                  <span style={{ fontSize: 22 }}>👎</span>
+                  <b>Nu, verific eu</b>
+                  <small>Aprob manual fiecare</small>
                 </OptionCard>
               </div>
             </div>
-          </div>
+          </Section>
         )}
 
         {/* ── STEP 5: Tasks ───────────────────────────────────────── */}
-        {/* ── STEP 5: Tasks ───────────────────────────────────────── */}
         {step === 5 && (
-          <div>
-            <h2 className="text-xl font-black mb-1">Ce trebuie să creeze influencerul?</h2>
-            <p className="text-sm text-muted-foreground mb-5">Selectează platforma și tipul de conținut</p>
-
+          <Section badge={6} title="Ce trebuie să creeze influencerul?" sub="Selectează platforma și tipul de conținut">
             {/* Tab-uri platforme */}
-            <div className="grid grid-cols-4 gap-2 mb-5">
+            <div className="bz-plat">
               {platformTabs.map(p => (
                 <button key={p.id} type="button"
                   onClick={() => setActiveTab(p.id)}
-                  className={`relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border-2 transition ${activeTab === p.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}>
-                  {p.active && (
-                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-green-500 rounded-full border-2 border-background flex items-center justify-center">
-                      <Check className="w-2 h-2 text-white" />
-                    </span>
-                  )}
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: p.bg }}>
-                    {p.icon}
-                  </div>
-                  <span className={`text-[11px] font-black ${activeTab === p.id ? 'text-primary' : 'text-muted-foreground'}`}>{p.label}</span>
+                  className={activeTab === p.id ? 'on' : ''}>
+                  {p.active && <em><Check className="w-2.5 h-2.5" /></em>}
+                  <i style={{ background: p.bg }}>{p.icon}</i>
+                  <span>{p.label}</span>
                 </button>
               ))}
             </div>
 
-            <div className="space-y-3">
+            <div className="bz-f" style={{ gap: 10 }}>
 
               {/* ── INSTAGRAM ── */}
               {activeTab === 'instagram' && (<>
@@ -1355,44 +1404,38 @@ function BarterCampaignWizardContent() {
                   { key: 'tasks_ig_reel', label: 'Instagram Reel', desc: 'Video scurt în feed', duration: 'tasks_ig_reel_duration', durationLabel: 'sec. minim' },
                   { key: 'tasks_ig_post', label: 'Post Feed (foto/carousel)', desc: 'Postare permanentă în feed' },
                   { key: 'tasks_ig_live', label: 'Instagram Live', desc: 'Live stream cu brandul' },
-                ].map(task => (
-                  <div key={task.key} className={`w-full border-2 rounded-2xl overflow-hidden transition ${
-                    (task.counter ? data.tasks_stories_count > 0 : (data as any)[task.key])
-                      ? 'border-primary bg-primary/5' : 'border-border'}`}>
-                    <button type="button" className="w-full flex items-center gap-3 p-4 text-left"
+                ].map(task => {
+                  const on = task.counter ? data.tasks_stories_count > 0 : (data as any)[task.key]
+                  return (
+                    <TaskTile key={task.key} on={!!on} label={task.label} desc={task.desc}
                       onClick={() => task.counter
                         ? set({ tasks_stories_count: data.tasks_stories_count > 0 ? 0 : 2 })
                         : set({ [task.key]: !(data as any)[task.key] } as any)}>
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${
-                        (task.counter ? data.tasks_stories_count > 0 : (data as any)[task.key]) ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
-                        {(task.counter ? data.tasks_stories_count > 0 : (data as any)[task.key]) && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                      <div className="flex-1"><p className="font-bold text-sm">{task.label}</p><p className="text-xs text-muted-foreground">{task.desc}</p></div>
-                    </button>
-                    {task.counter && data.tasks_stories_count > 0 && (
-                      <div className="px-4 pb-4">
-                        <p className="text-xs text-muted-foreground mb-3 text-center">Câte stories?</p>
-                        <Counter value={data.tasks_stories_count} onChange={v => set({ tasks_stories_count: v })} min={1} max={10} />
-                      </div>
-                    )}
-                    {task.duration && (data as any)[task.key] && (
-                      <div className="px-4 pb-3 flex items-center gap-3">
-                        <label className="text-xs text-muted-foreground whitespace-nowrap">{task.durationLabel}</label>
-                        <input type="number" min="5" value={(data as any)[task.duration]}
-                          onChange={e => set({ [task.duration!]: parseInt(e.target.value) || 0 } as any)}
-                          className="w-20 px-2 py-1.5 text-sm border border-input rounded-xl" />
-                        <span className="text-xs text-muted-foreground">secunde</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <div className="bg-muted/40 rounded-2xl p-4">
-                  <p className="text-xs font-bold text-muted-foreground mb-2">Postarea rămâne online minim</p>
-                  <div className="flex gap-2 flex-wrap">
+                      {task.counter && data.tasks_stories_count > 0 && (
+                        <div style={{ padding: '0 16px 16px' }}>
+                          <p className="bz-hint" style={{ textAlign: 'center', marginBottom: 10 }}>Câte stories?</p>
+                          <Counter value={data.tasks_stories_count} onChange={v => set({ tasks_stories_count: v })} min={1} max={10} />
+                        </div>
+                      )}
+                      {task.duration && (data as any)[task.key] && (
+                        <div className="bz-task-x">
+                          <span>{task.durationLabel}</span>
+                          <input type="number" min="5" value={(data as any)[task.duration]}
+                            onChange={e => set({ [task.duration!]: parseInt(e.target.value) || 0 } as any)}
+                            className="bz-input" />
+                          <span>secunde</span>
+                        </div>
+                      )}
+                    </TaskTile>
+                  )
+                })}
+                <div className="bz-sub">
+                  <p className="bz-lbl" style={{ margin: 0 }}>Postarea rămâne online minim</p>
+                  <div className="bz-chips">
                     {[7, 14, 30, 60, 90].map(d => (
                       <button key={d} type="button"
                         onClick={() => set({ tasks_ig_days_online: d })}
-                        className={`text-xs px-3 py-1.5 rounded-xl border-2 font-bold transition ${data.tasks_ig_days_online === d ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'}`}>
+                        className={`bz-chipb${data.tasks_ig_days_online === d ? ' on' : ''}`}>
                         {d} zile
                       </button>
                     ))}
@@ -1407,38 +1450,32 @@ function BarterCampaignWizardContent() {
                   { key: 'tasks_tt_live', label: 'TikTok Live', desc: 'Live stream', duration: undefined },
                   { key: 'tasks_tt_duet', label: 'Duet / Stitch', desc: 'Duet cu videoul brandului', duration: undefined },
                 ].map(task => (
-                  <div key={task.key} className={`w-full border-2 rounded-2xl overflow-hidden transition ${(data as any)[task.key] ? 'border-primary bg-primary/5' : 'border-border'}`}>
-                    <button type="button" className="w-full flex items-center gap-3 p-4 text-left"
-                      onClick={() => set({ [task.key]: !(data as any)[task.key] } as any)}>
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${(data as any)[task.key] ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
-                        {(data as any)[task.key] && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                      <div className="flex-1"><p className="font-bold text-sm">{task.label}</p><p className="text-xs text-muted-foreground">{task.desc}</p></div>
-                    </button>
+                  <TaskTile key={task.key} on={!!(data as any)[task.key]} label={task.label} desc={task.desc}
+                    onClick={() => set({ [task.key]: !(data as any)[task.key] } as any)}>
                     {task.duration && (data as any)[task.key] && (
-                      <div className="px-4 pb-3 flex items-center gap-3">
-                        <label className="text-xs text-muted-foreground">{task.durationLabel}</label>
+                      <div className="bz-task-x">
+                        <span>{task.durationLabel}</span>
                         <input type="number" min="5" value={(data as any)[task.duration]}
                           onChange={e => set({ [task.duration!]: parseInt(e.target.value) || 0 } as any)}
-                          className="w-20 px-2 py-1.5 text-sm border border-input rounded-xl" />
-                        <span className="text-xs text-muted-foreground">secunde</span>
+                          className="bz-input" />
+                        <span>secunde</span>
                       </div>
                     )}
-                  </div>
+                  </TaskTile>
                 ))}
-                <div className="bg-muted/40 rounded-2xl p-4">
-                  <p className="text-xs font-bold text-muted-foreground mb-2">Videoul rămâne pe profil minim</p>
-                  <div className="flex gap-2 flex-wrap">
+                <div className="bz-sub">
+                  <p className="bz-lbl" style={{ margin: 0 }}>Videoul rămâne pe profil minim</p>
+                  <div className="bz-chips">
                     {[7, 14, 30, 60].map(d => (
                       <button key={d} type="button"
                         onClick={() => set({ tasks_tt_days_online: d })}
-                        className={`text-xs px-3 py-1.5 rounded-xl border-2 font-bold transition ${data.tasks_tt_days_online === d ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'}`}>
+                        className={`bz-chipb${data.tasks_tt_days_online === d ? ' on' : ''}`}>
                         {d} zile
                       </button>
                     ))}
                     <button type="button"
                       onClick={() => set({ tasks_tt_days_online: 9999 })}
-                      className={`text-xs px-3 py-1.5 rounded-xl border-2 font-bold transition ${data.tasks_tt_days_online === 9999 ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'}`}>
+                      className={`bz-chipb${data.tasks_tt_days_online === 9999 ? ' on' : ''}`}>
                       permanent
                     </button>
                   </div>
@@ -1450,35 +1487,22 @@ function BarterCampaignWizardContent() {
                 {[
                   { key: 'tasks_yt_short', label: 'YouTube Short', desc: 'Video scurt max 60 sec', duration: 'tasks_yt_short_duration', durationLabel: 'sec. minim' },
                   { key: 'tasks_yt_video', label: 'Video lung dedicat', desc: 'Video dedicat brandului', duration: 'tasks_yt_video_duration', durationLabel: 'min. minim' },
-                  { key: 'tasks_yt_mention', label: 'Mentiune în video existent', desc: 'Câteva secunde în alt video', duration: undefined },
+                  { key: 'tasks_yt_mention', label: 'Mențiune în video existent', desc: 'Câteva secunde în alt video', duration: undefined },
                 ].map(task => (
-                  <div key={task.key} className={`w-full border-2 rounded-2xl overflow-hidden transition ${(data as any)[task.key] ? 'border-primary bg-primary/5' : 'border-border'}`}>
-                    <button type="button" className="w-full flex items-center gap-3 p-4 text-left"
-                      onClick={() => set({ [task.key]: !(data as any)[task.key] } as any)}>
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${(data as any)[task.key] ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
-                        {(data as any)[task.key] && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                      <div className="flex-1"><p className="font-bold text-sm">{task.label}</p><p className="text-xs text-muted-foreground">{task.desc}</p></div>
-                    </button>
+                  <TaskTile key={task.key} on={!!(data as any)[task.key]} label={task.label} desc={task.desc}
+                    onClick={() => set({ [task.key]: !(data as any)[task.key] } as any)}>
                     {task.duration && (data as any)[task.key] && (
-                      <div className="px-4 pb-3 flex items-center gap-3">
-                        <label className="text-xs text-muted-foreground">{task.durationLabel}</label>
+                      <div className="bz-task-x">
+                        <span>{task.durationLabel}</span>
                         <input type="number" min="1" value={(data as any)[task.duration]}
                           onChange={e => set({ [task.duration!]: parseInt(e.target.value) || 0 } as any)}
-                          className="w-20 px-2 py-1.5 text-sm border border-input rounded-xl" />
+                          className="bz-input" />
                       </div>
                     )}
-                  </div>
+                  </TaskTile>
                 ))}
-                <div className="border-2 border-border rounded-2xl p-4 space-y-2">
-                  <button type="button" onClick={() => set({ tasks_yt_link_in_desc: !data.tasks_yt_link_in_desc })}
-                    className="flex items-center gap-2 text-sm w-full">
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${data.tasks_yt_link_in_desc ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
-                      {data.tasks_yt_link_in_desc && <Check className="w-2.5 h-2.5 text-white" />}
-                    </div>
-                    Link în descrierea video obligatoriu
-                  </button>
-                </div>
+                <TaskTile on={data.tasks_yt_link_in_desc} label="Link în descrierea video obligatoriu"
+                  onClick={() => set({ tasks_yt_link_in_desc: !data.tasks_yt_link_in_desc })} />
               </>)}
 
               {/* ── FACEBOOK ── */}
@@ -1489,346 +1513,312 @@ function BarterCampaignWizardContent() {
                   { key: 'tasks_fb_reel', label: 'Facebook Reel', desc: 'Video scurt' },
                   { key: 'tasks_fb_share', label: 'Share postarea brandului', desc: 'Redistribuire' },
                 ].map(task => (
-                  <div key={task.key} className={`w-full border-2 rounded-2xl overflow-hidden transition ${(data as any)[task.key] ? 'border-primary bg-primary/5' : 'border-border'}`}>
-                    <button type="button" className="w-full flex items-center gap-3 p-4 text-left"
-                      onClick={() => set({ [task.key]: !(data as any)[task.key] } as any)}>
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${(data as any)[task.key] ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
-                        {(data as any)[task.key] && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                      <div className="flex-1"><p className="font-bold text-sm">{task.label}</p><p className="text-xs text-muted-foreground">{task.desc}</p></div>
-                    </button>
-                  </div>
+                  <TaskTile key={task.key} on={!!(data as any)[task.key]} label={task.label} desc={task.desc}
+                    onClick={() => set({ [task.key]: !(data as any)[task.key] } as any)} />
                 ))}
               </>)}
 
             </div>
-          </div>
+          </Section>
         )}
 
         {/* ── STEP 6: Brief & Link ──────────────────────────────────────────── */}
         {step === 6 && (
-          <div>
-            <h2 className="text-xl font-black mb-1">Brief, link & hashtag-uri</h2>
-            <p className="text-sm text-muted-foreground mb-5">Spune influencerilor exact cum să prezinte brandul</p>
+          <Section badge={7} title="Brief, link & hashtag-uri" sub="Spune influencerilor exact cum să prezinte brandul">
 
-            <div className="space-y-5">
-
-              {/* Link promovare */}
-              <div className="border-2 border-green-200 bg-green-50 rounded-2xl p-4">
-                <p className="text-sm font-black text-green-800 mb-1">Link de promovat</p>
-                <p className="text-xs text-green-600 mb-3">Influencerul va adăuga acest link în bio / stories</p>
-                <input type="url" placeholder="https://site.ro/produs"
-                  value={data.promotion_link}
-                  onChange={e => set({ promotion_link: e.target.value })}
-                  className="w-full px-4 py-3 border border-green-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
-                <div className="mt-3 space-y-2">
-                  {[
-                    { key: 'bio', label: 'Adaugă în bio pe durata campaniei' },
-                    { key: 'swipeup', label: 'Swipe-up în Stories' },
-                    { key: 'verbal', label: 'Menționat verbal în video' },
-                    { key: 'description', label: 'Link în descrierea video (YouTube)' },
-                  ].map(opt => (
+            {/* Link promovare */}
+            <div className="bz-note green" style={{ flexDirection: 'column', padding: 16, gap: 8 }}>
+              <b style={{ fontSize: 14 }}>Link de promovat</b>
+              <span>Influencerul va adăuga acest link în bio / stories</span>
+              <input type="url" placeholder="https://site.ro/produs"
+                value={data.promotion_link}
+                onChange={e => set({ promotion_link: e.target.value })}
+                className="bz-input" style={{ borderColor: '#a7e3cc' }} />
+              <div className="bz-f" style={{ gap: 8, marginTop: 4 }}>
+                {[
+                  { key: 'bio', label: 'Adaugă în bio pe durata campaniei' },
+                  { key: 'swipeup', label: 'Swipe-up în Stories' },
+                  { key: 'verbal', label: 'Menționat verbal în video' },
+                  { key: 'description', label: 'Link în descrierea video (YouTube)' },
+                ].map(opt => {
+                  const on = data.promotion_link_placement.includes(opt.key)
+                  return (
                     <button key={opt.key} type="button"
                       onClick={() => {
                         const cur = data.promotion_link_placement
                         set({ promotion_link_placement: cur.includes(opt.key) ? cur.filter(x => x !== opt.key) : [...cur, opt.key] })
                       }}
-                      className={`flex items-center gap-2 text-sm w-full ${data.promotion_link_placement.includes(opt.key) ? 'text-green-800' : 'text-green-600'}`}>
-                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${data.promotion_link_placement.includes(opt.key) ? 'bg-green-500 border-green-500' : 'border-green-300'}`}>
-                        {data.promotion_link_placement.includes(opt.key) && <Check className="w-2.5 h-2.5 text-white" />}
-                      </div>
+                      className="bu-row" style={{ gap: 10, minHeight: 44, background: 'none', border: 0, padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer', textAlign: 'left', fontWeight: on ? 700 : 500 }}>
+                      <span className="bz-box" style={on ? { background: '#16a34a', borderColor: '#16a34a' } : { borderColor: '#a7e3cc' }}>
+                        {on && <Check className="w-3.5 h-3.5" />}
+                      </span>
                       {opt.label}
                     </button>
-                  ))}
-                </div>
+                  )
+                })}
               </div>
-
-              {/* AI Brief Generator */}
-              <AIBriefGenerator
-                offerName={data.offer_name}
-                offerValue={data.offer_value}
-                offerDescription={data.offer_description}
-                platforms={data.platforms}
-                campaignType="BARTER"
-                onApply={(brief) => {
-                  if (brief.story_instructions) set({ story_instructions: brief.story_instructions })
-                  if (brief.required_hashtags) set({ required_hashtags: brief.required_hashtags })
-                  if (brief.required_caption) set({ required_caption: brief.required_caption })
-                  if (brief.key_messages) set({ key_messages: Array.isArray(brief.key_messages) ? brief.key_messages.join('\n') : brief.key_messages })
-                  if (brief.forbidden_content) set({ forbidden_content: brief.forbidden_content })
-                  if (brief.content_tone) set({ content_tone: brief.content_tone })
-                }}
-              />
-
-              {/* Hashtag-uri */}
-              <div>
-                <label className="block text-sm font-bold mb-2">Hashtag-uri obligatorii <span className="font-normal text-muted-foreground">(separat prin spațiu)</span></label>
-                <input type="text" placeholder="#brand #produs #ad"
-                  value={data.required_hashtags}
-                  onChange={e => set({ required_hashtags: e.target.value })}
-                  className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-
-              {/* Caption */}
-              <div>
-                <label className="block text-sm font-bold mb-2">Caption obligatoriu <span className="font-normal text-muted-foreground">(opțional)</span></label>
-                <textarea rows={3} placeholder='ex: "Parteneriat cu @brand. Am primit produsul în schimbul unei recenzii oneste."'
-                  value={data.required_caption}
-                  onChange={e => set({ required_caption: e.target.value })}
-                  className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
-              </div>
-
-              {/* Ton continut */}
-              <div>
-                <label className="block text-sm font-bold mb-2">Tonul conținutului</label>
-                <div className="flex gap-2 flex-wrap">
-                  {['Autentic', 'Distractiv', 'Educational', 'Lifestyle', 'Profesional', 'Inspirational'].map(tone => (
-                    <button key={tone} type="button"
-                      onClick={() => {
-                        const cur = data.content_tone
-                        set({ content_tone: cur.includes(tone) ? cur.filter(x => x !== tone) : [...cur, tone] })
-                      }}
-                      className={`text-sm px-4 py-2 rounded-xl border-2 font-bold transition ${data.content_tone.includes(tone) ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}>
-                      {tone}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Instructiuni */}
-              <div>
-                <label className="block text-sm font-bold mb-2">Instrucțiuni de creare conținut</label>
-                <textarea rows={5} placeholder="ex: Arată cum folosești produsul în rutina zilnică. Filmează în lumină naturală. Menționează cele 3 beneficii: X, Y, Z..."
-                  value={data.story_instructions}
-                  onChange={e => set({ story_instructions: e.target.value })}
-                  maxLength={2000}
-                  className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y" />
-              </div>
-
-              {/* Mesaje cheie */}
-              <div>
-                <label className="block text-sm font-bold mb-2">Mesaje cheie de transmis <span className="font-normal text-muted-foreground">(opțional)</span></label>
-                <textarea rows={3} placeholder="ex: Rezultate vizibile din prima săptămână. Formula cu 15% Vitamina C. Disponibil pe site.ro cu livrare în 24h."
-                  value={data.key_messages}
-                  onChange={e => set({ key_messages: e.target.value })}
-                  className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y" />
-              </div>
-
-              {/* Ce sa evite */}
-              <div>
-                <label className="block text-sm font-bold mb-2">Ce să evite <span className="font-normal text-muted-foreground">(opțional)</span></label>
-                <textarea rows={2} placeholder="ex: Nu menționa competitorii. Evită filtrele puternice. Nu face promisiuni medicale."
-                  value={data.forbidden_content}
-                  onChange={e => set({ forbidden_content: e.target.value })}
-                  className="w-full px-4 py-3 border border-input rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y" />
-              </div>
-
-              {/* Zile online */}
-              <div>
-                <label className="block text-sm font-bold mb-2">Postarea rămâne online minim</label>
-                <div className="flex gap-2 flex-wrap">
-                  {[7, 14, 30, 60, 90].map(d => (
-                    <button key={d} type="button"
-                      onClick={() => set({ min_days_online: d })}
-                      className={`text-sm px-4 py-2 rounded-xl border-2 font-bold transition ${data.min_days_online === d ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'}`}>
-                      {d} zile
-                    </button>
-                  ))}
-                </div>
-              </div>
-
             </div>
-          </div>
-        )}
 
+            {/* AI Brief Generator */}
+            <AIBriefGenerator
+              offerName={data.offer_name}
+              offerValue={data.offer_value}
+              offerDescription={data.offer_description}
+              platforms={data.platforms}
+              campaignType="BARTER"
+              onApply={(brief) => {
+                if (brief.story_instructions) set({ story_instructions: brief.story_instructions })
+                if (brief.required_hashtags) set({ required_hashtags: brief.required_hashtags })
+                if (brief.required_caption) set({ required_caption: brief.required_caption })
+                if (brief.key_messages) set({ key_messages: Array.isArray(brief.key_messages) ? brief.key_messages.join('\n') : brief.key_messages })
+                if (brief.forbidden_content) set({ forbidden_content: brief.forbidden_content })
+                if (brief.content_tone) set({ content_tone: brief.content_tone })
+              }}
+            />
+
+            {/* Hashtag-uri */}
+            <div className="bz-f">
+              <label>Hashtag-uri obligatorii <small>(separat prin spațiu)</small></label>
+              <input type="text" placeholder="#brand #produs #ad"
+                value={data.required_hashtags}
+                onChange={e => set({ required_hashtags: e.target.value })}
+                className="bz-input" />
+            </div>
+
+            {/* Caption */}
+            <div className="bz-f">
+              <label>Caption obligatoriu <small>(opțional)</small></label>
+              <textarea rows={3} placeholder='ex: "Parteneriat cu @brand. Am primit produsul în schimbul unei recenzii oneste."'
+                value={data.required_caption}
+                onChange={e => set({ required_caption: e.target.value })}
+                className="bz-input" />
+            </div>
+
+            {/* Ton continut */}
+            <div className="bz-f">
+              <label>Tonul conținutului</label>
+              <div className="bz-chips">
+                {['Autentic', 'Distractiv', 'Educational', 'Lifestyle', 'Profesional', 'Inspirational'].map(tone => (
+                  <button key={tone} type="button"
+                    onClick={() => {
+                      const cur = data.content_tone
+                      set({ content_tone: cur.includes(tone) ? cur.filter(x => x !== tone) : [...cur, tone] })
+                    }}
+                    className={`bz-chipb${data.content_tone.includes(tone) ? ' on' : ''}`}>
+                    {tone}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Instructiuni */}
+            <div className="bz-f">
+              <label>Instrucțiuni de creare conținut</label>
+              <textarea rows={5} placeholder="ex: Arată cum folosești produsul în rutina zilnică. Filmează în lumină naturală. Menționează cele 3 beneficii: X, Y, Z..."
+                value={data.story_instructions}
+                onChange={e => set({ story_instructions: e.target.value })}
+                maxLength={2000}
+                className="bz-input" />
+            </div>
+
+            {/* Mesaje cheie */}
+            <div className="bz-f">
+              <label>Mesaje cheie de transmis <small>(opțional)</small></label>
+              <textarea rows={3} placeholder="ex: Rezultate vizibile din prima săptămână. Formula cu 15% Vitamina C. Disponibil pe site.ro cu livrare în 24h."
+                value={data.key_messages}
+                onChange={e => set({ key_messages: e.target.value })}
+                className="bz-input" />
+            </div>
+
+            {/* Ce sa evite */}
+            <div className="bz-f">
+              <label>Ce să evite <small>(opțional)</small></label>
+              <textarea rows={2} placeholder="ex: Nu menționa competitorii. Evită filtrele puternice. Nu face promisiuni medicale."
+                value={data.forbidden_content}
+                onChange={e => set({ forbidden_content: e.target.value })}
+                className="bz-input" />
+            </div>
+
+            {/* Zile online */}
+            <div className="bz-f">
+              <label>Postarea rămâne online minim</label>
+              <div className="bz-chips">
+                {[7, 14, 30, 60, 90].map(d => (
+                  <button key={d} type="button"
+                    onClick={() => set({ min_days_online: d })}
+                    className={`bz-chipb${data.min_days_online === d ? ' on' : ''}`}>
+                    {d} zile
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          </Section>
+        )}
 
         {/* ── STEP 6: Target ──────────────────────────────────────── */}
         {step === 6 && (
-          <div>
-            <h2 className="text-xl font-black mb-1">Target influenceri</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              Cine va putea vedea și aplica la oferta ta
-            </p>
-
-            <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6 flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Users className="w-6 h-6 text-green-600" />
-              </div>
+          <Section badge={<Target className="w-4 h-4" />} title="Target influenceri" sub="Cine va putea vedea și aplica la oferta ta">
+            <div className="bz-note green" style={{ alignItems: 'center', padding: 18, gap: 14 }}>
+              <span className="bu-ico" style={{ background: '#fff', color: '#14532d' }}><Users className="w-5 h-5" /></span>
               <div>
-                <p className="font-black text-green-800 text-base">
-                  🎯 Toți influencerii din rețea
-                </p>
-                <p className="text-sm text-green-700 mt-1">
+                <b style={{ fontSize: 15 }}>🎯 Toți influencerii din rețea</b>
+                <p style={{ margin: '4px 0 0' }}>
                   Oferta ta va fi vizibilă tuturor celor <strong>179+ influenceri</strong> verificați din AddFame. Ei aplică, tu alegi cu cine colaborezi.
                 </p>
               </div>
             </div>
-
-            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <p className="text-xs text-blue-700 font-semibold">
-                💡 În curând vei putea filtra după numărul de followeri, nișă și locație.
-              </p>
+            <div className="bz-note blue" style={{ fontWeight: 600 }}>
+              💡 În curând vei putea filtra după numărul de followeri, nișă și locație.
             </div>
-          </div>
+          </Section>
         )}
 
         {/* ── STEP 7: Review ──────────────────────────────────────── */}
         {step === 7 && (
-          <div>
-            <h2 className="text-xl font-black mb-1">Review & Publică</h2>
-            <p className="text-sm text-muted-foreground mb-6">Verifică totul înainte de a trimite spre aprobare</p>
+          <Section badge={<CheckCircle2 className="w-4 h-4" />} title="Review & Publică" sub="Verifică totul înainte de a trimite spre aprobare">
 
             {data.offer_image_urls.length > 0 && (
-              <div className="mb-5">
-                <div className="relative rounded-2xl overflow-hidden mb-2">
-                  <img src={data.offer_image_urls[0]} alt="Offer" className="w-full h-44 object-cover" />
-                  <div className="absolute bottom-3 left-3">
-                    <span className="bg-primary text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wide">Gratuit</span>
+              <div className="bz-f">
+                <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden' }}>
+                  <img src={data.offer_image_urls[0]} alt="Offer" style={{ width: '100%', height: 176, objectFit: 'cover', display: 'block' }} />
+                  <div style={{ position: 'absolute', bottom: 12, left: 12 }}>
+                    <span className="bu-chip" style={{ background: '#5a35e6', color: '#fff', textTransform: 'uppercase', letterSpacing: '.05em' }}>Gratuit</span>
                   </div>
-                  <div className="absolute bottom-3 right-3 bg-black/60 text-white text-sm font-black px-3 py-1 rounded-xl">{data.offer_name}</div>
+                  <div style={{ position: 'absolute', bottom: 12, right: 12, maxWidth: '60%', background: 'rgba(20,18,58,.72)', color: '#fff', fontSize: 13, fontWeight: 800, padding: '4px 12px', borderRadius: 10 }}>{data.offer_name}</div>
                 </div>
                 {data.offer_image_urls.length > 1 && (
-                  <div className="grid grid-cols-4 gap-2">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
                     {data.offer_image_urls.slice(1).map((url, idx) => (
-                      <img key={idx} src={url} alt={`Imagine ${idx + 2}`} className="w-full h-16 object-cover rounded-xl border border-border" />
+                      <img key={idx} src={url} alt={`Imagine ${idx + 2}`} style={{ width: '100%', height: 64, objectFit: 'cover', borderRadius: 12, border: '1px solid #e5e3f3' }} />
                     ))}
                   </div>
                 )}
               </div>
             )}
 
-            <div className="bg-card border border-border rounded-2xl overflow-hidden mb-5">
-              <div className="px-5 py-3 bg-muted/30 border-b border-border">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Detalii ofertă</p>
-              </div>
-              <div className="px-5">
-                <ReviewField label="Tip ofertă" value={data.offer_type === 'product' ? 'Free Product' : 'Free Service'} />
-                <ReviewField label={data.offer_type === 'product' ? 'Produs' : 'Serviciu'} value={data.offer_name} />
-                {data.offer_description && <ReviewField label="Descriere" value={data.offer_description} />}
-                <ReviewField label="Valoare" value={`${data.offer_value} RON`} />
-                <ReviewField label="Nr. influenceri" value={String(data.offer_count)} />
-                <ReviewField label="Rezervare" value={data.reservation_required ? 'Necesară' : 'Nu e necesară'} />
-                <ReviewField label="Durata campaniei" value={data.duration_days ? `${data.duration_days} zile (până pe ${new Date(data.deadline).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })})` : 'Nesetată'} />
-              </div>
+            <div className="bz-rv">
+              <h3>Detalii ofertă</h3>
+              <ReviewField label="Tip ofertă" value={data.offer_type === 'product' ? 'Free Product' : 'Free Service'} />
+              <ReviewField label={data.offer_type === 'product' ? 'Produs' : 'Serviciu'} value={data.offer_name} />
+              {data.offer_description && <ReviewField label="Descriere" value={data.offer_description} />}
+              <ReviewField label="Valoare" value={`${data.offer_value} RON`} />
+              <ReviewField label="Nr. influenceri" value={String(data.offer_count)} />
+              <ReviewField label="Rezervare" value={data.reservation_required ? 'Necesară' : 'Nu e necesară'} />
+              <ReviewField label="Durata campaniei" value={data.duration_days ? `${data.duration_days} zile (până pe ${new Date(data.deadline).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })})` : 'Nesetată'} />
             </div>
 
-            <div className="bg-card border border-border rounded-2xl overflow-hidden mb-5">
-              <div className="px-5 py-3 bg-muted/30 border-b border-border">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Logistică & Brief</p>
-              </div>
-              <div className="px-5">
-                <ReviewField
-                  label="Ridicare ofertă"
-                  value={data.delivery_method === 'pickup'
-                    ? `Ridicare: ${data.pickup_location_name}`
-                    : 'Livrare la domiciliu'}
-                />
-                <ReviewField
-                  label="Stories solicitate"
-                  value={`${data.tasks_stories_count} Instagram Stor${data.tasks_stories_count > 1 ? 'ies' : 'y'}${data.tasks_include_post ? ' + 1 Post' : ''}`}
-                />
-                <ReviewField label="Accept influenceri" value={data.auto_accept_influencers ? 'Automat' : 'Manual (eu aprob)'} />
-                <ReviewField
-                  label="Followeri minimi"
-                  value={data.min_followers_target === 0 ? 'Fără restricții' : `${data.min_followers_target.toLocaleString()}+`}
-                />
-              </div>
+            <div className="bz-rv">
+              <h3>Logistică & Brief</h3>
+              <ReviewField
+                label="Ridicare ofertă"
+                value={data.delivery_method === 'pickup'
+                  ? `Ridicare: ${data.pickup_location_name}`
+                  : 'Livrare la domiciliu'}
+              />
+              <ReviewField
+                label="Stories solicitate"
+                value={`${data.tasks_stories_count} Instagram Stor${data.tasks_stories_count > 1 ? 'ies' : 'y'}${data.tasks_include_post ? ' + 1 Post' : ''}`}
+              />
+              <ReviewField label="Accept influenceri" value={data.auto_accept_influencers ? 'Automat' : 'Manual (eu aprob)'} />
+              <ReviewField
+                label="Followeri minimi"
+                value={data.min_followers_target === 0 ? 'Fără restricții' : `${data.min_followers_target.toLocaleString()}+`}
+              />
             </div>
 
             {/* Taxa AddFame per influencer */}
-            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-black text-amber-800">Taxă AddFame</p>
-                <p className="text-xs text-amber-600 mt-0.5">
+            <div className="bz-note amber" style={{ alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
+              <div style={{ minWidth: 0 }}>
+                <b style={{ fontSize: 14 }}>Taxă AddFame</b>
+                <p style={{ margin: '2px 0 0', fontSize: 12 }}>
                   {feeInfo
                     ? `${data.offer_count} influenceri × ${feeInfo.price.toLocaleString('ro-RO')} RON · se plătește la publicare`
                     : 'Se plătește la publicare'}
                 </p>
                 {feeInfo && !feeInfo.enough && (
-                  <p className="text-xs text-amber-700 font-bold mt-1">
+                  <p style={{ margin: '4px 0 0', fontSize: 12, fontWeight: 700 }}>
                     Sold insuficient — campania se va salva ca draft.{' '}
-                    <a href="/brand/wallet" className="underline">Adaugă credite</a>
+                    <a href="/brand/wallet" className="bz-lnk">Adaugă credite</a>
                   </p>
                 )}
               </div>
-              <p className="text-2xl font-black text-amber-700 whitespace-nowrap">
-                {feeInfo ? `${(data.offer_count * feeInfo.price).toLocaleString('ro-RO')} RON` : '…'}
-              </p>
+              <b style={{ fontFamily: 'var(--font-display, system-ui)', fontSize: 24, whiteSpace: 'nowrap' }}>
+                {feeTotal !== null ? ronFmt(feeTotal) : '…'}
+              </b>
             </div>
 
-            <div className="bg-muted/30 rounded-xl p-4 text-xs text-muted-foreground text-center mb-2">
+            <p className="bz-hint" style={{ textAlign: 'center' }}>
               Prin publicare accepți{' '}
-              <a href="/termeni" target="_blank" rel="noopener noreferrer" className="text-primary underline">Termenii Serviciului</a>
+              <a href="/termeni" target="_blank" rel="noopener noreferrer" style={{ color: '#5a35e6', textDecoration: 'underline' }}>Termenii Serviciului</a>
               {' '}și{' '}
-              <a href="/politica-de-confidentialitate" target="_blank" rel="noopener noreferrer" className="text-primary underline">Politica de confidențialitate</a>.
-            </div>
-          </div>
+              <a href="/politica-de-confidentialitate" target="_blank" rel="noopener noreferrer" style={{ color: '#5a35e6', textDecoration: 'underline' }}>Politica de confidențialitate</a>.
+            </p>
+          </Section>
         )}
-      </div>
 
-      {/* ── Sticky CTA ──────────────────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border px-4 py-4 safe-area-pb">
-        <div className="max-w-lg mx-auto">
-          {step < 7 ? (
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={next}
-                disabled={!canProceed()}
-                className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{
-                  background: canProceed() ? 'linear-gradient(135deg, #2f6fe0, #5a35e6)' : undefined,
-                  backgroundColor: canProceed() ? undefined : 'hsl(var(--muted))'
-                }}
-              >
+        {/* ── Bară de acțiuni (sticky) ────────────────────────────────────── */}
+        <div className="bz-foot">
+          <button type="button" className="bu-btn" onClick={step === 0 ? () => router.back() : back}>
+            <ArrowLeft className="w-4 h-4" />Înapoi
+          </button>
+          <div className="grp">
+            <button
+              type="button"
+              onClick={saveDraft}
+              disabled={savingDraft}
+              className={`bu-btn${draftSaved ? ' ok' : ''}`}
+            >
+              {savingDraft
+                ? <><Loader2 className="w-4 h-4 animate-spin" />Se salvează...</>
+                : draftSaved
+                  ? <>✓ Draft salvat!</>
+                  : <>Salvează draft</>
+              }
+            </button>
+            {step < 7 ? (
+              <button type="button" onClick={next} disabled={!canProceed()} className="bu-btn p">
                 Continuă
                 <ArrowRight className="w-4 h-4" />
               </button>
-              <button
-                type="button"
-                onClick={saveDraft}
-                disabled={savingDraft}
-                className="w-full py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition border-2"
-                style={{ borderColor: '#5a35e6', color: draftSaved ? '#16a34a' : '#5a35e6', background: draftSaved ? '#f0fdf4' : 'white' }}
-              >
-                {savingDraft
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />Se salvează...</>
-                  : draftSaved
-                    ? <>✓ Draft salvat!</>
-                    : <>Salvează draft</>
+            ) : (
+              <button type="button" onClick={handleSubmit} disabled={loading} className="bu-btn p">
+                {loading
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />Se publică...</>
+                  : <><Zap className="w-4 h-4" />{feeInfo && !feeInfo.enough ? 'Salvează ca draft (sold insuficient)' : feeInfo ? `Publică · ${(data.offer_count * feeInfo.price).toLocaleString('ro-RO')} RON` : 'Publică oferta'}</>
                 }
               </button>
+            )}
+          </div>
+        </div>
+
+        </div>
+
+        {/* ── Rezumat (coloană dreapta, desktop) ──────────────────────────── */}
+        <div className="bz-side">
+          <div className="bu-card bz-sum">
+            <p className="bu-label" style={{ margin: 0 }}>Rezumat</p>
+            <h3 style={{ marginBottom: 6 }}>{data.offer_name || 'Campania ta barter'}</h3>
+            <ReviewField label="Tip campanie" value="Barter" />
+            <ReviewField label="Ofertă" value={data.offer_type ? (data.offer_type === 'product' ? 'Free Product' : 'Free Service') : '—'} />
+            <ReviewField label="Valoare" value={parseFloat(data.offer_value) > 0 ? `${data.offer_value} RON` : '—'} />
+            <ReviewField label="Locuri (influenceri)" value={String(data.offer_count)} />
+            <ReviewField label="Livrare" value={data.delivery_method ? (data.delivery_method === 'pickup' ? 'Ridicare' : 'La domiciliu') : '—'} />
+            <ReviewField label="Durată" value={data.duration_days ? `${data.duration_days} zile` : '—'} />
+            <ReviewField label="Platforme" value={activePlatforms.length ? activePlatforms.join(', ') : '—'} />
+            <div className="bz-sum-fee">
+              <div>
+                <b style={{ fontSize: 13, fontFamily: 'inherit' }}>Taxă AddFame</b>
+                <div style={{ fontSize: 12 }}>
+                  {feeInfo ? `${data.offer_count} × ${feeInfo.price.toLocaleString('ro-RO')} RON` : 'se plătește la publicare'}
+                </div>
+              </div>
+              <b>{feeTotal !== null ? ronFmt(feeTotal) : '…'}</b>
             </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 transition disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #2f6fe0, #5a35e6)' }}
-            >
-              {loading
-                ? <><Loader2 className="w-4 h-4 animate-spin" />Se publică...</>
-                : <><Zap className="w-4 h-4" />{feeInfo && !feeInfo.enough ? 'Salvează ca draft (sold insuficient)' : feeInfo ? `Publică · ${(data.offer_count * feeInfo.price).toLocaleString('ro-RO')} RON` : 'Publică oferta'}</>
-              }
-            </button>
-              <button
-                type="button"
-                onClick={saveDraft}
-                disabled={savingDraft}
-                className="w-full py-2.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition border-2"
-                style={{ borderColor: '#5a35e6', color: draftSaved ? '#16a34a' : '#5a35e6', background: draftSaved ? '#f0fdf4' : 'white' }}
-              >
-                {savingDraft
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />Se salvează...</>
-                  : draftSaved
-                    ? <>✓ Draft salvat!</>
-                    : <>Salvează draft</>
-                }
-              </button>
-            </div>
-          )}
+            {feeInfo && !feeInfo.enough && (
+              <p className="bz-hint" style={{ color: '#9a4206', fontWeight: 700, marginTop: 8 }}>Sold insuficient — se salvează ca draft.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -120,8 +120,8 @@ export default function BrandAnalyticsPage() {
   const fmtRon = (n: number) => `${n.toLocaleString('ro-RO')} RON`
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+    <div className="bu" style={{ alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+      <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: '#5a35e6', borderTopColor: 'transparent' }} />
     </div>
   )
 
@@ -143,221 +143,215 @@ export default function BrandAnalyticsPage() {
   const topNise = Object.entries(niseCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
   const totalNise = topNise.reduce((s, [, v]) => s + v, 0)
 
+  const kpis = [
+    { icon: TrendingUp, label: 'Reach total estimat', value: fmt(totalReach) || '—', sub: 'persoane atinse', bg: '#efeaff', fg: '#4423c4' },
+    { icon: BarChart2, label: 'Postări publicate', value: totalPosts.toString(), sub: 'stories + posts', bg: '#e6f0ff', fg: '#1d4fb8' },
+    { icon: DollarSign, label: 'Economii generate', value: fmtRon(Math.round(savings)), sub: 'față de agenție', bg: '#dcf5ec', fg: '#14532d' },
+    { icon: Award, label: 'ROI estimat', value: `${roi}%`, sub: 'față de investiție', bg: '#fff1c2', fg: '#854d0e' },
+  ]
+  const statuses = [
+    { label: 'Invitați', count: invitedCount, color: '#2f6fe0' },
+    { label: 'Activi', count: activeCount, color: '#5a35e6' },
+    { label: 'Finalizați', count: completedCount, color: '#1d9e75' },
+    { label: 'Refuzați', count: statusCount['REJECTED'] || 0, color: '#c9c6e0' },
+  ]
+  const periodLabel = PERIODS.find(p => p.days === period)?.label
+
   return (
-    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <style>{``}</style>
+    <div className="bu">
+      <style>{`
+        .an-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+        .an-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+        @media(max-width:1023px){.an-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media(max-width:767px){.an-two{grid-template-columns:minmax(0,1fr)}.an-kpis{gap:12px}}
+        .an-num{font-family:var(--font-display,system-ui),system-ui,sans-serif;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+        .an-kpi-v{font-size:28px;overflow-wrap:anywhere}
+        @media(max-width:767px){.an-kpi-v{font-size:22px}}
+        .an-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #eeecf7;min-width:0}
+        .an-row:last-child{border-bottom:0}
+        .an-per{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;max-width:100%;scrollbar-width:none}
+        .an-per::-webkit-scrollbar{display:none}
+        .an-mini{background:#f6f6fc;border-radius:14px;padding:12px 14px;min-width:0}
+        .an-top{display:grid;grid-template-columns:20px 40px minmax(0,1fr) minmax(60px,140px) 56px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #eeecf7}
+        .an-top:last-child{border-bottom:0}
+        @media(max-width:560px){.an-top{grid-template-columns:18px 40px minmax(0,1fr) 52px}.an-top .an-bar{display:none}}
+      `}</style>
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-6 py-5">
-        <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-xl font-black text-gray-900">Analytics & Impact</h1>
-            <p className="text-sm text-gray-400 mt-0.5">{brand.name} · Pe AddFame de {daysOnPlatform} zile</p>
+      <div className="bu-head">
+        <div>
+          <h1>Analytics & Impact</h1>
+          <p className="bu-muted" style={{ margin: '6px 0 0' }}>{brand.name} · Pe AddFame de {daysOnPlatform} zile</p>
+        </div>
+        <span className="bu-chip" style={{ background: '#dcf5ec', color: '#14532d' }}>
+          <span style={{ width: 6, height: 6, borderRadius: 99, background: '#1d9e75' }} /> Cont activ
+        </span>
+      </div>
+
+      {/* Period selector */}
+      <div>
+        <div className="an-per">
+          {PERIODS.map(({ label, days }) => (
+            <button key={days} onClick={() => { setLoading(true); setPeriod(days) }}
+              className={`bu-pill${period === days ? ' on' : ''}`} style={{ height: 44, flex: 'none' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="bu-muted bu-sm" style={{ margin: '10px 0 0' }}>
+          {period === 0 ? 'Date pentru toată activitatea' : `Date pentru ultimele ${periodLabel}`}
+          {' · '}{campaigns.length} campanii · {collabs.length} colaborări
+        </p>
+      </div>
+
+      {/* KPI Row */}
+      <div className="an-kpis">
+        {kpis.map(({ icon: Icon, label, value, sub, bg, fg }) => (
+          <div key={label} className="bu-card bu-card-pad">
+            <div className="bu-ico" style={{ background: bg, color: fg, marginBottom: 12 }}><Icon className="w-5 h-5" /></div>
+            <div className="bu-label" style={{ marginBottom: 6 }}>{label}</div>
+            <div className="an-num an-kpi-v">{value}</div>
+            <div className="bu-muted bu-xs" style={{ marginTop: 4 }}>{sub}</div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Period selector */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 flex-wrap max-w-full">
-              {PERIODS.map(({ label, days }) => (
-                <button key={days} onClick={() => { setLoading(true); setPeriod(days) }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${period === days ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                  {label}
-                </button>
-              ))}
+        ))}
+      </div>
+
+      {/* Financiar + Status */}
+      <div className="an-two">
+        <div className="bu-card bu-card-pad">
+          <div className="bu-label" style={{ marginBottom: 14 }}>Rezumat financiar</div>
+          <div className="bu-row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
+            <div style={{ minWidth: 0 }}>
+              <div className="bu-muted bu-xs">Investit via AddFame</div>
+              <div className="an-num" style={{ fontSize: 30 }}>{fmtRon(Math.round(invested))}</div>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Cont activ
-            </span>
+            <div style={{ textAlign: 'right' }}>
+              <div className="bu-muted bu-xs">Echivalent agenție</div>
+              <div className="an-num" style={{ fontSize: 20, color: '#6a6690', textDecoration: 'line-through', textDecorationColor: '#c9c6e0' }}>{fmtRon(Math.round(agencyEquivalent))}</div>
+            </div>
+          </div>
+          <div className="bu-div" style={{ paddingTop: 14 }}>
+            <div className="bu-label" style={{ marginBottom: 4 }}>Campanii ({campaigns.length})</div>
+            {campaigns.length === 0 && <p className="bu-muted bu-sm" style={{ margin: '8px 0 0' }}>Nicio campanie în perioada aleasă</p>}
+            {campaigns.slice(0, 4).map((camp: any) => (
+              <div key={camp.id} className="an-row">
+                <span style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{camp.title}</span>
+                <span className="bu-row" style={{ gap: 8, flex: 'none' }}>
+                  <span className="bu-muted bu-xs">{collabs.filter((c: any) => c.status === 'ACTIVE' || c.status === 'COMPLETED').length} inf.</span>
+                  <span className="bu-chip" style={{ background: '#dcf5ec', color: '#14532d' }}>
+                    {camp.campaign_type === 'BARTER' ? `${camp.offer_value || 0} RON` : `${camp.budget_per_influencer || 0} RON`}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 10, marginTop: 14 }}>
+            <div className="an-mini">
+              <div className="bu-muted bu-xs">Cost / influencer</div>
+              <div className="an-num" style={{ fontSize: 18, marginTop: 2 }}>{collabs.length > 0 ? `${Math.round(invested / Math.max(activeCount + completedCount, 1))} RON` : '—'}</div>
+            </div>
+            <div className="an-mini">
+              <div className="bu-muted bu-xs">Cost / 1K reach</div>
+              <div className="an-num" style={{ fontSize: 18, marginTop: 2 }}>{totalReach > 0 ? `${((invested / totalReach) * 1000).toFixed(2)} RON` : '—'}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bu-card bu-card-pad">
+          <div className="bu-label" style={{ marginBottom: 14 }}>Status colaborări · {collabs.length} total</div>
+          <div className="bu-col" style={{ gap: 14, marginBottom: 18 }}>
+            {statuses.map(({ label, count, color }) => (
+              <div key={label} className="bu-row" style={{ gap: 12 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, width: 76, flex: 'none' }}>{label}</span>
+                <div className="bu-bar" style={{ flex: 1, height: 8 }}>
+                  <i style={{ width: `${collabs.length > 0 ? (count / collabs.length) * 100 : 0}%`, background: color }} />
+                </div>
+                <b className="an-num" style={{ fontSize: 16, width: 28, textAlign: 'right' }}>{count}</b>
+              </div>
+            ))}
+          </div>
+
+          <div className="bu-div" style={{ paddingTop: 14, marginBottom: 14 }}>
+            <div className="bu-label" style={{ marginBottom: 10 }}>Nișe influenceri</div>
+            <div className="bu-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+              {topNise.length > 0 ? topNise.map(([nisa, count]) => (
+                <span key={nisa} className="bu-chip" style={{ background: '#efeaff', color: '#4423c4' }}>
+                  {nisa} {totalNise > 0 ? `${Math.round((count / totalNise) * 100)}%` : ''}
+                </span>
+              )) : <span className="bu-muted bu-sm">Nicio dată disponibilă încă</span>}
+            </div>
+          </div>
+
+          <div className="bu-div" style={{ paddingTop: 14 }}>
+            <div className="bu-label" style={{ marginBottom: 4 }}>Comparație industrie</div>
+            {[
+              { label: 'Eng. rate mediu', yours: '3.8%', industry: '1.9%' },
+              { label: 'Cost / reach', yours: totalReach > 0 ? `${((invested / totalReach)).toFixed(3)} RON` : '—', industry: '0.05 RON' },
+              { label: 'Setup campanie', yours: '15 min', industry: '5-7 zile' },
+            ].map(({ label, yours, industry }) => (
+              <div key={label} className="an-row" style={{ flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
+                <span className="bu-row" style={{ gap: 8 }}>
+                  <span className="bu-muted bu-xs">vs {industry}</span>
+                  <span className="bu-chip" style={{ background: '#dcf5ec', color: '#14532d' }}>{yours}</span>
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-6 space-y-5">
-
-        {/* Period label */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-400">
-            {period === 0 ? 'Date pentru toată activitatea' : `Date pentru ultimele ${PERIODS.find(p => p.days === period)?.label}`}
-            {' · '}{campaigns.length} campanii · {collabs.length} colaborări
-          </p>
-        </div>
-
-        {/* KPI Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { icon: TrendingUp, label: 'Reach total estimat', value: fmt(totalReach) || '—', sub: 'persoane atinse', color: 'text-purple-600', bg: 'bg-purple-50' },
-            { icon: BarChart2, label: 'Postări publicate', value: totalPosts.toString(), sub: 'stories + posts', color: 'text-blue-600', bg: 'bg-blue-50' },
-            { icon: DollarSign, label: 'Economii generate', value: fmtRon(Math.round(savings)), sub: 'față de agenție', color: 'text-green-600', bg: 'bg-green-50' },
-            { icon: Award, label: 'ROI estimat', value: `${roi}%`, sub: 'față de investiție', color: 'text-orange-600', bg: 'bg-orange-50' },
-          ].map(({ icon: Icon, label, value, sub, color, bg }) => (
-            <div key={label} className="bg-white rounded-2xl border border-gray-100 p-5">
-              <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}>
-                <Icon className={`w-5 h-5 ${color}`} />
-              </div>
-              <p className="text-xs font-bold text-gray-400 mb-1">{label}</p>
-              <p className={`text-2xl font-black ${color}`}>{value}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Financiar + Status */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-          {/* Financiar */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-4">Rezumat financiar</p>
-            <div className="flex items-baseline justify-between mb-5">
-              <div>
-                <p className="text-xs text-gray-400">Investit via AddFame</p>
-                <p className="text-3xl font-black text-gray-900">{fmtRon(Math.round(invested))}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-400">Echivalent agenție</p>
-                <p className="text-xl font-black text-red-500">{fmtRon(Math.round(agencyEquivalent))}</p>
-              </div>
-            </div>
-            <div className="h-px bg-gray-100 mb-4"></div>
-            <p className="text-xs font-black text-gray-400 mb-3">Campanii ({campaigns.length})</p>
-            <div className="space-y-2.5">
-              {campaigns.slice(0, 4).map((camp: any) => {
-                const campCollabs = collabs.filter((c: any) => c.status !== 'REJECTED' && campaigns.find((ca: any) => ca.id === camp.id))
-                return (
-                  <div key={camp.id} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700 truncate max-w-[60%]">{camp.title}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">{collabs.filter((c: any) => c.status === 'ACTIVE' || c.status === 'COMPLETED').length} inf.</span>
-                      <span className="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
-                        {camp.campaign_type === 'BARTER' ? `${camp.offer_value || 0} RON` : `${camp.budget_per_influencer || 0} RON`}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="h-px bg-gray-100 mt-4 mb-3"></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400">Cost / influencer</p>
-                <p className="text-base font-black text-gray-900">{collabs.length > 0 ? `${Math.round(invested / Math.max(activeCount + completedCount, 1))} RON` : '—'}</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400">Cost / 1K reach</p>
-                <p className="text-base font-black text-gray-900">{totalReach > 0 ? `${((invested / totalReach) * 1000).toFixed(2)} RON` : '—'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Status + Nișe */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-4">Status colaborări · {collabs.length} total</p>
-            <div className="space-y-3 mb-5">
-              {[
-                { label: 'Invitați', count: invitedCount, color: '#378ADD', max: collabs.length },
-                { label: 'Activi', count: activeCount, color: '#7F77DD', max: collabs.length },
-                { label: 'Finalizați', count: completedCount, color: '#1D9E75', max: collabs.length },
-                { label: 'Refuzați', count: statusCount['REJECTED'] || 0, color: '#E24B4A', max: collabs.length },
-              ].map(({ label, count, color, max }) => (
-                <div key={label} className="flex items-center gap-3">
-                  <span className="text-sm text-gray-700 w-20">{label}</span>
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full">
-                    <div className="h-full rounded-full" style={{ width: `${max > 0 ? (count / max) * 100 : 0}%`, background: color }} />
-                  </div>
-                  <span className="text-sm text-gray-500 w-6 text-right">{count}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="h-px bg-gray-100 mb-4"></div>
-            <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Nișe influenceri</p>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {topNise.length > 0 ? topNise.map(([nisa, count]) => (
-                <span key={nisa} className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-100">
-                  {nisa} {totalNise > 0 ? `${Math.round((count / totalNise) * 100)}%` : ''}
+      {/* Top influenceri */}
+      {topInfluencers.length > 0 && (
+        <div className="bu-card bu-card-pad">
+          <div className="bu-label" style={{ marginBottom: 6 }}>Top influenceri după reach</div>
+          <div>
+            {topInfluencers.map((inf, idx) => (
+              <div key={inf.id} className="an-top">
+                <span className="an-num" style={{ fontSize: 14, color: '#8783a8' }}>{idx + 1}</span>
+                <span className="bu-face" style={{ width: 40, height: 40, background: 'linear-gradient(135deg,#e6f0ff,#efeaff)', color: '#4423c4', fontSize: 15 }}>
+                  {inf.avatar
+                    ? <img src={inf.avatar} alt={inf.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : inf.name?.[0]}
                 </span>
-              )) : <span className="text-xs text-gray-400">Nicio dată disponibilă încă</span>}
-            </div>
-
-            <div className="h-px bg-gray-100 mb-4"></div>
-            <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Comparație industrie</p>
-            <div className="space-y-2.5">
-              {[
-                { label: 'Eng. rate mediu', yours: '3.8%', industry: '1.9%', better: true },
-                { label: 'Cost / reach', yours: totalReach > 0 ? `${((invested / totalReach)).toFixed(3)} RON` : '—', industry: '0.05 RON', better: true },
-                { label: 'Setup campanie', yours: '15 min', industry: '5-7 zile', better: true },
-              ].map(({ label, yours, industry, better }) => (
-                <div key={label} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{label}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">vs {industry}</span>
-                    <span className={`text-xs font-black px-2 py-0.5 rounded-full ${better ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-                      {yours}
-                    </span>
+                <div style={{ minWidth: 0 }}>
+                  <a href={`/influencer/${inf.slug || inf.id}`} target="_blank" style={{ fontWeight: 700, fontSize: 14, color: '#14123a', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inf.name}</span> <ArrowUpRight className="w-3 h-3" style={{ flex: 'none' }} />
+                  </a>
+                  <div className="bu-row bu-muted bu-xs" style={{ gap: 10 }}>
+                    {inf.ig_followers > 0 && <span>IG {fmt(inf.ig_followers)}</span>}
+                    {inf.tt_followers > 0 && <span>TT {fmt(inf.tt_followers)}</span>}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Top influenceri */}
-        {topInfluencers.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-4">Top influenceri după reach</p>
-            <div className="space-y-3">
-              {topInfluencers.map((inf, idx) => (
-                <div key={inf.id} className="flex items-center gap-4">
-                  <span className="text-xs font-black text-gray-300 w-4">{idx + 1}</span>
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {inf.avatar
-                      ? <img src={inf.avatar} alt={inf.name} className="w-full h-full object-cover" />
-                      : <span className="text-sm font-black text-orange-500">{inf.name?.[0]}</span>
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <a href={`/influencer/${inf.slug || inf.id}`} target="_blank" className="text-sm font-black text-gray-900 hover:text-orange-500 transition flex items-center gap-1">
-                      {inf.name} <ArrowUpRight className="w-3 h-3" />
-                    </a>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      {inf.ig_followers > 0 && <span className="text-xs text-gray-400">IG {fmt(inf.ig_followers)}</span>}
-                      {inf.tt_followers > 0 && <span className="text-xs text-gray-400">TT {fmt(inf.tt_followers)}</span>}
-                    </div>
-                  </div>
-                  <div className="flex-1 max-w-32">
-                    <div className="h-2 bg-gray-100 rounded-full">
-                      <div className="h-full rounded-full bg-purple-400"
-                        style={{ width: `${topInfluencers[0].reach > 0 ? (inf.reach / topInfluencers[0].reach) * 100 : 0}%` }} />
-                    </div>
-                  </div>
-                  <span className="text-sm font-black text-gray-700 w-16 text-right">{fmt(inf.reach)}</span>
+                <div className="bu-bar an-bar">
+                  <i style={{ width: `${topInfluencers[0].reach > 0 ? (inf.reach / topInfluencers[0].reach) * 100 : 0}%` }} />
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-xs text-gray-400">Total investit</p>
-                <p className="text-lg font-black text-gray-900">{fmtRon(Math.round(invested))}</p>
+                <b className="an-num" style={{ fontSize: 16, textAlign: 'right' }}>{fmt(inf.reach)}</b>
               </div>
-              <div className="w-px h-8 bg-gray-100"></div>
-              <div>
-                <p className="text-xs text-gray-400">Economii generate</p>
-                <p className="text-lg font-black text-green-600">{fmtRon(Math.round(savings))}</p>
-              </div>
-              <div className="w-px h-8 bg-gray-100"></div>
-              <div>
-                <p className="text-xs text-gray-400">ROI total estimat</p>
-                <p className="text-lg font-black text-green-600">{roi}%</p>
-              </div>
-            </div>
-            <p className="text-xs text-gray-300">Generat de AddFame · addfame.ro</p>
+            ))}
           </div>
         </div>
+      )}
 
+      {/* Footer */}
+      <div className="bu-card bu-card-pad">
+        <div className="bu-row" style={{ justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div className="bu-row" style={{ gap: 20, flexWrap: 'wrap' }}>
+            <div>
+              <div className="bu-muted bu-xs">Total investit</div>
+              <div className="an-num" style={{ fontSize: 20 }}>{fmtRon(Math.round(invested))}</div>
+            </div>
+            <div>
+              <div className="bu-muted bu-xs">Economii generate</div>
+              <div className="an-num" style={{ fontSize: 20, color: '#14532d' }}>{fmtRon(Math.round(savings))}</div>
+            </div>
+            <div>
+              <div className="bu-muted bu-xs">ROI total estimat</div>
+              <div className="an-num" style={{ fontSize: 20, color: '#14532d' }}>{roi}%</div>
+            </div>
+          </div>
+          <span className="bu-muted bu-xs">Generat de AddFame · addfame.ro</span>
+        </div>
       </div>
     </div>
   )

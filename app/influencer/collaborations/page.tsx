@@ -9,7 +9,8 @@ import {
   Briefcase, Check, X, Clock, CheckCircle, AlertCircle,
   MessageSquare, ChevronRight, ArrowRight, Zap, Search,
   RefreshCw, ExternalLink, Link2, Send, Upload, Eye,
-  RotateCcw, AlertTriangle, Calendar, DollarSign
+  RotateCcw, AlertTriangle, Calendar, DollarSign,
+  Loader2, Package, Truck, Lock, Copy, FileText, Star
 } from 'lucide-react'
 import Link from 'next/link'
 import { checkInWithCode } from '@/app/actions/collaborations'
@@ -101,9 +102,9 @@ type Collaboration = {
 }
 
 const fmt = (n: number) => `${n.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON`
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-const fmtDateShort = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-const fmtDateTime = (d: string) => new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })
+const fmtDateShort = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })
+const fmtDateTime = (d: string) => new Date(d).toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
 const PLATFORM_ICON: Record<string, React.ReactElement> = {
   instagram: <InstagramIcon className="w-4 h-4" />,
@@ -171,25 +172,25 @@ function ScoreTimerBanner({ acceptedAt }: { acceptedAt?: string }) {
   const expired = hoursElapsed >= 48
 
   const theme = in24h
-    ? { color: '#059669', bg: '#ecfdf5', border: '#6ee7b7', timerBg: '#059669', label: 'Bonus maxim disponibil!', sub: 'Postează în 24h de la acceptare' }
+    ? { color: '#14532d', bg: '#dcf5ec', border: '#b8e8d3', timerBg: '#14532d', label: 'Bonus maxim disponibil!', sub: 'Postează în 24h de la acceptare' }
     : in48h
-    ? { color: '#d97706', bg: '#fffbeb', border: '#fcd34d', timerBg: '#d97706', label: 'Bonus parțial — grăbește-te!', sub: 'Bonusul de 24h a expirat' }
-    : { color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', timerBg: '#7c3aed', label: 'Câștigă puncte Creator Score', sub: 'Bonusurile de viteză au expirat' }
+    ? { color: '#854d0e', bg: '#fff1c2', border: '#f3dd8c', timerBg: '#854d0e', label: 'Bonus parțial — grăbește-te!', sub: 'Bonusul de 24h a expirat' }
+    : { color: '#5b2fd0', bg: '#efeaff', border: '#ddd1ff', timerBg: '#7040f0', label: 'Câștigă puncte Creator Score', sub: 'Bonusurile de viteză au expirat' }
 
   return (
-    <div style={{ background: theme.bg, borderBottom: `1px solid ${theme.border}`, padding: '14px 16px' }}>
+    <div style={{ background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '14px 16px' }}>
 
       {/* Row 1: Label + puncte */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
         <div>
           <p style={{ fontSize: 12, fontWeight: 900, color: theme.color, margin: '0 0 2px' }}>
-            {in24h ? '🔥' : in48h ? '⚡' : '⭐'} {theme.label}
+            {theme.label}
           </p>
-          <p style={{ fontSize: 11, color: theme.color, opacity: 0.75, margin: 0 }}>{theme.sub}</p>
+          <p style={{ fontSize: 12, color: theme.color, opacity: 0.8, margin: 0 }}>{theme.sub}</p>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <p style={{ fontSize: 22, fontWeight: 900, color: theme.color, margin: 0, lineHeight: 1, letterSpacing: '-0.5px' }}>+{totalPossible}</p>
-          <p style={{ fontSize: 10, color: theme.color, opacity: 0.6, margin: '1px 0 0', fontWeight: 600 }}>puncte posibile</p>
+          <p style={{ fontSize: 11, color: theme.color, opacity: 0.6, margin: '1px 0 0', fontWeight: 600 }}>puncte posibile</p>
         </div>
       </div>
 
@@ -206,15 +207,15 @@ function ScoreTimerBanner({ acceptedAt }: { acceptedAt?: string }) {
 
         {/* Breakdown pills */}
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 10, fontWeight: 700, background: 'white', color: '#059669', padding: '3px 8px', borderRadius: 100, border: '1px solid #6ee7b7' }}>+100 colaborare</span>
-          <span style={{ fontSize: 10, fontWeight: 700, background: 'white', color: '#059669', padding: '3px 8px', borderRadius: 100, border: '1px solid #6ee7b7' }}>+50 prima aprobare</span>
+          <span style={{ fontSize: 11, fontWeight: 700, background: 'white', color: '#14532d', padding: '3px 8px', borderRadius: 100, border: '1px solid #b8e8d3' }}>+100 colaborare</span>
+          <span style={{ fontSize: 11, fontWeight: 700, background: 'white', color: '#14532d', padding: '3px 8px', borderRadius: 100, border: '1px solid #b8e8d3' }}>+50 prima aprobare</span>
           {bonus > 0 && (
-            <span style={{ fontSize: 10, fontWeight: 900, background: theme.timerBg, color: 'white', padding: '3px 8px', borderRadius: 100 }}>
+            <span style={{ fontSize: 11, fontWeight: 900, background: theme.timerBg, color: 'white', padding: '3px 8px', borderRadius: 100 }}>
               +{bonus} bonus {in24h ? '24h' : '48h'}
             </span>
           )}
           {expired && (
-            <span style={{ fontSize: 10, fontWeight: 700, background: '#f3f4f6', color: '#6b7280', padding: '3px 8px', borderRadius: 100 }}>bonusuri expirate</span>
+            <span style={{ fontSize: 11, fontWeight: 700, background: '#f3f4f6', color: '#6b7280', padding: '3px 8px', borderRadius: 100 }}>bonusuri expirate</span>
           )}
         </div>
       </div>
@@ -232,13 +233,145 @@ function ScoreTimerBanner({ acceptedAt }: { acceptedAt?: string }) {
             }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-            <span style={{ fontSize: 9, color: theme.color, opacity: 0.6 }}>Acceptat</span>
-            <span style={{ fontSize: 9, color: theme.color, opacity: 0.6, fontWeight: 700 }}>
+            <span style={{ fontSize: 11, color: theme.color, opacity: 0.6 }}>Acceptat</span>
+            <span style={{ fontSize: 11, color: theme.color, opacity: 0.6, fontWeight: 700 }}>
               {in24h ? 'Deadline bonus 24h' : 'Deadline bonus 48h'}
             </span>
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Helpers de afișare (design "Centrul de comandă") ────────────────────────
+const TAB_LABEL: Record<Tab, string> = {
+  'All': 'Toate', 'Invited': 'Invitate', 'Fara raspuns': 'Fără răspuns', 'Active': 'Active',
+  'Applied': 'Aplicate', 'Completed': 'Finalizate', 'Respinse': 'Respinse',
+}
+const TAB_ORDER: Tab[] = ['All', 'Invited', 'Active', 'Applied', 'Completed', 'Fara raspuns', 'Respinse']
+const STEPS = ['Aplicat', 'Acceptat', 'Pachet', 'Postat', 'Aprobat']
+
+type Pastel = { label: string; bg: string; fg: string }
+const GRN = { bg: '#dcf5ec', fg: '#14532d' }, AMB = { bg: '#fff1c2', fg: '#854d0e' }, BLU = { bg: '#e6f0ff', fg: '#1d4fb8' }
+const VIO = { bg: '#efeaff', fg: '#5b2fd0' }, GRY = { bg: '#f0eff7', fg: '#4a4770' }, ORG = { bg: '#fff1e6', fg: '#9a4206' }
+const RED = { bg: '#fff4f2', fg: '#b42318' }
+
+const fmtRon = (n: number) => `${Number(n).toLocaleString('ro-RO', { maximumFractionDigits: 2 })} RON`
+const isDeliveryBarter = (c: any) => c.campaigns?.campaign_type === 'BARTER' && c.campaigns?.delivery_method === 'delivery'
+const isPickupBarter = (c: any) => c.campaigns?.campaign_type === 'BARTER' && c.campaigns?.delivery_method === 'pickup'
+const isPendingReview = (c: any) =>
+  c.status === 'ACTIVE' && !!c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at
+const isRejectedPost = (c: any) => c.status === 'ACTIVE' && !!c.deliverable_rejected_at && !c.deliverable_submitted_at
+const needsAddress = (c: any) => c.status === 'ACTIVE' && isDeliveryBarter(c) && !c.delivery_name
+const isLatePost = (c: any) =>
+  c.status === 'ACTIVE' && !!c.package_received_at && !c.deliverable_submitted_at && !!c.post_deadline_days &&
+  (Date.now() - new Date(c.package_received_at).getTime()) > c.post_deadline_days * 86400000
+
+// Pasul curent din cei 5 (null = fără progres; 5 = totul bifat)
+function collabStage(c: any): number | null {
+  if (c.status === 'COMPLETED') return 5
+  if (c.status === 'PENDING') return 0
+  if (c.status !== 'ACTIVE') return null
+  if (isPendingReview(c)) return 4
+  if (isDeliveryBarter(c) && !c.package_received_at) return 2
+  return 3
+}
+
+function collabStatus(c: any, expired: boolean): Pastel {
+  if (expired) return { label: 'Fără răspuns', ...AMB }
+  if (c.status === 'INVITED') return { label: 'Invitat', ...BLU }
+  if (c.status === 'PENDING') return { label: 'Aplicat · în așteptare', ...AMB }
+  if (c.status === 'COMPLETED') return { label: 'Finalizat', ...VIO }
+  if (c.status === 'REJECTED') return { label: 'Respins', ...GRY }
+  if (c.status === 'ACTIVE') {
+    if (isPendingReview(c)) return { label: 'În revizuire la brand', ...AMB }
+    if (isRejectedPost(c)) return { label: 'Post respins', ...RED }
+    if (isLatePost(c)) return { label: 'Întârziat', ...ORG }
+    if (needsAddress(c)) return { label: 'Adresă necesară', ...AMB }
+    if (isDeliveryBarter(c) && !c.package_sent_at) return { label: 'Brandul pregătește pachetul', ...BLU }
+    if (isDeliveryBarter(c) && !c.package_received_at) return { label: 'Colet în drum', ...BLU }
+    return { label: 'De postat', ...GRN }
+  }
+  return { label: c.status || '—', ...GRY }
+}
+
+// Chip de termen — vizibil doar după primirea coletului
+function deadlineChip(c: any): Pastel | null {
+  if (c.status !== 'ACTIVE' || isPendingReview(c) || isRejectedPost(c) || !c.package_received_at || c.deliverable_submitted_at) return null
+  if (isLatePost(c)) return { label: 'Termen depășit', ...ORG }
+  if (c.post_deadline_days) {
+    const msLeft = c.post_deadline_days * 86400000 - (Date.now() - new Date(c.package_received_at).getTime())
+    const d = Math.ceil(msLeft / 86400000)
+    if (d <= 0) return { label: 'Astăzi e ultima zi', ...ORG }
+    if (d === 1) return { label: 'Ultima zi — postează azi', ...ORG }
+    if (d <= 3) return { label: `${d} zile rămase`, ...ORG }
+    return { label: `Colet primit · ${d} zile rămase`, ...GRY }
+  }
+  return { label: 'Colet primit · postează', ...GRY }
+}
+
+// Câștig / plată pentru rând
+function moneyInfo(c: any): { amt: string; tag: string; tagStyle: Pastel } | null {
+  if (c.status === 'ACTIVE' && c.reserved_amount) return { amt: fmtRon(c.reserved_amount), tag: 'Plată garantată', tagStyle: { label: '', ...BLU } }
+  if (c.status === 'COMPLETED' && c.payment_amount) return { amt: fmtRon(c.payment_amount), tag: 'Plătit', tagStyle: { label: '', ...GRN } }
+  const camp = c.campaigns
+  if (!camp) return null
+  if (c.status === 'INVITED' && c.reserved_amount) return { amt: fmtRon(c.reserved_amount), tag: 'Câștig net', tagStyle: { label: '', ...VIO } }
+  const perInf = camp.budget_per_influencer
+    ? camp.budget_per_influencer
+    : camp.max_influencers && camp.max_influencers > 0
+      ? (camp.budget / camp.max_influencers)
+      : camp.budget
+  if (!(perInf > 0)) return null
+  if (c.status === 'REJECTED') return { amt: fmtRon(perInf), tag: 'Buget', tagStyle: { label: '', ...GRY } }
+  return { amt: fmtRon(perInf), tag: 'Câștig net', tagStyle: { label: '', ...VIO } }
+}
+
+function Track({ cur }: { cur: number }) {
+  const lineW = Math.min(Math.max(cur, 0), 4) * 20
+  return (
+    <div className="ic-trk" role="img" aria-label={`Pas ${Math.min(cur + 1, 5)} din 5`}>
+      <div className="ic-trk-line" /><div className="ic-trk-fill" style={{ width: `${lineW}%` }} />
+      {STEPS.map((s, i) => {
+        const done = i < cur, now = i === cur
+        return (
+          <div key={s} className="ic-trk-step">
+            <span className="ic-trk-dot" style={{
+              background: done ? '#7040f0' : now ? '#efeaff' : '#f0eff7',
+              color: done ? '#fff' : now ? '#5b2fd0' : '#8783a8',
+              boxShadow: now ? '0 0 0 3px #d9ccff' : 'none',
+            }}>{done ? <Check size={11} strokeWidth={3.2} /> : i + 1}</span>
+            <span className="ic-trk-lbl" style={{ fontWeight: 700, color: '#14123a', whiteSpace: 'nowrap', visibility: now ? 'visible' : 'hidden', height: now ? undefined : 0 }}>{s}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+const FACE_BG = ['#efeaff', '#e6f0ff', '#dcf5ec', '#fff1c2', '#fff1e6']
+const FACE_FG = ['#5b2fd0', '#1d4fb8', '#14532d', '#854d0e', '#9a4206']
+function BrandFace({ name, size = 40 }: { name?: string; size?: number }) {
+  const n = name || '?'
+  const k = (n.charCodeAt(0) || 0) % 5
+  return (
+    <span className="iu-face" style={{ width: size, height: size, background: FACE_BG[k], color: FACE_FG[k], fontSize: Math.round(size * 0.4), borderRadius: 12 }}>
+      {n[0]?.toUpperCase()}
+    </span>
+  )
+}
+
+function Note({ tone = 'grey', title, right, children }: { tone?: string; title?: React.ReactNode; right?: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div className={`ic-note ${tone}`}>
+      {(title || right) && (
+        <div className="ic-nh">
+          {title ? <b className="ic-nt">{title}</b> : <span />}
+          {right}
+        </div>
+      )}
+      {children}
     </div>
   )
 }
@@ -317,458 +450,274 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
     setEditing(false)
   }
 
-  // Was rejected — show rejection reason + resubmit form
-  if (wasRejected || editing) return (
-    <div className="mt-4 rounded-2xl overflow-hidden border-2 border-red-200">
-      {wasRejected && !editing && (
-        <div className="bg-red-50 px-4 py-3 flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-black text-red-700">Post respins de brand</p>
-            {collab.deliverable_rejection_reason && (
-              <p className="text-xs text-red-600 mt-0.5">„{collab.deliverable_rejection_reason}"</p>
-            )}
-          </div>
-        </div>
-      )}
-      <div className="bg-white p-4 space-y-3">
-        <p className="text-xs font-black text-gray-500 uppercase tracking-wider flex items-center gap-2">
-          <Upload className="w-3.5 h-3.5" />
-          {wasRejected ? 'Retrimite dovada postului' : 'Editează dovada'}
-        </p>
-        <div>
-          <label className="text-xs font-bold text-gray-600 mb-1.5 block">Link-uri postări publice *</label>
-          <div className="space-y-2">
-            {urls.map((u, i) => (
-              <div key={i} className="relative flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="url"
-                    value={u}
-                    onChange={e => { updateUrl(i, e.target.value); setError(null) }}
-                    placeholder={`https://instagram.com/p/... (postarea ${i + 1})`}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-medium outline-none focus:border-purple-400 transition"
-                    style={{ fontFamily: 'inherit' }}
-                  />
-                </div>
-                {urls.length > 1 && (
-                  <button onClick={() => removeUrl(i)} className="text-red-400 hover:text-red-600 transition p-1 flex-shrink-0" title="Șterge">✕</button>
-                )}
+  // Câmpurile formularului (comune pentru trimitere / retrimitere / editare)
+  const renderFields = () => (
+    <>
+      <div className="ic-f">
+        <label className="iu-label">Link-uri postări publice *</label>
+        <div className="ic-col" style={{ gap: 8 }}>
+          {urls.map((u, i) => (
+            <div key={i} className="iu-row" style={{ gap: 8 }}>
+              <div className="iu-search" style={{ flex: 1 }}>
+                <Link2 size={16} style={{ flex: 'none' }} />
+                <input
+                  type="url"
+                  value={u}
+                  onChange={e => { updateUrl(i, e.target.value); setError(null) }}
+                  placeholder={`https://instagram.com/p/... (postarea ${i + 1})`}
+                />
               </div>
-            ))}
-            <button onClick={addUrl} className="text-xs font-bold text-purple-600 hover:text-purple-800 transition flex items-center gap-1">
-              + Adaugă alt link (story, post, reel etc.)
-            </button>
-          </div>
-        </div>
-        {/* Screenshot thumbnail */}
-        <div>
-          <label className="text-xs font-bold text-gray-600 mb-1.5 block">
-            Screenshot postare <span className="text-red-500 font-bold">*obligatoriu</span>
-          </label>
-          <ThumbnailUpload
-            collabId={collab.id}
-            currentUrl={thumbnailUrl}
-            onUploaded={url => setThumbnailUrl(url)}
-          />
-        </div>
-        <div>
-          <label className="text-xs font-bold text-gray-600 mb-1.5 block">
-            Notă pentru brand <span className="font-normal text-gray-400">(opțional)</span>
-          </label>
-          <textarea
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            placeholder="ex: Am postat marți, am atins 15k views în primele 24h, engagement rate 8%..."
-            rows={2}
-            className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-medium outline-none focus:border-purple-400 transition resize-none"
-            style={{ fontFamily: 'inherit' }}
-          />
-        </div>
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-bold text-gray-600">
-              Cod Spark Ads / Partnership Ads <span className="font-normal text-gray-400">(opțional)</span>
-            </label>
-            <button type="button" onClick={() => setShowAdsHelp(v => !v)}
-              className="text-xs font-bold text-blue-500 hover:text-blue-700 transition">
-              {showAdsHelp ? '▲ Ascunde' : '? Cum găsesc codul'}
-            </button>
-          </div>
-          {showAdsHelp && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1.5 text-xs mb-2">
-              {platform === 'tiktok' ? (
-                <>
-                  <p className="font-black text-blue-700">📱 TikTok — Spark Ads:</p>
-                  <ol className="space-y-1 text-blue-600 list-decimal list-inside">
-                    <li>Deschide postul → apasă "..." → "Ad settings"</li>
-                    <li>Activează "Ad authorization" → selectează 30 zile</li>
-                    <li>Copiază codul de 7 cifre generat</li>
-                  </ol>
-                </>
-              ) : platform === 'instagram' ? (
-                <>
-                  <p className="font-black text-blue-700">📸 Instagram — Partnership Ads:</p>
-                  <ol className="space-y-1 text-blue-600 list-decimal list-inside">
-                    <li>Deschide postul → "..." → activează "Allow brand partner to boost"</li>
-                    <li>Brandul primește acces direct — nu există cod separat</li>
-                  </ol>
-                </>
-              ) : (
-                <>
-                  <p className="font-black text-blue-700">💡 Cod Ads per platformă:</p>
-                  <p className="text-blue-600"><strong>TikTok:</strong> postul → "..." → "Ad settings" → "Ad authorization" → cod 7 cifre</p>
-                  <p className="text-blue-600"><strong>Instagram:</strong> postul → "..." → "Allow brand partner to boost"</p>
-                </>
+              {urls.length > 1 && (
+                <button onClick={() => removeUrl(i)} className="ic-x" title="Șterge" aria-label="Șterge linkul"><X size={16} /></button>
               )}
             </div>
-          )}
-          <input type="text" value={adsCode} onChange={e => setAdsCode(e.target.value)}
-            placeholder={platform === 'tiktok' ? 'ex: 1234567 (7 cifre)' : 'Codul Spark Ads sau Partnership Ads'}
-            className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-medium outline-none focus:border-blue-400 transition"
-            style={{ fontFamily: 'inherit' }}
-          />
-          <p className="text-[10px] text-gray-400 mt-1">Permite brandului să ruleze ads cu postul tău — mai multă vizibilitate pentru ambii.</p>
+          ))}
+          <button type="button" onClick={addUrl} className="ic-linkbtn">+ Adaugă alt link (story, post, reel etc.)</button>
         </div>
-        {error && <p className="text-xs text-red-600 font-bold flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
-        {/* Acord licență conținut — Opțiunea 2 */}
-        <label className="flex items-start gap-3 bg-purple-50 border-2 border-purple-200 rounded-xl p-3 cursor-pointer hover:bg-purple-100 transition">
-          <input
-            type="checkbox"
-            checked={licenseConsent}
-            onChange={e => setLicenseConsent(e.target.checked)}
-            className="mt-0.5 w-4 h-4 accent-purple-600 flex-shrink-0 cursor-pointer"
-          />
-          <span className="text-xs text-gray-700 leading-relaxed">
-            <span className="font-black text-purple-700">Acord utilizare conținut</span> — Sunt de acord ca{' '}
-            <strong>AddFame.ro</strong> să poată folosi acest conținut (postare, metrici, screenshot, repost) în
-            materiale de promovare — inclusiv pe conturile oficiale <strong>@addfame.ro</strong>{' '}
-            (Instagram, TikTok, LinkedIn, website), conform{' '}
-            <a href="/termeni" target="_blank" rel="noreferrer" className="text-purple-600 underline font-bold">
-              Termenilor și Condițiilor
-            </a>
-            . <span className="text-red-500 font-bold">*obligatoriu</span>
-          </span>
-        </label>
-        <div className="flex gap-2">
-          {editing && (
-            <button onClick={() => { setEditing(false); setUrls(existingUrls); setNote(collab.deliverable_note || ''); setAdsCode(collab.ads_code || '') }}
-              className="flex-1 py-2.5 rounded-xl font-bold text-sm text-gray-600 border-2 border-gray-200 hover:bg-gray-50 transition">
-              Anulează
-            </button>
-          )}
-          <button onClick={submit} disabled={saving || !licenseConsent || !thumbnailUrl}
-            className="flex-1 py-2.5 rounded-xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }}>
-            {saving
-              ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Trimite…</>
-              : <><Send className="w-3.5 h-3.5" /> {wasRejected ? 'Retrimite dovada' : 'Trimite dovada'}</>
-            }
+      </div>
+
+      <div className="ic-f">
+        <label className="iu-label">Screenshot postare <span style={{ color: '#b42318' }}>obligatoriu</span></label>
+        <ThumbnailUpload
+          collabId={collab.id}
+          currentUrl={thumbnailUrl}
+          onUploaded={url => setThumbnailUrl(url)}
+        />
+      </div>
+
+      <div className="ic-f">
+        <label className="iu-label">Notă pentru brand <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 600 }}>(opțional)</span></label>
+        <textarea
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          placeholder="ex: Am postat marți, am atins 15k views în primele 24h, engagement rate 8%..."
+          rows={2}
+          className="iu-input ic-ta"
+        />
+      </div>
+
+      <div className="ic-f">
+        <div className="iu-row" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+          <label className="iu-label">Cod Spark Ads / Partnership Ads <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 600 }}>(opțional)</span></label>
+          <button type="button" onClick={() => setShowAdsHelp(v => !v)} className="ic-linkbtn" style={{ color: '#1d4fb8' }}>
+            {showAdsHelp ? 'Ascunde' : 'Cum găsesc codul?'}
           </button>
         </div>
+        {showAdsHelp && (
+          <Note tone="blue">
+            {platform === 'tiktok' ? (
+              <>
+                <b className="iu-sm">TikTok — Spark Ads</b>
+                <ol className="ic-ol">
+                  <li>Deschide postul, apasă „..." și alege „Ad settings"</li>
+                  <li>Activează „Ad authorization" și selectează 30 zile</li>
+                  <li>Copiază codul de 7 cifre generat</li>
+                </ol>
+              </>
+            ) : platform === 'instagram' ? (
+              <>
+                <b className="iu-sm">Instagram — Partnership Ads</b>
+                <ol className="ic-ol">
+                  <li>Deschide postul, apasă „..." și activează „Allow brand partner to boost"</li>
+                  <li>Brandul primește acces direct — nu există cod separat</li>
+                </ol>
+              </>
+            ) : (
+              <>
+                <b className="iu-sm">Cod Ads per platformă</b>
+                <span className="iu-xs"><b>TikTok:</b> postul, „..." , „Ad settings", „Ad authorization", cod de 7 cifre</span>
+                <span className="iu-xs"><b>Instagram:</b> postul, „...", „Allow brand partner to boost"</span>
+              </>
+            )}
+          </Note>
+        )}
+        <input type="text" value={adsCode} onChange={e => setAdsCode(e.target.value)}
+          placeholder={platform === 'tiktok' ? 'ex: 1234567 (7 cifre)' : 'Codul Spark Ads sau Partnership Ads'}
+          className="iu-input" style={{ width: '100%' }}
+        />
+        <span className="iu-xs iu-muted">Permite brandului să ruleze ads cu postul tău — mai multă vizibilitate pentru ambii.</span>
       </div>
-    </div>
-  )
 
-  // Submitted, waiting for brand
-  if (isSubmitted) return (
-    <div className="mt-4 bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-        <p className="text-xs font-black text-amber-700 uppercase tracking-wider">Dovadă trimisă — în așteptarea aprobării</p>
-      </div>
-      <div className="bg-white border border-amber-200 rounded-xl p-3 flex items-center gap-3">
-        <Link2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-        <a href={collab.deliverable_url} target="_blank" rel="noopener noreferrer"
-          className="text-sm font-bold text-amber-700 hover:text-amber-900 underline truncate flex-1">
-          {collab.deliverable_url}
-        </a>
-        <a href={collab.deliverable_url} target="_blank" rel="noopener noreferrer"
-          className="flex-shrink-0 p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 transition">
-          <ExternalLink className="w-3.5 h-3.5 text-amber-600" />
-        </a>
-      </div>
-      {collab.ads_code && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-2">
-          <span className="text-xs font-black text-blue-700">Cod Ads:</span>
-          <span className="text-xs font-mono font-bold text-blue-600">{collab.ads_code}</span>
+      {error && (
+        <div className="ic-note red" role="alert" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <AlertCircle size={16} style={{ flex: 'none' }} /><b className="iu-sm" style={{ color: '#b42318' }}>{error}</b>
         </div>
       )}
-      {collab.deliverable_note && (
-        <p className="text-xs text-gray-500 italic">„{collab.deliverable_note}"</p>
+
+      {/* Acord licență conținut */}
+      <label className="ic-consent">
+        <input type="checkbox" checked={licenseConsent} onChange={e => setLicenseConsent(e.target.checked)} />
+        <span className="iu-xs" style={{ lineHeight: 1.55, color: '#4a4770' }}>
+          <b style={{ color: '#5b2fd0' }}>Acord utilizare conținut</b> — Sunt de acord ca{' '}
+          <b>AddFame.ro</b> să poată folosi acest conținut (postare, metrici, screenshot, repost) în
+          materiale de promovare — inclusiv pe conturile oficiale <b>@addfame.ro</b>{' '}
+          (Instagram, TikTok, LinkedIn, website), conform{' '}
+          <a href="/termeni" target="_blank" rel="noreferrer" style={{ color: '#5b2fd0', fontWeight: 700 }}>Termenilor și Condițiilor</a>
+          . <span style={{ color: '#b42318', fontWeight: 700 }}>obligatoriu</span>
+        </span>
+      </label>
+    </>
+  )
+
+  const renderSubmitBtn = (label: string) => (
+    <button onClick={submit} disabled={saving || !licenseConsent || !thumbnailUrl} className="iu-btn p big" style={{ flex: 1 }}>
+      {saving
+        ? <><Loader2 size={16} className="ic-spin" /> Se trimite…</>
+        : <><Send size={15} /> {label}</>}
+    </button>
+  )
+
+  // Respins sau în editare — formular de retrimitere
+  if (wasRejected || editing) return (
+    <div className="ic-col" style={{ gap: 14 }}>
+      {wasRejected && !editing && (
+        <Note tone="red">
+          <div className="iu-row" style={{ gap: 8, alignItems: 'flex-start' }}>
+            <AlertTriangle size={16} style={{ flex: 'none', marginTop: 2 }} />
+            <div className="ic-col" style={{ gap: 2 }}>
+              <b className="iu-sm" style={{ color: '#b42318' }}>Post respins de brand</b>
+              {collab.deliverable_rejection_reason && <span className="iu-xs" style={{ color: '#b42318' }}>„{collab.deliverable_rejection_reason}"</span>}
+            </div>
+          </div>
+        </Note>
       )}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-gray-400">Trimis: {fmtDateTime(collab.deliverable_submitted_at!)}</p>
-        <button onClick={() => setEditing(true)}
-          className="text-xs font-bold text-amber-600 hover:text-amber-800 flex items-center gap-1 transition">
-          <RotateCcw className="w-3 h-3" /> Editează
-        </button>
+      <b className="iu-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Upload size={13} /> {wasRejected ? 'Retrimite dovada postului' : 'Editează dovada'}
+      </b>
+      {renderFields()}
+      <div className="ic-btns">
+        {editing && (
+          <button onClick={() => { setEditing(false); setUrls(existingUrls); setNote(collab.deliverable_note || ''); setAdsCode(collab.ads_code || '') }} className="iu-btn big" style={{ flex: 1 }}>
+            Anulează
+          </button>
+        )}
+        {renderSubmitBtn(wasRejected ? 'Retrimite dovada' : 'Trimite dovada')}
       </div>
     </div>
   )
 
-  // Not yet submitted — show submit form
-  return (
-    <div className="mt-4 rounded-2xl overflow-hidden border-2 border-purple-200">
-      <div className="bg-purple-50 px-4 py-3 flex items-center gap-2">
-        <Upload className="w-4 h-4 text-purple-600" />
-        <p className="text-xs font-black text-purple-700 uppercase tracking-wider">Trimite dovada postului</p>
-      </div>
+  // Trimis, în așteptarea brandului
+  if (isSubmitted) return (
+    <div className="ic-col" style={{ gap: 12 }}>
+      <Note tone="amber" title={<span className="iu-row" style={{ gap: 8 }}><span className="ic-pulse" /> Dovadă trimisă — în așteptarea aprobării</span>}>
+        {(collab.deliverable_urls?.length ? collab.deliverable_urls : [collab.deliverable_url]).filter(Boolean).map((u: string, i: number) => (
+          <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="ic-linkbox">
+            <Link2 size={14} style={{ flex: 'none' }} />
+            <span className="ic-linktxt">{u}</span>
+            <ExternalLink size={13} style={{ flex: 'none' }} />
+          </a>
+        ))}
+        {collab.ads_code && (
+          <span className="iu-sm"><span className="iu-muted">Cod Ads:</span> <span className="ic-mono">{collab.ads_code}</span></span>
+        )}
+        {collab.deliverable_note && <span className="iu-xs" style={{ fontStyle: 'italic' }}>„{collab.deliverable_note}"</span>}
+        <div className="iu-row" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+          <span className="iu-xs iu-muted">Trimis: {fmtDateTime(collab.deliverable_submitted_at!)}</span>
+          <button onClick={() => setEditing(true)} className="ic-linkbtn" style={{ width: 'auto' }}>
+            <RotateCcw size={12} style={{ verticalAlign: '-1px', marginRight: 4 }} /> Editează
+          </button>
+        </div>
+      </Note>
+    </div>
+  )
 
-      {/* ── Motivare Creator Score cu Timer Live ─────────────────── */}
+  // Încă netrimis — formular de trimitere
+  return (
+    <div className="ic-col" style={{ gap: 14 }}>
+      {/* Motivare Creator Score cu timer live */}
       <ScoreTimerBanner acceptedAt={collab.created_at} />
 
-      <div className="bg-white p-4 space-y-3">
-        {/* Brief complet campanie */}
-        {(collab.campaigns?.deliverables || collab.campaigns?.content_type?.length > 0 || collab.campaigns?.required_caption || collab.campaigns?.required_hashtags?.length > 0 || collab.campaigns?.key_messages?.length > 0 || collab.campaigns?.min_duration || collab.campaigns?.min_days_online || collab.campaigns?.story_instructions || collab.campaigns?.forbidden_mentions?.length > 0 || collab.campaigns?.tasks_ig_reel || collab.campaigns?.tasks_ig_post || collab.campaigns?.tasks_include_post || (collab.campaigns?.tasks_stories_count ?? 0) > 0 || collab.campaigns?.tasks_tt_video || collab.campaigns?.tasks_tt_live || collab.campaigns?.tasks_yt_short || collab.campaigns?.tasks_yt_video || collab.campaigns?.tasks_fb_post || collab.campaigns?.promotion_link || collab.campaigns?.brief_pdf_url) && (
-          <div className="bg-purple-50 border-2 border-purple-100 rounded-2xl p-4 space-y-3">
-            <p className="text-xs font-black text-purple-700 uppercase tracking-wider flex items-center gap-1.5">📋 Brief campanie — ce trebuie să faci</p>
+      {/* Brief complet campanie */}
+      {(collab.campaigns?.deliverables || collab.campaigns?.content_type?.length > 0 || collab.campaigns?.required_caption || collab.campaigns?.required_hashtags?.length > 0 || collab.campaigns?.key_messages?.length > 0 || collab.campaigns?.min_duration || collab.campaigns?.min_days_online || collab.campaigns?.story_instructions || collab.campaigns?.forbidden_mentions?.length > 0 || collab.campaigns?.tasks_ig_reel || collab.campaigns?.tasks_ig_post || collab.campaigns?.tasks_include_post || (collab.campaigns?.tasks_stories_count ?? 0) > 0 || collab.campaigns?.tasks_tt_video || collab.campaigns?.tasks_tt_live || collab.campaigns?.tasks_yt_short || collab.campaigns?.tasks_yt_video || collab.campaigns?.tasks_fb_post || collab.campaigns?.promotion_link || collab.campaigns?.brief_pdf_url) && (
+        <div className="ic-brief">
+          <b className="iu-label" style={{ color: '#5b2fd0' }}>Brief campanie — ce trebuie să faci</b>
 
-            {(() => {
-              const tasks: { label: string; sub?: string; color: string; bg: string; border: string }[] = []
-              const c = collab.campaigns
-              if (!c) return null
-              if ((c.tasks_stories_count ?? 0) > 0) tasks.push({ label: `${c.tasks_stories_count} Instagram ${c.tasks_stories_count === 1 ? 'Story' : 'Stories'}`, sub: c.tasks_ig_days_online ? `online minim ${c.tasks_ig_days_online} zile` : undefined, color: '#4c1d95', bg: '#f5f3ff', border: '#c4b5fd' })
-              if (c.tasks_ig_reel) tasks.push({ label: 'Instagram Reel', sub: c.tasks_ig_reel_duration ? `minim ${c.tasks_ig_reel_duration} secunde` : undefined, color: '#4c1d95', bg: '#f5f3ff', border: '#c4b5fd' })
-              if (c.tasks_ig_post || c.tasks_include_post) tasks.push({ label: 'Post Feed Instagram', sub: 'foto sau carousel', color: '#4c1d95', bg: '#f5f3ff', border: '#c4b5fd' })
-              if (c.tasks_ig_live) tasks.push({ label: 'Instagram Live', sub: undefined, color: '#4c1d95', bg: '#f5f3ff', border: '#c4b5fd' })
-              if (c.tasks_tt_video) tasks.push({ label: 'TikTok Video', sub: [c.tasks_tt_video_duration ? `minim ${c.tasks_tt_video_duration} sec` : '', c.tasks_tt_days_online ? `online minim ${c.tasks_tt_days_online === 9999 ? 'permanent' : c.tasks_tt_days_online + ' zile'}` : ''].filter(Boolean).join(' · ') || undefined, color: '#111827', bg: '#f3f4f6', border: '#d1d5db' })
-              if (c.tasks_tt_live) tasks.push({ label: 'TikTok Live', sub: undefined, color: '#111827', bg: '#f3f4f6', border: '#d1d5db' })
-              if (c.tasks_tt_duet) tasks.push({ label: 'TikTok Duet', sub: undefined, color: '#111827', bg: '#f3f4f6', border: '#d1d5db' })
-              if (c.tasks_yt_short) tasks.push({ label: 'YouTube Short', sub: c.tasks_yt_short_duration ? `minim ${c.tasks_yt_short_duration} sec` : undefined, color: '#7f1d1d', bg: '#fef2f2', border: '#fca5a5' })
-              if (c.tasks_yt_video) tasks.push({ label: 'Video YouTube', sub: c.tasks_yt_video_duration ? `minim ${c.tasks_yt_video_duration} min` : undefined, color: '#7f1d1d', bg: '#fef2f2', border: '#fca5a5' })
-              if (c.tasks_yt_mention) tasks.push({ label: 'Mențiune YouTube', sub: undefined, color: '#7f1d1d', bg: '#fef2f2', border: '#fca5a5' })
-              if (c.tasks_fb_post) tasks.push({ label: 'Facebook Post', sub: undefined, color: '#1e3a5f', bg: '#eff6ff', border: '#93c5fd' })
-              if (c.tasks_fb_story) tasks.push({ label: 'Facebook Story', sub: undefined, color: '#1e3a5f', bg: '#eff6ff', border: '#93c5fd' })
-              if (c.tasks_fb_reel) tasks.push({ label: 'Facebook Reel', sub: undefined, color: '#1e3a5f', bg: '#eff6ff', border: '#93c5fd' })
-              if (c.tasks_fb_share) tasks.push({ label: 'Share postare Facebook', sub: undefined, color: '#1e3a5f', bg: '#eff6ff', border: '#93c5fd' })
-              if (tasks.length === 0 && !c.deliverables) return null
-              return (
-                <div className="rounded-2xl overflow-hidden border-2 border-purple-300">
-                  <div className="flex items-center gap-2.5 px-4 py-3" style={{ background: '#7c3aed' }}>
-                    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                    <p className="font-black text-white text-sm uppercase tracking-wide">Ce trebuie să postezi</p>
-                    <span className="ml-auto bg-white/20 text-white text-xs font-black px-2.5 py-0.5 rounded-full">{tasks.length} task{tasks.length !== 1 ? 'uri' : ''}</span>
-                  </div>
-                  <div className="bg-white p-3 space-y-2">
-                    {tasks.map((t, i) => (
-                      <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: t.bg, border: `1px solid ${t.border}` }}>
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#7c3aed' }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-black truncate" style={{ color: t.color }}>{t.label}</p>
-                          {t.sub && <p className="text-xs" style={{ color: t.color, opacity: 0.7 }}>{t.sub}</p>}
-                        </div>
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#7c3aed', color: 'white' }}>obligatoriu</span>
-                      </div>
-                    ))}
-                    {tasks.length > 1 && (
-                      <div className="flex items-start gap-2 rounded-xl px-3 py-2.5 mt-1" style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
-                        <svg className="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                        <p className="text-xs font-bold" style={{ color: '#78350f' }}>Toate cele <strong>{tasks.length} task-uri sunt obligatorii</strong> — trimite link dovadă pentru fiecare postare.</p>
-                      </div>
-                    )}
-                  </div>
+          {(() => {
+            const tasks: { label: string; sub?: string }[] = []
+            const c = collab.campaigns
+            if (!c) return null
+            if ((c.tasks_stories_count ?? 0) > 0) tasks.push({ label: `${c.tasks_stories_count} Instagram ${c.tasks_stories_count === 1 ? 'Story' : 'Stories'}`, sub: c.tasks_ig_days_online ? `online minim ${c.tasks_ig_days_online} zile` : undefined })
+            if (c.tasks_ig_reel) tasks.push({ label: 'Instagram Reel', sub: c.tasks_ig_reel_duration ? `minim ${c.tasks_ig_reel_duration} secunde` : undefined })
+            if (c.tasks_ig_post || c.tasks_include_post) tasks.push({ label: 'Post Feed Instagram', sub: 'foto sau carousel' })
+            if (c.tasks_ig_live) tasks.push({ label: 'Instagram Live' })
+            if (c.tasks_tt_video) tasks.push({ label: 'TikTok Video', sub: [c.tasks_tt_video_duration ? `minim ${c.tasks_tt_video_duration} sec` : '', c.tasks_tt_days_online ? `online minim ${c.tasks_tt_days_online === 9999 ? 'permanent' : c.tasks_tt_days_online + ' zile'}` : ''].filter(Boolean).join(' · ') || undefined })
+            if (c.tasks_tt_live) tasks.push({ label: 'TikTok Live' })
+            if (c.tasks_tt_duet) tasks.push({ label: 'TikTok Duet' })
+            if (c.tasks_yt_short) tasks.push({ label: 'YouTube Short', sub: c.tasks_yt_short_duration ? `minim ${c.tasks_yt_short_duration} sec` : undefined })
+            if (c.tasks_yt_video) tasks.push({ label: 'Video YouTube', sub: c.tasks_yt_video_duration ? `minim ${c.tasks_yt_video_duration} min` : undefined })
+            if (c.tasks_yt_mention) tasks.push({ label: 'Mențiune YouTube' })
+            if (c.tasks_fb_post) tasks.push({ label: 'Facebook Post' })
+            if (c.tasks_fb_story) tasks.push({ label: 'Facebook Story' })
+            if (c.tasks_fb_reel) tasks.push({ label: 'Facebook Reel' })
+            if (c.tasks_fb_share) tasks.push({ label: 'Share postare Facebook' })
+            if (tasks.length === 0 && !c.deliverables) return null
+            return (
+              <div className="ic-tasks">
+                <div className="iu-row" style={{ justifyContent: 'space-between', gap: 8 }}>
+                  <b className="iu-sm">Ce trebuie să postezi</b>
+                  <span className="iu-chip" style={{ background: '#efeaff', color: '#5b2fd0' }}>{tasks.length} task{tasks.length !== 1 ? '-uri' : ''}</span>
                 </div>
-              )
-            })()}
-            {collab.campaigns?.content_type?.length > 0 && (
-              <div className="bg-white rounded-xl p-3 border border-purple-100">
-                <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider mb-1">🎬 Tip conținut</p>
-                <p className="text-xs font-bold text-gray-700">{collab.campaigns.content_type.join(', ')}</p>
-              </div>
-            )}
-            {collab.campaigns?.brief_pdf_url && (
-              <a href={collab.campaigns.brief_pdf_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-white font-black text-sm"
-                style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)' }}>
-                <span>📋</span> Citește Brieful Campaniei
-                <span className="ml-auto text-white/70 text-xs">Deschide PDF →</span>
-              </a>
-            )}
-            {collab.campaigns?.promotion_link && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                <p className="text-[10px] font-black text-green-700 uppercase tracking-wider mb-1">🔗 Link de promovat</p>
-                <a href={collab.campaigns.promotion_link} target="_blank" rel="noopener noreferrer"
-                  className="text-xs font-bold text-green-700 underline break-all">{collab.campaigns.promotion_link}</a>
-              </div>
-            )}
-            {collab.campaigns?.story_instructions && (
-              <div className="bg-white rounded-xl p-3 border border-purple-100">
-                <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider mb-1">📝 Instrucțiuni story</p>
-                <p className="text-xs text-gray-700 leading-relaxed">{collab.campaigns.story_instructions}</p>
-              </div>
-            )}
-            {(collab.campaigns?.min_duration || collab.campaigns?.min_days_online) && (
-              <div className="grid grid-cols-2 gap-2">
-                {collab.campaigns?.min_duration && (
-                  <div className="bg-white rounded-xl p-3 border border-purple-100">
-                    <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider mb-1">⏱️ Durată minimă</p>
-                    <p className="text-xs font-bold text-gray-700">{collab.campaigns.min_duration} secunde</p>
+                {tasks.map((t, i) => (
+                  <div key={i} className="ic-task">
+                    <span className="ic-trk-dot" style={{ background: '#7040f0', color: '#fff', width: 24, height: 24 }}><Check size={12} strokeWidth={3.2} /></span>
+                    <div className="ic-col" style={{ flex: 1, minWidth: 0 }}>
+                      <b className="iu-sm">{t.label}</b>
+                      {t.sub && <span className="iu-xs iu-muted">{t.sub}</span>}
+                    </div>
+                    <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}>obligatoriu</span>
                   </div>
-                )}
-                {collab.campaigns?.min_days_online && (
-                  <div className="bg-white rounded-xl p-3 border border-purple-100">
-                    <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider mb-1">📅 Online minim</p>
-                    <p className="text-xs font-bold text-gray-700">{collab.campaigns.min_days_online} zile</p>
-                  </div>
-                )}
-              </div>
-            )}
-            {collab.campaigns?.required_caption && (
-              <div className="bg-yellow-50 rounded-xl p-3 border border-yellow-200">
-                <p className="text-[10px] font-black text-yellow-600 uppercase tracking-wider mb-1">✍️ Caption obligatoriu</p>
-                <p className="text-xs text-gray-700 leading-relaxed font-medium">{collab.campaigns.required_caption}</p>
-              </div>
-            )}
-            {collab.campaigns?.required_hashtags?.length > 0 && (
-              <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
-                <p className="text-[10px] font-black text-blue-600 uppercase tracking-wider mb-1"># Hashtag-uri obligatorii</p>
-                <p className="text-xs font-bold text-blue-700">#{collab.campaigns.required_hashtags.join(' #')}</p>
-              </div>
-            )}
-            {collab.campaigns?.key_messages?.length > 0 && (
-              <div className="bg-white rounded-xl p-3 border border-purple-100">
-                <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider mb-1">⭐ Mesaje cheie de transmis</p>
-                <ul className="space-y-1">{collab.campaigns.key_messages.map((m: string, i: number) => (
-                  <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5"><span className="text-purple-400 flex-shrink-0 mt-0.5">•</span>{m}</li>
-                ))}</ul>
-              </div>
-            )}
-            {collab.campaigns?.forbidden_mentions?.length > 0 && (
-              <div className="bg-red-50 rounded-xl p-3 border border-red-200">
-                <p className="text-[10px] font-black text-red-500 uppercase tracking-wider mb-1">🚫 Nu menționa / evită</p>
-                <p className="text-xs text-red-700 font-medium">{collab.campaigns.forbidden_mentions.join(', ')}</p>
-              </div>
-            )}
-          </div>
-        )}
-        <div>
-          <label className="text-xs font-bold text-gray-600 mb-1.5 block">Link-uri postări publice *</label>
-          <div className="space-y-2">
-            {urls.map((u, i) => (
-              <div key={i} className="relative flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="url"
-                    value={u}
-                    onChange={e => { updateUrl(i, e.target.value); setError(null) }}
-                    placeholder={`https://instagram.com/p/... (postarea ${i + 1})`}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-medium outline-none focus:border-purple-400 transition"
-                    style={{ fontFamily: 'inherit' }}
-                  />
-                </div>
-                {urls.length > 1 && (
-                  <button onClick={() => removeUrl(i)} className="text-red-400 hover:text-red-600 transition p-1 flex-shrink-0" title="Șterge">✕</button>
+                ))}
+                {tasks.length > 1 && (
+                  <Note tone="amber">
+                    <span className="iu-xs" style={{ fontWeight: 700 }}>Toate cele {tasks.length} task-uri sunt obligatorii — trimite link dovadă pentru fiecare postare.</span>
+                  </Note>
                 )}
               </div>
-            ))}
-            <button onClick={addUrl} className="text-xs font-bold text-purple-600 hover:text-purple-800 transition flex items-center gap-1">
-              + Adaugă alt link (story, post, reel etc.)
-            </button>
-          </div>
-        </div>
-        {/* Screenshot thumbnail */}
-        <div>
-          <label className="text-xs font-bold text-gray-600 mb-1.5 block">
-            Screenshot postare <span className="text-red-500 font-bold">*obligatoriu</span>
-          </label>
-          <ThumbnailUpload
-            collabId={collab.id}
-            currentUrl={thumbnailUrl}
-            onUploaded={url => setThumbnailUrl(url)}
-          />
-        </div>
-        <div>
-          <label className="text-xs font-bold text-gray-600 mb-1.5 block">
-            Notă pentru brand <span className="font-normal text-gray-400">(opțional)</span>
-          </label>
-          <textarea
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            placeholder="ex: Am postat marți, am atins 15k views în primele 24h, engagement rate 8%..."
-            rows={2}
-            className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-medium outline-none focus:border-purple-400 transition resize-none"
-            style={{ fontFamily: 'inherit' }}
-          />
-        </div>
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-bold text-gray-600">
-              Cod Spark Ads / Partnership Ads <span className="font-normal text-gray-400">(opțional)</span>
-            </label>
-            <button type="button" onClick={() => setShowAdsHelp(v => !v)}
-              className="text-xs font-bold text-blue-500 hover:text-blue-700 transition">
-              {showAdsHelp ? '▲ Ascunde' : '? Cum găsesc codul'}
-            </button>
-          </div>
-          {showAdsHelp && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1.5 text-xs mb-2">
-              {platform === 'tiktok' ? (
-                <>
-                  <p className="font-black text-blue-700">📱 TikTok — Spark Ads:</p>
-                  <ol className="space-y-1 text-blue-600 list-decimal list-inside">
-                    <li>Deschide postul → apasă "..." → "Ad settings"</li>
-                    <li>Activează "Ad authorization" → selectează 30 zile</li>
-                    <li>Copiază codul de 7 cifre generat</li>
-                  </ol>
-                </>
-              ) : platform === 'instagram' ? (
-                <>
-                  <p className="font-black text-blue-700">📸 Instagram — Partnership Ads:</p>
-                  <ol className="space-y-1 text-blue-600 list-decimal list-inside">
-                    <li>Deschide postul → "..." → activează "Allow brand partner to boost"</li>
-                    <li>Brandul primește acces direct — nu există cod separat</li>
-                  </ol>
-                </>
-              ) : (
-                <>
-                  <p className="font-black text-blue-700">💡 Cod Ads per platformă:</p>
-                  <p className="text-blue-600"><strong>TikTok:</strong> postul → "..." → "Ad settings" → "Ad authorization" → cod 7 cifre</p>
-                  <p className="text-blue-600"><strong>Instagram:</strong> postul → "..." → "Allow brand partner to boost"</p>
-                </>
-              )}
+            )
+          })()}
+
+          {collab.campaigns?.content_type?.length > 0 && (
+            <Note tone="grey" title="Tip conținut"><b className="iu-sm">{collab.campaigns.content_type.join(', ')}</b></Note>
+          )}
+          {collab.campaigns?.brief_pdf_url && (
+            <a href={collab.campaigns.brief_pdf_url} target="_blank" rel="noopener noreferrer" className="iu-btn p big" style={{ justifyContent: 'space-between' }}>
+              <span className="iu-row" style={{ gap: 8 }}><FileText size={16} /> Citește brieful campaniei</span>
+              <span style={{ opacity: .8, fontSize: 12 }}>Deschide PDF</span>
+            </a>
+          )}
+          {collab.campaigns?.promotion_link && (
+            <Note tone="green" title="Link de promovat">
+              <a href={collab.campaigns.promotion_link} target="_blank" rel="noopener noreferrer" className="iu-sm" style={{ color: '#14532d', fontWeight: 700, wordBreak: 'break-all' }}>{collab.campaigns.promotion_link}</a>
+            </Note>
+          )}
+          {collab.campaigns?.story_instructions && (
+            <Note tone="grey" title="Instrucțiuni story"><span className="iu-sm" style={{ whiteSpace: 'pre-wrap' }}>{collab.campaigns.story_instructions}</span></Note>
+          )}
+          {(collab.campaigns?.min_duration || collab.campaigns?.min_days_online) && (
+            <div className="ic-grid2">
+              {collab.campaigns?.min_duration && <Note tone="grey" title="Durată minimă"><b className="iu-sm">{collab.campaigns.min_duration} secunde</b></Note>}
+              {collab.campaigns?.min_days_online && <Note tone="grey" title="Online minim"><b className="iu-sm">{collab.campaigns.min_days_online} zile</b></Note>}
             </div>
           )}
-          <input type="text" value={adsCode} onChange={e => setAdsCode(e.target.value)}
-            placeholder={platform === 'tiktok' ? 'ex: 1234567 (7 cifre)' : 'Codul Spark Ads sau Partnership Ads'}
-            className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-medium outline-none focus:border-blue-400 transition"
-            style={{ fontFamily: 'inherit' }}
-          />
-          <p className="text-[10px] text-gray-400 mt-1">Permite brandului să ruleze ads cu postul tău — mai multă vizibilitate pentru ambii.</p>
+          {collab.campaigns?.required_caption && (
+            <Note tone="amber" title="Caption obligatoriu"><span className="iu-sm" style={{ whiteSpace: 'pre-wrap' }}>{collab.campaigns.required_caption}</span></Note>
+          )}
+          {collab.campaigns?.required_hashtags?.length > 0 && (
+            <Note tone="blue" title="Hashtag-uri obligatorii"><b className="iu-sm" style={{ color: '#1d4fb8' }}>#{collab.campaigns.required_hashtags.join(' #')}</b></Note>
+          )}
+          {collab.campaigns?.key_messages?.length > 0 && (
+            <Note tone="violet" title="Mesaje cheie de transmis">
+              <ul className="ic-ul">{collab.campaigns.key_messages.map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+            </Note>
+          )}
+          {collab.campaigns?.forbidden_mentions?.length > 0 && (
+            <Note tone="red" title="Nu menționa / evită"><span className="iu-sm" style={{ color: '#b42318' }}>{collab.campaigns.forbidden_mentions.join(', ')}</span></Note>
+          )}
         </div>
-        {error && <p className="text-xs text-red-600 font-bold flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
-        {/* Acord licență conținut — Opțiunea 2 */}
-        <label className="flex items-start gap-3 bg-purple-50 border-2 border-purple-200 rounded-xl p-3 cursor-pointer hover:bg-purple-100 transition">
-          <input
-            type="checkbox"
-            checked={licenseConsent}
-            onChange={e => setLicenseConsent(e.target.checked)}
-            className="mt-0.5 w-4 h-4 accent-purple-600 flex-shrink-0 cursor-pointer"
-          />
-          <span className="text-xs text-gray-700 leading-relaxed">
-            <span className="font-black text-purple-700">Acord utilizare conținut</span> — Sunt de acord ca{' '}
-            <strong>AddFame.ro</strong> să poată folosi acest conținut (postare, metrici, screenshot, repost) în
-            materiale de promovare — inclusiv pe conturile oficiale <strong>@addfame.ro</strong>{' '}
-            (Instagram, TikTok, LinkedIn, website), conform{' '}
-            <a href="/termeni" target="_blank" rel="noreferrer" className="text-purple-600 underline font-bold">
-              Termenilor și Condițiilor
-            </a>
-            . <span className="text-red-500 font-bold">*obligatoriu</span>
-          </span>
-        </label>
-        <button onClick={submit} disabled={saving || !licenseConsent || !thumbnailUrl}
-          className="w-full py-3 rounded-xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-          style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 14px rgba(139,92,246,0.3)' }}>
-          {saving
-            ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Trimite…</>
-            : <><Send className="w-3.5 h-3.5" /> Trimite dovada postului</>
-          }
-        </button>
-      </div>
+      )}
+
+      {renderFields()}
+      <div className="ic-btns">{renderSubmitBtn('Trimite dovada postului')}</div>
     </div>
   )
 }
@@ -788,6 +737,8 @@ export default function CollaborationsPage() {
   const [addressModal, setAddressModal] = useState<{ collabId: string } | null>(null)
   const [address, setAddress] = useState({ name: '', phone: '', address: '', city: '', county: '', postal_code: '' })
   const [campaignModalId, setCampaignModalId] = useState<string | null>(null)
+  const [deliverableModalId, setDeliverableModalId] = useState<string | null>(null)
+  const [reviewModalId, setReviewModalId] = useState<string | null>(null)
 
   const notify = (msg: string, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
 
@@ -817,18 +768,20 @@ export default function CollaborationsPage() {
 
   useEffect(() => {
     fetchCollabs()
+    let cancelled = false
+    let channel: any = null
+    const sb = createClient()
     const setup = async () => {
-      const sb = createClient()
       const { data: { user } } = await sb.auth.getUser()
-      if (!user) return
+      if (!user || cancelled) return
       const { data: inf } = await sb.from('influencers').select('id').eq('user_id', user.id).single()
-      if (!inf) return
-      const channel = sb.channel('collabs-rt')
+      if (!inf || cancelled) return
+      channel = sb.channel(`collabs-rt-${inf.id}-${Math.random().toString(36).slice(2, 8)}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'collaborations', filter: `influencer_id=eq.${inf.id}` }, fetchCollabs)
         .subscribe()
-      return () => { sb.removeChannel(channel) }
     }
     setup()
+    return () => { cancelled = true; if (channel) sb.removeChannel(channel) }
   }, [fetchCollabs])
 
   async function handleAction(collabId: string, action: 'accept' | 'decline', inv?: any) {
@@ -952,822 +905,663 @@ export default function CollaborationsPage() {
     c.status === 'ACTIVE' && !!c.deliverable_rejected_at && !c.deliverable_submitted_at
   )
 
+  async function confirmPackageReceived(c: Collaboration) {
+    const sb = createClient()
+    await sb.from('collaborations').update({ package_received_at: new Date().toISOString() }).eq('id', c.id)
+    setCollabs(prev => prev.map(col => col.id === c.id ? { ...col, package_received_at: new Date().toISOString() } : col))
+  }
+
+  async function submitCheckin(c: Collaboration) {
+    const code = checkinInputs[c.id] || ''
+    if (code.length < 4) { setCheckinError(p => ({ ...p, [c.id]: 'Codul trebuie să aibă minim 4 caractere' })); return }
+    setCheckinLoading(p => ({ ...p, [c.id]: true }))
+    setCheckinError(p => ({ ...p, [c.id]: '' }))
+    const res = await checkInWithCode(c.id, code) as any
+    if (res.success) {
+      setCollabs(prev => prev.map(col => col.id === c.id ? { ...col, checked_in_at: new Date().toISOString() } : col))
+    } else {
+      setCheckinError(p => ({ ...p, [c.id]: res.error || 'Cod incorect' }))
+    }
+    setCheckinLoading(p => ({ ...p, [c.id]: false }))
+  }
+
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 rounded-full border-t-purple-500 border-purple-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
-        <p className="text-sm text-gray-400 font-semibold">Se încarcă colaborările…</p>
+    <div className="iu" aria-busy="true">
+      <style>{IC_CSS}</style>
+      <div className="iu-head">
+        <div className="ic-col" style={{ gap: 8 }}>
+          <div className="ic-sk" style={{ width: 260, height: 34 }} />
+          <div className="ic-sk" style={{ width: 320, height: 14 }} />
+        </div>
       </div>
+      <div className="ic-sk" style={{ height: 38, width: '70%', borderRadius: 99 }} />
+      <div className="iu-card">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className={i ? 'ic-rw' : ''} style={{ padding: '16px 20px', display: 'flex', gap: 14, alignItems: 'center' }}>
+            <div className="ic-sk" style={{ width: 40, height: 40, borderRadius: 12 }} />
+            <div className="ic-col" style={{ flex: 1, gap: 8 }}>
+              <div className="ic-sk" style={{ width: '45%', height: 14 }} />
+              <div className="ic-sk" style={{ width: '25%', height: 11 }} />
+            </div>
+            <div className="ic-sk" style={{ width: 90, height: 24, borderRadius: 99 }} />
+          </div>
+        ))}
+      </div>
+      <p className="iu-sm iu-muted" style={{ textAlign: 'center', margin: 0 }}>Se încarcă colaborările…</p>
     </div>
   )
 
+  const fmtLong = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })
+  const totalGuaranteed = collabs.filter(c => c.status === 'ACTIVE' && c.reserved_amount).reduce((s, c) => s + (c.reserved_amount || 0), 0)
+  const totalPaid = collabs.filter(c => c.status === 'COMPLETED' && c.payment_amount).reduce((s, c) => s + (c.payment_amount || 0), 0)
+  const toPostCount = needsDeliverable.length + needsResubmit.length
+  const newInvites = invitations.filter(inv => !isExpiredInvite(inv))
+  const reviewCollab = collabs.find(c => c.id === reviewModalId)
+  const deliverableCollab = collabs.find(c => c.id === deliverableModalId)
+
+  const CopyBtn = ({ text, msg }: { text: string; msg: string }) => (
+    <button type="button" className="ic-copy" onClick={() => { navigator.clipboard.writeText(text); notify(msg) }}>
+      <Copy size={12} /> Copiază
+    </button>
+  )
+
+  // ── Detalii invitație: brief + ofertă barter ──
+  const renderInviteDetails = (inv: Collaboration) => {
+    const camp: any = inv.campaigns
+    return (
+      <div className="ic-col" style={{ gap: 12 }}>
+        {inv.message && inv.message !== 'You have been invited to collaborate on a campaign.' && (
+          <Note tone="blue" title="Mesaj de la brand"><span className="iu-sm" style={{ fontStyle: 'italic' }}>„{inv.message}"</span></Note>
+        )}
+        {camp?.campaign_type === 'BARTER' && (
+          <div className="ic-offer">
+            {camp?.offer_image_url && <img src={camp.offer_image_url} alt={camp.offer_name || ''} className="ic-offer-img" />}
+            <div className="ic-col" style={{ gap: 8, padding: 14 }}>
+              <b className="ic-nt" style={{ color: '#9a4206' }}>Ofertă barter</b>
+              {camp?.offer_name && <b className="iu-sm">{camp.offer_name}</b>}
+              {camp?.offer_description && <span className="iu-xs" style={{ color: '#4a4770', lineHeight: 1.55 }}>{camp.offer_description}</span>}
+              {camp?.delivery_method && (
+                <span className="iu-xs" style={{ fontWeight: 700 }}>
+                  {camp.delivery_method === 'delivery' ? 'Livrare la domiciliu' : 'Ridicare personală'}
+                </span>
+              )}
+              {camp?.deliverables && <Note tone="grey" title="Ce trebuie să postezi"><b className="iu-sm">{camp.deliverables}</b></Note>}
+              {camp?.story_instructions && <Note tone="grey" title="Instrucțiuni"><span className="iu-xs" style={{ lineHeight: 1.55 }}>{camp.story_instructions}</span></Note>}
+            </div>
+          </div>
+        )}
+        <div className="ic-grid2">
+          {camp?.product_name && <Note tone="grey" title="Produs"><b className="iu-sm">{camp.product_name}</b></Note>}
+          {camp?.content_type?.length > 0 && <Note tone="grey" title="Tip conținut"><b className="iu-sm">{camp.content_type.join(', ')}</b></Note>}
+          {camp?.min_duration && <Note tone="grey" title="Durată minimă"><b className="iu-sm">{camp.min_duration} secunde</b></Note>}
+          {camp?.min_days_online && <Note tone="grey" title="Online minim"><b className="iu-sm">{camp.min_days_online} zile</b></Note>}
+        </div>
+        {camp?.required_caption && <Note tone="amber" title="Caption obligatoriu"><span className="iu-sm" style={{ whiteSpace: 'pre-wrap' }}>{camp.required_caption}</span></Note>}
+        {camp?.required_hashtags?.length > 0 && <Note tone="blue" title="Hashtag-uri obligatorii"><b className="iu-sm" style={{ color: '#1d4fb8' }}>#{camp.required_hashtags.join(' #')}</b></Note>}
+        {camp?.key_messages?.length > 0 && (
+          <Note tone="violet" title="Mesaje cheie">
+            <ul className="ic-ul">{camp.key_messages.map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+          </Note>
+        )}
+        {camp?.forbidden_mentions?.length > 0 && <Note tone="red" title="Nu este permis"><span className="iu-sm" style={{ color: '#b42318' }}>{camp.forbidden_mentions.join(', ')}</span></Note>}
+        {camp?.registrations_open === false && (
+          <Note tone="amber">
+            <b className="iu-sm">Înscrieri închise</b>
+            <span className="iu-xs">Nu-ți face griji — brandurile lansează campanii noi regulat. Mai multe oferte vin în curând pe AddFame.</span>
+          </Note>
+        )}
+        {camp?.id && (
+          <a href={`/influencer/campaigns/${camp.id}`} target="_blank" rel="noopener noreferrer" className="ic-linkbtn" style={{ width: 'auto', color: '#5b2fd0' }}>
+            Vezi pagina completă a campaniei →
+          </a>
+        )}
+      </div>
+    )
+  }
+
+  // ── Detalii colaborare activă / aplicată / finalizată ──
+  const renderDetails = (c: Collaboration) => {
+    const camp: any = c.campaigns
+    const imgs = (Array.isArray(camp?.offer_image_urls) && camp.offer_image_urls.length > 0)
+      ? camp.offer_image_urls.filter(Boolean)
+      : (camp?.offer_image_url ? [camp.offer_image_url] : [])
+    const deliveryBarter = isDeliveryBarter(c)
+    return (
+      <div className="ic-col" style={{ gap: 12 }}>
+
+        {/* Postare respinsă */}
+        {isRejectedPost(c) && (
+          <Note tone="red">
+            <div className="iu-row" style={{ gap: 8, alignItems: 'flex-start' }}>
+              <AlertTriangle size={16} style={{ flex: 'none', marginTop: 2 }} />
+              <div className="ic-col" style={{ gap: 2 }}>
+                <b className="iu-sm" style={{ color: '#b42318' }}>Post respins de brand</b>
+                {c.deliverable_rejection_reason && <span className="iu-xs" style={{ color: '#b42318' }}>„{c.deliverable_rejection_reason}"</span>}
+              </div>
+            </div>
+            <button className="iu-btn p" style={{ alignSelf: 'flex-start' }} onClick={() => setDeliverableModalId(c.id)}>Retrimite dovada</button>
+          </Note>
+        )}
+
+        {/* Adresă livrare lipsă */}
+        {needsAddress(c) && (
+          <Note tone="amber" title="Completează adresa de livrare">
+            <span className="iu-xs">Brandul are nevoie de adresa ta pentru a-ți trimite produsul.</span>
+            <button className="iu-btn p" style={{ alignSelf: 'flex-start' }} onClick={() => setAddressModal({ collabId: c.id })}>Adaugă adresa de livrare</button>
+          </Note>
+        )}
+
+        {/* Check-in locație - barter pickup */}
+        {c.status === 'ACTIVE' && isPickupBarter(c) && (
+          <Note tone="violet" title="Check-in la locație">
+            {c.checked_in_at ? (
+              <div className="iu-row" style={{ gap: 8 }}>
+                <CheckCircle size={18} />
+                <div className="ic-col">
+                  <b className="iu-sm" style={{ color: '#5b2fd0' }}>Check-in confirmat</b>
+                  <span className="iu-xs iu-muted">{new Date(c.checked_in_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <span className="iu-xs">Cere codul de 6 caractere de la brand când ajungi la locație.</span>
+                <div className="iu-row" style={{ gap: 8 }}>
+                  <input
+                    value={checkinInputs[c.id] || ''}
+                    onChange={e => setCheckinInputs(p => ({ ...p, [c.id]: e.target.value.toUpperCase().slice(0, 6) }))}
+                    placeholder="AB3X7K"
+                    maxLength={6}
+                    className="iu-input"
+                    style={{ flex: 1, textAlign: 'center', fontFamily: 'ui-monospace, monospace', fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase' }}
+                  />
+                  <button className="iu-btn p" onClick={() => submitCheckin(c)} disabled={checkinLoading[c.id] || !checkinInputs[c.id]}>
+                    {checkinLoading[c.id] ? <Loader2 size={15} className="ic-spin" /> : <Check size={15} />} OK
+                  </button>
+                </div>
+                {checkinError[c.id] && <b className="iu-xs" style={{ color: '#b42318' }}>{checkinError[c.id]}</b>}
+              </>
+            )}
+          </Note>
+        )}
+
+        {/* Status livrare - barter */}
+        {c.status === 'ACTIVE' && deliveryBarter && c.delivery_name && (
+          <>
+            {c.package_sent_at && !c.package_received_at && (
+              <Note tone="blue" title="Pachetul tău e în drum">
+                {c.package_courier && <span className="iu-sm">Curier: <b>{c.package_courier}</b>{c.package_tracking ? ` · AWB: ${c.package_tracking}` : ''}</span>}
+                <span className="iu-xs">Trimis pe {fmtLong(c.package_sent_at)}. Confirmă când ajunge.</span>
+                <button className="iu-btn p" style={{ alignSelf: 'flex-start' }} onClick={() => confirmPackageReceived(c)}>
+                  <Check size={15} /> Am primit coletul
+                </button>
+              </Note>
+            )}
+            {!c.deliverable_submitted_at && !c.deliverable_approved_at && c.package_received_at && (() => {
+              const deadline = new Date(new Date(c.package_received_at).getTime() + (c.post_deadline_days || 14) * 86400000)
+              const msLeft = deadline.getTime() - Date.now()
+              const daysLeft = Math.max(0, Math.floor(msLeft / 86400000))
+              const hoursLeft = Math.max(0, Math.floor((msLeft % 86400000) / 3600000))
+              const urgent = daysLeft <= 2
+              const expired = msLeft <= 0
+              return (
+                <Note tone={expired ? 'red' : urgent ? 'orange' : 'amber'} title={expired ? 'Termen depășit — riști un strike' : urgent ? 'Urgent — mai ai puțin timp' : 'Timp rămas pentru postare'}>
+                  {!expired ? (
+                    <>
+                      <div className="iu-row" style={{ gap: 6, alignItems: 'baseline' }}>
+                        <b className="iu-d" style={{ fontSize: 28 }}>{daysLeft}</b><span className="iu-sm">zile</span>
+                        <b className="iu-d" style={{ fontSize: 20, marginLeft: 6 }}>{hoursLeft}</b><span className="iu-sm">ore</span>
+                      </div>
+                      {urgent && (
+                        <span className="iu-xs" style={{ fontWeight: 700 }}>
+                          Postează și trimite dovada înainte de {deadline.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}, ora {deadline.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                      <span className="iu-xs">Termen: {deadline.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                    </>
+                  ) : (
+                    <>
+                      <b className="iu-sm" style={{ color: '#b42318' }}>Termenul a expirat pe {fmtLong(deadline.toISOString())}</b>
+                      <span className="iu-xs">Contactează-ne la contact@addfame.ro dacă ai nevoie de ajutor.</span>
+                    </>
+                  )}
+                </Note>
+              )
+            })()}
+          </>
+        )}
+
+        {/* Dovadă: de trimis / în revizuire */}
+        {c.status === 'ACTIVE' && !c.deliverable_submitted_at && !isRejectedPost(c) && !needsAddress(c) && (
+          <Note tone="violet" title="Trimite dovada postului">
+            <span className="iu-xs">Publică postul și trimite link-ul pentru a primi plata.</span>
+            <button className="iu-btn p" style={{ alignSelf: 'flex-start' }} onClick={() => setDeliverableModalId(c.id)}><Upload size={15} /> Trimite dovada</button>
+          </Note>
+        )}
+        {isPendingReview(c) && (
+          <Note tone="amber" title="Dovadă trimisă — în așteptarea aprobării">
+            {c.deliverable_url && (
+              <a href={c.deliverable_url} target="_blank" rel="noopener noreferrer" className="ic-linkbox">
+                <Link2 size={14} style={{ flex: 'none' }} /><span className="ic-linktxt">{c.deliverable_url}</span><ExternalLink size={13} style={{ flex: 'none' }} />
+              </a>
+            )}
+            <button className="iu-btn" style={{ alignSelf: 'flex-start' }} onClick={() => setDeliverableModalId(c.id)}><Eye size={15} /> Vezi / editează dovada</button>
+          </Note>
+        )}
+
+        {/* Finalizat */}
+        {c.status === 'COMPLETED' && c.deliverable_url && (
+          <Note tone="green" title="Post aprobat de brand">
+            <a href={c.deliverable_url} target="_blank" rel="noopener noreferrer" className="ic-linkbox">
+              <Link2 size={14} style={{ flex: 'none' }} /><span className="ic-linktxt">{c.deliverable_url}</span><ExternalLink size={13} style={{ flex: 'none' }} />
+            </a>
+            {c.deliverable_approved_at && <span className="iu-xs iu-muted">Aprobat: {fmtDateTime(c.deliverable_approved_at)}</span>}
+            {c.payment_amount ? <span className="iu-xs iu-muted">Plată eliberată: <b style={{ color: '#14532d' }}>{fmtRon(c.payment_amount)}</b></span> : null}
+          </Note>
+        )}
+
+        {/* Mesaj de la brand */}
+        {c.message && c.message !== 'You have been invited to collaborate on a campaign.' && (
+          <Note tone="blue" title="Mesaj de la brand"><span className="iu-sm" style={{ fontStyle: 'italic' }}>„{c.message}"</span></Note>
+        )}
+
+        {/* Despre campanie */}
+        {camp?.description && <Note tone="grey" title="Despre campanie"><span className="iu-sm" style={{ lineHeight: 1.55 }}>{camp.description}</span></Note>}
+
+        {/* Ofertă barter */}
+        {camp?.offer_name && (
+          <div className="ic-offer">
+            {imgs.length > 0 && (
+              <div style={{ position: 'relative' }}>
+                <img src={imgs[0]} alt={camp.offer_name} className="ic-offer-img" />
+                {imgs.length > 1 && <span className="ic-imgcount">+{imgs.length - 1} imagini</span>}
+              </div>
+            )}
+            <div className="ic-col" style={{ gap: 6, padding: 14 }}>
+              <b className="ic-nt" style={{ color: '#9a4206' }}>Ce primești</b>
+              <b className="iu-sm">{camp.offer_name}</b>
+              {camp.offer_description && <span className="iu-xs" style={{ color: '#4a4770', lineHeight: 1.55 }}>{camp.offer_description}</span>}
+            </div>
+          </div>
+        )}
+
+        {camp?.story_instructions && (
+          <Note tone="violet" title="Instrucțiuni postare"><span className="iu-sm" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{camp.story_instructions}</span></Note>
+        )}
+
+        {camp?.promotion_link && (
+          <Note tone="green" title="Link produs / promovare" right={<CopyBtn text={camp.promotion_link} msg="Link copiat!" />}>
+            <a href={camp.promotion_link} target="_blank" rel="noopener noreferrer" className="iu-sm" style={{ color: '#14532d', fontWeight: 700, wordBreak: 'break-all' }}>{camp.promotion_link}</a>
+            {Array.isArray(camp.promotion_link_placement) && camp.promotion_link_placement.length > 0 && (
+              <div className="iu-row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                {camp.promotion_link_placement.map((place: string) => (
+                  <span key={place} className="iu-chip" style={{ background: '#fff', color: '#14532d', height: 22 }}>{place}</span>
+                ))}
+              </div>
+            )}
+          </Note>
+        )}
+
+        {camp?.required_caption && (
+          <Note tone="violet" title="Caption obligatoriu" right={<CopyBtn text={camp.required_caption} msg="Caption copiat!" />}>
+            <span className="iu-sm" style={{ whiteSpace: 'pre-wrap' }}>{camp.required_caption}</span>
+          </Note>
+        )}
+
+        {Array.isArray(camp?.required_hashtags) && camp.required_hashtags.length > 0 && (
+          <Note tone="blue" title="Hashtag-uri obligatorii" right={<CopyBtn text={camp.required_hashtags.map((t: string) => '#' + t.replace(/^#/, '')).join(' ')} msg="Hashtag-uri copiate!" />}>
+            <div className="iu-row" style={{ gap: 6, flexWrap: 'wrap' }}>
+              {camp.required_hashtags.map((tag: string) => (
+                <span key={tag} className="iu-chip" style={{ background: '#fff', color: '#1d4fb8', height: 24 }}>#{tag.replace(/^#/, '')}</span>
+              ))}
+            </div>
+          </Note>
+        )}
+
+        {(camp?.forbidden_content || (Array.isArray(camp?.forbidden_mentions) && camp.forbidden_mentions.length > 0)) && (
+          <Note tone="red" title="Ce să eviți">
+            {camp.forbidden_content && <span className="iu-sm" style={{ whiteSpace: 'pre-wrap', color: '#14123a' }}>{camp.forbidden_content}</span>}
+            {Array.isArray(camp.forbidden_mentions) && camp.forbidden_mentions.length > 0 && (
+              <div className="iu-row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                {camp.forbidden_mentions.map((m: string) => (
+                  <span key={m} className="iu-chip" style={{ background: '#fff', color: '#b42318', height: 22 }}>{m}</span>
+                ))}
+              </div>
+            )}
+          </Note>
+        )}
+
+        <div className="iu-row" style={{ gap: 14, flexWrap: 'wrap' }}>
+          {camp?.id && (
+            <a href={`/influencer/campaigns/${camp.id}`} target="_blank" rel="noopener noreferrer" className="ic-linkbtn" style={{ width: 'auto', color: '#5b2fd0' }}>
+              Vezi pagina completă a campaniei →
+            </a>
+          )}
+          {c.status !== 'REJECTED' && (
+            <Link href={`/influencer/inbox?collab=${c.id}`} className="ic-linkbtn" style={{ width: 'auto', color: '#5b2fd0', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <MessageSquare size={14} /> Deschide chat
+            </Link>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Acțiunea principală a rândului ──
+  const renderAction = (c: Collaboration, expired: boolean) => {
+    if (expired) return null
+    const busy = actionLoading === c.id
+    const isExp = expandedId === c.id
+    const toggle = () => setExpandedId(isExp ? null : c.id)
+    let main: React.ReactNode = null
+    if (c.status === 'INVITED') {
+      main = c.campaigns?.registrations_open === false
+        ? <span className="iu-chip" style={{ background: '#fff4f2', color: '#b42318', height: 32 }}>Înscrieri închise</span>
+        : (
+          <>
+            <button className="iu-btn p" onClick={() => handleAction(c.id, 'accept', c)} disabled={busy}>
+              {busy ? <Loader2 size={15} className="ic-spin" /> : <Check size={15} />} Acceptă
+            </button>
+            <button className="iu-btn danger" onClick={() => handleAction(c.id, 'decline', c)} disabled={busy}>Refuz</button>
+          </>
+        )
+    } else if (c.status === 'PENDING') {
+      main = <Link href={`/influencer/inbox?collab=${c.id}`} className="iu-btn"><MessageSquare size={15} /> Deschide chat</Link>
+    } else if (c.status === 'ACTIVE') {
+      if (isRejectedPost(c)) main = <button className="iu-btn p" onClick={() => setDeliverableModalId(c.id)}><Upload size={15} /> Retrimite dovada</button>
+      else if (needsAddress(c)) main = <button className="iu-btn p" onClick={() => setAddressModal({ collabId: c.id })}><Truck size={15} /> Adaugă adresa</button>
+      else if (isDeliveryBarter(c) && c.package_sent_at && !c.package_received_at) main = <button className="iu-btn p" onClick={() => confirmPackageReceived(c)}><Package size={15} /> Am primit coletul</button>
+      else if (isPickupBarter(c) && !c.checked_in_at) main = <button className="iu-btn p" onClick={toggle}><Check size={15} /> Check-in</button>
+      else if (isPendingReview(c)) main = <Link href={`/influencer/inbox?collab=${c.id}`} className="iu-btn"><MessageSquare size={15} /> Deschide chat</Link>
+      else if (!c.deliverable_submitted_at && !(isDeliveryBarter(c) && !c.package_received_at)) main = <button className="iu-btn p" onClick={() => setDeliverableModalId(c.id)}><Upload size={15} /> Trimite dovada</button>
+      else main = <Link href={`/influencer/inbox?collab=${c.id}`} className="iu-btn"><MessageSquare size={15} /> Deschide chat</Link>
+    } else if (c.status === 'COMPLETED') {
+      main = <button className="iu-btn" onClick={() => setReviewModalId(c.id)}><Star size={15} /> Lasă o evaluare</button>
+    }
+    return (
+      <div className="ic-act">
+        {main}
+        <button className="iu-btn ic-chev" aria-label="Detalii" aria-expanded={isExp} onClick={toggle}>
+          <ChevronRight size={16} style={{ transform: isExp ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }} />
+        </button>
+      </div>
+    )
+  }
+
+  const renderRow = (c: Collaboration) => {
+    const expired = isExpiredInvite(c)
+    const st = collabStatus(c, expired)
+    const dl = deadlineChip(c)
+    const money = expired ? null : moneyInfo(c)
+    const cur = expired ? null : collabStage(c)
+    const isExp = expandedId === c.id
+    const hot = c.status === 'INVITED' && !expired || isRejectedPost(c) || isPendingReview(c)
+    const platforms = (c.campaigns?.platforms || []).slice(0, 3)
+    return (
+      <div key={c.id} className={`ic-rw${hot ? ' hot' : ''}`}>
+        <div className="ic-row">
+          <BrandFace name={c.campaigns?.brand_name || c.campaigns?.title} size={40} />
+          <div className="ic-who">
+            <b>{c.campaigns?.title || 'Campanie'}</b>
+            <span className="iu-xs iu-muted ic-meta">
+              {c.campaigns?.brand_name}
+              {c.campaigns?.campaign_type ? ` · ${c.campaigns.campaign_type === 'BARTER' ? 'Barter' : 'Plătit'}` : ''}
+              {c.campaigns?.deadline ? ` · termen ${fmtDateShort(c.campaigns.deadline)}` : ''}
+            </span>
+            {platforms.length > 0 && (
+              <span className="ic-plats">{platforms.map((p: string) => <span key={p} title={p}>{PLATFORM_ICON[p.toLowerCase()] || null}</span>)}</span>
+            )}
+          </div>
+          <div className="ic-trkwrap">
+            {cur !== null
+              ? <Track cur={cur} />
+              : <span className="iu-sm iu-muted">
+                  {expired ? 'Perioada de înscriere a expirat'
+                    : c.status === 'INVITED' ? 'Așteaptă răspunsul tău'
+                    : c.status === 'REJECTED' ? 'Colaborare închisă'
+                    : '—'}
+                </span>}
+          </div>
+          <div className="ic-stat">
+            <span className="iu-chip" style={{ background: st.bg, color: st.fg }}>{st.label}</span>
+            {dl && <span className="iu-chip" style={{ background: dl.bg, color: dl.fg }}>{dl.label}</span>}
+            {money && (
+              <span className="ic-money">
+                <b>{money.amt}</b>
+                <span className="iu-chip" style={{ background: money.tagStyle.bg, color: money.tagStyle.fg, height: 20, fontSize: 11 }}>{money.tag}</span>
+              </span>
+            )}
+          </div>
+          {renderAction(c, expired)}
+        </div>
+        {isExp && (
+          <div className="ic-det">
+            {expired ? (
+              <Note tone="amber" title="Nu ai răspuns la timp">
+                <span className="iu-xs" style={{ lineHeight: 1.55 }}>Perioada de înscriere a expirat. Nu-ți face griji — brandurile lansează campanii noi regulat pe AddFame.</span>
+              </Note>
+            ) : c.status === 'INVITED' ? renderInviteDetails(c) : renderDetails(c)}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const emptyCopy: Record<Tab, { t: string; d: string }> = {
+    'All': { t: 'Nicio colaborare încă', d: 'Aplică la campanii sau așteaptă invitații de la branduri.' },
+    'Invited': { t: 'Nicio invitație nouă', d: 'Când un brand te invită la o campanie, o vei găsi aici.' },
+    'Fara raspuns': { t: 'Nicio invitație expirată', d: 'Invitațiile la care nu ai răspuns la timp apar aici.' },
+    'Active': { t: 'Nicio colaborare activă', d: 'Colaborările acceptate, aflate în desfășurare, apar aici.' },
+    'Applied': { t: 'Nicio aplicare în așteptare', d: 'Aplicările tale la campanii, în așteptarea brandului, apar aici.' },
+    'Completed': { t: 'Nicio colaborare finalizată', d: 'După aprobarea postării și plată, colaborarea apare aici.' },
+    'Respinse': { t: 'Nicio colaborare respinsă', d: 'Aplicările sau invitațiile refuzate apar aici.' },
+  }
+
   return (
-    <div className="p-5 lg:p-8 max-w-5xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <style>{`
-        .infl-grad { background: linear-gradient(135deg, #7040f0, #9030f0); }
-        .tab-btn { padding:7px 16px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .18s;white-space:nowrap; }
-        .tab-btn.on { background:linear-gradient(135deg,#7040f0, #9030f0);color:white;box-shadow:0 4px 12px rgba(139,92,246,.3); }
-        .tab-btn:not(.on) { background:#f3f4f6;color:#6b7280; }
-        .tab-btn:not(.on):hover { background:#ede9fe;color:#7c3aed; }
-        .btn-accept { display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:12px;font-size:14px;font-weight:800;background:linear-gradient(135deg,#7040f0, #9030f0);color:white;border:none;cursor:pointer;transition:all .18s;font-family:inherit; }
-        .btn-accept:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 6px 18px rgba(139,92,246,.4); }
-        .btn-decline { display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:12px;font-size:14px;font-weight:700;background:white;color:#6b7280;border:2px solid #e5e7eb;cursor:pointer;transition:all .18s;font-family:inherit; }
-        .btn-decline:hover:not(:disabled) { border-color:#fca5a5;color:#ef4444;background:#fff5f5; }
-        .btn-accept:disabled,.btn-decline:disabled { opacity:.55;cursor:not-allowed;transform:none;box-shadow:none; }
-        .search-box { width:100%;padding:10px 16px 10px 42px;border:2px solid #e5e7eb;border-radius:12px;font-size:14px;font-weight:500;outline:none;transition:border-color .2s;font-family:inherit; }
-        .search-box:focus { border-color:#8b5cf6;box-shadow:0 0 0 4px rgba(139,92,246,.08); }
-        @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-        .toast-anim { animation:slideDown .3s ease; }
-        @keyframes pulse-ring { 0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.4)} 50%{box-shadow:0 0 0 6px rgba(59,130,246,0)} }
-        .pulse-ring { animation:pulse-ring 2s ease-in-out infinite; }
-      `}</style>
+    <div className="iu">
+      <style>{IC_CSS}</style>
 
       {/* Toast */}
       {toast && (
-        <div className={`toast-anim fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold max-w-sm ${toast.ok ? 'bg-white border-2 border-green-200 text-green-700' : 'bg-white border-2 border-red-200 text-red-600'}`}>
-          {toast.ok ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+        <div className={`ic-toast ${toast.ok ? 'ok' : 'err'}`} role="status">
+          {toast.ok ? <CheckCircle size={16} style={{ flex: 'none' }} /> : <AlertCircle size={16} style={{ flex: 'none' }} />}
           {toast.msg}
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">Colaborările mele</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {collabs.length} total
-            {invitations.length > 0 && <> · <span className="text-blue-600 font-bold">{invitations.length} invitații noi</span></>}
-            {needsResubmit.length > 0 && <> · <span className="text-red-500 font-bold">{needsResubmit.length} respinse</span></>}
-          </p>
+      <div className="iu-head">
+        <div className="ic-col" style={{ gap: 6 }}>
+          <h1>Colaborările mele</h1>
+          <span className="iu-muted iu-sm">
+            {collabs.length} {collabs.length === 1 ? 'colaborare' : 'colaborări'}
+            {counts['Active'] > 0 && <> · {counts['Active']} {counts['Active'] === 1 ? 'activă' : 'active'}</>}
+            {newInvites.length > 0 && <> · <b style={{ color: '#1d4fb8' }}>{newInvites.length} {newInvites.length === 1 ? 'invitație nouă' : 'invitații noi'}</b></>}
+            {needsResubmit.length > 0 && <> · <b style={{ color: '#b42318' }}>{needsResubmit.length} {needsResubmit.length === 1 ? 'respinsă' : 'respinse'}</b></>}
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={fetchCollabs} className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition" title="Refresh">
-            <RefreshCw className="w-4 h-4 text-gray-500" />
-          </button>
-          <Link href="/influencer/campaigns"
-            className="inline-flex items-center gap-2 infl-grad text-white font-bold text-sm px-4 py-2.5 rounded-xl hover:-translate-y-0.5 transition"
-            style={{ boxShadow: '0 4px 14px rgba(139,92,246,.3)' }}>
-            <Briefcase className="w-4 h-4" /> Găsește campanii
-          </Link>
+        <div className="iu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={fetchCollabs} className="iu-btn" title="Reîmprospătează" aria-label="Reîmprospătează"><RefreshCw size={15} /></button>
+          <Link href="/influencer/campaigns" className="iu-btn p"><Briefcase size={15} /> Găsește campanii</Link>
         </div>
       </div>
 
-      {/* ── Alert: posts rejected ──────────────────────────── */}
+      {/* Câștiguri / plăți */}
+      {collabs.length > 0 && (
+        <div className="ic-stats">
+          <div className="iu-card ic-stat-c">
+            <span className="iu-ico" style={{ background: BLU.bg, color: BLU.fg }}><Lock size={18} /></span>
+            <div className="ic-col"><span className="iu-label">Plată garantată</span><b className="iu-d ic-big">{fmtRon(totalGuaranteed)}</b><span className="iu-xs iu-muted">în colaborări active</span></div>
+          </div>
+          <div className="iu-card ic-stat-c">
+            <span className="iu-ico" style={{ background: GRN.bg, color: GRN.fg }}><CheckCircle size={18} /></span>
+            <div className="ic-col"><span className="iu-label">Încasat</span><b className="iu-d ic-big">{fmtRon(totalPaid)}</b><span className="iu-xs iu-muted">din colaborări finalizate</span></div>
+          </div>
+          <div className="iu-card ic-stat-c">
+            <span className="iu-ico" style={{ background: toPostCount > 0 ? AMB.bg : GRY.bg, color: toPostCount > 0 ? AMB.fg : GRY.fg }}><Upload size={18} /></span>
+            <div className="ic-col"><span className="iu-label">De trimis</span><b className="iu-d ic-big">{toPostCount}</b><span className="iu-xs iu-muted">{toPostCount === 1 ? 'dovadă de postare' : 'dovezi de postare'}</span></div>
+          </div>
+        </div>
+      )}
+
+      {/* Alerte */}
       {needsResubmit.length > 0 && (
-        <div className="mb-5 bg-red-50 border-2 border-red-200 rounded-2xl p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-black text-red-700 text-sm">
-              {needsResubmit.length} post{needsResubmit.length > 1 ? 'uri' : ''} respins{needsResubmit.length > 1 ? 'e' : ''} de brand
-            </p>
-            <p className="text-xs text-red-600 mt-0.5">
-              Deschide colaborarea activă și retrimite dovada corectată.
-            </p>
+        <div className="ic-note red ic-alert">
+          <AlertTriangle size={18} style={{ flex: 'none' }} />
+          <div className="ic-col" style={{ flex: 1, minWidth: 0 }}>
+            <b className="iu-sm" style={{ color: '#b42318' }}>
+              {needsResubmit.length} {needsResubmit.length > 1 ? 'postări respinse' : 'postare respinsă'} de brand
+            </b>
+            <span className="iu-xs">Deschide colaborarea activă și retrimite dovada corectată.</span>
           </div>
-          <button onClick={() => setActiveTab('Active')} className="ml-auto text-xs font-bold text-red-600 hover:text-red-800 whitespace-nowrap transition">
-            Vezi active →
-          </button>
+          <button onClick={() => setActiveTab('Active')} className="iu-btn danger">Vezi active</button>
         </div>
       )}
-
-      {/* ── Alert: needs deliverable ───────────────────────── */}
       {needsDeliverable.length > 0 && needsResubmit.length === 0 && (
-        <div className="mb-5 bg-purple-50 border-2 border-purple-200 rounded-2xl p-4 flex items-start gap-3">
-          <Upload className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-black text-purple-700 text-sm">
-              {needsDeliverable.length} colaborare{needsDeliverable.length > 1 ? 'i' : ''} active — trimite dovada postului
-            </p>
-            <p className="text-xs text-purple-600 mt-0.5">Publică postul și trimite link-ul pentru a primi plata.</p>
+        <div className="ic-note violet ic-alert">
+          <Upload size={18} style={{ flex: 'none' }} />
+          <div className="ic-col" style={{ flex: 1, minWidth: 0 }}>
+            <b className="iu-sm" style={{ color: '#5b2fd0' }}>
+              {needsDeliverable.length} {needsDeliverable.length > 1 ? 'colaborări active' : 'colaborare activă'} — trimite dovada postului
+            </b>
+            <span className="iu-xs">Publică postul și trimite link-ul pentru a primi plata.</span>
           </div>
-          <button onClick={() => { setActiveTab('Active'); setExpandedId(needsDeliverable[0]?.id) }} className="ml-auto text-xs font-bold text-purple-600 hover:text-purple-800 whitespace-nowrap transition">
-            Trimite →
-          </button>
+          <button onClick={() => { setActiveTab('Active'); setExpandedId(needsDeliverable[0]?.id) }} className="iu-btn p">Trimite</button>
+        </div>
+      )}
+      {newInvites.length > 0 && activeTab !== 'Invited' && (
+        <div className="ic-note blue ic-alert">
+          <MessageSquare size={18} style={{ flex: 'none' }} />
+          <div className="ic-col" style={{ flex: 1, minWidth: 0 }}>
+            <b className="iu-sm" style={{ color: '#1d4fb8' }}>{newInvites.length} {newInvites.length > 1 ? 'invitații în așteptare' : 'invitație în așteptare'}</b>
+            <span className="iu-xs">Răspunde înainte să expire perioada de înscriere.</span>
+          </div>
+          <button onClick={() => setActiveTab('Invited')} className="iu-btn">Vezi invitațiile</button>
         </div>
       )}
 
-      {/* ── Search + Tabs ──────────────────────────────────── */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-4" style={{ boxShadow: '0 2px 12px rgba(0,0,0,.04)' }}>
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-3 border-b border-gray-100" style={{ scrollbarWidth: 'none' }}>
-          {TABS.map(tab => {
-            const label: Record<string, string> = { 'All': 'Toate', 'Invited': 'Invitate', 'Fara raspuns': 'Fără răspuns', 'Active': 'Active', 'Applied': 'Aplicate', 'Completed': 'Finalizate', 'Respinse': 'Respinse' }
-            return (
-              <button key={tab} onClick={() => setActiveTab(tab)} className={`tab-btn ${activeTab === tab ? 'on' : ''}`}>
-                {label[tab] || tab}
-                {counts[tab] > 0 && (
-                  <span className={`ml-1.5 text-[11px] font-black px-1.5 py-0.5 rounded-full ${activeTab === tab ? 'bg-white/25 text-white' : tab === 'Fara raspuns' ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-500'}`}>
-                    {counts[tab]}
-                  </span>
-                )}
-              </button>
-            )
-          })}
+      {/* Tab-uri + căutare */}
+      <div className="ic-bar">
+        <div className="iu-tabs ic-tabs" role="tablist">
+          {TAB_ORDER.map(tab => (
+            <button key={tab} role="tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)} className={`iu-pill${activeTab === tab ? ' on' : ''}`}>
+              {TAB_LABEL[tab]}
+              {counts[tab] > 0 && <span className="n">{counts[tab]}</span>}
+            </button>
+          ))}
         </div>
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input className="search-box" placeholder="Caută campanie sau brand…" value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
+        <label className="iu-search ic-search">
+          <Search size={16} style={{ flex: 'none' }} />
+          <input placeholder="Caută campanie sau brand…" value={search} onChange={e => setSearch(e.target.value)} />
+        </label>
       </div>
 
-
-      {/* ── Pending invitations ────────────────────────────── */}
-      {invitations.filter(inv => !isExpiredInvite(inv)).length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-2 h-2 rounded-full bg-blue-500 pulse-ring" />
-            <h2 className="font-black text-gray-900">Invitații în așteptare</h2>
-            <span className="bg-blue-100 text-blue-700 text-xs font-black px-2.5 py-0.5 rounded-full">Răspuns necesar</span>
-          </div>
-          <div className="space-y-4">
-            {invitations.filter(inv => !isExpiredInvite(inv)).map(inv => (
-              <div key={inv.id} className="relative overflow-hidden rounded-2xl border-2 border-blue-200 bg-white" style={{ boxShadow: '0 4px 24px rgba(59,130,246,.12)' }}>
-                <div className="h-1 w-full infl-grad" />
-                <div className="p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="bg-blue-100 text-blue-700 text-xs font-black px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Brand Invitation
-                        </span>
-                        <span className="text-xs text-gray-400">{fmtDate(inv.created_at)}</span>
-                      </div>
-                      <h3 className="font-black text-gray-900 text-lg leading-tight">
-                        {inv.campaigns?.title || 'Campaign Invitation'}
-                      </h3>
-                      <p className="text-sm font-semibold text-gray-500 mt-0.5">{inv.campaigns?.brand_name}</p>
-                      {inv.message && inv.message !== 'You have been invited to collaborate on a campaign.' && (
-                        <div className="mt-3 flex items-start gap-2 bg-blue-50 rounded-xl p-3">
-                          <MessageSquare className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                          <p className="text-xs text-gray-600 italic">„{inv.message}"</p>
-                        </div>
-                      )}
-                      <div className="flex flex-wrap items-center gap-3 mt-4">
-                        {inv.campaigns?.deadline && (
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500">
-                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                            Deadline: <span className="text-gray-700">{fmtDateShort(inv.campaigns.deadline)}</span>
-                          </div>
-                        )}
-                        {inv.campaigns?.platforms?.map(p => (
-                          <span key={p} className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full">
-                            {PLATFORM_ICON[p.toLowerCase()] || null}
-                            <span className="text-xs font-semibold text-gray-600 capitalize">{p}</span>
-                          </span>
-                        ))}
-                      </div>
-                      {/* BARTER specific info */}
-                      {inv.campaigns?.campaign_type === 'BARTER' && (
-                        <div className="mt-4 bg-orange-50 border border-orange-200 rounded-2xl overflow-hidden">
-                          {/* Poza produs */}
-                          {inv.campaigns?.offer_image_url && (
-                            <div className="w-full aspect-video overflow-hidden">
-                              <img src={inv.campaigns.offer_image_url} alt={inv.campaigns.offer_name}
-                                className="w-full h-full object-cover" />
-                            </div>
-                          )}
-                          <div className="p-4 space-y-3">
-                            <p className="text-xs font-black text-orange-700 uppercase tracking-wider">🎁 Ofertă Barter</p>
-                            {inv.campaigns?.offer_name && (
-                              <div>
-                                <p className="text-sm font-black text-gray-900">{inv.campaigns.offer_name}</p>
-                              </div>
-                            )}
-                            {inv.campaigns?.offer_description && (
-                              <p className="text-xs text-gray-600 leading-relaxed">{inv.campaigns.offer_description}</p>
-                            )}
-                            {inv.campaigns?.delivery_method && (
-                              <p className="text-xs font-bold text-gray-500">
-                                {inv.campaigns.delivery_method === 'delivery' ? '📦 Livrare la domiciliu' : '🏪 Ridicare personală'}
-                              </p>
-                            )}
-                            {inv.campaigns?.deliverables && (
-                              <div className="bg-white rounded-xl p-3 border border-orange-100">
-                                <p className="text-[10px] font-black text-orange-600 uppercase tracking-wider mb-1">📋 Ce trebuie să postezi</p>
-                                <p className="text-xs text-gray-700 font-bold">{inv.campaigns.deliverables}</p>
-                              </div>
-                            )}
-                            {inv.campaigns?.story_instructions && (
-                              <div className="bg-white rounded-xl p-3 border border-orange-100">
-                                <p className="text-[10px] font-black text-orange-600 uppercase tracking-wider mb-1">📝 Instrucțiuni</p>
-                                <p className="text-xs text-gray-600 leading-relaxed">{inv.campaigns.story_instructions}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Brief preview */}
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {inv.campaigns?.product_name && (
-                          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">📦 Produs</p>
-                            <p className="text-xs font-bold text-gray-700">{inv.campaigns.product_name}</p>
-                          </div>
-                        )}
-                        {inv.campaigns?.content_type?.length > 0 && (
-                          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">🎬 Tip conținut</p>
-                            <p className="text-xs font-bold text-gray-700">{inv.campaigns.content_type.join(', ')}</p>
-                          </div>
-                        )}
-                        {inv.campaigns?.min_duration && (
-                          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">⏱️ Durată minimă</p>
-                            <p className="text-xs font-bold text-gray-700">{inv.campaigns.min_duration} secunde</p>
-                          </div>
-                        )}
-                        {inv.campaigns?.min_days_online && (
-                          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">📅 Online minim</p>
-                            <p className="text-xs font-bold text-gray-700">{inv.campaigns.min_days_online} zile</p>
-                          </div>
-                        )}
-                        {inv.campaigns?.required_caption && (
-                          <div className="bg-yellow-50 rounded-xl p-3 border border-yellow-100 sm:col-span-2">
-                            <p className="text-[10px] font-black text-yellow-600 uppercase tracking-wider mb-1">✍️ Caption obligatoriu</p>
-                            <p className="text-xs font-bold text-gray-700">{inv.campaigns.required_caption}</p>
-                          </div>
-                        )}
-                        {inv.campaigns?.required_hashtags?.length > 0 && (
-                          <div className="bg-blue-50 rounded-xl p-3 border border-blue-100 sm:col-span-2">
-                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-wider mb-1"># Hashtag-uri obligatorii</p>
-                            <p className="text-xs font-bold text-blue-700">#{inv.campaigns.required_hashtags.join(' #')}</p>
-                          </div>
-                        )}
-                        {inv.campaigns?.key_messages?.length > 0 && (
-                          <div className="bg-purple-50 rounded-xl p-3 border border-purple-100 sm:col-span-2">
-                            <p className="text-[10px] font-black text-purple-600 uppercase tracking-wider mb-1">⭐ Mesaje cheie</p>
-                            <ul className="space-y-0.5">{inv.campaigns.key_messages.map((m: string, i: number) => (
-                              <li key={i} className="text-xs text-gray-700 flex items-start gap-1"><span className="text-purple-400 flex-shrink-0">•</span>{m}</li>
-                            ))}</ul>
-                          </div>
-                        )}
-                        {inv.campaigns?.forbidden_mentions?.length > 0 && (
-                          <div className="bg-red-50 rounded-xl p-3 border border-red-100 sm:col-span-2">
-                            <p className="text-[10px] font-black text-red-500 uppercase tracking-wider mb-1">🚫 Nu este permis</p>
-                            <p className="text-xs text-red-700">{inv.campaigns.forbidden_mentions.join(', ')}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-start sm:items-end gap-4 flex-shrink-0">
-                      {(inv.reserved_amount || inv.campaigns?.budget_per_influencer || inv.campaigns?.budget) && (
-                        <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3 text-center sm:text-right">
-                          <p className="text-xs text-gray-400 font-medium mb-0.5">Câștigul tău</p>
-                          {inv.reserved_amount ? (
-                            <>
-                              <p className="text-2xl font-black text-green-600">{fmt(inv.reserved_amount)}</p>
-                              <p className="text-xs text-gray-400 mt-0.5">câștig net după finalizare</p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-2xl font-black text-green-600">{fmt(inv.campaigns.budget_per_influencer || inv.campaigns.budget)}</p>
-                              <p className="text-xs text-gray-400 mt-0.5">câștig net după finalizare</p>
-                            </>
-                          )}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <button onClick={() => handleAction(inv.id, 'decline', inv)} disabled={actionLoading === inv.id} className="btn-decline flex-1 sm:flex-none">
-                          {actionLoading === inv.id ? <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <X className="w-4 h-4" />}
-                          Refuz
-                        </button>
-                        {inv.campaigns?.registrations_open === false ? (
-                          <div className="flex flex-col gap-2 flex-1">
-                            <div className="flex items-center justify-center gap-1.5 text-xs font-black text-red-500 bg-red-50 border border-red-200 rounded-2xl px-3 py-2">
-                              🚫 Înscrieri închise
-                            </div>
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
-                              <p className="text-xs text-amber-700 leading-relaxed">
-                                🌟 <strong>Nu-ți face griji!</strong> Brandurile lansează campanii noi regulat.<br/>
-                                <span className="text-amber-600">Mai multe oferte vin în curând pe AddFame! 🚀</span>
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <button onClick={() => handleAction(inv.id, 'accept', inv)} disabled={actionLoading === inv.id} className="btn-accept flex-1 sm:flex-none">
-                            {actionLoading === inv.id ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
-                            Accept
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Mesaj Fără răspuns ──────────────────────────────── */}
+      {/* Mesaj Fără răspuns */}
       {activeTab === 'Fara raspuns' && expiredCount > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-2">
-          <p className="text-sm font-black text-amber-800 mb-1">⏰ Invitații la care nu ai răspuns</p>
-          <p className="text-xs text-amber-600 leading-relaxed">
-            Perioada de înscriere pentru aceste campanii a expirat. Completează-ți profilul pentru a primi invitații mai relevante în viitor! 🚀
-          </p>
-        </div>
+        <Note tone="amber" title="Invitații la care nu ai răspuns">
+          <span className="iu-xs" style={{ lineHeight: 1.55 }}>
+            Perioada de înscriere pentru aceste campanii a expirat. Completează-ți profilul pentru a primi invitații mai relevante în viitor.
+          </span>
+        </Note>
       )}
 
-      {/* ── Collaboration List ──────────────────────────────── */}
+      {/* Listă colaborări */}
       {filtered.length === 0 ? (
-        <div className="bg-white border border-gray-100 rounded-2xl p-16 text-center" style={{ boxShadow: '0 2px 12px rgba(0,0,0,.04)' }}>
-          <div className="w-16 h-16 rounded-2xl infl-grad flex items-center justify-center mx-auto mb-4" style={{ boxShadow: '0 4px 16px rgba(139,92,246,.25)' }}>
-            <Zap className="w-8 h-8 text-white" />
-          </div>
-          <p className="font-black text-gray-700 text-lg mb-2">
-            {activeTab === 'All' ? 'Nicio colaborare încă' : `Nicio colaborare ${activeTab.toLowerCase()}`}
+        <div className="iu-card ic-empty">
+          <span className="iu-ico" style={{ background: 'linear-gradient(135deg,#7040f0,#9030f0)', color: '#fff', width: 56, height: 56, borderRadius: 18 }}><Zap size={26} /></span>
+          <h2>{search ? 'Niciun rezultat' : emptyCopy[activeTab].t}</h2>
+          <p className="iu-muted iu-sm" style={{ margin: 0, maxWidth: 340 }}>
+            {search ? `Nu am găsit colaborări pentru „${search}".` : emptyCopy[activeTab].d}
           </p>
-          <p className="text-sm text-gray-400 mb-6 max-w-xs mx-auto">
-            {activeTab === 'All' ? 'Aplică la campanii sau așteaptă invitații de la branduri.' : `Nu ai colaborări ${activeTab.toLowerCase()} în acest moment.`}
-          </p>
-          <Link href="/influencer/campaigns"
-            className="inline-flex items-center gap-2 infl-grad text-white font-bold text-sm px-6 py-3 rounded-xl"
-            style={{ boxShadow: '0 4px 14px rgba(139,92,246,.3)' }}>
-            Caută campanii <ArrowRight className="w-4 h-4" />
-          </Link>
+          {search
+            ? <button className="iu-btn" onClick={() => setSearch('')}>Șterge căutarea</button>
+            : <Link href="/influencer/campaigns" className="iu-btn p big">Caută campanii <ArrowRight size={16} /></Link>}
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map(c => {
-            const cfg = STATUS_CONFIG[c.status] ?? STATUS_CONFIG.PENDING
-            const isExpanded = expandedId === c.id
-            const isInvited = c.status === 'INVITED'
-            const hasDeliverablePending = c.status === 'ACTIVE' && !!c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at
-            const wasRejected = c.status === 'ACTIVE' && !!c.deliverable_rejected_at && !c.deliverable_submitted_at
-            const isExpiredInv = isExpiredInvite(c)
-
-            if (isInvited && !isExpiredInv) return null
-
-            if (isExpiredInv) return (
-              <div key={c.id} className="rounded-2xl border border-amber-200 bg-amber-50/50 overflow-hidden">
-                <div className="flex items-start gap-4 p-4">
-                  <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-5 h-5 text-amber-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-black text-gray-700 truncate">{c.campaigns?.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{c.campaigns?.brand_name} · {c.campaigns?.campaign_type === 'BARTER' ? 'Barter' : 'Platit'}</p>
-                    <div className="mt-2 bg-white border border-amber-100 rounded-xl p-3">
-                      <p className="text-xs font-black text-amber-700 mb-1">⏰ Nu ai răspuns la timp</p>
-                      <p className="text-xs text-gray-500 leading-relaxed">
-                        Perioada de înscriere a expirat. Nu-ți face griji — brandurile lansează campanii noi regulat pe AddFame! 🚀
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-black text-amber-700 bg-amber-100 px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap">
-                    Fără răspuns
-                  </span>
-                </div>
-              </div>
-            )
-
-            return (
-              <div key={c.id}
-                className={`rounded-2xl border-2 bg-white overflow-hidden transition-all ${wasRejected ? 'border-red-200' : hasDeliverablePending ? 'border-amber-200' : cfg.border}`}
-                style={{ boxShadow: '0 2px 12px rgba(0,0,0,.04)' }}>
-
-                {/* Main row */}
-                <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50/60 transition" onClick={() => setExpandedId(isExpanded ? null : c.id)}>
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${wasRejected ? 'bg-red-50' : hasDeliverablePending ? 'bg-amber-50' : cfg.bg}`}>
-                    {wasRejected ? <AlertTriangle className="w-4 h-4 text-red-500" /> : hasDeliverablePending ? <Eye className="w-4 h-4 text-amber-500" /> : cfg.icon}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-gray-900 truncate">{c.campaigns?.title || 'Campaign'}</p>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <p className="text-xs text-gray-400 font-medium">{c.campaigns?.brand_name}</p>
-                      {c.campaigns?.deadline && (
-                        <>
-                          <span className="text-gray-200">·</span>
-                          <p className="text-xs text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {fmtDateShort(c.campaigns.deadline)}</p>
-                        </>
-                      )}
-                      {wasRejected && <span className="text-[10px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Post respins</span>}
-                      {hasDeliverablePending && <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">📝 Postat — în așteptare</span>}
-                      {c.status === 'ACTIVE' && !hasDeliverablePending && !wasRejected && c.package_received_at && !c.deliverable_submitted_at && (() => {
-                        const isLate = c.post_deadline_days && (new Date().getTime() - new Date(c.package_received_at).getTime()) > c.post_deadline_days * 86400000
-                        if (isLate) return <span className="text-[10px] font-black text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">⏰ Întârziat</span>
-                        if (c.post_deadline_days) {
-                          const msLeft = c.post_deadline_days * 86400000 - (new Date().getTime() - new Date(c.package_received_at).getTime())
-                          const daysLeftToPost = Math.ceil(msLeft / 86400000)
-                          if (daysLeftToPost <= 0) return <span className="text-[10px] font-black text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">⏰ Astăzi e ultima zi</span>
-                          if (daysLeftToPost === 1) return <span className="text-[10px] font-black text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full animate-pulse">🔥 Ultima zi — postează azi!</span>
-                          if (daysLeftToPost <= 3) return <span className="text-[10px] font-black text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">📦 {daysLeftToPost} zile rămase</span>
-                          return <span className="text-[10px] font-black text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">📦 La tine · {daysLeftToPost} zile rămase</span>
-                        }
-                        return <span className="text-[10px] font-black text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">📦 La tine · postează</span>
-                      })()}
-                      {c.status === 'ACTIVE' && !c.package_received_at && c.package_sent_at && <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">🚚 Colet în drum</span>}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    {c.campaigns?.platforms?.slice(0, 2).map(p => (
-                      <span key={p}>{PLATFORM_ICON[p.toLowerCase()] || null}</span>
-                    ))}
-                    {c.status === 'ACTIVE' && c.reserved_amount ? (
-                      <span className="flex items-center gap-1 text-xs font-black text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full">
-                        🔒 {c.reserved_amount.toLocaleString('ro-RO')} RON garantat
-                      </span>
-                    ) : c.status === 'COMPLETED' && c.payment_amount ? (
-                      <span className="flex items-center gap-1 text-xs font-black text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-full">
-                        ✅ {c.payment_amount.toLocaleString('ro-RO')} RON plătit
-                      </span>
-                    ) : (
-                      <span className="text-sm font-black text-green-600">
-                        {(() => {
-                          const camp = c.campaigns
-                          if (!camp) return null
-                          // budget_per_influencer dacă există, altfel calculat din budget / max_influencers
-                          const perInf = camp.budget_per_influencer
-                            ? camp.budget_per_influencer
-                            : camp.max_influencers && camp.max_influencers > 0
-                              ? (camp.budget / camp.max_influencers)
-                              : camp.budget
-                          return perInf > 0 ? fmt(perInf) : null
-                        })()}
-                      </span>
-                    )}
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${wasRejected ? 'bg-red-50 text-red-600' : hasDeliverablePending ? 'bg-amber-50 text-amber-600' : `${cfg.bg} ${cfg.text}`}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${wasRejected ? 'bg-red-500' : hasDeliverablePending ? 'bg-amber-400' : cfg.dot}`} />
-                      {wasRejected ? 'Respins' : hasDeliverablePending ? 'Revizuire' : cfg.label}
-                    </span>
-                    <ChevronRight className={`w-4 h-4 text-gray-300 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                  </div>
-                </div>
-
-                {/* Expanded */}
-                {isExpanded && (
-                  <div className="px-4 pb-5 border-t border-gray-100">
-                    <div className="pt-4 space-y-4">
-
-                      {/* Campaign details */}
-                      {c.campaigns?.description && (
-                        <div className="bg-gray-50 rounded-xl p-3">
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Despre campanie</p>
-                          <p className="text-xs text-gray-600 leading-relaxed">{c.campaigns.description}</p>
-                        </div>
-                      )}
-
-
-                      {/* Ofertă barter */}
-                      {c.campaigns?.offer_name && (() => {
-                        const imgs = (Array.isArray(c.campaigns?.offer_image_urls) && c.campaigns.offer_image_urls.length > 0)
-                          ? c.campaigns.offer_image_urls.filter(Boolean)
-                          : (c.campaigns?.offer_image_url ? [c.campaigns.offer_image_url] : [])
-                        return (
-                          <div className="bg-amber-50 border border-amber-100 rounded-xl overflow-hidden">
-                            {/* Poza produsului */}
-                            {imgs.length > 0 && (
-                              <div className="relative w-full aspect-video overflow-hidden">
-                                <img
-                                  src={imgs[0]}
-                                  alt={c.campaigns.offer_name}
-                                  className="w-full h-full object-cover"
-                                />
-                                {imgs.length > 1 && (
-                                  <span className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
-                                    +{imgs.length - 1} imagini
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            <div className="p-3">
-                              <p className="text-[10px] font-black text-amber-700 uppercase tracking-wider mb-1.5">🎁 Ce primești</p>
-                              <p className="text-sm font-bold text-gray-900 mb-1">{c.campaigns.offer_name}</p>
-                              {c.campaigns.offer_description && (
-                                <p className="text-xs text-gray-600 leading-relaxed">{c.campaigns.offer_description}</p>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })()}
-
-                      {/* Story instructions */}
-                      {c.campaigns?.story_instructions && (
-                        <div className="bg-pink-50 border border-pink-100 rounded-xl p-3">
-                          <p className="text-[10px] font-black text-pink-700 uppercase tracking-wider mb-1.5">📱 Instrucțiuni postare</p>
-                          <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">{c.campaigns.story_instructions}</p>
-                        </div>
-                      )}
-
-                      {/* Link promovare */}
-                      {c.campaigns?.promotion_link && (
-                        <div className="bg-green-50 border border-green-100 rounded-xl p-3">
-                          <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
-                            <p className="text-[10px] font-black text-green-700 uppercase tracking-wider">🔗 Link produs / promovare</p>
-                            <button
-                              onClick={() => { navigator.clipboard.writeText(c.campaigns.promotion_link); notify('✅ Link copiat!') }}
-                              className="text-[10px] font-bold text-green-700 hover:text-green-900"
-                            >
-                              📋 Copiază
-                            </button>
-                          </div>
-                          <a href={c.campaigns.promotion_link} target="_blank" rel="noopener noreferrer"
-                            className="text-xs font-bold text-green-700 hover:text-green-900 underline break-all">
-                            {c.campaigns.promotion_link}
-                          </a>
-                          {Array.isArray(c.campaigns.promotion_link_placement) && c.campaigns.promotion_link_placement.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {c.campaigns.promotion_link_placement.map((place: string) => (
-                                <span key={place} className="text-[10px] font-bold bg-white border border-green-200 text-green-700 px-2 py-0.5 rounded-full">{place}</span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Required caption */}
-                      {c.campaigns?.required_caption && (
-                        <div className="bg-purple-50 border border-purple-100 rounded-xl p-3">
-                          <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
-                            <p className="text-[10px] font-black text-purple-700 uppercase tracking-wider">📝 Caption obligatoriu</p>
-                            <button
-                              onClick={() => { navigator.clipboard.writeText(c.campaigns.required_caption); notify('✅ Caption copiat!') }}
-                              className="text-[10px] font-bold text-purple-700 hover:text-purple-900"
-                            >
-                              📋 Copiază
-                            </button>
-                          </div>
-                          <p className="text-xs text-gray-700 whitespace-pre-wrap">{c.campaigns.required_caption}</p>
-                        </div>
-                      )}
-
-                      {/* Required hashtags */}
-                      {Array.isArray(c.campaigns?.required_hashtags) && c.campaigns.required_hashtags.length > 0 && (
-                        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
-                          <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
-                            <p className="text-[10px] font-black text-blue-700 uppercase tracking-wider"># Hashtag-uri obligatorii</p>
-                            <button
-                              onClick={() => { navigator.clipboard.writeText(c.campaigns.required_hashtags.map((t: string) => '#' + t.replace(/^#/, '')).join(' ')); notify('✅ Hashtag-uri copiate!') }}
-                              className="text-[10px] font-bold text-blue-700 hover:text-blue-900"
-                            >
-                              📋 Copiază
-                            </button>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {c.campaigns.required_hashtags.map((tag: string) => (
-                              <span key={tag} className="text-xs font-bold bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full">
-                                #{tag.replace(/^#/, '')}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Forbidden */}
-                      {(c.campaigns?.forbidden_content || (Array.isArray(c.campaigns?.forbidden_mentions) && c.campaigns.forbidden_mentions.length > 0)) && (
-                        <div className="bg-red-50 border border-red-100 rounded-xl p-3">
-                          <p className="text-[10px] font-black text-red-700 uppercase tracking-wider mb-1.5">🚫 Ce să eviți</p>
-                          {c.campaigns.forbidden_content && (
-                            <p className="text-xs text-gray-700 leading-relaxed mb-2 whitespace-pre-wrap">{c.campaigns.forbidden_content}</p>
-                          )}
-                          {Array.isArray(c.campaigns.forbidden_mentions) && c.campaigns.forbidden_mentions.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
-                              {c.campaigns.forbidden_mentions.map((m: string) => (
-                                <span key={m} className="text-[10px] font-bold bg-white border border-red-200 text-red-700 px-2 py-0.5 rounded-full">{m}</span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Link spre pagina detaliată */}
-                      {c.campaigns?.id && (
-                        <a
-                          href={`/influencer/campaigns/${c.campaigns.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-700 transition"
-                        >
-                          Vezi pagina completă a campaniei →
-                        </a>
-                      )}
-
-                      {/* Message from brand */}
-                      {c.message && c.message !== 'You have been invited to collaborate on a campaign.' && (
-                        <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3">
-                          <MessageSquare className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-[10px] font-black text-blue-500 uppercase tracking-wider mb-1">Mesaj de la brand</p>
-                            <p className="text-xs text-gray-600 italic">„{c.message}"</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ── ADRESĂ LIVRARE - dacă lipsește la barter delivery ── */}
-                      {c.status === 'ACTIVE' &&
-                        c.campaigns?.campaign_type === 'BARTER' &&
-                        c.campaigns?.delivery_method === 'delivery' &&
-                        !c.delivery_name && (
-                        <div className="bg-orange-50 border-2 border-orange-300 rounded-2xl p-4">
-                          <p className="text-sm font-black text-orange-800 mb-1">📦 Completează adresa de livrare</p>
-                          <p className="text-xs text-orange-600 mb-3">Brandul are nevoie de adresa ta pentru a-ți trimite produsul.</p>
-                          <button
-                            onClick={() => setAddressModal({ collabId: c.id })}
-                            className="w-full py-2.5 rounded-xl font-black text-sm text-white transition"
-                            style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}
-                          >
-                            Adaugă adresa de livrare →
-                          </button>
-                        </div>
-                      )}
-
-                    {/* Check-in locatie - barter pickup */}
-                    {c.status === 'ACTIVE' && c.campaigns?.campaign_type === 'BARTER' && c.campaigns?.delivery_method === 'pickup' && (
-                      <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-4">
-                        {c.checked_in_at ? (
-                          <div className="text-center py-1">
-                            <p className="text-2xl mb-1">✅</p>
-                            <p className="text-sm font-black text-indigo-700">Check-in confirmat!</p>
-                            <p className="text-xs text-indigo-500 mt-1">
-                              {new Date(c.checked_in_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                          </div>
-                        ) : (
-                          <>
-                            <p className="text-sm font-black text-indigo-800 mb-1">📍 Check-in la locație</p>
-                            <p className="text-xs text-indigo-600 mb-3">Cere codul de 6 caractere de la brand când ajungi la locație</p>
-                            <div className="flex gap-2">
-                              <input
-                                value={checkinInputs[c.id] || ''}
-                                onChange={e => setCheckinInputs(p => ({ ...p, [c.id]: e.target.value.toUpperCase().slice(0, 6) }))}
-                                placeholder="AB3X7K"
-                                maxLength={6}
-                                className="flex-1 px-3 py-2.5 border-2 border-indigo-200 rounded-xl text-sm font-black text-center outline-none focus:border-indigo-500 bg-white uppercase"
-                                style={{ fontFamily: 'monospace', letterSpacing: '.2em' }}
-                              />
-                              <button
-                                onClick={async () => {
-                                  const code = checkinInputs[c.id] || ''
-                                  if (code.length < 4) { setCheckinError(p => ({ ...p, [c.id]: 'Codul trebuie să aibă minim 4 caractere' })); return }
-                                  setCheckinLoading(p => ({ ...p, [c.id]: true }))
-                                  setCheckinError(p => ({ ...p, [c.id]: '' }))
-                                  const res = await checkInWithCode(c.id, code) as any
-                                  if (res.success) {
-                                    setCollabs(prev => prev.map(col => col.id === c.id ? { ...col, checked_in_at: new Date().toISOString() } : col))
-                                  } else {
-                                    setCheckinError(p => ({ ...p, [c.id]: res.error || 'Cod incorect' }))
-                                  }
-                                  setCheckinLoading(p => ({ ...p, [c.id]: false }))
-                                }}
-                                disabled={checkinLoading[c.id] || !checkinInputs[c.id]}
-                                className="px-4 py-2.5 rounded-xl font-black text-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition">
-                                {checkinLoading[c.id] ? '...' : '✓ OK'}
-                              </button>
-                            </div>
-                            {checkinError[c.id] && (
-                              <p className="text-xs text-red-500 font-bold mt-2">⚠ {checkinError[c.id]}</p>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Status livrare - barter */}
-                    {c.status === 'ACTIVE' && c.campaigns?.campaign_type === 'BARTER' && c.campaigns?.delivery_method === 'delivery' && c.delivery_name && (
-                      <div className="space-y-3">
-                        {/* Pachet trimis de brand - influencerul confirmă primire */}
-                        {c.package_sent_at && !c.package_received_at && (
-                          <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4">
-                            <p className="text-sm font-black text-blue-800 mb-1">🚚 Pachetul tău e în drum!</p>
-                            {c.package_courier && <p className="text-xs text-blue-600 mb-1">Curier: {c.package_courier}{c.package_tracking ? ` · AWB: ${c.package_tracking}` : ''}</p>}
-                            <p className="text-xs text-blue-600 mb-3">Trimis pe {new Date(c.package_sent_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}. Confirmă când ajunge!</p>
-                            <button
-                              onClick={async () => {
-                                const sb = createClient()
-                                await sb.from('collaborations').update({ package_received_at: new Date().toISOString() }).eq('id', c.id)
-                                setCollabs(prev => prev.map(col => col.id === c.id ? { ...col, package_received_at: new Date().toISOString() } : col))
-                              }}
-                              className="w-full py-2.5 rounded-xl font-black text-sm text-white bg-blue-500 hover:bg-blue-600 transition">
-                              ✅ Am primit coletul!
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Countdown deadline postare — vizibil doar după primirea coletului */}
-                        {!c.deliverable_submitted_at && !c.deliverable_approved_at && c.package_received_at && (() => {
-                          const ref = c.package_received_at
-                          if (!ref) return null
-                          const deadline = new Date(new Date(ref).getTime() + (c.post_deadline_days || 14) * 86400000)
-                          const msLeft = deadline.getTime() - Date.now()
-                          const daysLeft = Math.max(0, Math.floor(msLeft / 86400000))
-                          const hoursLeft = Math.max(0, Math.floor((msLeft % 86400000) / 3600000))
-                          const urgent = daysLeft <= 2
-                          const expired = msLeft <= 0
-                          return (
-                            <div className={`rounded-2xl p-4 border-2 ${expired ? 'bg-red-50 border-red-400' : urgent ? 'bg-orange-50 border-orange-300' : 'bg-amber-50 border-amber-200'}`}>
-                              <p className={`text-xs font-black uppercase tracking-wider mb-2 ${expired ? 'text-red-600' : urgent ? 'text-orange-600' : 'text-amber-700'}`}>
-                                {expired ? '❌ Deadline depășit — riști un strike!' : urgent ? '🚨 URGENT — Mai ai puțin timp!' : '⏰ Timp rămas pentru postare'}
-                              </p>
-                              {!expired ? (
-                                <>
-                                  <div className="flex items-baseline gap-2">
-                                    <span className={`text-3xl font-black ${urgent ? 'text-orange-600' : 'text-amber-700'}`}>{daysLeft}</span>
-                                    <span className={`text-sm ${urgent ? 'text-orange-500' : 'text-amber-600'}`}>zile</span>
-                                    <span className={`text-xl font-black ${urgent ? 'text-orange-600' : 'text-amber-700'}`}>{hoursLeft}</span>
-                                    <span className={`text-sm ${urgent ? 'text-orange-500' : 'text-amber-600'}`}>ore</span>
-                                  </div>
-                                  {urgent && (
-                                    <p className="text-xs font-bold text-orange-600 mt-1.5">
-                                      ⚠️ Postează și trimite dovada înainte de {deadline.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}, ora {deadline.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                  )}
-                                </>
-                              ) : (
-                                <div>
-                                  <p className="text-sm font-bold text-red-600">Termenul a expirat pe {deadline.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}</p>
-                                  <p className="text-xs text-red-500 mt-1">Contactează-ne la contact@addfame.ro dacă ai nevoie de ajutor.</p>
-                                </div>
-                              )}
-                              {!expired && <p className={`text-xs mt-1 ${urgent ? 'text-orange-500' : 'text-amber-600'}`}>
-                                Deadline: {deadline.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
-                              </p>}
-                            </div>
-                          )
-                        })()}
-                      </div>
-                    )}
-
-                      {/* ── DELIVERABLE SECTION for ACTIVE ── */}
-                      {c.status === 'ACTIVE' && (
-                        <DeliverableSection collab={c} onUpdated={updateCollab} />
-                      )}
-
-                      {/* Completed: show approved deliverable */}
-                      {c.status === 'COMPLETED' && c.deliverable_url && (
-                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-2">
-                          <p className="text-xs font-black text-green-700 uppercase tracking-wider flex items-center gap-2">
-                            <CheckCircle className="w-3.5 h-3.5" /> Post aprobat de brand
-                          </p>
-                          <a href={c.deliverable_url} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-2 bg-white border border-green-200 rounded-xl p-3 hover:bg-green-50 transition group">
-                            <Link2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            <span className="text-sm font-bold text-green-700 truncate flex-1">{c.deliverable_url}</span>
-                            <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-green-600 transition" />
-                          </a>
-                          {c.deliverable_approved_at && (
-                            <p className="text-xs text-gray-400">Aprobat: {fmtDateTime(c.deliverable_approved_at)}</p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Review for completed */}
-                      {c.status === 'COMPLETED' && (
-                        <LeaveReview
-                          collaborationId={c.id}
-                          reviewerRole="influencer"
-                          targetName={c.campaigns?.brand_name ?? 'acest brand'}
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+        <div className="iu-card" style={{ overflow: 'hidden' }}>
+          {filtered.map(renderRow)}
         </div>
       )}
 
-      {/* ── Modal adresă livrare barter ──────────────────────────────────── */}
+      {/* ── Sheet: trimite dovada postului ── */}
+      {deliverableCollab && (
+        <div className="ic-ov">
+          <div className="ic-mod wide" role="dialog" aria-modal="true">
+            <div className="ic-mh">
+              <div className="ic-col" style={{ minWidth: 0 }}>
+                <h2>{isRejectedPost(deliverableCollab) ? 'Retrimite dovada' : isPendingReview(deliverableCollab) ? 'Dovada trimisă' : 'Trimite dovada postului'}</h2>
+                <span className="iu-xs iu-muted ic-meta">{deliverableCollab.campaigns?.title} · {deliverableCollab.campaigns?.brand_name}</span>
+              </div>
+              <button onClick={() => setDeliverableModalId(null)} className="ic-x" aria-label="Închide"><X size={18} /></button>
+            </div>
+            <div className="ic-mb">
+              <DeliverableSection
+                key={deliverableCollab.id}
+                collab={deliverableCollab}
+                onUpdated={(u) => { updateCollab(u); if (u.deliverable_submitted_at) { setDeliverableModalId(null); notify('Dovada a fost trimisă. Brandul o va revizui.') } }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Sheet: evaluare ── */}
+      {reviewCollab && (
+        <div className="ic-ov" onClick={() => setReviewModalId(null)}>
+          <div className="ic-mod" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+            <div className="ic-mh">
+              <div className="ic-col" style={{ minWidth: 0 }}>
+                <h2>Evaluează brandul</h2>
+                <span className="iu-xs iu-muted ic-meta">{reviewCollab.campaigns?.title} · {reviewCollab.campaigns?.brand_name}</span>
+              </div>
+              <button onClick={() => setReviewModalId(null)} className="ic-x" aria-label="Închide"><X size={18} /></button>
+            </div>
+            <div className="ic-mb">
+              <LeaveReview
+                collaborationId={reviewCollab.id}
+                reviewerRole="influencer"
+                targetName={reviewCollab.campaigns?.brand_name ?? 'acest brand'}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal adresă livrare barter ── */}
       {addressModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl">
-            <div className="h-1 w-full" style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }} />
-            <div className="p-6">
-              <h3 className="font-black text-gray-900 text-lg mb-1">📦 Adresă de livrare</h3>
-              <p className="text-sm text-gray-500 mb-5">Brandul va trimite produsul la această adresă după aprobare.</p>
-              <div className="space-y-3">
+        <div className="ic-ov">
+          <div className="ic-mod" role="dialog" aria-modal="true">
+            <div className="ic-mh">
+              <div className="ic-col">
+                <h2>Adresă de livrare</h2>
+                <span className="iu-xs iu-muted">Brandul va trimite produsul la această adresă după aprobare.</span>
+              </div>
+              <button onClick={() => setAddressModal(null)} className="ic-x" aria-label="Închide"><X size={18} /></button>
+            </div>
+            <div className="ic-mb">
+              <div className="ic-col" style={{ gap: 10 }}>
                 <input value={address.name} onChange={e => setAddress(p => ({ ...p, name: e.target.value }))}
-                  placeholder="Nume complet *" className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition" />
-                <div className="grid grid-cols-2 gap-3">
+                  placeholder="Nume complet *" className="iu-input" autoComplete="name" />
+                <div className="ic-grid2">
                   <input value={address.phone} onChange={e => setAddress(p => ({ ...p, phone: e.target.value }))}
-                    placeholder="Telefon *" className="px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition" />
+                    placeholder="Telefon *" className="iu-input" autoComplete="tel" inputMode="tel" />
                   <input value={address.postal_code} onChange={e => setAddress(p => ({ ...p, postal_code: e.target.value }))}
-                    placeholder="Cod poștal" className="px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition" />
+                    placeholder="Cod poștal" className="iu-input" autoComplete="postal-code" />
                 </div>
                 <input value={address.address} onChange={e => setAddress(p => ({ ...p, address: e.target.value }))}
-                  placeholder="Stradă, număr, bloc, ap. *" className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition" />
-                <div className="grid grid-cols-2 gap-3">
+                  placeholder="Stradă, număr, bloc, ap. *" className="iu-input" autoComplete="street-address" />
+                <div className="ic-grid2">
                   <input value={address.city} onChange={e => setAddress(p => ({ ...p, city: e.target.value }))}
-                    placeholder="Oraș *" className="px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition" />
+                    placeholder="Oraș *" className="iu-input" />
                   <input value={address.county} onChange={e => setAddress(p => ({ ...p, county: e.target.value }))}
-                    placeholder="Județ *" className="px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition" />
+                    placeholder="Județ *" className="iu-input" />
                 </div>
               </div>
-              <p className="text-xs text-gray-400 text-center mt-3">🔒 Adresa e vizibilă doar brandului după aprobare</p>
-              <div className="flex gap-3 mt-5">
-                <button onClick={() => setAddressModal(null)}
-                  className="flex-1 py-3 rounded-2xl font-black text-sm text-gray-600 border-2 border-gray-200 hover:bg-gray-50 transition">
-                  Anulează
-                </button>
-                <button onClick={handleAcceptWithAddress} disabled={!!actionLoading}
-                  className="flex-1 py-3 rounded-2xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }}>
-                  {actionLoading ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
-                  Accept invitația
+              <span className="iu-xs iu-muted" style={{ textAlign: 'center' }}><Lock size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} />Adresa e vizibilă doar brandului după aprobare</span>
+              <div className="ic-btns">
+                <button onClick={() => setAddressModal(null)} className="iu-btn big" style={{ flex: 1 }}>Anulează</button>
+                <button onClick={handleAcceptWithAddress} disabled={!!actionLoading} className="iu-btn p big" style={{ flex: 1 }}>
+                  {actionLoading ? <Loader2 size={16} className="ic-spin" /> : <Check size={16} />}
+                  Acceptă invitația
                 </button>
               </div>
             </div>
@@ -1777,3 +1571,118 @@ export default function CollaborationsPage() {
     </div>
   )
 }
+
+const IC_CSS = `
+.ic-col { display:flex; flex-direction:column; min-width:0; }
+.ic-spin { animation: icspin .8s linear infinite; }
+@keyframes icspin { to { transform: rotate(360deg); } }
+.ic-sk { border-radius:8px; background:linear-gradient(90deg,#eeecf7 25%,#f6f5fc 50%,#eeecf7 75%); background-size:200% 100%; animation:icsk 1.3s ease-in-out infinite; }
+@keyframes icsk { to { background-position:-200% 0; } }
+.ic-bar { display:flex; flex-direction:column; gap:12px; }
+.ic-tabs { overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; padding-bottom:2px; }
+.ic-tabs::-webkit-scrollbar { display:none; }
+.ic-tabs .iu-pill { flex:none; }
+.ic-search { width:100%; max-width:420px; }
+.ic-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.ic-stat-c { display:flex; gap:14px; align-items:center; padding:16px 18px; }
+.ic-big { font-size:20px; letter-spacing:-.02em; line-height:1.15; }
+.ic-alert { flex-direction:row !important; align-items:center; gap:12px; padding:14px 16px; }
+.ic-note { display:flex; flex-direction:column; gap:8px; padding:12px 14px; border-radius:14px; border:1px solid transparent; min-width:0; }
+.ic-note.blue { background:#e6f0ff; border-color:#cfe0fb; color:#1d4fb8; }
+.ic-note.orange { background:#fff1e6; border-color:#fbd9bd; color:#9a4206; }
+.ic-note.green { background:#dcf5ec; border-color:#b8e8d3; color:#14532d; }
+.ic-note.amber { background:#fff1c2; border-color:#f3dd8c; color:#854d0e; }
+.ic-note.violet { background:#efeaff; border-color:#ddd1ff; color:#5b2fd0; }
+.ic-note.red { background:#fff4f2; border-color:#f3c9c4; color:#b42318; }
+.ic-note.grey { background:#f6f6fc; border-color:#e5e3f3; color:#14123a; }
+.ic-note .iu-sm, .ic-note .iu-xs { color:#14123a; }
+.ic-note.red .iu-xs { color:#b42318; }
+.ic-nh { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+.ic-nt { font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.ic-note.grey .ic-nt { color:#8783a8; }
+.ic-copy { display:inline-flex; align-items:center; gap:5px; min-height:28px; padding:0 8px; border-radius:8px; border:0; background:rgba(255,255,255,.7); color:inherit; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.ic-copy:hover { background:#fff; }
+.ic-rw { border-top:1px solid #eeecf7; }
+.ic-rw:first-child { border-top:0; }
+.ic-rw.hot { background:#fdfcff; box-shadow:inset 3px 0 0 #7040f0; }
+.ic-row { display:grid; grid-template-columns:40px minmax(150px,1fr) minmax(190px,300px) 170px auto; gap:16px; align-items:center; padding:14px 20px; }
+.ic-who { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.ic-who > b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ic-meta { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ic-plats { display:flex; gap:8px; align-items:center; margin-top:2px; }
+.ic-trkwrap { min-width:0; }
+.ic-stat { display:flex; flex-direction:column; align-items:flex-start; gap:6px; min-width:0; }
+.ic-stat .iu-chip { max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+.ic-money { display:flex; flex-direction:column; align-items:flex-start; gap:3px; }
+.ic-money > b { font-size:14px; }
+.ic-act { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+.ic-chev { width:40px; padding:0 !important; flex:none; }
+.ic-det { padding:4px 20px 20px; }
+.ic-trk { position:relative; display:flex; align-items:flex-start; width:100%; min-width:0; }
+.ic-trk-line { position:absolute; left:10%; right:10%; top:10px; height:2px; background:#e5e3f3; }
+.ic-trk-fill { position:absolute; left:10%; top:10px; height:2px; background:#7040f0; max-width:80%; }
+.ic-trk-step { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; min-width:0; position:relative; }
+.ic-trk-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; position:relative; z-index:1; flex:none; }
+.ic-trk-lbl { font-size:11px; }
+.ic-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.ic-ul { margin:0; padding:0 0 0 18px; display:flex; flex-direction:column; gap:3px; font-size:13px; color:#14123a; }
+.ic-ol { margin:0; padding:0 0 0 18px; display:flex; flex-direction:column; gap:3px; font-size:12px; color:#14123a; }
+.ic-offer { border:1px solid #fbd9bd; background:#fff8f2; border-radius:14px; overflow:hidden; }
+.ic-offer-img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; }
+.ic-imgcount { position:absolute; top:8px; right:8px; background:rgba(20,18,58,.6); color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px; }
+.ic-linkbox { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; background:#fff; border:1px solid #e5e3f3; color:#4a4770; min-width:0; text-decoration:none; }
+.ic-linktxt { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600; }
+.ic-linkbtn { background:none; border:0; padding:6px 0; font:inherit; font-size:13px; font-weight:700; color:#5b2fd0; cursor:pointer; min-height:32px; text-align:left; text-decoration:none; }
+.ic-linkbtn:hover { color:#14123a; }
+.ic-mono { font-family:ui-monospace,monospace; font-weight:800; font-size:13px; color:#1d4fb8; background:#fff; padding:4px 10px; border-radius:8px; border:1px solid #cfe0fb; word-break:break-all; }
+.ic-pulse { width:8px; height:8px; border-radius:50%; background:#d9a400; flex:none; animation:icpulse 1.4s ease-in-out infinite; }
+@keyframes icpulse { 50% { opacity:.3; } }
+.ic-f { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.ic-ta { height:auto; padding:10px 14px; width:100%; resize:vertical; line-height:1.5; }
+.ic-x { flex:none; width:40px; height:40px; border-radius:12px; border:0; background:#f0eff7; color:#4a4770; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.ic-x:hover { background:#e5e3f3; }
+.ic-consent { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:14px; background:#efeaff; border:1.5px solid #ddd1ff; cursor:pointer; }
+.ic-consent input { margin-top:2px; width:18px; height:18px; accent-color:#7040f0; flex:none; cursor:pointer; }
+.ic-brief { display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:16px; background:#f9f7ff; border:1px solid #e6dcff; }
+.ic-tasks { display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:14px; background:#fff; border:1px solid #ddd1ff; }
+.ic-task { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:#f6f6fc; }
+.ic-btns { display:flex; gap:10px; flex-wrap:wrap; }
+.ic-empty { display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; padding:56px 20px; }
+.ic-ov { position:fixed; inset:0; z-index:60; background:rgba(20,18,58,.5); display:flex; align-items:center; justify-content:center; padding:16px; }
+.ic-mod { background:#fff; border-radius:22px; width:100%; max-width:440px; max-height:92vh; overflow:auto; box-shadow:0 30px 60px -20px rgba(20,18,58,.5); }
+.ic-mod.wide { max-width:600px; }
+.ic-mh { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:18px 20px; border-bottom:1px solid #eeecf7; position:sticky; top:0; background:#fff; z-index:2; }
+.ic-mb { display:flex; flex-direction:column; gap:16px; padding:20px; }
+.ic-toast { position:fixed; top:20px; right:20px; z-index:70; display:flex; gap:10px; align-items:center; padding:12px 16px; border-radius:14px; background:#fff; font-size:14px; font-weight:700; max-width:min(380px, calc(100vw - 32px)); box-shadow:0 18px 36px -18px rgba(20,18,58,.4); animation:icin .25s ease; }
+.ic-toast.ok { border:1.5px solid #b8e8d3; color:#14532d; }
+.ic-toast.err { border:1.5px solid #f3c9c4; color:#b42318; }
+@keyframes icin { from { opacity:0; transform:translateY(-8px); } }
+@media (max-width: 1023px) {
+  .ic-row { grid-template-columns:40px minmax(0,1fr) auto; gap:12px; }
+  .ic-trkwrap { grid-column:1 / -1; order:5; }
+  .ic-stat { order:3; align-items:flex-end; }
+  .ic-money { align-items:flex-end; }
+  .ic-act { grid-column:1 / -1; order:6; justify-content:stretch; }
+  .ic-act > .iu-btn:not(.ic-chev), .ic-act > .iu-chip { flex:1; }
+}
+@media (max-width: 767px) {
+  .ic-stats { grid-template-columns:minmax(0,1fr); gap:10px; }
+  .ic-stat-c { padding:14px; }
+  .iu-pill { height:44px; }
+  .ic-act .iu-btn, .ic-btns .iu-btn, .ic-note .iu-btn { min-height:44px; }
+  .ic-chev { width:44px; }
+  .ic-x { width:44px; height:44px; }
+  .ic-row { padding:14px; }
+  .ic-det { padding:4px 14px 16px; }
+  .ic-alert { flex-wrap:wrap; }
+  .ic-alert .iu-btn { width:100%; }
+  .ic-grid2 { grid-template-columns:minmax(0,1fr); }
+  .ic-btns > * { flex:1 1 100%; }
+  .ic-toast { left:16px; right:16px; top:12px; max-width:none; }
+  .ic-ov { align-items:flex-end; padding:0; }
+  .ic-mod, .ic-mod.wide { max-width:none; border-radius:22px 22px 0 0; max-height:92vh; }
+  .ic-mb { padding:16px; padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
+  .ic-search { max-width:none; }
+  .ic-input, .iu-input, .iu-search input { font-size:16px; }
+}
+`

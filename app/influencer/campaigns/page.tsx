@@ -9,8 +9,9 @@ import {
   Search, Clock, CheckCircle, AlertCircle, X, ArrowRight,
   Zap, Filter, Globe, SlidersHorizontal, ChevronDown,
   Briefcase, TrendingUp, Users, DollarSign, Calendar,
-  Sparkles, Tag, ArchiveX
+  Sparkles, Tag, ArchiveX, Ban
 } from 'lucide-react'
+import { CampaignHero, CampaignStats, CampaignSections, CAMPAIGN_CSS } from './campaign-sections'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 
 type Campaign = {
@@ -185,8 +186,8 @@ function CampaignImageSlider({ images, alt }: { images: string[]; alt: string })
     )}
     <div className="space-y-2">
       <div
-        className="relative rounded-2xl overflow-hidden border border-gray-100 bg-gray-50"
-        style={{ cursor: 'zoom-in' }}
+        className="relative overflow-hidden"
+        style={{ cursor: 'zoom-in', borderRadius: 14, background: '#f6f6fc' }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onClick={() => setLightbox(true)}
@@ -199,7 +200,7 @@ function CampaignImageSlider({ images, alt }: { images: string[]; alt: string })
           fontSize: 10, fontWeight: 700, padding: '3px 8px',
           borderRadius: 20, backdropFilter: 'blur(4px)',
           pointerEvents: 'none',
-        }}>🔍 Apasă pentru full screen</div>
+        }}>Apasă pentru full screen</div>
 
         {total > 1 && (
           <>
@@ -246,7 +247,8 @@ function CampaignImageSlider({ images, alt }: { images: string[]; alt: string })
             <button
               key={i}
               onClick={() => setIdx(i)}
-              className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition ${i === idx ? 'border-orange-500' : 'border-transparent opacity-60 hover:opacity-100'}`}
+              className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition ${i === idx ? 'opacity-100' : 'border-transparent opacity-60 hover:opacity-100'}`}
+              style={i === idx ? { borderColor: '#7040f0' } : undefined}
             >
               <img src={url} alt="" className="w-full h-full object-cover" />
             </button>
@@ -276,14 +278,14 @@ function CampaignScoreTimer({ acceptedAt }: { acceptedAt?: string }) {
   const mm = Math.floor((left % 3_600_000) / 60_000)
   const ss = Math.floor((left % 60_000) / 1000)
   const timer = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
-  const color = h < 24 ? '#059669' : h < 48 ? '#d97706' : '#7c3aed'
-  const bg = h < 24 ? '#ecfdf5' : h < 48 ? '#fffbeb' : '#f5f3ff'
-  const border = h < 24 ? '#6ee7b7' : h < 48 ? '#fcd34d' : '#c4b5fd'
+  const color = h < 24 ? '#14532d' : h < 48 ? '#854d0e' : '#5b2fd0'
+  const bg = h < 24 ? '#dcf5ec' : h < 48 ? '#fff1c2' : '#efeaff'
+  const border = h < 24 ? '#a7e3cb' : h < 48 ? '#f3dc8a' : '#ddd2ff'
   return (
-    <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: '10px 14px', marginBottom: 12 }}>
+    <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: 14, padding: '10px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
         <p style={{ fontSize: 12, fontWeight: 900, color, margin: 0 }}>
-          {h < 24 ? '🔥 Bonus maxim disponibil!' : h < 48 ? '⚡ Grăbește-te pentru bonus!' : '⭐ Postează și câștigă puncte'}
+          {h < 24 ? 'Bonus maxim disponibil' : h < 48 ? 'Grăbește-te pentru bonus' : 'Postează și câștigă puncte'}
         </p>
         <span style={{ fontSize: 16, fontWeight: 900, color, flexShrink: 0 }}>+{total} pts</span>
       </div>
@@ -474,354 +476,333 @@ export default function CampaignsPage() {
   if (barterSortBy === 'Locuri: Cele mai multe') filteredBarter = [...filteredBarter].sort((a, b) => ((b.max_influencers ?? 0) - (b.current_influencers ?? 0)) - ((a.max_influencers ?? 0) - (a.current_influencers ?? 0)))
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 rounded-full border-t-purple-500 border-purple-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
-        <p className="text-sm text-gray-400 font-semibold">Loading campaigns…</p>
+    <div className="iu" style={{ minHeight: '60vh', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="iu-col" style={{ alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #e5e3f3', borderTopColor: '#7040f0', animation: 'cmSpin .8s linear infinite' }} />
+        <p className="iu-muted iu-sm" style={{ margin: 0, fontWeight: 600 }}>Se încarcă campaniile…</p>
+        <style>{`@keyframes cmSpin { to { transform: rotate(360deg) } }`}</style>
       </div>
     </div>
   )
 
+  const coverImg = (c: any) => (Array.isArray(c.offer_images) && c.offer_images[0]) || (Array.isArray(c.offer_image_urls) && c.offer_image_urls[0]) || c.offer_image_url || null
+  const initials = (s: string) => (s || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+  const resetPaidFilters = () => { setFilterBudget(0); setFilterNiche(''); setFilterCountry(''); setFilterPlatform('Toate') }
+  const archivedCount = campaigns.filter(c => c.deadline && new Date(c.deadline) < new Date()).length
+  const activeCount = campaigns.filter(c => !(c.deadline && new Date(c.deadline) < new Date())).length
+
   return (
-    <div className="p-5 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+    <div className="iu">
+      <style>{CAMPAIGN_CSS}</style>
       <style>{`
-        
-        .infl-grad { background: linear-gradient(135deg, #7040f0, #9030f0); }
-        .card { background: white; border: 1.5px solid #f0f0f0; border-radius: 20px; }
-        .camp-card { background: white; border: 1.5px solid #f0f0f0; border-radius: 18px; cursor: pointer; transition: all .2s ease; }
-        .camp-card:hover { border-color: #ddd6fe; box-shadow: 0 8px 28px rgba(139,92,246,0.12); transform: translateY(-2px); }
-        .camp-card.applied { border-color: #86efac; background: linear-gradient(135deg, #f0fdf4, #ffffff); }
-        .camp-card.urgent { border-color: #fcd34d; }
-        .search-box { width:100%;padding:11px 16px 11px 44px;border:2px solid #e5e7eb;border-radius:14px;font-size:14px;font-weight:500;outline:none;transition:all .2s;font-family:inherit;background:white; }
-        .search-box:focus { border-color:#8b5cf6;box-shadow:0 0 0 4px rgba(139,92,246,0.08); }
-        .search-box::placeholder { color:#9ca3af;font-weight:400; }
-        .filter-select { padding:8px 32px 8px 12px;border:2px solid #e5e7eb;border-radius:12px;font-size:13px;font-weight:700;outline:none;cursor:pointer;font-family:inherit;color:#374151;background:white;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;background-size:14px; }
-        .filter-select:focus { border-color:#8b5cf6; }
-        .pill-btn { padding:6px 14px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid #e5e7eb;background:white;transition:all .15s;font-family:inherit;color:#6b7280;white-space:nowrap; }
-        .pill-btn.on { background:linear-gradient(135deg,#7040f0, #9030f0);color:white;border-color:transparent;box-shadow:0 3px 10px rgba(139,92,246,0.3); }
-        .pill-btn:not(.on):hover { border-color:#c4b5fd;color:#7c3aed; }
-        .btn-apply { width:100%;padding:14px;border-radius:14px;font-size:15px;font-weight:800;color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#7040f0, #9030f0);transition:all .18s;font-family:inherit; }
-        .btn-apply:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 8px 24px rgba(139,92,246,0.4); }
-        .btn-apply:disabled { opacity:.6;cursor:not-allowed;transform:none; }
-        .textarea-msg { width:100%;padding:12px 14px;border:2px solid #e5e7eb;border-radius:14px;font-size:14px;font-weight:500;outline:none;transition:border-color .2s;font-family:inherit;resize:none;color:#111; }
-        .textarea-msg:focus { border-color:#8b5cf6;box-shadow:0 0 0 4px rgba(139,92,246,0.08); }
-        .textarea-msg::placeholder { color:#9ca3af;font-weight:400; }
-        @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-        .toast-anim { animation:slideDown .3s ease; }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .card-in { animation:fadeUp .35s ease both; }
+        .cm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:18px; align-items:stretch; }
+        .cm-card { background:#fff; border:1px solid #e5e3f3; border-radius:20px; display:flex; flex-direction:column; min-width:0; cursor:pointer; transition:box-shadow .2s, border-color .2s; animation:cmUp .35s ease both; }
+        .cm-card:hover { border-color:#cfc6f5; box-shadow:0 14px 30px -18px rgba(112,64,240,.4); }
+        .cm-card.applied { border-color:#a7e3cb; }
+        .cm-card.urgent { border-color:#f7d2b3; }
+        .cm-cover { height:76px; position:relative; display:flex; align-items:flex-start; justify-content:space-between; padding:12px 14px; border-radius:20px 20px 0 0; gap:8px; overflow:hidden; background:linear-gradient(135deg,#7040f0,#9030f0); }
+        .cm-cover.barter { background:linear-gradient(135deg,#2f6fe0,#5a35e6); }
+        .cm-cover.img { height:130px; }
+        .cm-cover img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+        .cm-cover .shade { position:absolute; inset:0; background:linear-gradient(180deg,rgba(20,18,58,.35),rgba(20,18,58,0) 60%); }
+        .cm-cover .blob { position:absolute; right:-30px; bottom:-60px; width:150px; height:150px; border-radius:50%; background:rgba(255,255,255,.14); pointer-events:none; }
+        .cm-tchip { position:relative; display:inline-flex; align-items:center; height:24px; padding:0 10px; border-radius:999px; background:rgba(255,255,255,.22); color:#fff; font-size:12px; font-weight:700; backdrop-filter:blur(4px); white-space:nowrap; }
+        .cm-body { padding:16px 18px 18px; display:flex; flex-direction:column; gap:12px; flex:1; min-width:0; }
+        .cm-brand { display:flex; align-items:center; gap:10px; min-width:0; }
+        .cm-brand span.nm { font-size:13px; font-weight:700; color:#4a4770; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .cm-title { font-family:var(--font-display,system-ui),system-ui,sans-serif; font-weight:700; font-size:18px; letter-spacing:-.01em; line-height:1.25; color:#14123a; margin:0; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        .cm-desc { margin:0; font-size:13px; color:#6a6690; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        .cm-stat { display:flex; gap:6px; padding:12px 0; border-top:1px solid #eeecf7; border-bottom:1px solid #eeecf7; }
+        .cm-stat > div { flex:1; min-width:0; display:flex; flex-direction:column; }
+        .cm-stat b { font-family:var(--font-display,system-ui),system-ui,sans-serif; font-size:17px; line-height:1.15; color:#14123a; overflow-wrap:anywhere; }
+        .cm-stat span { font-size:12px; color:#6a6690; }
+        .cm-chips { display:flex; flex-wrap:wrap; gap:6px; }
+        .cm-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:auto; flex-wrap:wrap; }
+        .cm-sel { appearance:none; padding-right:34px; cursor:pointer; font-weight:600; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238783a8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; background-size:14px; }
+        .cm-bar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+        .cm-pills { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; }
+        .cm-pills::-webkit-scrollbar { display:none; }
+        .cm-pills .iu-pill { flex:none; }
+        .cm-adv { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding-top:14px; border-top:1px solid #eeecf7; }
+        .cm-empty { padding:56px 20px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px; }
+        .cm-toast { position:fixed; top:20px; right:20px; z-index:90; display:flex; align-items:center; gap:10px; padding:14px 18px; border-radius:16px; background:#fff; font-size:14px; font-weight:700; max-width:380px; box-shadow:0 16px 40px -12px rgba(20,18,58,.3); animation:cmIn .3s ease; }
+        .cm-overlay { position:fixed; inset:0; z-index:100; background:rgba(20,18,58,.5); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:16px; }
+        .cm-pm { background:#fff; border-radius:24px; padding:24px; width:100%; max-width:420px; box-shadow:0 20px 60px rgba(20,18,58,.25); }
+        .cm-x { width:44px; height:44px; border-radius:12px; border:0; background:#f0eff7; color:#4a4770; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
+        .cm-x:hover { background:#e5e3f3; }
+        .cm-sheet { background:#fff; width:100%; border-radius:24px 24px 0 0; overflow-y:auto; height:95vh; max-width:600px; margin:0 auto; position:relative; font-family:var(--font-body,system-ui),system-ui,sans-serif; color:#14123a; }
+        .cm-sheet-head { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid #eeecf7; padding:16px 20px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; border-radius:24px 24px 0 0; }
+        .cm-sheet-head h2 { font-size:20px; line-height:1.2; margin:0; font-family:var(--font-display,system-ui),system-ui,sans-serif; font-weight:800; letter-spacing:-.02em; overflow-wrap:anywhere; }
+        .cm-sheet-body { padding:20px; display:flex; flex-direction:column; gap:20px; }
+        .cm-sheet-body > * { min-width:0; }
+        .cm-addr { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .cm-addr > div { display:flex; flex-direction:column; gap:5px; min-width:0; }
+        .cm-addr .full { grid-column:1 / -1; }
+        .cm-addr .iu-input { font-size:16px; width:100%; }
+        .cm-apply-foot { position:sticky; bottom:0; z-index:5; background:#fff; border-top:1px solid #eeecf7; margin:0 -20px -20px; padding:12px 20px calc(12px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; box-shadow:0 -14px 28px -22px rgba(20,18,58,.35); }
+        .cm-score { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; border-radius:14px; background:#dcf5ec; border:1px solid #a7e3cb; }
+        .cm-sheet-body img { max-width:100%; }
+        .cm-note { display:flex; align-items:center; gap:14px; padding:16px; border-radius:20px; }
+        @keyframes cmIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:none} }
+        @keyframes cmUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-        .modal-overlay { animation:fadeIn .2s ease; }
         @keyframes slideUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
-        .modal-panel { animation:slideUp .3s cubic-bezier(.34,1.56,.64,1); }
+        .modal-overlay { animation:fadeIn .2s ease; }
+        .modal-panel { animation:slideUp .3s ease; }
+        .textarea-msg { width:100%;padding:12px 14px;border:1.5px solid #e5e3f3;border-radius:12px;font-size:14px;outline:none;transition:border-color .2s;font-family:inherit;resize:none;color:#14123a;box-sizing:border-box; }
+        .textarea-msg:focus { border-color:#7040f0;box-shadow:0 0 0 3px rgba(112,64,240,.1); }
+        .textarea-msg::placeholder { color:#8783a8; }
+        .btn-apply { width:100%;min-height:50px;padding:0 16px;border-radius:14px;font-size:15px;font-weight:800;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#7040f0,#9030f0);box-shadow:0 10px 22px -12px rgba(112,64,240,.7);transition:filter .15s;font-family:inherit; }
+        .btn-apply:hover:not(:disabled) { filter:brightness(1.07); }
+        .btn-apply:disabled { opacity:.6;cursor:not-allowed; }
+        @media (max-width:767px) {
+          .cm-grid { grid-template-columns:1fr; gap:14px; }
+          .cm-cover { height:64px; }
+          .cm-cover.img { height:120px; }
+          .cm-body { padding:14px; }
+          .cm-title { font-size:17px; }
+          .cm-adv { grid-template-columns:1fr; }
+          .cm-bar > .iu-search { flex:1 1 100%; }
+          .cm-bar .cm-sel, .cm-bar .iu-btn { flex:1 1 100%; min-height:44px; }
+          .cm-pills .iu-pill, .cm-tabs .iu-pill { min-height:44px; }
+          .cm-tabs { flex-wrap:nowrap !important; overflow-x:auto; scrollbar-width:none; margin:0 -16px; padding:0 16px; }
+          .cm-tabs::-webkit-scrollbar { display:none; }
+          .cm-tabs .iu-pill { flex:none; }
+          .cm-toast { left:16px; right:16px; top:12px; max-width:none; }
+          .cm-overlay.pm { align-items:flex-end; padding:0; }
+          .cm-pm { border-radius:24px 24px 0 0; max-width:none; padding:20px 16px 28px; }
+          .cm-sheet-head { padding:14px 16px; }
+          .cm-sheet-body { padding:16px; }
+          .cm-apply-foot { margin:0 -16px -16px; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); }
+          .cm-addr { grid-template-columns:1fr; }
+          .cm-score { flex-wrap:wrap; }
+          .cm-note { flex-wrap:wrap; }
+          .cm-empty { padding:40px 16px; }
+        }
       `}</style>
 
-      {/* Toast */}
       {/* Modal profil incomplet */}
       {showProfileModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-            <div style={{ width: 52, height: 52, borderRadius: 16, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, fontSize: 24 }}>⚠️</div>
-            <h2 style={{ fontSize: 17, fontWeight: 900, color: '#1e1b4b', margin: '0 0 6px' }}>Profilul tău e incomplet</h2>
-            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 14px', lineHeight: 1.6 }}>
+        <div className="cm-overlay pm">
+          <div className="cm-pm">
+            <div className="iu-ico" style={{ width: 52, height: 52, background: '#fff1c2', color: '#854d0e', marginBottom: 14 }}><AlertCircle size={24} /></div>
+            <h2 style={{ marginBottom: 6 }}>Profilul tău e incomplet</h2>
+            <p className="iu-muted iu-sm" style={{ margin: '0 0 14px', lineHeight: 1.6 }}>
               Brandurile nu pot vedea profiluri incomplete. Completează informațiile de mai jos pentru a putea aplica la campanii:
             </p>
-            <div style={{ background: '#fef2f2', borderRadius: 12, padding: '10px 14px', marginBottom: 18 }}>
+            <div style={{ background: '#fff4f2', borderRadius: 14, padding: '12px 14px', marginBottom: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {profileMissing.map((item: string, i: number) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i < profileMissing.length - 1 ? 6 : 0 }}>
-                  <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fecaca', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#b91c1c' }}>{item}</span>
+                <div key={i} className="iu-row" style={{ gap: 8 }}>
+                  <X size={14} color="#b42318" style={{ flex: 'none' }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#b42318' }}>{item}</span>
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowProfileModal(false)}
-                style={{ flex: 1, padding: '11px', borderRadius: 12, border: '1.5px solid #e5e7eb', background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#6b7280', fontFamily: 'inherit' }}>
-                Înapoi
-              </button>
-              <a href="/influencer/profile"
-                style={{ flex: 1, padding: '11px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#7040f0, #9030f0)', fontSize: 13, fontWeight: 900, cursor: 'pointer', color: 'white', fontFamily: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                Completează profilul →
-              </a>
+            <div className="iu-row" style={{ gap: 10, flexWrap: 'wrap' }}>
+              <button className="iu-btn" style={{ flex: 1, minHeight: 44 }} onClick={() => setShowProfileModal(false)}>Înapoi</button>
+              <a href="/influencer/profile" className="iu-btn p" style={{ flex: 1.4, minHeight: 44 }}>Completează profilul <ArrowRight size={15} /></a>
             </div>
           </div>
         </div>
       )}
 
       {toast && (
-        <div className={`toast-anim fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold max-w-sm ${toast.ok ? 'bg-white border-2 border-green-200 text-green-700' : 'bg-white border-2 border-red-200 text-red-600'}`}>
-          {toast.ok ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+        <div className="cm-toast" style={{ border: `1.5px solid ${toast.ok ? '#a7e3cb' : '#f3c9c4'}`, color: toast.ok ? '#14532d' : '#b42318' }}>
+          {toast.ok ? <CheckCircle size={16} style={{ flex: 'none' }} /> : <AlertCircle size={16} style={{ flex: 'none' }} />}
           {toast.msg}
         </div>
       )}
 
-      {/* Header + Tabs */}
-      <div className="mb-5">
-        <h1 className="text-2xl font-black text-gray-900">Campanii disponibile</h1>
-        {appliedIds.size > 0 && <p className="text-sm text-green-600 font-bold mt-0.5">{appliedIds.size} aplicate</p>}
-      </div>
+      {/* Header */}
+      <section className="iu-head">
+        <div className="iu-col" style={{ gap: 4 }}>
+          <h1>Campanii disponibile</h1>
+          <p style={{ margin: 0, color: '#4a4770' }}>
+            {activeCount} {activeCount === 1 ? 'campanie plătită' : 'campanii plătite'} · {barterCampaigns.length} {barterCampaigns.length === 1 ? 'ofertă barter' : 'oferte barter'}
+            {appliedIds.size > 0 && <> · <b style={{ color: '#7040f0' }}>{appliedIds.size} {appliedIds.size === 1 ? 'aplicată' : 'aplicate'}</b></>}
+          </p>
+        </div>
+      </section>
 
       {/* Tab selector */}
-      <div className="flex gap-3 mb-5">
-        <button
-          onClick={() => setActiveTab('paid')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-sm transition ${activeTab === 'paid'
-              ? 'infl-grad text-white shadow-lg'
-              : 'bg-white border-2 border-gray-200 text-gray-500 hover:border-purple-300 hover:text-purple-600'
-            }`}
-        >
-          <DollarSign className="w-4 h-4" />
-          Campanii Plătite
-          <span className={`text-xs px-2 py-0.5 rounded-full font-black ${activeTab === 'paid' ? 'bg-white bg-opacity-20 text-white' : 'bg-gray-100 text-gray-500'}`}>
-            {campaigns.filter(c => !(c.deadline && new Date(c.deadline) < new Date())).length}
-          </span>
+      <div className="iu-tabs cm-tabs">
+        <button className={`iu-pill ${activeTab === 'paid' ? 'on' : ''}`} onClick={() => setActiveTab('paid')}>
+          <DollarSign size={15} /> Campanii plătite <span className="n">{activeCount}</span>
         </button>
-        <button
-          onClick={() => setActiveTab('barter')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-sm transition ${activeTab === 'barter' ? 'text-white shadow-lg' : 'bg-white border-2 border-gray-200 text-gray-500 hover:border-orange-300 hover:text-orange-600'
-            }`}
-          style={activeTab === 'barter' ? { background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' } : {}}
-        >
-          <Sparkles className="w-4 h-4" />
-          Free Offer / Barter
-          <span className={`text-xs px-2 py-0.5 rounded-full font-black ${activeTab === 'barter' ? 'bg-white bg-opacity-20 text-white' : 'bg-orange-50 text-orange-500'}`}>
-            {barterCampaigns.length}
-          </span>
+        <button className={`iu-pill ${activeTab === 'barter' ? 'on' : ''}`} onClick={() => setActiveTab('barter')}>
+          <Sparkles size={15} /> Free Offer / Barter <span className="n">{barterCampaigns.length}</span>
         </button>
         {noReplyCollabs.length > 0 && (
-          <button
-            onClick={() => setActiveTab('noReply')}
-            className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-sm transition ${activeTab === 'noReply' ? 'bg-amber-500 text-white shadow-lg' : 'bg-white border-2 border-amber-200 text-amber-600 hover:border-amber-400'}`}
-          >
-            <Clock className="w-4 h-4" />
-            Fără răspuns
-            <span className={`text-xs px-2 py-0.5 rounded-full font-black ${activeTab === 'noReply' ? 'bg-white bg-opacity-20 text-white' : 'bg-amber-100 text-amber-700'}`}>
-              {noReplyCollabs.length}
-            </span>
+          <button className={`iu-pill ${activeTab === 'noReply' ? 'on' : ''}`} onClick={() => setActiveTab('noReply')}>
+            <Clock size={15} /> Fără răspuns <span className="n">{noReplyCollabs.length}</span>
           </button>
         )}
       </div>
       {/* Banner verificare — dezactivat temporar */}
       {false && !identityVerified && null}
+
       {activeTab === 'noReply' && (
-        <div className="space-y-3">
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-            <p className="text-sm font-black text-amber-800 mb-1">⏰ Invitații expirate fără răspuns</p>
-            <p className="text-xs text-amber-600 leading-relaxed">Aceste campanii nu mai acceptă înscrieri. Nu-ți face griji — mai multe campanii vin în curând! 🚀</p>
+        <div className="iu-col" style={{ gap: 12 }}>
+          <div className="iu-card iu-card-pad" style={{ background: '#fff1c2', borderColor: '#f3dc8a' }}>
+            <p style={{ margin: '0 0 4px', fontWeight: 800, color: '#854d0e' }}>Invitații expirate fără răspuns</p>
+            <p className="iu-sm" style={{ margin: 0, color: '#854d0e' }}>Aceste campanii nu mai acceptă înscrieri. Nu-ți face griji — mai multe campanii vin în curând!</p>
           </div>
           {noReplyCollabs.map((collab: any) => (
-            <div key={collab.campaign_id} className="bg-white border border-amber-100 rounded-2xl p-4 opacity-80">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-amber-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-black text-gray-800 text-sm truncate">{collab.campaigns?.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{collab.campaigns?.brand_name} · {collab.campaigns?.campaign_type === 'BARTER' ? 'Campanie barter (produs gratuit)' : 'Campanie plătită'}</p>
-                </div>
-                <span className="text-[11px] font-black text-amber-700 bg-amber-100 px-2 py-1 rounded-full flex-shrink-0">Fără răspuns</span>
+            <div key={collab.campaign_id} className="iu-card iu-card-pad iu-row" style={{ gap: 12, opacity: .85 }}>
+              <div className="iu-ico" style={{ background: '#fff1c2', color: '#854d0e' }}><Clock size={18} /></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{collab.campaigns?.title}</p>
+                <p className="iu-muted iu-xs" style={{ margin: '2px 0 0' }}>{collab.campaigns?.brand_name} · {collab.campaigns?.campaign_type === 'BARTER' ? 'Campanie barter (produs gratuit)' : 'Campanie plătită'}</p>
               </div>
+              <span className="iu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}>Fără răspuns</span>
             </div>
           ))}
-          <div className="text-center py-4">
-            <p className="text-sm text-gray-500 mb-3">Completează-ți profilul ca să primești invitații mai relevante</p>
-            <a href="/influencer/settings" className="inline-flex items-center gap-2 text-sm font-black text-purple-600 bg-purple-50 border border-purple-200 px-4 py-2 rounded-xl hover:bg-purple-100 transition">
-              Actualizează profilul
-            </a>
+          <div style={{ textAlign: 'center', padding: '12px 0' }}>
+            <p className="iu-muted iu-sm" style={{ margin: '0 0 12px' }}>Completează-ți profilul ca să primești invitații mai relevante</p>
+            <a href="/influencer/settings" className="iu-btn" style={{ minHeight: 44 }}>Actualizează profilul</a>
           </div>
         </div>
       )}
 
       {activeTab === 'paid' && (<>
-        <button
-          onClick={() => setShowArchived(v => !v)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-bold transition mb-4 ${showArchived
-            ? 'bg-gray-200 border-gray-300 text-gray-700'
-            : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
-            }`}
-        >
-          <ArchiveX className="w-4 h-4" />
-          {showArchived ? 'Înapoi la active' : `Arhivate (${campaigns.filter(c => c.deadline && new Date(c.deadline) < new Date()).length})`}
-        </button>
-
         {/* Filters */}
-        <div className="card p-4 mb-5">
-          {/* Row 1: search + sort */}
-          <div className="flex flex-wrap gap-3 mb-3">
-            <div className="relative flex-1 min-w-[180px]">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input className="search-box" placeholder="Search campaigns, brands, niches…" value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="iu-card iu-card-pad iu-col" style={{ gap: 14 }}>
+          <div className="cm-bar">
+            <div className="iu-search" style={{ flex: '1 1 220px' }}>
+              <Search size={16} />
+              <input placeholder="Caută campanii, branduri, nișe…" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-            <select className="filter-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+            <select className="iu-input cm-sel" value={sortBy} onChange={e => setSortBy(e.target.value)}>
               {SORT_OPTIONS.map(o => <option key={o}>{o}</option>)}
             </select>
-            <button
-              onClick={() => setShowAdvanced(v => !v)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 font-bold text-sm transition ${showAdvanced ? 'border-purple-400 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              Filtre
-              {activeFilters > 0 && <span className="w-5 h-5 rounded-full bg-purple-600 text-white text-xs font-black flex items-center justify-center">{activeFilters}</span>}
+            <button onClick={() => setShowAdvanced(v => !v)} className={`iu-btn ${showAdvanced ? 'p' : ''}`}>
+              <SlidersHorizontal size={15} /> Filtre
+              {activeFilters > 0 && <span className="iu-chip" style={{ height: 20, padding: '0 7px', background: showAdvanced ? 'rgba(255,255,255,.25)' : '#efeaff', color: showAdvanced ? '#fff' : '#5b2fd0' }}>{activeFilters}</span>}
+            </button>
+            <button onClick={() => setShowArchived(v => !v)} className={`iu-btn ${showArchived ? 'p' : ''}`}>
+              <ArchiveX size={15} /> {showArchived ? 'Înapoi la active' : `Arhivate (${archivedCount})`}
             </button>
           </div>
 
-          {/* Row 2: platform pills */}
-          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          <div className="cm-pills">
             {PLATFORMS.map(p => (
-              <button key={p} className={`pill-btn flex-shrink-0 ${filterPlatform === p ? 'on' : ''}`} onClick={() => setFilterPlatform(p)}>
-                {p}
-              </button>
+              <button key={p} className={`iu-pill ${filterPlatform === p ? 'on' : ''}`} onClick={() => setFilterPlatform(p)}>{p}</button>
             ))}
           </div>
 
-          {/* Advanced filters */}
           {showAdvanced && (
-            <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1.5 block">Budget Range</label>
-                <select className="filter-select w-full" value={filterBudget} onChange={e => setFilterBudget(+e.target.value)}>
+            <div className="cm-adv">
+              <div className="iu-col" style={{ gap: 6 }}>
+                <label className="iu-label">Buget</label>
+                <select className="iu-input cm-sel" value={filterBudget} onChange={e => setFilterBudget(+e.target.value)}>
                   {BUDGET_RANGES.map((r, i) => <option key={i} value={i}>{r.label}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1.5 block">Niche</label>
-                <select className="filter-select w-full" value={filterNiche} onChange={e => setFilterNiche(e.target.value)}>
+              <div className="iu-col" style={{ gap: 6 }}>
+                <label className="iu-label">Nișă</label>
+                <select className="iu-input cm-sel" value={filterNiche} onChange={e => setFilterNiche(e.target.value)}>
                   <option value="">Toate nișele</option>
                   {allNiches.map(n => <option key={n}>{n}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1.5 block">Country</label>
-                <select className="filter-select w-full" value={filterCountry} onChange={e => setFilterCountry(e.target.value)}>
+              <div className="iu-col" style={{ gap: 6 }}>
+                <label className="iu-label">Țară</label>
+                <select className="iu-input cm-sel" value={filterCountry} onChange={e => setFilterCountry(e.target.value)}>
                   <option value="">Toate țările</option>
                   {allCountries.map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
               {activeFilters > 0 && (
-                <button
-                  onClick={() => { setFilterBudget(0); setFilterNiche(''); setFilterCountry(''); setFilterPlatform('Toate') }}
-                  className="text-xs font-bold text-red-500 hover:text-red-700 transition text-left"
-                >
-                  ✕ Șterge toate filtrele
+                <button onClick={resetPaidFilters} className="iu-btn danger" style={{ minHeight: 44, justifySelf: 'start' }}>
+                  <X size={14} /> Șterge toate filtrele
                 </button>
               )}
             </div>
           )}
         </div>
 
-        {/* Results count */}
-        <p className="text-xs font-bold text-gray-400 mb-3 px-1">
-          Showing {filtered.length} of {campaigns.length} campaigns
+        <p className="iu-muted iu-sm" style={{ margin: 0, fontWeight: 600 }}>
+          Se afișează {filtered.length} din {campaigns.length} campanii
         </p>
 
-        {/* Grid */}
         {filtered.length === 0 ? (
-          <div className="card p-16 text-center">
-            <div className="w-16 h-16 rounded-2xl infl-grad flex items-center justify-center mx-auto mb-4" style={{ boxShadow: '0 4px 16px rgba(139,92,246,.25)' }}>
-              <Zap className="w-8 h-8 text-white" />
-            </div>
-            <p className="font-black text-gray-700 text-lg mb-2">Nicio campanie găsită</p>
-            <p className="text-sm text-gray-400 max-w-xs mx-auto">
-              {campaigns.length === 0 ? 'No active campaigns yet. Check back soon!' : 'Try adjusting your filters.'}
+          <div className="iu-card cm-empty">
+            <div className="iu-ico" style={{ width: 60, height: 60, borderRadius: 18, background: 'linear-gradient(135deg,#7040f0,#9030f0)', color: '#fff' }}><Zap size={28} /></div>
+            <h3 style={{ marginTop: 8 }}>Nicio campanie găsită</h3>
+            <p className="iu-muted iu-sm" style={{ margin: 0, maxWidth: 320 }}>
+              {campaigns.length === 0 ? 'Nu există încă campanii active. Revino în curând!' : 'Încearcă să ajustezi filtrele.'}
             </p>
             {activeFilters > 0 && (
-              <button onClick={() => { setFilterBudget(0); setFilterNiche(''); setFilterCountry(''); setFilterPlatform('Toate'); setSearch('') }} className="mt-4 text-sm font-bold text-purple-600 hover:text-purple-800 transition">
-                Clear all filters
-              </button>
+              <button onClick={() => { resetPaidFilters(); setSearch('') }} className="iu-btn" style={{ marginTop: 10, minHeight: 44 }}>Șterge filtrele</button>
             )}
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="cm-grid">
             {filtered.map((c, i) => {
               const applied = appliedIds.has(c.id)
               const days = daysLeft(c.deadline)
               const expired = days < 0
               const urgent = days >= 0 && days <= 3
+              const img = coverImg(c)
+              const slotsLeft = c.max_influencers ? c.max_influencers - (c.current_influencers || 0) : null
 
               return (
                 <div
                   key={c.id}
-                  className={`camp-card card-in p-5 ${applied ? 'applied' : ''} ${urgent && !applied ? 'urgent' : ''}`}
+                  className={`cm-card ${applied ? 'applied' : ''} ${urgent && !applied ? 'urgent' : ''}`}
                   style={{ animationDelay: `${Math.min(i, 9) * 0.04}s` }}
                   onClick={() => { setSelected(c); setApplyMsg(''); setApplyError(null) }}
                 >
-                  {/* Imagine campanie */}
-                  {(() => {
-                    const img = (Array.isArray(c.offer_images) && c.offer_images[0])
-                      || (Array.isArray(c.offer_image_urls) && c.offer_image_urls[0])
-                      || c.offer_image_url
-                    if (!img) return null
-                    return (
-                      <div className="w-full rounded-xl mb-3 overflow-hidden" style={{ aspectRatio: '16/9' }}>
-                        <img src={img} alt={c.title} className="w-full h-full object-cover" />
-                      </div>
-                    )
-                  })()}
-                  {/* Top: brand + budget */}
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex-1 min-w-0">
-                      {applied && (
-                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-full mb-1.5">
-                          <CheckCircle className="w-2.5 h-2.5" /> Applied
-                        </span>
-                      )}
-                      {urgent && !applied && !expired && (
-                        <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-0.5 rounded-full mb-1.5">
-                          🔥 Urgent
-                        </span>
-                      )}
-                      <h3 className="font-black text-gray-900 text-sm leading-snug line-clamp-2">{c.title}</h3>
-                      <p className="text-xs text-gray-400 font-semibold mt-0.5">{c.brand_name}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-lg font-black text-green-600">{fmt(c.budget ?? 0)}</p>
-                      <p className="text-[10px] text-gray-400 font-medium">total budget</p>
-                    </div>
+                  <div className={`cm-cover ${img ? 'img' : ''}`}>
+                    {img && <img src={img} alt={c.title} />}
+                    {img && <i className="shade" />}
+                    {!img && <i className="blob" />}
+                    <span className="cm-tchip" style={{ zIndex: 1 }}>Plătită</span>
+                    {applied ? (
+                      <span className="iu-chip" style={{ background: '#dcf5ec', color: '#14532d', zIndex: 1 }}><CheckCircle size={12} /> Aplicat</span>
+                    ) : urgent && !expired ? (
+                      <span className="iu-chip" style={{ background: '#fff1e6', color: '#9a4206', zIndex: 1 }}>Urgent</span>
+                    ) : null}
                   </div>
-
-                  {/* Description */}
-                  {c.description && (
-                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 mb-3">{c.description}</p>
-                  )}
-
-                  {/* Platforms */}
-                  {c.platforms?.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-2.5">
-                      {c.platforms.map(p => <PlatformBadge key={p} platform={p} />)}
+                  <div className="cm-body">
+                    <div className="cm-brand">
+                      <span className="iu-face" style={{ width: 28, height: 28, fontSize: 11, background: '#efeaff', color: '#5b2fd0' }}>{initials(c.brand_name)}</span>
+                      <span className="nm">{c.brand_name}</span>
                     </div>
-                  )}
+                    <h3 className="cm-title">{c.title}</h3>
+                    {c.description && <p className="cm-desc">{c.description}</p>}
 
-                  {/* Niches */}
-                  {c.niches?.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {c.niches.slice(0, 3).map(n => (
-                        <span key={n} className="text-[10px] font-bold bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{n}</span>
-                      ))}
-                      {c.niches.length > 3 && <span className="text-[10px] font-bold bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">+{c.niches.length - 3}</span>}
-                    </div>
-                  )}
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <Clock className={`w-3 h-3 ${expired ? 'text-red-400' : urgent ? 'text-orange-400' : 'text-gray-300'}`} />
-                        <span className={`text-[10px] font-bold ${expired ? 'text-red-500' : urgent ? 'text-orange-500' : 'text-gray-400'}`}>
-                          {expired ? 'Expired' : days === 0 ? 'Last day!' : days === 1 ? '1 day left' : `${days}d left`}
-                        </span>
+                    <div className="cm-stat">
+                      <div><b style={{ color: '#14532d' }}>{fmt(c.budget ?? 0)} RON</b><span>buget total</span></div>
+                      {c.max_influencers ? (
+                        <div><b>{slotsLeft}</b><span>{slotsLeft === 1 ? 'loc liber' : 'locuri libere'}</span></div>
+                      ) : null}
+                      <div>
+                        <b style={{ color: expired ? '#b42318' : urgent ? '#9a4206' : undefined }}>
+                          {expired ? 'Expirat' : days === 0 ? 'Azi' : `${days} ${days === 1 ? 'zi' : 'zile'}`}
+                        </b>
+                        <span>{c.deadline ? fmtDateShort(c.deadline) : 'deadline'}</span>
                       </div>
-                      {c.countries?.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Globe className="w-3 h-3 text-gray-300" />
-                          <span className="text-[10px] text-gray-400 font-medium">{c.countries.slice(0, 2).join(', ')}</span>
-                        </div>
-                      )}
                     </div>
-                    <span className="text-xs font-black text-purple-600 flex items-center gap-1">
-                      View <ArrowRight className="w-3 h-3" />
-                    </span>
+
+                    {c.platforms?.length > 0 && (
+                      <div className="cm-chips">{c.platforms.map(p => <PlatformBadge key={p} platform={p} />)}</div>
+                    )}
+                    {c.niches?.length > 0 && (
+                      <div className="cm-chips">
+                        {c.niches.slice(0, 3).map(n => <span key={n} className="iu-chip" style={{ background: '#efeaff', color: '#5b2fd0' }}>{n}</span>)}
+                        {c.niches.length > 3 && <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}>+{c.niches.length - 3}</span>}
+                      </div>
+                    )}
+
+                    <div className="cm-foot">
+                      <span className="iu-muted iu-xs iu-row" style={{ gap: 5, minWidth: 0 }}>
+                        {c.countries?.length > 0 && <><Globe size={13} /> {c.countries.slice(0, 2).join(', ')}</>}
+                      </span>
+                      <span className={`iu-btn ${applied ? '' : 'p'}`} style={{ minHeight: 44 }}>
+                        {applied ? 'Vezi detalii' : 'Aplică'} <ArrowRight size={14} />
+                      </span>
+                    </div>
                   </div>
                 </div>
               )
@@ -832,77 +813,46 @@ export default function CampaignsPage() {
       </>)} {/* end activeTab === 'paid' */}
 
       {/* Tab: Campanii Barter */}
-      {activeTab === 'barter' && (
-        <div>
-          {/* Barter Filters */}
-          <div className="card p-4 mb-5">
-            <div className="flex gap-3 mb-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  className="search-box"
-                  placeholder="Caută oferte, branduri..."
-                  value={barterSearch}
-                  onChange={e => setBarterSearch(e.target.value)}
-                />
+      {activeTab === 'barter' && (<>
+          <div className="iu-card iu-card-pad iu-col" style={{ gap: 14 }}>
+            <div className="cm-bar">
+              <div className="iu-search" style={{ flex: '1 1 220px' }}>
+                <Search size={16} />
+                <input placeholder="Caută oferte, branduri..." value={barterSearch} onChange={e => setBarterSearch(e.target.value)} />
               </div>
-              <select
-                className="filter-select"
-                value={barterSortBy}
-                onChange={e => setBarterSortBy(e.target.value)}
-              >
+              <select className="iu-input cm-sel" value={barterSortBy} onChange={e => setBarterSortBy(e.target.value)}>
                 {['Cele mai noi', 'Valoare: Mare → Mică', 'Locuri: Cele mai multe'].map(o => (
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
             </div>
-            {/* Platform pills */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="cm-pills">
               {['Toate', 'Instagram', 'TikTok', 'YouTube', 'Facebook'].map(p => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setBarterFilterPlatform(p)}
-                  className={`pill-btn ${barterFilterPlatform === p ? 'on' : ''}`}
-                  style={barterFilterPlatform === p ? { background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', borderColor: 'transparent' } : {}}
-                >
-                  {p}
-                </button>
+                <button key={p} type="button" onClick={() => setBarterFilterPlatform(p)} className={`iu-pill ${barterFilterPlatform === p ? 'on' : ''}`}>{p}</button>
               ))}
             </div>
           </div>
 
-          {/* Results count */}
-          <p className="text-sm text-gray-400 mb-4">
-            <span className="font-bold text-gray-600">{filteredBarter.length}</span> oferte disponibile
+          <p className="iu-muted iu-sm" style={{ margin: 0, fontWeight: 600 }}>
+            <b style={{ color: '#14123a' }}>{filteredBarter.length}</b> oferte disponibile
             {barterSearch || barterFilterPlatform !== 'Toate' ? ' (filtrate)' : ' în zona ta'}
           </p>
 
           {filteredBarter.length === 0 ? (
-            <div className="card p-16 text-center">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 4px 16px rgba(90,53,230,.25)' }}>
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-              <p className="font-black text-gray-700 text-lg mb-2">
-                {barterCampaigns.length === 0 ? 'Nicio campanie barter disponibilă' : 'Niciun rezultat găsit'}
-              </p>
-              <p className="text-sm text-gray-400 max-w-xs mx-auto">
+            <div className="iu-card cm-empty">
+              <div className="iu-ico" style={{ width: 60, height: 60, borderRadius: 18, background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', color: '#fff' }}><Sparkles size={28} /></div>
+              <h3 style={{ marginTop: 8 }}>{barterCampaigns.length === 0 ? 'Nicio campanie barter disponibilă' : 'Niciun rezultat găsit'}</h3>
+              <p className="iu-muted iu-sm" style={{ margin: 0, maxWidth: 320 }}>
                 {barterCampaigns.length === 0
                   ? 'Setează-ți orașul în Settings pentru a vedea ofertele din zona ta.'
                   : 'Încearcă să schimbi filtrele.'}
               </p>
               {(barterSearch || barterFilterPlatform !== 'Toate') && (
-                <button
-                  onClick={() => { setBarterSearch(''); setBarterFilterPlatform('Toate') }}
-                  className="mt-4 text-sm font-bold text-orange-500 hover:text-orange-700 transition"
-                >
-                  Resetează filtrele
-                </button>
+                <button onClick={() => { setBarterSearch(''); setBarterFilterPlatform('Toate') }} className="iu-btn" style={{ marginTop: 10, minHeight: 44 }}>Resetează filtrele</button>
               )}
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="cm-grid">
               {filteredBarter.map((c, i) => {
                 const days = daysLeft(c.deadline)
                 const urgent = days >= 0 && days <= 3
@@ -913,860 +863,145 @@ export default function CampaignsPage() {
                   const expiry = new Date(new Date(c.registration_opened_at).getTime() + (c.registration_deadline_days || 30) * 86400000)
                   return expiry < new Date()
                 })()
+                const img = coverImg(c)
                 return (
                   <div
                     key={c.id}
                     onClick={() => setSelected(c)}
-                    className="card-in cursor-pointer transition"
-                    style={{
-                      animationDelay: `${Math.min(i, 9) * 0.04}s`,
-                      background: 'white',
-                      border: urgent ? '1.5px solid #fcd34d' : '1.5px solid #f0f0f0',
-                      borderRadius: '18px',
-                      overflow: 'hidden',
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(90,53,230,0.15)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = ''; (e.currentTarget as HTMLElement).style.transform = '' }}
+                    className={`cm-card ${urgent && !isClosed ? 'urgent' : ''}`}
+                    style={{ animationDelay: `${Math.min(i, 9) * 0.04}s` }}
                   >
-                    {/* Gradient top bar */}
-                    <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#2f6fe0, #5a35e6)' }} />
-                    {/* Imagine campanie */}
-                    {(() => {
-                      const img = (Array.isArray(c.offer_images) && c.offer_images[0])
-                        || (Array.isArray(c.offer_image_urls) && c.offer_image_urls[0])
-                        || c.offer_image_url
-                      if (!img) return null
-                      return (
-                        <div style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden' }}>
-                          <img src={img} alt={c.brand_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                      )
-                    })()}
-                    <div className="p-5">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0 pr-3">
-                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full text-white"
-                              style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
-                              🎁 Free Offer
-                            </span>
-                            {isClosed && (
-                              <span className="text-[10px] font-black bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                                🚫 Înscrieri închise
-                              </span>
-                            )}
-                            {urgent && !isClosed && (
-                              <span className="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                                ⚡ {days}d left
-                              </span>
-                            )}
-                            {slotsLeft <= 2 && slotsLeft > 0 && (
-                              <span className="text-[10px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                                🔥 {slotsLeft} slot{slotsLeft !== 1 ? 's' : ''} left
-                              </span>
-                            )}
-                          </div>
-                          <h3 className="font-black text-gray-900 text-sm leading-tight line-clamp-2">
-                            {c.brand_name}
-                          </h3>
-                          <p className="text-xs text-gray-400 mt-1 font-semibold line-clamp-1">{c.offer_name || 'Campanie barter'}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0 max-w-[110px]">
-                          <p className="font-black text-orange-500 text-xs leading-tight line-clamp-2">
-                            {c.offer_name || 'Produs gratuit'}
-                          </p>
-                          <p className="text-[10px] text-gray-400 mt-1">primești gratuit</p>
-                        </div>
+                    <div className={`cm-cover barter ${img ? 'img' : ''}`}>
+                      {img && <img src={img} alt={c.brand_name} />}
+                      {img && <i className="shade" />}
+                      {!img && <i className="blob" />}
+                      <span className="cm-tchip" style={{ zIndex: 1 }}>Free Offer · Barter</span>
+                      {isClosed ? (
+                        <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770', zIndex: 1 }}>Înscrieri închise</span>
+                      ) : urgent ? (
+                        <span className="iu-chip" style={{ background: '#fff1e6', color: '#9a4206', zIndex: 1 }}>{days === 0 ? 'Ultima zi' : `${days} ${days === 1 ? 'zi' : 'zile'} rămase`}</span>
+                      ) : null}
+                    </div>
+                    <div className="cm-body">
+                      <div className="cm-brand">
+                        <span className="iu-face" style={{ width: 28, height: 28, fontSize: 11, background: '#e6f0ff', color: '#1d4fb8' }}>{initials(c.brand_name)}</span>
+                        <span className="nm">{c.brand_name}</span>
                       </div>
+                      <h3 className="cm-title">{c.offer_name || 'Campanie barter'}</h3>
+                      {c.offer_description && <p className="cm-desc">{c.offer_description}</p>}
 
-                      {/* Description */}
-                      {c.offer_description && (
-                        <p className="text-xs text-gray-500 mb-3 line-clamp-2">{c.offer_description}</p>
-                      )}
-
-                      {/* Platforms */}
-                      {(c.platforms || []).length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          {c.platforms.map((p: string) => <PlatformBadge key={p} platform={p} />)}
-                        </div>
-                      )}
-
-                      {/* Delivery + Deadline */}
-                      <div className="flex items-center justify-between text-xs mb-3">
-                        <span className="text-gray-500 font-semibold">
-                          {c.delivery_method === 'pickup'
-                            ? `📍 ${c.pickup_location_name || 'Ridicare din locație'}`
-                            : '🚚 Livrare la domiciliu'}
-                        </span>
+                      <div className="cm-stat">
+                        <div><b style={{ color: '#1d4fb8' }}>Gratuit</b><span>primești produsul</span></div>
+                        <div><b>{slotsLeft}</b><span>{slotsLeft === 1 ? 'loc liber' : 'locuri libere'}</span></div>
                         {c.deadline && (
-                          <span className={`font-bold ${urgent ? 'text-amber-600' : 'text-gray-400'}`}>
-                            <Clock className="w-3 h-3 inline mr-1" />
-                            {days > 0 ? `${days}d` : 'Azi'}
-                          </span>
+                          <div><b style={{ color: urgent ? '#9a4206' : undefined }}>{days > 0 ? `${days} ${days === 1 ? 'zi' : 'zile'}` : 'Azi'}</b><span>deadline</span></div>
                         )}
                       </div>
 
-                      {/* Slots progress */}
-                      <div className="mb-4">
-                        <div className="flex justify-between text-[11px] text-gray-400 mb-1.5 font-semibold">
-                          <span>{c.current_influencers || 0}/{c.max_influencers} slots ocupate</span>
-                          <span className={slotsLeft <= 2 ? 'text-red-500 font-black' : ''}>{slotsLeft} rămase</span>
-                        </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all"
-                            style={{
-                              width: `${pct}%`,
-                              background: pct > 80 ? '#ef4444' : 'linear-gradient(90deg,#2f6fe0, #5a35e6)'
-                            }} />
-                        </div>
+                      {(c.platforms || []).length > 0 && (
+                        <div className="cm-chips">{c.platforms.map((p: string) => <PlatformBadge key={p} platform={p} />)}</div>
+                      )}
+
+                      <div className="cm-chips">
+                        <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}>
+                          {c.delivery_method === 'pickup' ? `Ridicare: ${c.pickup_location_name || 'din locație'}` : 'Livrare la domiciliu'}
+                        </span>
                       </div>
 
-                      {/* CTA */}
-                      <button
-                        className="w-full py-3 rounded-xl text-sm font-black text-white transition"
-                        style={isClosed
-                          ? { background: '#e5e7eb', color: '#9ca3af', cursor: 'not-allowed' }
-                          : { background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 4px 12px rgba(90,53,230,0.25)' }
-                        }
-                      >
-                        {isClosed ? '🚫 Înscrieri închise' : 'Vezi oferta →'}
-                      </button>
+                      <div>
+                        <div className="iu-row iu-xs iu-muted" style={{ justifyContent: 'space-between', marginBottom: 6, fontWeight: 600 }}>
+                          <span>{c.current_influencers || 0}/{c.max_influencers} locuri ocupate</span>
+                          <span style={{ color: slotsLeft <= 2 ? '#b42318' : undefined, fontWeight: slotsLeft <= 2 ? 800 : 600 }}>{slotsLeft} rămase</span>
+                        </div>
+                        <div className="iu-bar"><i style={{ width: `${pct}%`, background: pct > 80 ? '#b42318' : undefined }} /></div>
+                      </div>
+
+                      <div className="cm-foot">
+                        <span />
+                        <span className={`iu-btn ${isClosed ? '' : 'p'}`} style={{ minHeight: 44, ...(isClosed ? { color: '#8783a8', cursor: 'not-allowed' } : {}) }}>
+                          {isClosed ? 'Înscrieri închise' : <>Vezi oferta <ArrowRight size={14} /></>}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )
               })}
             </div>
           )}
-        </div>
-      )}
+      </>)}
 
       {/* Modal */}
       {selected && (
         <div
-          className="modal-overlay fixed inset-0 bg-opacity-50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          className="modal-overlay cm-overlay"
+          style={{ alignItems: 'flex-end', padding: 0, zIndex: 80 }}
           onClick={e => { if (e.target === e.currentTarget) setSelected(null) }}
         >
-          <div className="modal-panel bg-white w-full rounded-t-3xl shadow-2xl overflow-y-auto" style={{ height: "95vh", maxWidth: 560, margin: "0 auto" }}>
-
-            {/* Mobile drag handle */}
-            <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <div className="w-10 h-1 rounded-full bg-gray-200" />
-            </div>
+          <div className="modal-panel cm-sheet">
 
             {/* Modal header */}
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-start justify-between z-10 rounded-t-3xl">
-              <div className="flex-1 min-w-0 pr-3">
-                <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                  {appliedIds.has(selected.id) && (
-                    <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-full">
-                      <CheckCircle className="w-2.5 h-2.5" /> Applied
-                    </span>
-                  )}
-                  {daysLeft(selected.deadline) <= 3 && daysLeft(selected.deadline) >= 0 && !appliedIds.has(selected.id) && (
-                    <span className="bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-0.5 rounded-full">🔥 Urgent</span>
-                  )}
-                </div>
-                <h2 className="font-black text-gray-900 text-lg leading-tight">
-                  {selected.title?.replace(/^\[(Barter|Managed|Paid)\]\s*/i, '') || selected.brand_name}
-                </h2>
-                <p className="text-sm text-gray-500 font-semibold mt-0.5">{selected.brand_name}</p>
+            <div className="cm-sheet-head">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p className="iu-label" style={{ margin: 0 }}>{selected.campaign_type === 'BARTER' ? 'Campanie barter' : 'Campanie plătită'}</p>
+                <h2 style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 17 }}>{selected.title?.replace(/^(\[(Barter|Managed|Paid)\]\s*)+/i, '') || selected.brand_name}</h2>
+                <p className="iu-muted iu-xs" style={{ margin: '1px 0 0', fontWeight: 600 }}>{selected.brand_name}</p>
               </div>
-              <button onClick={() => setSelected(null)} className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition flex-shrink-0 mt-1">
-                <X className="w-4 h-4 text-gray-600" />
-              </button>
+              <button onClick={() => setSelected(null)} className="cm-x" aria-label="Închide"><X size={18} /></button>
             </div>
 
-            <div className="px-6 py-5 space-y-5">
+            <div className="cm-sheet-body">
 
-              {/* Key stats — barter vs paid */}
-              {selected.campaign_type === 'BARTER' ? (
-                <>
-                  {/* Barter: slider de imagini */}
-                  {(() => {
-                    const imgs = [
-                      ...(Array.isArray(selected.offer_images) ? selected.offer_images : []),
-                      ...(Array.isArray(selected.offer_image_urls) ? selected.offer_image_urls : []),
-                      ...(selected.offer_image_url ? [selected.offer_image_url] : []),
-                    ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i) // deduplicate
-                    if (imgs.length === 0) return null
-                    return <CampaignImageSlider images={imgs} alt={selected.offer_name || 'Produs'} />
-                  })()}
+              {/* Hero: tip, brand, titlu */}
+              <CampaignHero c={selected} applied={appliedIds.has(selected.id)} />
 
-                  {/* Barter stats — focus pe ce primește influencerul */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-2xl p-3.5 text-center border" style={{ background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', borderColor: '#ddd6fe' }}>
-                      <span className="text-xl mb-1 block">🎁</span>
-                      <p className="text-sm font-black text-orange-600 leading-tight line-clamp-2" title={selected.offer_name}>
-                        {selected.offer_name || 'Produs gratuit'}
-                      </p>
-                      <p className="text-[10px] text-gray-500 font-medium mt-1">primești gratuit</p>
-                    </div>
-                    <div className="bg-purple-50 border border-purple-100 rounded-2xl p-3.5 text-center">
-                      <Calendar className="w-4 h-4 text-purple-500 mx-auto mb-1" />
-                      <p className="text-base font-black text-gray-900">{selected.deadline ? fmtDateShort(selected.deadline) : '—'}</p>
-                      <p className="text-[10px] text-gray-400 font-medium">
-                        {selected.deadline && daysLeft(selected.deadline) >= 0 ? `${daysLeft(selected.deadline)} zile` : 'Expirat'}
-                      </p>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3.5 text-center">
-                      <Users className="w-4 h-4 text-blue-500 mx-auto mb-1" />
-                      <p className="text-base font-black text-gray-900">{(selected.current_influencers || 0)}/{selected.max_influencers}</p>
-                      <p className="text-[10px] text-gray-400 font-medium">Locuri</p>
-                    </div>
+              {/* Slider de imagini (barter + plătite) */}
+              {(() => {
+                const imgs = [
+                  ...(Array.isArray(selected.offer_images) ? selected.offer_images : []),
+                  ...(Array.isArray(selected.offer_image_urls) ? selected.offer_image_urls : []),
+                  ...(selected.offer_image_url ? [selected.offer_image_url] : []),
+                ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i) // deduplicate
+                if (imgs.length === 0) return null
+                return (
+                  <div className="iu-card" style={{ padding: 10 }}>
+                    <CampaignImageSlider images={imgs} alt={selected.campaign_type === 'BARTER' ? (selected.offer_name || 'Produs') : (selected.title || 'Campanie')} />
                   </div>
+                )
+              })()}
 
-                  {/* Barter: detalii ofertă - bine ordonată */}
-                  <div className="rounded-2xl overflow-hidden border" style={{ borderColor: '#ddd6fe' }}>
-                    {/* Header */}
-                    <div className="px-4 py-3 border-b" style={{ background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', borderColor: '#ddd6fe' }}>
-                      <p className="text-xs font-black text-orange-700 uppercase tracking-wider">🎁 Despre ofertă</p>
-                      {selected.offer_name && (
-                        <p className="text-base font-black text-gray-900 mt-1">{selected.offer_name}</p>
-                      )}
-                    </div>
+              {/* Recompensă · locuri · deadline */}
+              <CampaignStats c={selected} collabAmount={collabAmounts[selected.id]} />
 
-                    {/* Body */}
-                    <div className="bg-white p-4 space-y-3">
-                      {selected.offer_description && (
-                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selected.offer_description}</p>
-                      )}
-
-                      {/* Brief campanie - OBLIGATORIU */}
-                      {selected.brief_pdf_url && (() => {
-                        const url = selected.brief_pdf_url as string
-                        const isImage = /\.(png|jpe?g|webp)$/i.test(url)
-                        return (
-                          <>
-                            <style>{`
-                              @keyframes briefPulse {
-                                0%, 100% { box-shadow: 0 0 0 3px rgba(124,58,237,0.25), 0 4px 16px rgba(124,58,237,0.3); }
-                                50% { box-shadow: 0 0 0 7px rgba(124,58,237,0.1), 0 4px 28px rgba(124,58,237,0.55); }
-                              }
-                              .brief-cta { animation: briefPulse 2s ease-in-out infinite; }
-                            `}</style>
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="brief-cta mt-3"
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: 12,
-                                background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-                                borderRadius: 16,
-                                padding: '12px 16px',
-                                textDecoration: 'none',
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{
-                                  width: 38, height: 38, borderRadius: 10,
-                                  background: 'rgba(255,255,255,0.18)',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  fontSize: 20, flexShrink: 0,
-                                }}>
-                                  {isImage ? '🖼️' : '📋'}
-                                </div>
-                                <div>
-                                  <p style={{ margin: 0, fontSize: 10, fontWeight: 900, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                    ⚠️ OBLIGATORIU
-                                  </p>
-                                  <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: '#fff' }}>
-                                    Citește Brieful Campaniei
-                                  </p>
-                                </div>
-                              </div>
-                              <div style={{
-                                background: '#fff',
-                                color: '#7c3aed',
-                                fontWeight: 900,
-                                fontSize: 11,
-                                padding: '7px 15px',
-                                borderRadius: 20,
-                                whiteSpace: 'nowrap',
-                                flexShrink: 0,
-                              }}>
-                                {isImage ? 'Deschide →' : 'Deschide PDF →'}
-                              </div>
-                            </a>
-                          </>
-                        )
-                      })()}
-
-                      {/* Quick info pills */}
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="bg-orange-50/50 rounded-xl p-2.5 border border-orange-100">
-                          <p className="text-gray-400 mb-0.5 text-[10px] uppercase tracking-wider font-bold">Tip ofertă</p>
-                          <p className="font-black text-gray-800">{selected.offer_type === 'product' ? '📦 Produs' : '🛠️ Serviciu'}</p>
-                        </div>
-                        <div className="bg-orange-50/50 rounded-xl p-2.5 border border-orange-100">
-                          <p className="text-gray-400 mb-0.5 text-[10px] uppercase tracking-wider font-bold">Ridicare</p>
-                          <p className="font-black text-gray-800">
-                            {selected.delivery_method === 'pickup' ? '📍 Din locație' : '🚚 Livrare'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {selected.delivery_method === 'pickup' && selected.pickup_location_name && (
-                        <div className="bg-orange-50/50 rounded-xl p-2.5 border border-orange-100 text-xs">
-                          <p className="text-gray-400 mb-0.5 text-[10px] uppercase tracking-wider font-bold">Locație pickup</p>
-                          <p className="font-black text-gray-800">📍 {selected.pickup_location_name}</p>
-                          {selected.pickup_location_address && (
-                            <p className="text-gray-500 text-[11px] mt-0.5">{selected.pickup_location_address}</p>
-                          )}
-                        </div>
-                      )}
-
-                      {selected.reservation_required && (
-                        <div className="bg-amber-50 rounded-xl p-2.5 border border-amber-100 text-xs">
-                          <p className="font-semibold text-amber-700">📅 Rezervare necesară înainte de vizită</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Barter: ce trebuie să postezi - nou design card */}
-                  {(() => {
-                    const s = selected
-                    const tasks: { label: string; sub?: string }[] = []
-                    if ((s.tasks_stories_count ?? 0) > 0) tasks.push({ label: `${s.tasks_stories_count} Instagram ${s.tasks_stories_count === 1 ? 'Story' : 'Stories'}` })
-                    if (s.tasks_ig_reel) tasks.push({ label: 'Instagram Reel', sub: s.tasks_ig_reel_duration ? `minim ${s.tasks_ig_reel_duration} secunde` : undefined })
-                    if (s.tasks_ig_post || s.tasks_include_post) tasks.push({ label: 'Post Feed Instagram', sub: 'foto sau carousel' })
-                    if (s.tasks_ig_live) tasks.push({ label: 'Instagram Live', sub: undefined })
-                    if (s.tasks_tt_video) tasks.push({ label: 'TikTok Video', sub: [s.tasks_tt_video_duration ? `minim ${s.tasks_tt_video_duration} sec` : '', s.tasks_tt_days_online ? `online minim ${s.tasks_tt_days_online === 9999 ? 'permanent' : s.tasks_tt_days_online + ' zile'}` : ''].filter(Boolean).join(' · ') || undefined })
-                    if (s.tasks_tt_live) tasks.push({ label: 'TikTok Live', sub: undefined })
-                    if (s.tasks_tt_duet) tasks.push({ label: 'TikTok Duet', sub: undefined })
-                    if (s.tasks_yt_short) tasks.push({ label: 'YouTube Short', sub: s.tasks_yt_short_duration ? `minim ${s.tasks_yt_short_duration} sec` : undefined })
-                    if (s.tasks_yt_video) tasks.push({ label: 'Video YouTube', sub: s.tasks_yt_video_duration ? `minim ${s.tasks_yt_video_duration} min` : undefined })
-                    if (s.tasks_yt_mention) tasks.push({ label: 'Mențiune YouTube', sub: undefined })
-                    if (s.tasks_fb_post) tasks.push({ label: 'Facebook Post', sub: undefined })
-                    if (s.tasks_fb_story) tasks.push({ label: 'Facebook Story', sub: undefined })
-                    if (s.tasks_fb_reel) tasks.push({ label: 'Facebook Reel', sub: undefined })
-                    if (s.tasks_fb_share) tasks.push({ label: 'Share postare Facebook', sub: undefined })
-                    if (tasks.length === 0 && !s.deliverables && !s.story_instructions) return null
-                    return (
-                      <div className="rounded-2xl overflow-hidden border-2 border-purple-300">
-                        <div className="flex items-center gap-2.5 px-4 py-3" style={{ background: '#7c3aed' }}>
-                          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                          <p className="font-black text-white text-sm uppercase tracking-wide">Ce trebuie să postezi</p>
-                          {tasks.length > 0 && <span className="ml-auto bg-white/20 text-white text-xs font-black px-2.5 py-0.5 rounded-full">{tasks.length} task{tasks.length !== 1 ? 'uri' : ''}</span>}
-                        </div>
-                        <div className="bg-white p-3 space-y-2">
-                          {s.deliverables && <p className="text-xs font-bold text-gray-500 pb-1">{s.deliverables}</p>}
-                          {tasks.map((t, i) => (
-                            <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: '#f5f3ff', border: '1px solid #c4b5fd' }}>
-                              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#7c3aed' }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-black" style={{ color: '#4c1d95' }}>{t.label}</p>
-                                {t.sub && <p className="text-xs" style={{ color: '#7c3aed' }}>{t.sub}</p>}
-                              </div>
-                              <span className="text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#7c3aed', color: 'white' }}>obligatoriu</span>
-                            </div>
-                          ))}
-                          {tasks.length > 1 && (
-                            <div className="flex items-start gap-2 rounded-xl px-3 py-2.5" style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
-                              <svg className="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                              <p className="text-xs font-bold" style={{ color: '#78350f' }}>Toate cele <strong>{tasks.length} task-uri sunt obligatorii</strong> — trimite link dovadă pentru fiecare postare.</p>
-                            </div>
-                          )}
-                          {s.story_instructions && (
-                            <div className="mt-2 pt-3 border-t border-purple-100">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Instrucțiuni complete</p>
-                              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{s.story_instructions}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })()}
-                </>
-              ) : (
-                <>
-                  {/* Paid/Managed: banner de imagini (la fel ca barter) */}
-                  {(() => {
-                    const imgs = [
-                      ...(Array.isArray(selected.offer_images) ? selected.offer_images : []),
-                      ...(Array.isArray(selected.offer_image_urls) ? selected.offer_image_urls : []),
-                      ...(selected.offer_image_url ? [selected.offer_image_url] : []),
-                    ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i)
-                    if (imgs.length === 0) return null
-                    return <CampaignImageSlider images={imgs} alt={selected.title || 'Campanie'} />
-                  })()}
-
-                  {/* Paid/Managed stats */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-green-50 border border-green-100 rounded-2xl p-3.5 text-center">
-                      {((selected as any).payment_mode === 'NEGOTIABLE' || (!selected.budget_per_influencer && !selected.budget)) ? (
-                        <>
-                          <p className="text-xs font-black text-green-500 mb-1">💬</p>
-                          <p className="text-sm font-black text-green-600 leading-tight">De discutat</p>
-                          <p className="text-[10px] text-gray-400 font-medium">Preț</p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-xs font-black text-green-500 mb-1">RON</p>
-                          <p className="text-lg font-black text-green-600">{selected.budget_per_influencer || selected.budget}</p>
-                          <p className="text-[10px] text-gray-400 font-medium">Câștig tău</p>
-                        </>
-                      )}
-                    </div>
-                    <div className="bg-purple-50 border border-purple-100 rounded-2xl p-3.5 text-center">
-                      <Calendar className="w-4 h-4 text-purple-500 mx-auto mb-1" />
-                      <p className="text-base font-black text-gray-900">{selected.deadline ? fmtDateShort(selected.deadline) : '—'}</p>
-                      <p className="text-[10px] text-gray-400 font-medium">
-                        {selected.deadline && daysLeft(selected.deadline) >= 0 ? `${daysLeft(selected.deadline)} zile` : 'Expirat'}
-                      </p>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3.5 text-center">
-                      <Users className="w-4 h-4 text-blue-500 mx-auto mb-1" />
-                      <p className="text-base font-black text-gray-900">{(selected.current_influencers || 0)}/{selected.max_influencers || '∞'}</p>
-                      <p className="text-[10px] text-gray-400 font-medium">Locuri</p>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Secțiuni doar pentru campanii PLĂTITE */}
-              {selected.campaign_type !== 'BARTER' && (<>
-
-                {/* Description */}
-                {selected.description && (
-                  <div>
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Despre campanie</p>
-                    <p className="text-sm text-gray-600 leading-relaxed">{selected.description}</p>
-                  </div>
-                )}
-
-                {/* Câștig potențial */}
-                {(collabAmounts[selected.id] || selected.budget_per_influencer || (selected as any).payment_mode === 'NEGOTIABLE') && (
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4">
-                    <p className="text-xs font-black text-green-700 uppercase tracking-wider mb-2">💰 Câștigul tău</p>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        {(() => {
-                          const perInf = collabAmounts[selected.id] || selected.budget_per_influencer || 0
-                          const negotiable = (selected as any).payment_mode === 'NEGOTIABLE' || !perInf
-                          return negotiable ? <>
-                            <p className="text-2xl font-black text-green-600">De discutat</p>
-                            <p className="text-xs text-green-600 text-opacity-70">prețul se stabilește cu brandul</p>
-                          </> : <>
-                            <p className="text-2xl font-black text-green-600">{perInf} RON</p>
-                            <p className="text-xs text-green-600 text-opacity-70">câștig net după finalizare</p>
-                          </>
-                        })()}
-                      </div>
-                      {selected.max_influencers && (
-                        <div className="text-right">
-                          <p className="text-sm font-black text-gray-700">{(selected.current_influencers || 0)}/{selected.max_influencers}</p>
-                          <p className="text-xs text-gray-400">locuri ocupate</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Brief PDF — la fel ca la barter */}
-                {selected.brief_pdf_url && (() => {
-                  const url = selected.brief_pdf_url as string
-                  const isImage = /\.(png|jpe?g|webp)$/i.test(url)
-                  return (
-                    <>
-                      <style>{`
-                        @keyframes briefPulse2 {
-                          0%, 100% { box-shadow: 0 0 0 3px rgba(124,58,237,0.25), 0 4px 16px rgba(124,58,237,0.3); }
-                          50% { box-shadow: 0 0 0 7px rgba(124,58,237,0.1), 0 4px 28px rgba(124,58,237,0.55); }
-                        }
-                        .brief-cta2 { animation: briefPulse2 2s ease-in-out infinite; }
-                      `}</style>
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="brief-cta2"
-                        style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, background:'linear-gradient(135deg,#7c3aed,#4f46e5)', borderRadius:16, padding:'12px 16px', textDecoration:'none' }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                          <div style={{ width:38, height:38, borderRadius:10, background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>
-                            {isImage ? '🖼️' : '📋'}
-                          </div>
-                          <div>
-                            <p style={{ margin:0, fontSize:10, fontWeight:900, color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.06em' }}>⚠️ OBLIGATORIU</p>
-                            <p style={{ margin:0, fontSize:13, fontWeight:900, color:'#fff' }}>Citește Brieful Campaniei</p>
-                          </div>
-                        </div>
-                        <div style={{ background:'#fff', color:'#7c3aed', fontWeight:900, fontSize:11, padding:'7px 15px', borderRadius:20, whiteSpace:'nowrap', flexShrink:0 }}>
-                          {isImage ? 'Deschide →' : 'Deschide PDF →'}
-                        </div>
-                      </a>
-                    </>
-                  )
-                })()}
-
-                {/* Ce trebuie să postezi — IDENTIC cu barter */}
-                {(() => {
-                  const s = selected
-                  const tasks: { label: string; sub?: string }[] = []
-                  if ((s.tasks_stories_count ?? 0) > 0) tasks.push({ label: `${s.tasks_stories_count} Instagram ${s.tasks_stories_count === 1 ? 'Story' : 'Stories'}` })
-                  if (s.tasks_ig_reel) tasks.push({ label: 'Instagram Reel', sub: s.tasks_ig_reel_duration ? `minim ${s.tasks_ig_reel_duration} secunde` : undefined })
-                  if (s.tasks_ig_post || s.tasks_include_post) tasks.push({ label: 'Post Feed Instagram', sub: 'foto sau carousel' })
-                  if (s.tasks_ig_live) tasks.push({ label: 'Instagram Live', sub: undefined })
-                  if (s.tasks_tt_video) tasks.push({ label: 'TikTok Video', sub: [s.tasks_tt_video_duration ? `minim ${s.tasks_tt_video_duration} sec` : '', s.tasks_tt_days_online ? `online minim ${s.tasks_tt_days_online === 9999 ? 'permanent' : s.tasks_tt_days_online + ' zile'}` : ''].filter(Boolean).join(' · ') || undefined })
-                  if (s.tasks_tt_live) tasks.push({ label: 'TikTok Live', sub: undefined })
-                  if (s.tasks_tt_duet) tasks.push({ label: 'TikTok Duet', sub: undefined })
-                  if (s.tasks_yt_short) tasks.push({ label: 'YouTube Short', sub: s.tasks_yt_short_duration ? `minim ${s.tasks_yt_short_duration} sec` : undefined })
-                  if (s.tasks_yt_video) tasks.push({ label: 'Video YouTube', sub: s.tasks_yt_video_duration ? `minim ${s.tasks_yt_video_duration} min` : undefined })
-                  if (s.tasks_yt_mention) tasks.push({ label: 'Mențiune YouTube', sub: undefined })
-                  if (s.tasks_fb_post) tasks.push({ label: 'Facebook Post', sub: undefined })
-                  if (s.tasks_fb_story) tasks.push({ label: 'Facebook Story', sub: undefined })
-                  if (s.tasks_fb_reel) tasks.push({ label: 'Facebook Reel', sub: undefined })
-                  if (s.tasks_fb_share) tasks.push({ label: 'Share postare Facebook', sub: undefined })
-                  if (tasks.length === 0 && !s.deliverables && !s.story_instructions) return null
-                  return (
-                    <div className="rounded-2xl overflow-hidden border-2 border-purple-300">
-                      <div className="flex items-center gap-2.5 px-4 py-3" style={{ background: '#7c3aed' }}>
-                        <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                        <p className="font-black text-white text-sm uppercase tracking-wide">Ce trebuie să postezi</p>
-                        {tasks.length > 0 && <span className="ml-auto bg-white/20 text-white text-xs font-black px-2.5 py-0.5 rounded-full">{tasks.length} task{tasks.length !== 1 ? 'uri' : ''}</span>}
-                      </div>
-                      <div className="bg-white p-3 space-y-2">
-                        {s.deliverables && <p className="text-xs font-bold text-gray-500 pb-1">{s.deliverables}</p>}
-                        {tasks.map((t, i) => (
-                          <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: '#f5f3ff', border: '1px solid #c4b5fd' }}>
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#7c3aed' }}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-black" style={{ color: '#4c1d95' }}>{t.label}</p>
-                              {t.sub && <p className="text-xs" style={{ color: '#7c3aed' }}>{t.sub}</p>}
-                            </div>
-                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#7c3aed', color: 'white' }}>obligatoriu</span>
-                          </div>
-                        ))}
-                        {tasks.length > 1 && (
-                          <div className="flex items-start gap-2 rounded-xl px-3 py-2.5" style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
-                            <svg className="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                            <p className="text-xs font-bold" style={{ color: '#78350f' }}>Toate cele <strong>{tasks.length} task-uri sunt obligatorii</strong> — trimite link dovadă pentru fiecare postare.</p>
-                          </div>
-                        )}
-                        {s.story_instructions && (
-                          <div className="mt-2 pt-3 border-t border-purple-100">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Instrucțiuni complete</p>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{s.story_instructions}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })()}
-
-                {/* Promotion link */}
-                {selected.promotion_link && (
-                  <div className="bg-green-50 border border-green-100 rounded-2xl p-4">
-                    <p className="text-xs font-black text-green-700 uppercase tracking-wider mb-2">🔗 Link de promovat</p>
-                    <a href={selected.promotion_link} target="_blank" rel="noopener noreferrer"
-                      className="text-sm font-bold text-green-700 underline break-all">{selected.promotion_link}</a>
-                    {Array.isArray(selected.promotion_link_placement) && selected.promotion_link_placement.length > 0 && (
-                      <p className="text-xs text-gray-500 mt-1">📍 Plasare: {selected.promotion_link_placement.join(', ')}</p>
-                    )}
-                  </div>
-                )}
-
-                {/* Required caption + hashtags */}
-                {(selected.required_caption || (Array.isArray(selected.required_hashtags) && selected.required_hashtags.length > 0)) && (
-                  <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 space-y-3">
-                    <p className="text-xs font-black text-amber-700 uppercase tracking-wider">📝 Cerințe text</p>
-                    {selected.required_caption && (
-                      <div>
-                        <p className="text-xs font-bold text-gray-500 mb-1">Caption obligatoriu:</p>
-                        <div className="bg-white border border-amber-200 rounded-xl p-3">
-                          <p className="text-sm text-gray-700 italic">"{selected.required_caption}"</p>
-                        </div>
-                      </div>
-                    )}
-                    {Array.isArray(selected.required_hashtags) && selected.required_hashtags.length > 0 && (
-                      <div>
-                        <p className="text-xs font-bold text-gray-500 mb-1.5"># Hashtag-uri obligatorii:</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {selected.required_hashtags.map((tag: string) => (
-                            <span key={tag} className="text-xs font-bold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">#{tag.replace(/^#/, '')}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Key messages */}
-                {Array.isArray(selected.key_messages) && selected.key_messages.length > 0 && (
-                  <div>
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">⭐ Ce trebuie să menționezi obligatoriu</p>
-                    <ul className="space-y-1.5">
-                      {selected.key_messages.map((msg: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                          <span className="w-5 h-5 rounded-full bg-orange-100 text-orange-600 font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
-                          {msg}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Forbidden */}
-                {(selected.forbidden_content || (Array.isArray(selected.forbidden_mentions) && selected.forbidden_mentions.length > 0)) && (
-                  <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
-                    <p className="text-xs font-black text-red-700 uppercase tracking-wider mb-2">🚫 Ce să eviți</p>
-                    {selected.forbidden_content && <p className="text-sm text-gray-700 leading-relaxed">{selected.forbidden_content}</p>}
-                    {Array.isArray(selected.forbidden_mentions) && selected.forbidden_mentions.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {selected.forbidden_mentions.map((m: string) => (
-                          <span key={m} className="text-xs font-bold bg-red-100 text-red-600 px-2.5 py-1 rounded-full">{m}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Brief PDF */}
-                {selected.brief_pdf_url && (() => {
-                  const url = selected.brief_pdf_url as string
-                  const isImage = /\.(png|jpe?g|webp)$/i.test(url)
-                  return (
-                    <>
-                      <style>{`
-                        @keyframes briefPulse {
-                          0%, 100% { box-shadow: 0 0 0 3px rgba(124,58,237,0.25), 0 4px 16px rgba(124,58,237,0.3); }
-                          50% { box-shadow: 0 0 0 7px rgba(124,58,237,0.1), 0 4px 28px rgba(124,58,237,0.55); }
-                        }
-                        .brief-cta { animation: briefPulse 2s ease-in-out infinite; }
-                      `}</style>
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="brief-cta"
-                        style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, background:'linear-gradient(135deg,#7c3aed,#4f46e5)', borderRadius:16, padding:'12px 16px', textDecoration:'none' }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                          <div style={{ width:38, height:38, borderRadius:10, background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>
-                            {isImage ? '🖼️' : '📋'}
-                          </div>
-                          <div>
-                            <p style={{ margin:0, fontSize:10, fontWeight:900, color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.06em' }}>⚠️ OBLIGATORIU</p>
-                            <p style={{ margin:0, fontSize:13, fontWeight:900, color:'#fff' }}>Citește Brieful Campaniei</p>
-                          </div>
-                        </div>
-                        <div style={{ background:'#fff', color:'#7c3aed', fontWeight:900, fontSize:11, padding:'7px 15px', borderRadius:20, whiteSpace:'nowrap', flexShrink:0 }}>
-                          {isImage ? 'Deschide →' : 'Deschide PDF →'}
-                        </div>
-                      </a>
-                    </>
-                  )
-                })()}
-
-                {/* BRIEF STRUCTURAT — câmpuri specifice paid */}
-                {(selected.product_name || selected.product_description) && (
-                  <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 space-y-2">
-                    <p className="text-xs font-black text-blue-700 uppercase tracking-wider">📦 Produs de promovat</p>
-                    {selected.product_name && <p className="font-bold text-sm text-gray-900">{selected.product_name}</p>}
-                    {selected.product_url && (
-                      <a href={selected.product_url} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-blue-600 underline break-all">{selected.product_url}</a>
-                    )}
-                    {selected.product_description && <p className="text-sm text-gray-600 leading-relaxed">{selected.product_description}</p>}
-                  </div>
-                )}
-
-                {/* 2. Puncte cheie obligatorii */}
-                {selected.key_messages && selected.key_messages.length > 0 && (
-                  <div>
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">⭐ Ce trebuie să menționezi obligatoriu</p>
-                    <ul className="space-y-1.5">
-                      {selected.key_messages.map((msg, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                          <span className="w-5 h-5 rounded-full bg-orange-100 text-orange-600 font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
-                          {msg}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* 3. Cerințe conținut */}
-                {(selected.content_type?.length || selected.min_duration || selected.content_tone?.length) && (
-                  <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 space-y-3">
-                    <p className="text-xs font-black text-purple-700 uppercase tracking-wider">🎬 Ce trebuie să creezi</p>
-                    {selected.content_type && selected.content_type.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {selected.content_type.map(t => (
-                          <span key={t} className="text-xs font-bold bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full capitalize">{t}</span>
-                        ))}
-                      </div>
-                    )}
-                    {selected.min_duration && (
-                      <p className="text-sm text-gray-700">⏱️ Durată minimă: <strong>{selected.min_duration} secunde</strong></p>
-                    )}
-                    {selected.content_tone && selected.content_tone.length > 0 && (
-                      <p className="text-sm text-gray-700">🎭 Ton: <strong>{selected.content_tone.join(', ')}</strong></p>
-                    )}
-                    <div className="space-y-1">
-                      {selected.product_in_frame && <p className="text-sm text-gray-700">✅ Produsul trebuie să apară vizibil în cadru</p>}
-                      {selected.mention_price && <p className="text-sm text-gray-700">✅ Menționează prețul</p>}
-                      {selected.link_in_bio && <p className="text-sm text-gray-700">✅ Link în bio / swipe up obligatoriu</p>}
-                      {selected.discount_code && <p className="text-sm text-gray-700">🏷️ Cod discount de menționat: <strong className="text-orange-600">{selected.discount_code}</strong></p>}
-                    </div>
-                  </div>
-                )}
-
-                {/* 6. Dovadă livrare */}
-                {selected.proof_requirements && selected.proof_requirements.length > 0 && (
-                  <div>
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">📋 Ce trimiți ca dovadă</p>
-                    <div className="flex flex-wrap gap-2">
-                      {selected.proof_requirements.map(p => (
-                        <span key={p} className="text-xs font-bold bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
-                          {p === 'screenshot_post' ? '📸 Screenshot post' :
-                            p === 'link_post' ? '🔗 Link postare' :
-                              p === 'screenshot_insights' ? '📊 Screenshot insights' :
-                                p === 'video_proof' ? '🎬 Video dovadă' : p}
-                        </span>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-400 mt-2">⚠️ Plata se eliberează după ce brandul verifică și aprobă dovezile.</p>
-                  </div>
-                )}
-
-              </>)} {/* end paid-only sections */}
-
-              {/* Cerințe postare — apare la TOATE tipurile de campanie */}
-              {(selected.required_caption || selected.required_hashtags?.length || selected.min_days_online) && (
-                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 space-y-2">
-                  <p className="text-xs font-black text-amber-700 uppercase tracking-wider">📱 Cerințe postare</p>
-                  {selected.required_caption && (
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs font-bold text-gray-500">Caption obligatoriu:</p>
-                        <button onClick={() => { navigator.clipboard.writeText(selected.required_caption!); notify('✅ Caption copiat!') }}
-                          className="text-[10px] font-bold text-amber-700 hover:text-amber-900">📋 Copiază</button>
-                      </div>
-                      <p className="text-sm text-gray-700 bg-white rounded-xl p-3 border border-amber-100 italic">{selected.required_caption}</p>
-                    </div>
-                  )}
-                  {selected.required_hashtags && selected.required_hashtags.length > 0 && (
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs font-bold text-gray-500">Hashtag-uri obligatorii:</p>
-                        <button onClick={() => { navigator.clipboard.writeText(selected.required_hashtags!.map(h => '#' + h.replace(/^#/, '')).join(' ')); notify('✅ Hashtag-uri copiate!') }}
-                          className="text-[10px] font-bold text-amber-700 hover:text-amber-900">📋 Copiază toate</button>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {selected.required_hashtags.map(h => (
-                          <span key={h} className="text-xs font-bold text-blue-600">#{h.replace(/^#/, '')}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {selected.min_days_online && (
-                    <p className="text-sm text-gray-700">📅 Postarea rămâne online minim <strong>{selected.min_days_online} zile</strong></p>
-                  )}
-                </div>
-              )}
-
-              {/* Link promovare — apare la TOATE tipurile */}
-              {selected.promotion_link && (
-                <div className="bg-green-50 border border-green-100 rounded-2xl p-4 space-y-2">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <p className="text-xs font-black text-green-700 uppercase tracking-wider">🔗 Link produs / promovare</p>
-                    <button onClick={() => { navigator.clipboard.writeText(selected.promotion_link!); notify('✅ Link copiat!') }}
-                      className="text-[10px] font-bold text-green-700 hover:text-green-900">📋 Copiază</button>
-                  </div>
-                  <a href={selected.promotion_link} target="_blank" rel="noopener noreferrer"
-                    className="text-sm font-bold text-green-700 hover:text-green-900 underline break-all block bg-white rounded-xl p-3 border border-green-100">
-                    {selected.promotion_link}
-                  </a>
-                  {Array.isArray(selected.promotion_link_placement) && selected.promotion_link_placement.length > 0 && (
-                    <div>
-                      <p className="text-[10px] font-bold text-green-700 uppercase tracking-wider mb-1.5">Unde trebuie inclus:</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {selected.promotion_link_placement.map((p: string) => (
-                          <span key={p} className="text-xs font-bold bg-white border border-green-200 text-green-700 px-2.5 py-1 rounded-full">{p}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Forbidden — apare la TOATE tipurile */}
-              {(selected.forbidden_mentions?.length || selected.forbidden_content) && (
-                <div className="bg-red-50 border border-red-100 rounded-2xl p-4 space-y-2">
-                  <p className="text-xs font-black text-red-700 uppercase tracking-wider">🚫 Ce NU este permis</p>
-                  {selected.forbidden_mentions && selected.forbidden_mentions.length > 0 && (
-                    <p className="text-sm text-gray-700">Nu menționa: <strong>{selected.forbidden_mentions.join(', ')}</strong></p>
-                  )}
-                  {selected.forbidden_content && (
-                    <p className="text-sm text-gray-700">{selected.forbidden_content}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Platforms */}
-              {selected.platforms?.length > 0 && (
-                <div>
-                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Platforms</p>
-                  <div className="flex flex-wrap gap-2">
-                    {selected.platforms.map(p => <PlatformBadge key={p} platform={p} />)}
-                  </div>
-                </div>
-              )}
-
-              {/* Niches + Countries */}
-              <div className="grid grid-cols-2 gap-4">
-                {selected.niches?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Target Niches</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selected.niches.map(n => (
-                        <span key={n} className="text-xs font-bold bg-purple-50 text-purple-600 border border-purple-100 px-2.5 py-1 rounded-full">{n}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {selected.countries?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Target Countries</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selected.countries.map(c => (
-                        <span key={c} className="inline-flex items-center gap-1 text-xs font-bold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
-                          <Globe className="w-3 h-3" />{c}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Brief, task-uri, caption, interzis, livrare… */}
+              <CampaignSections c={selected} onCopy={(text, msg) => { navigator.clipboard.writeText(text); notify(msg) }} />
 
               {/* Apply section */}
               {invitedIds.has(selected.id) ? (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">📩</span>
+                <div className="cm-note" style={{ background: '#e6f0ff', border: '1.5px solid #bcd3fb' }}>
+                  <div className="iu-ico" style={{ width: 48, height: 48, background: '#fff', color: '#1d4fb8' }}>
+                    <Briefcase size={22} />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-black text-blue-700">Ești invitat la această campanie!</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Mergi la <strong>Colaborări</strong> pentru a accepta sau refuza invitația.</p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontWeight: 800, color: '#1d4fb8' }}>Ești invitat la această campanie!</p>
+                    <p className="iu-xs iu-muted" style={{ margin: '2px 0 0' }}>Mergi la <strong>Colaborări</strong> pentru a accepta sau refuza invitația.</p>
                   </div>
-                  <a href="/influencer/collaborations" className="bg-blue-500 text-white text-xs font-black px-4 py-2 rounded-xl hover:bg-blue-600 transition">
-                    Vezi invitația →
+                  <a href="/influencer/collaborations" className="iu-btn p" style={{ minHeight: 44 }}>
+                    Vezi invitația <ArrowRight size={15} />
                   </a>
                 </div>
               ) : appliedIds.has(selected.id) || justApplied === selected.id ? (
-                <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <CheckCircle className="w-6 h-6 text-green-500" />
+                <div className="cm-note" style={{ background: '#dcf5ec', border: '1.5px solid #a7e3cb' }}>
+                  <div className="iu-ico" style={{ width: 48, height: 48, background: '#fff', color: '#14532d' }}>
+                    <CheckCircle size={22} />
                   </div>
                   <div>
-                    <p className="font-black text-green-700">Aplicație trimisă! 🎉</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Brandul îți va analiza profilul și îți va răspunde în curând.</p>
+                    <p style={{ margin: 0, fontWeight: 800, color: '#14532d' }}>Aplicație trimisă</p>
+                    <p className="iu-xs iu-muted" style={{ margin: '2px 0 0' }}>Brandul îți va analiza profilul și îți va răspunde în curând.</p>
                   </div>
                 </div>
               ) : daysLeft(selected.deadline) < 0 ? (
-                <div className="bg-gray-50 border-2 border-gray-200 rounded-2xl p-4 text-center">
-                  <p className="text-sm font-bold text-gray-500">Această campanie a expirat</p>
+                <div className="cm-note" style={{ background: '#f0eff7', justifyContent: 'center' }}>
+                  <p style={{ margin: 0, fontWeight: 700, color: '#4a4770' }}>Această campanie a expirat</p>
                 </div>
               ) : (selected.registrations_open === false || (() => {
                 if (invitedIds.has(selected.id)) return false // invitat direct de admin — nu se aplica deadline
@@ -1774,52 +1009,47 @@ export default function CampaignsPage() {
                 const expiry = new Date(new Date(selected.registration_opened_at).getTime() + (selected.registration_deadline_days || 30) * 86400000)
                 return expiry < new Date()
               })()) ? (
-                <div className="bg-gray-50 border-2 border-gray-200 rounded-2xl p-4 text-center">
-                  <p className="text-2xl mb-2">🚫</p>
-                  <p className="text-sm font-black text-gray-700">Înscrierile sunt închise</p>
-                  <p className="text-xs text-gray-400 mt-1">Brandul nu mai acceptă aplicații pentru această campanie.</p>
-                  <p className="text-xs text-amber-600 font-bold mt-2">🌟 Urmărește campanii noi care apar pe AddFame!</p>
+                <div className="cm-note" style={{ background: '#fff4f2', border: '1px solid #f3c9c4', flexDirection: 'column', textAlign: 'center' }}>
+                  <div className="iu-ico" style={{ background: '#fff', color: '#b42318' }}><Ban size={20} /></div>
+                  <p style={{ margin: 0, fontWeight: 800, color: '#b42318' }}>Înscrierile sunt închise</p>
+                  <p className="iu-sm" style={{ margin: 0, color: '#b42318' }}>Brandul nu mai acceptă aplicații pentru această campanie. Urmărește campaniile noi care apar pe AddFame.</p>
                 </div>
               ) : (
-                <div className="border-t border-gray-100 pt-4 space-y-4">
+                <>
                   {selected.delivery_method === 'delivery' && (
-                    <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: 12, padding: '14px 16px' }}>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: '#b45309', textTransform: 'uppercase', letterSpacing: '.05em', margin: '0 0 10px' }}>📦 Adresă livrare colet *</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                          <div>
-                            <p style={{ fontSize: 10, color: '#92400e', margin: '0 0 3px', fontWeight: 600 }}>Nume complet *</p>
-                            <input type="text" placeholder="Ion Popescu" value={applyAddress.name} onChange={e => setApplyAddress(p => ({ ...p, name: e.target.value }))} style={{ width: '100%', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 10px', fontSize: 12, background: 'white', boxSizing: 'border-box' as const }} />
-                          </div>
-                          <div>
-                            <p style={{ fontSize: 10, color: '#92400e', margin: '0 0 3px', fontWeight: 600 }}>Telefon *</p>
-                            <input type="tel" placeholder="07XXXXXXXX" value={applyAddress.phone} onChange={e => setApplyAddress(p => ({ ...p, phone: e.target.value }))} style={{ width: '100%', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 10px', fontSize: 12, background: 'white', boxSizing: 'border-box' as const }} />
-                          </div>
+                    <div className="iu-card cp-sec">
+                      <h3>Adresă livrare colet</h3>
+                      <div className="cm-addr">
+                        <div className="full">
+                          <label className="iu-label">Nume complet *</label>
+                          <input className="iu-input" type="text" placeholder="Ion Popescu" value={applyAddress.name} onChange={e => setApplyAddress(p => ({ ...p, name: e.target.value }))} />
                         </div>
                         <div>
-                          <p style={{ fontSize: 10, color: '#92400e', margin: '0 0 3px', fontWeight: 600 }}>Adresă *</p>
-                          <input type="text" placeholder="Str. Exemplu nr. 1, Bl. A, Ap. 5" value={applyAddress.address} onChange={e => setApplyAddress(p => ({ ...p, address: e.target.value }))} style={{ width: '100%', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 10px', fontSize: 12, background: 'white', boxSizing: 'border-box' as const }} />
+                          <label className="iu-label">Telefon *</label>
+                          <input className="iu-input" type="tel" placeholder="07XXXXXXXX" value={applyAddress.phone} onChange={e => setApplyAddress(p => ({ ...p, phone: e.target.value }))} />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-                          <div>
-                            <p style={{ fontSize: 10, color: '#92400e', margin: '0 0 3px', fontWeight: 600 }}>Oraș *</p>
-                            <input type="text" placeholder="București" value={applyAddress.city} onChange={e => setApplyAddress(p => ({ ...p, city: e.target.value }))} style={{ width: '100%', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 10px', fontSize: 12, background: 'white', boxSizing: 'border-box' as const }} />
-                          </div>
-                          <div>
-                            <p style={{ fontSize: 10, color: '#92400e', margin: '0 0 3px', fontWeight: 600 }}>Județ *</p>
-                            <input type="text" placeholder="Ilfov" value={applyAddress.county} onChange={e => setApplyAddress(p => ({ ...p, county: e.target.value }))} style={{ width: '100%', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 10px', fontSize: 12, background: 'white', boxSizing: 'border-box' as const }} />
-                          </div>
-                          <div>
-                            <p style={{ fontSize: 10, color: '#92400e', margin: '0 0 3px', fontWeight: 600 }}>Cod poștal</p>
-                            <input type="text" placeholder="077190" value={applyAddress.postal} onChange={e => setApplyAddress(p => ({ ...p, postal: e.target.value }))} style={{ width: '100%', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 10px', fontSize: 12, background: 'white', boxSizing: 'border-box' as const }} />
-                          </div>
+                        <div>
+                          <label className="iu-label">Cod poștal</label>
+                          <input className="iu-input" type="text" placeholder="077190" value={applyAddress.postal} onChange={e => setApplyAddress(p => ({ ...p, postal: e.target.value }))} />
+                        </div>
+                        <div className="full">
+                          <label className="iu-label">Adresă *</label>
+                          <input className="iu-input" type="text" placeholder="Str. Exemplu nr. 1, Bl. A, Ap. 5" value={applyAddress.address} onChange={e => setApplyAddress(p => ({ ...p, address: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label className="iu-label">Oraș *</label>
+                          <input className="iu-input" type="text" placeholder="București" value={applyAddress.city} onChange={e => setApplyAddress(p => ({ ...p, city: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label className="iu-label">Județ *</label>
+                          <input className="iu-input" type="text" placeholder="Ilfov" value={applyAddress.county} onChange={e => setApplyAddress(p => ({ ...p, county: e.target.value }))} />
                         </div>
                       </div>
                     </div>
                   )}
-                  <div>
-                    <label className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2">
-                      Message to brand <span className="text-gray-400 font-normal normal-case">(optional but recommended)</span>
+                  <div className="iu-card cp-sec">
+                    <label className="iu-label" style={{ display: 'block' }}>
+                      Mesaj către brand <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>(opțional, dar recomandat)</span>
                     </label>
                     <textarea
                       rows={3}
@@ -1829,46 +1059,48 @@ export default function CampaignsPage() {
                       placeholder="Prezintă-te și explică de ce ești potrivit. Menționează nișa, audiența și colaborările anterioare…"
                       className="textarea-msg"
                     />
-                    <p className="text-xs text-gray-400 mt-1 text-right">{applyMsg.length}/500</p>
+                    <p className="iu-xs iu-muted" style={{ margin: 0, textAlign: 'right' }}>{applyMsg.length}/500</p>
                   </div>
 
                   {applyError && (
-                    <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl p-4">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />{applyError}
+                    <div className="cm-note" style={{ background: '#fff4f2', border: '1px solid #f3c9c4', color: '#b42318', fontSize: 14, alignItems: 'flex-start' }}>
+                      <AlertCircle size={16} style={{ flex: 'none', marginTop: 2 }} />{applyError}
                     </div>
                   )}
 
-                  {/* Timer dacă are deja colaborare activă */}
-                  {activeCollabDates[selected.id] && (
-                    <CampaignScoreTimer acceptedAt={activeCollabDates[selected.id]} />
-                  )}
+                  {/* Footer lipicios: timer / bonus + buton */}
+                  <div className="cm-apply-foot">
+                    {/* Timer dacă are deja colaborare activă */}
+                    {activeCollabDates[selected.id] && (
+                      <CampaignScoreTimer acceptedAt={activeCollabDates[selected.id]} />
+                    )}
 
-                  {/* Score motivation — bonus info before applying */}
-                  {!activeCollabDates[selected.id] && (
-                  <div style={{ background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                    <div>
-                      <p style={{ fontSize: 12, fontWeight: 900, color: '#059669', margin: '0 0 2px' }}>🔥 Aplică acum — postează repede!</p>
-                      <p style={{ fontSize: 11, color: '#059669', opacity: 0.8, margin: 0 }}>Poți câștiga până la <strong>+225 puncte</strong> dacă trimiți dovada în 24h</p>
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: 18, fontWeight: 900, color: '#059669', margin: 0, lineHeight: 1 }}>+225</p>
-                      <p style={{ fontSize: 10, color: '#059669', opacity: 0.6, margin: 0 }}>pts max</p>
-                    </div>
+                    {/* Score motivation — bonus info before applying */}
+                    {!activeCollabDates[selected.id] && (
+                      <div className="cm-score">
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontSize: 13, fontWeight: 800, color: '#14532d', margin: '0 0 1px' }}>Aplică acum — postează repede</p>
+                          <p style={{ fontSize: 12, color: '#14532d', opacity: .8, margin: 0 }}>Poți câștiga până la <strong>+225 puncte</strong> dacă trimiți dovada în 24h</p>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <p style={{ fontFamily: 'var(--font-display,system-ui),system-ui,sans-serif', fontSize: 20, fontWeight: 800, color: '#14532d', margin: 0, lineHeight: 1 }}>+225</p>
+                          <p style={{ fontSize: 10, color: '#14532d', opacity: .7, margin: 0 }}>pts max</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      className="btn-apply"
+                      onClick={handleApply}
+                      disabled={actionLoading === selected.id}
+                    >
+                      {actionLoading === selected.id
+                        ? <><div className="w-4 h-4 border-2 border-white border-opacity-40 border-t-white rounded-full animate-spin" />Se trimite…</>
+                        : <>Trimite aplicația <ArrowRight className="w-4 h-4" /></>
+                      }
+                    </button>
                   </div>
-                  )}
-
-                  <button
-                    className="btn-apply"
-                    style={{ boxShadow: '0 6px 20px rgba(139,92,246,.35)' }}
-                    onClick={handleApply}
-                    disabled={actionLoading === selected.id}
-                  >
-                    {actionLoading === selected.id
-                      ? <><div className="w-4 h-4 border-2 border-white border-opacity-40 border-t-white rounded-full animate-spin" />Submitting…</>
-                      : <>Submit Application <ArrowRight className="w-4 h-4" /></>
-                    }
-                  </button>
-                </div>
+                </>
               )}
             </div>
           </div>

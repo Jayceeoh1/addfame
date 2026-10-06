@@ -13,6 +13,7 @@ import {
   Star, Award, Building2, CreditCard, AlertCircle, Check, Copy, ArrowLeft, Shield, BarChart2, FileText, Lock, Loader2
 } from 'lucide-react'
 import { fontVars } from '@/lib/fonts'
+import './influencer-ui.css'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
@@ -120,8 +121,10 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
 
   useEffect(() => {
     const sb = createClient()
+    let cancelled = false
+    let inviteChannel: any = null
     sb.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
+      if (!user || cancelled) return
       sb.from('influencers')
         .select('name, avatar, is_verified, wallet_balance, badge_expires_at, approval_status')
         .eq('user_id', user.id)
@@ -142,7 +145,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
         })
 
       // Ascultă notificările noi în timp real — popup pentru invitații
-      sb.channel(`invite-popup-${user.id}`)
+      inviteChannel = sb.channel(`invite-popup-${user.id}-${Math.random().toString(36).slice(2, 8)}`)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -157,6 +160,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
         })
         .subscribe()
     })
+    return () => { cancelled = true; if (inviteChannel) sb.removeChannel(inviteChannel) }
   }, [])
 
   const logout = async () => {

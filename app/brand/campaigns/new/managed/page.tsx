@@ -163,123 +163,185 @@ export default function NewManagedCampaign() {
     }
   }
 
+  const objLabel = OBJECTIVES.find(o => o.value === form.objective)?.label
+  const platLabels = form.platforms.map(v => PLATFORMS.find(p => p.value === v)?.label || v).join(', ')
+  const STEP_TITLES: Record<number, string> = { 1: 'Obiectiv și platforme', 2: 'Despre produsul tău', 3: 'Buget și timeline', 4: 'Brief pentru influenceri' }
+  const STEP_HELP: Record<number, string> = {
+    1: 'Selectează ce vrei să obții și unde vrei să apară campania.',
+    2: 'Ajută-ne să găsim influencerii cei mai potriviți.',
+    3: 'Noi distribuim bugetul optim între influenceri.',
+    4: 'Ce vrei să transmită conținutul creat.',
+  }
+
+  const styles = `
+    .mg-wrap { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 22px; align-items: start; }
+    .mg-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+    .mg-side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+    .mg-back { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid #e5e3f3; background: #fff; display: inline-flex; align-items: center; justify-content: center; color: #14123a; flex: none; }
+    .mg-steps { display: flex; align-items: center; gap: 8px; }
+    .mg-step { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .mg-dot { width: 30px; height: 30px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; background: #f0eff7; color: #8783a8; }
+    .mg-step.on .mg-dot { background: linear-gradient(135deg,#2f6fe0,#5a35e6); color: #fff; }
+    .mg-step.done .mg-dot { background: #dcf5ec; color: #14532d; }
+    .mg-step span.t { font-size: 13px; font-weight: 700; color: #8783a8; }
+    .mg-step.on span.t { color: #5a35e6; }
+    .mg-step.done span.t { color: #14532d; }
+    .mg-line { flex: 1; height: 2px; border-radius: 99px; background: #e5e3f3; min-width: 10px; }
+    .mg-line.done { background: #9bdcc3; }
+    .mg-sec { padding: 22px; }
+    .mg-sech { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
+    .mg-num { width: 30px; height: 30px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center; background: #efeaff; color: #4423c4; font-weight: 800; font-size: 14px; }
+    .mg-fl { display: block; font-size: 13px; font-weight: 700; color: #14123a; margin-bottom: 8px; }
+    .mg-fl small { font-weight: 500; color: #8783a8; font-size: 12px; }
+    .mg-tiles { display: grid; gap: 10px; }
+    .mg-tile { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 12px 14px; border: 1.5px solid #e5e3f3; border-radius: 14px; background: #fff; text-align: left; cursor: pointer; font: inherit; color: #14123a; transition: border-color .15s, background .15s; width: 100%; box-sizing: border-box; }
+    .mg-tile:hover { border-color: #c9b9fb; }
+    .mg-tile.on { border-color: #5a35e6; background: #f7f4ff; box-shadow: 0 0 0 3px rgba(90,53,230,.08); }
+    .mg-tile .em { font-size: 22px; flex: none; }
+    .mg-tile .tt { font-weight: 700; font-size: 14px; }
+    .mg-tile .ds { font-size: 12px; color: #6a6690; margin-top: 1px; }
+    .mg-tick { margin-left: auto; width: 22px; height: 22px; border-radius: 50%; background: #5a35e6; color: #fff; display: flex; align-items: center; justify-content: center; flex: none; }
+    .mg-g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mg-g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .mg-tile.c { flex-direction: column; justify-content: center; text-align: center; gap: 2px; position: relative; }
+    .mg-pop { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 800; background: #5a35e6; color: #fff; padding: 2px 8px; border-radius: 99px; }
+    .mg-pico { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex: none; background: #14123a; }
+    .mg-field { width: 100%; box-sizing: border-box; border: 1.5px solid #e5e3f3; border-radius: 12px; padding: 11px 14px; font: inherit; font-size: 14px; color: #14123a; background: #fff; outline: none; min-height: 44px; }
+    .mg-field:focus { border-color: #5a35e6; box-shadow: 0 0 0 3px rgba(90,53,230,.1); }
+    textarea.mg-field { resize: none; line-height: 1.5; }
+    .mg-stack { display: flex; flex-direction: column; gap: 18px; }
+    .mg-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; border: 2px dashed #d8d5ec; border-radius: 16px; background: #fbfaff; cursor: pointer; text-align: center; min-height: 44px; }
+    .mg-drop:hover { border-color: #5a35e6; background: #f7f4ff; }
+    .mg-img { position: relative; border-radius: 16px; overflow: hidden; border: 1.5px solid #e5e3f3; }
+    .mg-img img { width: 100%; height: 190px; object-fit: cover; display: block; }
+    .mg-img button { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border-radius: 12px; border: 0; background: rgba(255,255,255,.94); font-weight: 800; cursor: pointer; color: #14123a; }
+    .mg-note { background: #efeaff; color: #4423c4; border-radius: 14px; padding: 14px 16px; font-size: 13px; line-height: 1.55; }
+    .mg-calc { background: #f6f6fc; border: 1px solid #e5e3f3; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+    .mg-r { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .mg-r b { font-weight: 800; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+    .mg-err { display: flex; gap: 10px; align-items: flex-start; background: #fff4f2; border: 1px solid #f3c9c4; color: #b42318; border-radius: 14px; padding: 12px 14px; font-size: 13px; }
+    .mg-bar { position: sticky; bottom: 0; z-index: 20; display: flex; gap: 10px; padding: 12px 0; background: linear-gradient(180deg, rgba(246,246,252,0), #f6f6fc 30%); }
+    .mg-bar .bu-btn { flex: 1; height: 48px; }
+    .mg-sumc { padding: 18px; }
+    .mg-done { min-height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; }
+    @media (max-width: 900px) {
+      .mg-wrap { grid-template-columns: minmax(0,1fr); }
+      .mg-side { position: static; order: 2; }
+      .mg-step span.t { display: none; }
+    }
+    @media (max-width: 480px) {
+      .mg-sec { padding: 18px 16px; }
+      .mg-g3 { grid-template-columns: 1fr 1fr; }
+      .mg-bar { margin: 0 -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96); border-top: 1px solid #eeecf7; backdrop-filter: blur(6px); }
+    }
+  `
+
   if (done) return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <div className="text-center max-w-md">
-        <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
-          style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 12px 40px rgba(139,92,246,0.35)' }}>
-          <CheckCircle2 className="w-10 h-10 text-white" />
-        </div>
-        <h2 className="text-2xl font-black text-gray-900 mb-3">Campanie trimisă! 🎉</h2>
-        <p className="text-gray-500 mb-2">Echipa AddFame va analiza brief-ul și va selecta influencerii potriviți.</p>
-        <p className="text-sm text-gray-400">Vei fi notificat în 24-48h cu lista de influenceri propuși.</p>
-        <div className="mt-6 flex items-center justify-center gap-2 text-purple-600">
-          <div className="w-4 h-4 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin" />
-          <span className="text-sm font-bold">Redirecționare...</span>
+    <div className="bu">
+      <style>{styles}</style>
+      <div className="mg-done">
+        <div style={{ maxWidth: 440 }}>
+          <div className="bu-ico" style={{ width: 72, height: 72, borderRadius: 22, margin: '0 auto 20px', background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', boxShadow: '0 14px 34px -14px rgba(90,53,230,.7)' }}>
+            <CheckCircle2 className="w-9 h-9 text-white" />
+          </div>
+          <h1 style={{ fontSize: 28 }}>Campanie trimisă! 🎉</h1>
+          <p className="bu-muted" style={{ margin: '12px 0 4px' }}>Echipa AddFame va analiza brief-ul și va selecta influencerii potriviți.</p>
+          <p className="bu-muted bu-sm" style={{ margin: 0 }}>Vei fi notificat în 24-48h cu lista de influenceri propuși.</p>
+          <div className="bu-row" style={{ justifyContent: 'center', gap: 8, marginTop: 22, color: '#5a35e6' }}>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="bu-sm" style={{ fontWeight: 700 }}>Redirecționare...</span>
+          </div>
         </div>
       </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 md:p-8" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-      <div className="max-w-2xl mx-auto">
+    <div className="bu">
+      <style>{styles}</style>
 
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Link href="/brand/campaigns/new" className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition">
-            <ArrowLeft className="w-4 h-4 text-gray-600" />
-          </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)' }}>
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <h1 className="font-black text-gray-900 text-lg">Campanie Managed</h1>
-            </div>
-            <p className="text-sm text-gray-400">Noi ne ocupăm de tot — tu doar urmărești rezultatele</p>
-          </div>
+      {/* Header */}
+      <div className="bu-head" style={{ alignItems: 'center', justifyContent: 'flex-start', flexWrap: 'nowrap' }}>
+        <Link href="/brand/campaigns/new" className="mg-back" aria-label="Înapoi">
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
+        <div style={{ minWidth: 0 }}>
+          <div className="bu-label">Campanie nouă · Managed by AddFame</div>
+          <h1 style={{ fontSize: 28 }}>Campanie Managed</h1>
+          <p className="bu-muted bu-sm" style={{ margin: '4px 0 0' }}>Noi ne ocupăm de tot — tu doar urmărești rezultatele</p>
         </div>
+      </div>
 
-        {/* Progress steps */}
-        <div className="flex items-center gap-2 mb-8">
+      {/* Progress */}
+      <div className="bu-card" style={{ padding: '14px 18px' }}>
+        <div className="mg-steps">
           {STEPS.map((s, i) => (
-            <div key={s.n} className="flex items-center gap-2 flex-1">
-              <div className={`flex items-center gap-2 ${i < STEPS.length - 1 ? 'flex-1' : ''}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all flex-shrink-0 ${step > s.n ? 'bg-green-500 text-white' :
-                    step === s.n ? 'text-white' : 'bg-gray-200 text-gray-400'
-                  }`} style={step === s.n ? { background: 'linear-gradient(135deg,#7040f0, #9030f0)' } : {}}>
-                  {step > s.n ? <Check className="w-4 h-4" /> : s.n}
-                </div>
-                <span className={`text-xs font-black hidden sm:block ${step === s.n ? 'text-purple-600' : step > s.n ? 'text-green-600' : 'text-gray-400'}`}>{s.label}</span>
+            <div key={s.n} style={{ display: 'contents' }}>
+              <div className={`mg-step ${step === s.n ? 'on' : step > s.n ? 'done' : ''}`}>
+                <div className="mg-dot">{step > s.n ? <Check className="w-4 h-4" /> : s.n}</div>
+                <span className="t">{s.label}</span>
               </div>
-              {i < STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-2 rounded-full transition-all ${step > s.n ? 'bg-green-300' : 'bg-gray-200'}`} />
-              )}
+              {i < STEPS.length - 1 && <div className={`mg-line ${step > s.n ? 'done' : ''}`} />}
             </div>
           ))}
         </div>
+        <div className="bu-bar" style={{ marginTop: 12 }}><i style={{ width: `${(step / 4) * 100}%` }} /></div>
+        <div className="bu-muted bu-xs" style={{ marginTop: 6 }}>Pasul {step} din 4 · {STEPS[step - 1].label}</div>
+      </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 md:p-8 shadow-sm">
-
-          {/* ── STEP 1: Obiectiv ── */}
-          {step === 1 && (
-            <div>
-              <h2 className="text-xl font-black mb-1">Care este obiectivul campaniei?</h2>
-              <p className="text-sm text-gray-400 mb-6">Selectează ce vrei să obții</p>
-
-              <div className="space-y-3 mb-6">
-                {OBJECTIVES.map(obj => (
-                  <button key={obj.value} type="button"
-                    onClick={() => set({ objective: obj.value })}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition ${form.objective === obj.value ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'
-                      }`}>
-                    <span className="text-2xl flex-shrink-0">{obj.emoji}</span>
-                    <div className="flex-1">
-                      <p className="font-black text-sm text-gray-900">{obj.label}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{obj.desc}</p>
-                    </div>
-                    {form.objective === obj.value && (
-                      <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-
+      <div className="mg-wrap">
+        <div className="mg-main">
+          <div className="bu-card mg-sec">
+            <div className="mg-sech">
+              <div className="mg-num">{step}</div>
               <div>
-                <p className="text-sm font-black text-gray-700 mb-3">Pe ce platforme? <span className="text-gray-400 font-normal">(selectează toate)</span></p>
-                <div className="grid grid-cols-2 gap-3">
-                  {PLATFORMS.map(p => (
-                    <button key={p.value} type="button"
-                      onClick={() => togglePlatform(p.value)}
-                      className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition ${form.platforms.includes(p.value) ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'
-                        }`}>
-                      <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${p.color} flex items-center justify-center flex-shrink-0`}>
-                        <p.Icon />
+                <h2>{STEP_TITLES[step]}</h2>
+                <p className="bu-muted bu-sm" style={{ margin: '2px 0 0' }}>{STEP_HELP[step]}</p>
+              </div>
+            </div>
+
+            {/* ── STEP 1: Obiectiv ── */}
+            {step === 1 && (
+              <div className="mg-stack">
+                <div className="mg-tiles">
+                  {OBJECTIVES.map(obj => (
+                    <button key={obj.value} type="button"
+                      onClick={() => set({ objective: obj.value })}
+                      className={`mg-tile ${form.objective === obj.value ? 'on' : ''}`}>
+                      <span className="em">{obj.emoji}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <div className="tt">{obj.label}</div>
+                        <div className="ds">{obj.desc}</div>
                       </div>
-                      <span className="font-bold text-sm text-gray-800">{p.label}</span>
-                      {form.platforms.includes(p.value) && <Check className="w-4 h-4 text-purple-500 ml-auto" />}
+                      {form.objective === obj.value && <span className="mg-tick"><Check className="w-3 h-3" /></span>}
                     </button>
                   ))}
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* ── STEP 2: Produs ── */}
-          {step === 2 && (
-            <div>
-              <h2 className="text-xl font-black mb-1">Despre produsul tău</h2>
-              <p className="text-sm text-gray-400 mb-6">Ajută-ne să găsim influencerii cei mai potriviți</p>
-
-              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">Numele produsului / brandului *</label>
+                  <label className="mg-fl">Pe ce platforme? <small>(selectează toate)</small></label>
+                  <div className="mg-g2">
+                    {PLATFORMS.map(p => (
+                      <button key={p.value} type="button"
+                        onClick={() => togglePlatform(p.value)}
+                        className={`mg-tile ${form.platforms.includes(p.value) ? 'on' : ''}`}>
+                        <div className="mg-pico"><p.Icon /></div>
+                        <span className="tt">{p.label}</span>
+                        {form.platforms.includes(p.value) && <span className="mg-tick"><Check className="w-3 h-3" /></span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── STEP 2: Produs ── */}
+            {step === 2 && (
+              <div className="mg-stack">
+                <div>
+                  <label className="mg-fl">Numele produsului / brandului *</label>
                   <input
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition"
+                    className="mg-field"
                     placeholder="ex. Cafenea TopFace, Supliment X, Rochie Y..."
                     value={form.product_name}
                     onChange={e => set({ product_name: e.target.value })}
@@ -287,22 +349,22 @@ export default function NewManagedCampaign() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">Descriere scurtă *</label>
+                  <label className="mg-fl">Descriere scurtă *</label>
                   <textarea
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition resize-none"
+                    className="mg-field"
                     rows={4}
                     placeholder="Descrie produsul/serviciul tău, ce îl face special, cui se adresează..."
                     value={form.product_description}
                     onChange={e => set({ product_description: e.target.value })}
                     maxLength={500}
                   />
-                  <p className="text-xs text-gray-400 text-right mt-1">{form.product_description.length}/500</p>
+                  <p className="bu-muted bu-xs" style={{ textAlign: 'right', margin: '4px 0 0' }}>{form.product_description.length}/500</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">Website / link produs <span className="text-gray-400 font-normal">(opțional)</span></label>
+                  <label className="mg-fl">Website / link produs <small>(opțional)</small></label>
                   <input
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition"
+                    className="mg-field"
                     placeholder="https://..."
                     value={form.product_url}
                     onChange={e => set({ product_url: e.target.value })}
@@ -311,28 +373,22 @@ export default function NewManagedCampaign() {
 
                 {/* Imagine produs */}
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">
-                    Poza produsului / brandului <span className="text-gray-400 font-normal">(opțional)</span>
-                  </label>
+                  <label className="mg-fl">Poza produsului / brandului <small>(opțional)</small></label>
                   {form.product_image_url ? (
-                    <div className="relative rounded-2xl overflow-hidden border-2 border-purple-200">
-                      <img src={form.product_image_url} alt="Produs" className="w-full h-48 object-cover" />
-                      <button type="button"
-                        onClick={() => set({ product_image_url: '' })}
-                        className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-xl flex items-center justify-center shadow hover:bg-red-50 transition">
-                        <span className="text-gray-600 text-sm font-black">✕</span>
-                      </button>
+                    <div className="mg-img">
+                      <img src={form.product_image_url} alt="Produs" />
+                      <button type="button" aria-label="Șterge poza" onClick={() => set({ product_image_url: '' })}>✕</button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-purple-300 hover:bg-purple-50/30 transition">
-                      <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center">
-                        <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <label className="mg-drop">
+                      <div className="bu-ico" style={{ background: '#efeaff', color: '#5a35e6' }}>
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </div>
-                      <div className="text-center">
-                        <p className="text-sm font-black text-gray-700">Încarcă o poză</p>
-                        <p className="text-xs text-gray-400 mt-0.5">PNG, JPG până la 5MB</p>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>Încarcă o poză</div>
+                        <div className="bu-muted bu-xs" style={{ marginTop: 2 }}>PNG, JPG până la 5MB</div>
                       </div>
                       <input type="file" accept="image/*" className="hidden"
                         onChange={async (e) => {
@@ -357,47 +413,40 @@ export default function NewManagedCampaign() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-3">Nișe influenceri dorite <span className="text-gray-400 font-normal">(opțional)</span></label>
-                  <div className="flex flex-wrap gap-2">
+                  <label className="mg-fl">Nișe influenceri dorite <small>(opțional)</small></label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {NICHES.map(n => (
                       <button key={n} type="button"
                         onClick={() => toggleNiche(n)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition ${form.target_niches.includes(n)
-                            ? 'border-purple-400 bg-purple-50 text-purple-700'
-                            : 'border-gray-200 text-gray-500 hover:border-purple-200'
-                          }`}>
+                        className={`bu-pill ${form.target_niches.includes(n) ? 'on' : ''}`}
+                        style={{ minHeight: 44 }}>
                         {n}
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ── STEP 3: Buget ── */}
-          {step === 3 && (
-            <div>
-              <h2 className="text-xl font-black mb-1">Buget și timeline</h2>
-              <p className="text-sm text-gray-400 mb-6">Noi distribuim bugetul optim între influenceri</p>
-
-              <div className="space-y-5">
+            {/* ── STEP 3: Buget ── */}
+            {step === 3 && (
+              <div className="mg-stack">
                 {/* Mod de plată: fix vs de discutat */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="mg-g2">
                   <button type="button" onClick={() => set({ negotiable: false })}
-                    className={`p-3 rounded-2xl border-2 text-center transition ${!form.negotiable ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'}`}>
-                    <p className="font-black text-sm text-gray-900">💵 Preț fix</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Setezi suma per influencer</p>
+                    className={`mg-tile c ${!form.negotiable ? 'on' : ''}`}>
+                    <span className="tt">💵 Preț fix</span>
+                    <span className="ds">Setezi suma per influencer</span>
                   </button>
                   <button type="button" onClick={() => set({ negotiable: true })}
-                    className={`p-3 rounded-2xl border-2 text-center transition ${form.negotiable ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'}`}>
-                    <p className="font-black text-sm text-gray-900">💬 De discutat</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Prețul se stabilește cu influencerul</p>
+                    className={`mg-tile c ${form.negotiable ? 'on' : ''}`}>
+                    <span className="tt">💬 De discutat</span>
+                    <span className="ds">Prețul se stabilește cu influencerul</span>
                   </button>
                 </div>
 
                 {form.negotiable && (
-                  <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-sm text-purple-700 leading-relaxed">
+                  <div className="mg-note">
                     Nu setezi un buget acum. Prețul se discută individual cu fiecare influencer, iar echipa AddFame stabilește sumele la momentul alocării.
                   </div>
                 )}
@@ -405,64 +454,43 @@ export default function NewManagedCampaign() {
                 {!form.negotiable && (<>
                 {/* Budget options */}
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-3">Suma per influencer <span className="text-purple-500">(cât primește fiecare)</span></label>
-                  <div className="grid grid-cols-3 gap-2 mb-3">
+                  <label className="mg-fl">Suma per influencer <small>(cât primește fiecare)</small></label>
+                  <div className="mg-g3" style={{ marginBottom: 12 }}>
                     {BUDGET_OPTIONS.filter(b => b.value > 0).map(b => (
                       <button key={b.value} type="button"
                         onClick={() => set({ budget: b.value, custom_budget: '' })}
-                        className={`relative p-3 rounded-2xl border-2 text-center transition ${form.budget === b.value ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'
-                          }`}>
-                        {b.popular && (
-                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-black bg-violet-600 text-white px-2 py-0.5 rounded-full">POPULAR</span>
-                        )}
-                        <p className="font-black text-sm text-gray-900">{b.label}</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{b.desc}</p>
+                        className={`mg-tile c ${form.budget === b.value ? 'on' : ''}`}>
+                        {b.popular && <span className="mg-pop">POPULAR</span>}
+                        <span className="tt">{b.label}</span>
+                        <span className="ds">{b.desc}</span>
                       </button>
                     ))}
                     <button type="button"
                       onClick={() => set({ budget: 0 })}
-                      className={`p-3 rounded-2xl border-2 text-center transition ${form.budget === 0 ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-purple-200'
-                        }`}>
-                      <p className="font-black text-sm text-gray-900">Altul</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">Suma dorită</p>
+                      className={`mg-tile c ${form.budget === 0 ? 'on' : ''}`}>
+                      <span className="tt">Altul</span>
+                      <span className="ds">Suma dorită</span>
                     </button>
                   </div>
                   {form.budget === 0 && (
-                    <div className="relative">
-
-                      <input
-                        type="number" min={100}
-                        className="w-full px-4 py-3 border-2 border-purple-300 rounded-2xl text-sm font-bold outline-none focus:border-purple-400 transition"
-                        placeholder="Introduceți suma (minim 100 RON)"
-                        value={form.custom_budget}
-                        onChange={e => set({ custom_budget: e.target.value })}
-                      />
-                    </div>
+                    <input
+                      type="number" min={100}
+                      className="mg-field"
+                      placeholder="Introduceți suma (minim 100 RON)"
+                      value={form.custom_budget}
+                      onChange={e => set({ custom_budget: e.target.value })}
+                    />
                   )}
                 </div>
 
                 {/* Breakdown */}
                 {finalBudget > 0 && (
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-100 rounded-2xl p-4">
-                    <p className="text-xs font-black text-purple-700 uppercase tracking-wider mb-3">💡 Cum se distribuie bugetul</p>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between bg-white rounded-xl px-3 py-2">
-                        <span className="text-xs font-black text-gray-700">Fiecare influencer primește</span>
-                        <span className="text-xs font-black text-green-600">{perInfluencer.toLocaleString('ro-RO')} RON</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Nr. influenceri</span>
-                        <span className="font-black text-gray-900">× {form.influencer_count}</span>
-                      </div>
-                      <div className="flex justify-between border-t border-purple-200 pt-2">
-                        <span className="text-gray-600">Total plătit influenceri</span>
-                        <span className="font-black text-gray-900">{influencerPool.toLocaleString('ro-RO')} RON</span>
-                      </div>
-                      <div className="flex justify-between border-t border-purple-200 pt-2">
-                        <span className="font-black text-gray-700">Total de plătit</span>
-                        <span className="font-black text-purple-600">{totalBudget.toLocaleString('ro-RO')} RON</span>
-                      </div>
-                    </div>
+                  <div className="mg-calc">
+                    <div className="bu-label">Cum se distribuie bugetul</div>
+                    <div className="mg-r"><span>Fiecare influencer primește</span><b style={{ color: '#14532d' }}>{perInfluencer.toLocaleString('ro-RO')} RON</b></div>
+                    <div className="mg-r"><span className="bu-muted">Nr. influenceri</span><b>× {form.influencer_count}</b></div>
+                    <div className="mg-r bu-div" style={{ paddingTop: 8 }}><span className="bu-muted">Total plătit influenceri</span><b>{influencerPool.toLocaleString('ro-RO')} RON</b></div>
+                    <div className="mg-r bu-div" style={{ paddingTop: 8 }}><b>Total de plătit</b><b style={{ color: '#5a35e6', fontSize: 15 }}>{totalBudget.toLocaleString('ro-RO')} RON</b></div>
                   </div>
                 )}
                 </>)}
@@ -477,37 +505,27 @@ export default function NewManagedCampaign() {
 
                 {/* Timeline */}
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-3">
-                    Deadline campanie: <span className="text-purple-600">{form.deadline_days} zile</span>
-                  </label>
-                  <div className="flex gap-2">
+                  <label className="mg-fl">Deadline campanie: <span style={{ color: '#5a35e6' }}>{form.deadline_days} zile</span></label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
                     {[7, 14, 21, 30].map(d => (
                       <button key={d} type="button"
                         onClick={() => set({ deadline_days: d })}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-black border-2 transition ${form.deadline_days === d ? 'border-purple-400 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-purple-200'
-                          }`}>
-                        {d}z
+                        className={`mg-tile c ${form.deadline_days === d ? 'on' : ''}`}>
+                        <span className="tt">{d}z</span>
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ── STEP 4: Brief ── */}
-          {step === 4 && (
-            <div>
-              <h2 className="text-xl font-black mb-1">Brief pentru influenceri</h2>
-              <p className="text-sm text-gray-400 mb-6">Ce vrei să transmită conținutul creat</p>
-
-              <div className="space-y-4">
+            {/* ── STEP 4: Brief ── */}
+            {step === 4 && (
+              <div className="mg-stack">
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">
-                    Mesaje cheie <span className="text-gray-400 font-normal">(ce trebuie menționat obligatoriu)</span>
-                  </label>
+                  <label className="mg-fl">Mesaje cheie <small>(ce trebuie menționat obligatoriu)</small></label>
                   <textarea
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition resize-none"
+                    className="mg-field"
                     rows={3}
                     placeholder="ex. Menționa că suntem deschiși L-V 9-21, prețurile pornesc de la 50 RON, oferim livrare gratuită..."
                     value={form.key_messages}
@@ -516,11 +534,9 @@ export default function NewManagedCampaign() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">
-                    Instrucțiuni conținut <span className="text-gray-400 font-normal">(opțional)</span>
-                  </label>
+                  <label className="mg-fl">Instrucțiuni conținut <small>(opțional)</small></label>
                   <textarea
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition resize-none"
+                    className="mg-field"
                     rows={3}
                     placeholder="ex. Vrem videoclipuri naturale, nu scriptate. Produsul să fie vizibil. Ton vesel și energic..."
                     value={form.content_instructions}
@@ -529,67 +545,69 @@ export default function NewManagedCampaign() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2">
-                    Ce să evite <span className="text-gray-400 font-normal">(opțional)</span>
-                  </label>
+                  <label className="mg-fl">Ce să evite <small>(opțional)</small></label>
                   <textarea
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl text-sm font-medium outline-none focus:border-purple-400 transition resize-none"
+                    className="mg-field"
                     rows={2}
                     placeholder="ex. Nu menționați concurenții, evitați limbajul vulgar..."
                     value={form.forbidden_content}
                     onChange={e => set({ forbidden_content: e.target.value })}
                   />
                 </div>
-
-                {/* Summary */}
-                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-2 text-sm">
-                  <p className="font-black text-gray-700 mb-3">📋 Sumar campanie</p>
-                  <div className="flex justify-between"><span className="text-gray-500">Obiectiv</span><span className="font-bold capitalize">{OBJECTIVES.find(o => o.value === form.objective)?.label}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Platforme</span><span className="font-bold">{form.platforms.join(', ')}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Produs</span><span className="font-bold truncate max-w-[200px]">{form.product_name}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Per influencer</span><span className="font-bold text-green-600">{perInfluencer.toLocaleString('ro-RO')} RON</span></div><div className="flex justify-between"><span className="text-gray-500">Total campanie</span><span className="font-bold text-purple-600">{totalBudget.toLocaleString('ro-RO')} RON</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Influenceri</span><span className="font-bold">{form.influencer_count}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Deadline</span><span className="font-bold">{form.deadline_days} zile</span></div>
-                </div>
-
-
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Error */}
-          {error && (
-            <div className="mt-4 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-600">
-              <span>⚠️</span> {error}
-            </div>
-          )}
+            {/* Error */}
+            {error && (
+              <div className="mg-err" style={{ marginTop: 18 }}>
+                <span>⚠️</span> <span>{error}</span>
+              </div>
+            )}
+          </div>
 
-          {/* Navigation */}
-          <div className="flex gap-3 mt-6">
+          {/* Navigation (sticky) */}
+          <div className="mg-bar">
             {step > 1 && (
-              <button type="button"
-                onClick={() => setStep(s => (s - 1) as Step)}
-                className="flex-1 py-3 rounded-2xl font-bold text-sm border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+              <button type="button" className="bu-btn big"
+                onClick={() => setStep(s => (s - 1) as Step)}>
                 Înapoi
               </button>
             )}
             {step < 4 ? (
-              <button type="button"
+              <button type="button" className="bu-btn p big"
                 onClick={() => setStep(s => (s + 1) as Step)}
-                disabled={!canNext()}
-                className="flex-1 py-3 rounded-2xl font-black text-sm text-white transition flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 16px rgba(139,92,246,0.3)' }}>
+                disabled={!canNext()}>
                 Continuă <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
-              <button type="button"
+              <button type="button" className="bu-btn p big"
                 onClick={handleSubmit}
-                disabled={loading}
-                className="flex-1 py-3 rounded-2xl font-black text-sm text-white transition flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 16px rgba(139,92,246,0.3)' }}>
+                disabled={loading}>
                 {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Se trimite...</> : <><Sparkles className="w-4 h-4" /> Trimite campania</>}
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Rezumat */}
+        <div className="mg-side">
+          <div className="bu-card mg-sumc">
+            <div className="bu-label" style={{ marginBottom: 12 }}>Rezumat</div>
+            <div className="bu-col" style={{ gap: 10, fontSize: 13 }}>
+              <div className="mg-r"><span className="bu-muted">Tip</span><span className="bu-chip" style={{ background: '#efeaff', color: '#4423c4' }}>Managed by AddFame</span></div>
+              <div className="mg-r"><span className="bu-muted">Obiectiv</span><b>{objLabel || '—'}</b></div>
+              <div className="mg-r"><span className="bu-muted">Platforme</span><b>{platLabels || '—'}</b></div>
+              <div className="mg-r"><span className="bu-muted">Produs</span><b>{form.product_name || '—'}</b></div>
+              <div className="mg-r"><span className="bu-muted">Influenceri</span><b>{form.influencer_count}</b></div>
+              <div className="mg-r"><span className="bu-muted">Deadline</span><b>{form.deadline_days} zile</b></div>
+              <div className="bu-div" />
+              {form.negotiable ? (
+                <div className="mg-r"><span className="bu-muted">Buget</span><span className="bu-chip" style={{ background: '#e6f0ff', color: '#1d4fb8' }}>De discutat</span></div>
+              ) : (<>
+                <div className="mg-r"><span className="bu-muted">Per influencer</span><b style={{ color: '#14532d' }}>{perInfluencer.toLocaleString('ro-RO')} RON</b></div>
+                <div className="mg-r"><span className="bu-muted">Total campanie</span><b style={{ color: '#5a35e6', fontSize: 15 }}>{totalBudget.toLocaleString('ro-RO')} RON</b></div>
+              </>)}
+            </div>
           </div>
         </div>
       </div>

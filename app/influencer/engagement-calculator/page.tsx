@@ -87,208 +87,162 @@ export default function EngagementCalculatorPage() {
   }
 
   function getRating(er) {
-    if (er >= plat.benchmarks.excellent) return { label: 'Excelent 🔥', color: '#15803d', bg: '#f0fdf4', bar: '#22c55e', pct: 100 }
-    if (er >= plat.benchmarks.good) return { label: 'Bun 👍', color: '#b45309', bg: '#fffbeb', bar: '#f59e0b', pct: 66 }
-    if (er >= plat.benchmarks.avg) return { label: 'Mediu 😐', color: '#c2410c', bg: '#f5f3ff', bar: '#5a35e6', pct: 40 }
-    return { label: 'Scăzut ⚠️', color: '#b91c1c', bg: '#fef2f2', bar: '#ef4444', pct: 15 }
+    if (er >= plat.benchmarks.excellent) return { label: 'Excelent', color: '#14532d', bg: '#e9f8f1', bar: '#22a06b', pct: 100 }
+    if (er >= plat.benchmarks.good) return { label: 'Bun', color: '#854d0e', bg: '#fff7da', bar: '#d4a017', pct: 66 }
+    if (er >= plat.benchmarks.avg) return { label: 'Mediu', color: '#5b2fd0', bg: '#f4f0ff', bar: '#7040f0', pct: 40 }
+    return { label: 'Scăzut', color: '#b42318', bg: '#fdeeec', bar: '#e5483b', pct: 15 }
   }
 
   const rating = result !== null ? getRating(result) : null
   const canCalc = followers && plat.fields.some(k => fields[k])
 
   return (
-    <div className="p-5 lg:p-8 max-w-2xl mx-auto" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+    <div className="iu" style={{ maxWidth: 760 }}>
       <style>{`
-        
-        .er-input {
-          width: 100%; padding: 11px 14px; font-size: 14px; font-family: inherit; font-weight: 600;
-          border: 2px solid #e5e7eb; border-radius: 12px; background: white; color: #111;
-          outline: none; transition: border-color .18s, box-shadow .18s;
-        }
-        .er-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
-        .er-input::placeholder { color: #9ca3af; font-weight: 400; }
-        .plat-btn { border-radius: 16px; padding: 14px 10px; cursor: pointer; transition: all .18s; border: 2px solid transparent; text-align: center; }
-        .plat-btn:hover { transform: translateY(-2px); }
-        .calc-btn { width: 100%; padding: 14px; border-radius: 14px; font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer; border: none; color: white; transition: all .18s; }
-        .calc-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(139,92,246,0.35); }
-        .calc-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-        @keyframes popIn { from{opacity:0;transform:scale(.92)translateY(8px)} to{opacity:1;transform:scale(1)translateY(0)} }
-        .pop-in { animation: popIn .3s cubic-bezier(.34,1.56,.64,1) both; }
-        @keyframes barGrow { from{width:0} to{width:var(--target-w)} }
+        .ic-plats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+        .ic-plat { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 6px; min-height: 44px; border-radius: 14px; border: 1.5px solid #e5e3f3; background: #fff; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; color: #6a6690; transition: border-color .15s, background .15s; }
+        .ic-plat:hover { border-color: #cdb8ff; }
+        .ic-plat.on { border-color: #7040f0; background: #f7f4ff; color: #14123a; }
+        .ic-plat .ic-pi { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #f0eff7; color: #8783a8; }
+        .ic-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+        .ic-f { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .ic-f .iu-input { width: 100%; height: 46px; font-weight: 600; }
+        .ic-f .iu-input::placeholder { color: #a9a6c4; font-weight: 400; }
+        .ic-num { font-family: var(--font-display, system-ui), system-ui, sans-serif; font-weight: 800; font-size: 72px; line-height: 1; letter-spacing: -0.04em; }
         .bar-anim { animation: barGrow .6s cubic-bezier(.34,1.56,.64,1) .1s both; }
+        @keyframes barGrow { from{width:0} to{width:var(--target-w)} }
+        .ic-res { animation: icPop .3s cubic-bezier(.34,1.56,.64,1) both; }
+        @keyframes icPop { from { opacity: 0; transform: scale(.96) translateY(8px); } to { opacity: 1; transform: none; } }
+        .ic-bm { border-radius: 14px; padding: 12px 8px; text-align: center; border: 1.5px solid #e5e3f3; background: #fff; }
+        .ic-tier { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; border-radius: 12px; }
+        @media (max-width: 560px) {
+          .ic-plats { grid-template-columns: repeat(2, minmax(0,1fr)); }
+          .ic-num { font-size: 56px; }
+          .ic-actions { flex-direction: column-reverse; }
+          .ic-actions .iu-btn { width: 100%; height: 48px; }
+        }
       `}</style>
 
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#7040f0, #9030f0)', boxShadow: '0 4px 14px rgba(139,92,246,0.35)' }}>
-          <BarChart2 className="w-6 h-6 text-white" />
-        </div>
+      <div className="iu-head">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Calculator Engagement Rate</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Calculează ER-ul exact ca platformele profesionale</p>
+          <div className="iu-label" style={{ marginBottom: 6 }}>Instrumente</div>
+          <h1>Calculator Engagement Rate</h1>
+          <p className="iu-muted iu-sm" style={{ margin: '6px 0 0' }}>Calculează ER-ul exact ca platformele profesionale</p>
         </div>
       </div>
 
-      {/* Platform selector */}
-      <div className="mb-6">
-        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Alege platforma</p>
-        <div className="grid grid-cols-4 gap-3">
-          {PLATFORMS.map(p => {
-            const Icon = p.icon
-            const active = platform === p.id
-            return (
-              <button key={p.id}
-                className="plat-btn"
-                onClick={() => { setPlatform(p.id); setResult(null) }}
-                style={{
-                  background: active ? p.light : 'white',
-                  border: active ? `2px solid transparent` : '2px solid #f0f0f0',
-                  backgroundImage: active ? `${p.light}` : undefined,
-                  boxShadow: active ? `0 4px 16px rgba(0,0,0,0.1)` : 'none',
-                }}
-              >
-                <div className="w-9 h-9 rounded-xl mx-auto mb-2 flex items-center justify-center"
-                  style={{ background: active ? p.grad : '#f3f4f6' }}>
-                  <Icon className="w-5 h-5" style={{ color: active ? 'white' : '#9ca3af' }} />
-                </div>
-                <p className="text-xs font-black" style={{ color: active ? p.textColor : '#9ca3af' }}>
+      {/* Calculator */}
+      <div className="iu-card iu-card-pad iu-col" style={{ gap: 20 }}>
+        <div>
+          <div className="iu-label" style={{ marginBottom: 10 }}>Alege platforma</div>
+          <div className="ic-plats">
+            {PLATFORMS.map(p => {
+              const Icon = p.icon
+              const active = platform === p.id
+              return (
+                <button key={p.id} className={`ic-plat${active ? ' on' : ''}`}
+                  onClick={() => { setPlatform(p.id); setResult(null) }}>
+                  <span className="ic-pi" style={active ? { background: p.grad, color: '#fff' } : undefined}>
+                    <Icon className="w-5 h-5" />
+                  </span>
                   {p.label}
-                </p>
-              </button>
-            )
-          })}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Main form card */}
-      <div className="rounded-2xl p-6 mb-5" style={{ background: 'white', border: '1.5px solid #f0f0f0' }}>
-
-        {/* Followers + Posts */}
-        <div className="grid grid-cols-2 gap-4 mb-5">
-          <div>
-            <label className="block text-xs font-black text-gray-500 uppercase tracking-wide mb-2">
-              Followeri *
-            </label>
-            <input className="er-input" placeholder="Ex: 50K sau 500000"
+        <div className="ic-grid2">
+          <div className="ic-f">
+            <label className="iu-label">Followeri *</label>
+            <input className="iu-input" placeholder="Ex: 50K sau 500000"
               value={followers} onChange={e => { setFollowers(e.target.value); setResult(null) }} />
           </div>
-          <div>
-            <label className="block text-xs font-black text-gray-500 uppercase tracking-wide mb-2">
-              Posturi analizate
-            </label>
-            <input className="er-input" placeholder="10"
+          <div className="ic-f">
+            <label className="iu-label">Posturi analizate</label>
+            <input className="iu-input" placeholder="10"
               value={posts} onChange={e => { setPosts(e.target.value); setResult(null) }} />
           </div>
         </div>
 
-        {/* Engagement fields */}
         <div>
-          <label className="block text-xs font-black text-gray-500 uppercase tracking-wide mb-3">
-            Total interacțiuni (suma ultimelor {posts || 10} posturi)
-          </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="iu-label" style={{ marginBottom: 10 }}>Total interacțiuni (suma ultimelor {posts || 10} posturi)</div>
+          <div className="ic-grid2">
             {plat.fields.map(k => (
-              <div key={k}>
-                <label className="block text-xs font-semibold text-gray-400 mb-1.5">
-                  {FIELD_LABELS[k]}
-                </label>
-                <input className="er-input" placeholder="Ex: 15K"
+              <div key={k} className="ic-f">
+                <label className="iu-sm iu-muted" style={{ fontWeight: 600 }}>{FIELD_LABELS[k]}</label>
+                <input className="iu-input" placeholder="Ex: 15K"
                   value={fields[k]}
                   onChange={e => { setField(k, e.target.value); setResult(null) }} />
               </div>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Formula hint */}
-      <div className="flex items-center gap-2 mb-5 px-1">
-        <Info className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-        <p className="text-xs text-gray-400">
-          Formula: (likes + comentarii + share-uri + saves) ÷ {posts || 10} posturi ÷ followeri × 100
-        </p>
-      </div>
+        <div className="iu-row iu-xs iu-muted" style={{ gap: 8, alignItems: 'flex-start' }}>
+          <Info className="w-3.5 h-3.5" style={{ flex: 'none', marginTop: 2 }} />
+          <span>Formula: (likes + comentarii + share-uri + saves) ÷ {posts || 10} posturi ÷ followeri × 100</span>
+        </div>
 
-      {/* Buttons */}
-      <div className="flex gap-3 mb-6">
-        <button onClick={reset}
-          className="flex items-center gap-2 px-5 py-3.5 rounded-xl font-bold text-sm text-gray-500 bg-white border-2 border-gray-200 hover:border-gray-300 transition flex-shrink-0">
-          <RefreshCw className="w-4 h-4" /> Reset
-        </button>
-        <button className="calc-btn" disabled={!canCalc} onClick={calculate}
-          style={{ background: canCalc ? 'linear-gradient(135deg,#7040f0, #9030f0)' : '#e5e7eb' }}>
-          <span className="flex items-center justify-center gap-2">
+        <div className="iu-row ic-actions" style={{ gap: 12 }}>
+          <button onClick={reset} className="iu-btn big"><RefreshCw className="w-4 h-4" /> Resetează</button>
+          <button className="iu-btn p big" style={{ flex: 1 }} disabled={!canCalc} onClick={calculate}>
             <Sparkles className="w-4 h-4" /> Calculează Engagement Rate
-          </span>
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* Result */}
       {result !== null && rating && (
-        <div className="pop-in rounded-2xl p-6 mb-6" style={{ background: rating.bg, border: `2px solid ${rating.bar}30` }}>
-          <div className="flex items-center justify-between mb-4">
+        <div className="ic-res iu-card iu-card-pad iu-col" style={{ gap: 18, background: rating.bg, borderColor: `${rating.bar}40` }}>
+          <div className="iu-row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: rating.color, opacity: .7 }}>
-                Engagement Rate
-              </p>
-              <p className="text-6xl font-black leading-none" style={{ color: rating.color }}>
-                {result}%
-              </p>
+              <div className="iu-label" style={{ color: rating.color, opacity: .75, marginBottom: 6 }}>Engagement Rate</div>
+              <div className="ic-num" style={{ color: rating.color }}>{result}%</div>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-black" style={{ color: rating.color }}>{rating.label}</p>
-              <p className="text-sm mt-1" style={{ color: rating.color, opacity: .7 }}>pe {plat.label}</p>
+            <div style={{ textAlign: 'right' }}>
+              <span className="iu-chip" style={{ background: '#fff', color: rating.color, height: 30, padding: '0 14px', fontSize: 14 }}>{rating.label}</span>
+              <p className="iu-sm" style={{ margin: '6px 0 0', color: rating.color, opacity: .75 }}>pe {plat.label}</p>
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="h-2.5 rounded-full mb-4" style={{ background: `${rating.bar}20` }}>
-            <div className="h-full rounded-full bar-anim"
-              style={{ '--target-w': `${Math.min(rating.pct, 100)}%`, background: rating.bar, width: `${Math.min(rating.pct, 100)}%` } as React.CSSProperties} />
+          <div className="iu-bar" style={{ height: 10, background: `${rating.bar}25` }}>
+            <i className="bar-anim" style={{ '--target-w': `${Math.min(rating.pct, 100)}%`, background: rating.bar, width: `${Math.min(rating.pct, 100)}%` } as React.CSSProperties} />
           </div>
 
-          {/* Benchmark pills */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="ic-grid2" style={{ gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10 }}>
             {[
               { label: 'Mediu industrie', value: plat.benchmarks.avg, ok: result >= plat.benchmarks.avg },
               { label: 'Bun', value: plat.benchmarks.good, ok: result >= plat.benchmarks.good },
               { label: 'Excelent', value: plat.benchmarks.excellent, ok: result >= plat.benchmarks.excellent },
             ].map(b => (
-              <div key={b.label} className="rounded-xl p-3 text-center"
-                style={{ background: b.ok ? `${rating.bar}15` : 'white', border: `1.5px solid ${b.ok ? rating.bar : '#f0f0f0'}` }}>
-                <p className="text-lg font-black" style={{ color: b.ok ? rating.color : '#9ca3af' }}>
-                  {b.value}%
-                </p>
-                <p className="text-[11px] font-semibold mt-0.5" style={{ color: b.ok ? rating.color : '#9ca3af', opacity: b.ok ? .8 : 1 }}>
-                  {b.label}
-                </p>
+              <div key={b.label} className="ic-bm" style={b.ok ? { borderColor: rating.bar } : undefined}>
+                <div className="iu-d" style={{ fontSize: 20, fontWeight: 800, color: b.ok ? rating.color : '#8783a8' }}>{b.value}%</div>
+                <div className="iu-xs" style={{ fontWeight: 600, color: b.ok ? rating.color : '#8783a8' }}>{b.label}</div>
               </div>
             ))}
           </div>
 
-          <p className="text-xs text-center mt-4 font-semibold" style={{ color: rating.color, opacity: .7 }}>
-            Mergi la Profile → editează platforma pentru a salva acest ER pe profilul tău public
+          <p className="iu-xs" style={{ margin: 0, textAlign: 'center', fontWeight: 600, color: rating.color, opacity: .8 }}>
+            Mergi la Profil → editează platforma pentru a salva acest ER pe profilul tău public
           </p>
         </div>
       )}
 
-      {/* Benchmarks table */}
-      <div className="rounded-2xl p-5" style={{ background: 'white', border: '1.5px solid #f0f0f0' }}>
-        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">
-          Benchmark-uri {plat.label} 2025
-        </p>
-        <div className="space-y-2.5">
+      {/* Benchmarks */}
+      <div className="iu-card iu-card-pad">
+        <div className="iu-label" style={{ marginBottom: 14 }}>Benchmark-uri {plat.label} 2025</div>
+        <div className="iu-col" style={{ gap: 8 }}>
           {[
-            { label: 'Excelent — top creator', range: `≥ ${plat.benchmarks.excellent}%`, color: '#15803d', bg: '#f0fdf4', bar: '#22c55e' },
-            { label: 'Bun — peste medie', range: `${plat.benchmarks.good}–${plat.benchmarks.excellent}%`, color: '#b45309', bg: '#fffbeb', bar: '#f59e0b' },
-            { label: 'Mediu — industrie', range: `${plat.benchmarks.avg}–${plat.benchmarks.good}%`, color: '#c2410c', bg: '#f5f3ff', bar: '#5a35e6' },
-            { label: 'Scăzut', range: `< ${plat.benchmarks.avg}%`, color: '#b91c1c', bg: '#fef2f2', bar: '#ef4444' },
+            { label: 'Excelent — top creator', range: `≥ ${plat.benchmarks.excellent}%`, color: '#14532d', bg: '#dcf5ec' },
+            { label: 'Bun — peste medie', range: `${plat.benchmarks.good}–${plat.benchmarks.excellent}%`, color: '#854d0e', bg: '#fff1c2' },
+            { label: 'Mediu — industrie', range: `${plat.benchmarks.avg}–${plat.benchmarks.good}%`, color: '#5b2fd0', bg: '#efeaff' },
+            { label: 'Scăzut', range: `< ${plat.benchmarks.avg}%`, color: '#b42318', bg: '#fde8e6' },
           ].map(b => (
-            <div key={b.label} className="flex items-center justify-between px-4 py-2.5 rounded-xl"
-              style={{ background: b.bg }}>
-              <span className="text-sm font-semibold" style={{ color: b.color }}>{b.label}</span>
-              <span className="text-sm font-black" style={{ color: b.color }}>{b.range}</span>
+            <div key={b.label} className="ic-tier" style={{ background: b.bg, color: b.color }}>
+              <span style={{ fontSize: 14, fontWeight: 600 }}>{b.label}</span>
+              <span className="iu-d" style={{ fontSize: 14, fontWeight: 800 }}>{b.range}</span>
             </div>
           ))}
         </div>
