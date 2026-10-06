@@ -161,16 +161,48 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
 
   const summary = draft ? `Draft video v${draft.version}` : 'Draft video'
 
+  // ── Panou vizibil pe card (stare + ce trebuie făcut) ──
+  type Tone = { bg: string; border: string; fg: string }
+  const T: Record<string, Tone> = {
+    none: { bg: '#efeaff', border: '#cdb8ff', fg: '#4423c4' },
+    pending: { bg: '#fff8e1', border: '#f0c85a', fg: '#713f12' },
+    changes: { bg: '#fff1e6', border: '#f3a867', fg: '#9a4206' },
+    approved: { bg: '#dcf5ec', border: '#8fd6b8', fg: '#14532d' },
+  }
+  const st = !draft ? 'none' : draft.status === 'pending' ? 'pending' : draft.status === 'changes_requested' ? 'changes' : 'approved'
+  const nComments = draft ? draft.comments.length : 0
+  let title = '', body = '', cta = '', primary = true
+  if (role === 'influencer') {
+    if (st === 'none') { title = 'Trimite draftul video'; body = 'Încarcă videoclipul pentru aprobarea brandului, înainte să postezi.'; cta = 'Încarcă draftul' }
+    else if (st === 'pending') { title = 'Draft trimis, așteaptă brandul'; body = 'Brandul răspunde de obicei în 48 de ore. Nu posta înainte de aprobare.'; cta = 'Vezi draftul'; primary = false }
+    else if (st === 'changes') { title = 'Brandul cere modificări'; body = nComments ? `${nComments} ${nComments === 1 ? 'comentariu' : 'comentarii'} pe video. Refă clipul și trimite o versiune nouă.` : 'Refă clipul și trimite o versiune nouă.'; cta = 'Vezi modificările și trimite versiunea nouă' }
+    else { title = 'Draft aprobat'; body = 'Poți posta exact varianta aprobată.'; cta = 'Vezi draftul'; primary = false }
+  } else {
+    if (st === 'pending') { title = 'Draft de revizuit'; body = `Creatorul a trimis versiunea ${draft!.version}. Aprobă-o sau cere modificări.`; cta = 'Revizuiește draftul' }
+    else if (st === 'changes') { title = 'Ai cerut modificări'; body = 'Aștepți versiunea nouă de la creator.'; cta = 'Vezi draftul'; primary = false }
+    else { title = 'Draft aprobat'; body = 'Poți descărca materialul oricând în următoarele zile.'; cta = 'Vezi draftul'; primary = false }
+  }
+  const tone = T[st]
+
   return (
-    <div style={{ ...box, display: 'flex', flexDirection: 'column', gap: 12, fontFamily: 'inherit' }}>
-      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
-        style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 14, fontWeight: 800, color: '#14123a', whiteSpace: 'nowrap' }}>{summary}{draft ? ` · ${fmtMB(draft.file_size)}` : ''}</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {draft ? chip(draft.status) : <span style={{ fontSize: 12, fontWeight: 700, color: accent }}>Trimite la aprobare</span>}
-          <span style={{ fontSize: 12, fontWeight: 800, color: accent }}>{draft ? 'Vezi draftul' : 'Deschide'}</span>
-        </span>
-      </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontFamily: 'inherit', minWidth: 0 }}>
+      <div style={{ background: tone.bg, border: `1.5px solid ${tone.border}`, borderRadius: 18, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: tone.fg }}>{title}</span>
+          {draft && <span style={{ fontSize: 12, fontWeight: 700, color: tone.fg }}>v{draft.version} · {fmtMB(draft.file_size)}</span>}
+        </div>
+        <div style={{ fontSize: 13, lineHeight: 1.45, color: '#14123a' }}>{body}</div>
+        {st === 'changes' && draft?.review_note && (
+          <div style={{ background: '#fff', borderRadius: 12, padding: '10px 12px', fontSize: 14, lineHeight: 1.45, color: '#14123a', overflowWrap: 'anywhere' }}>
+            <b style={{ fontSize: 12, color: tone.fg, display: 'block', marginBottom: 2 }}>{role === 'influencer' ? 'Ce a scris brandul' : 'Ce ai cerut'}</b>
+            „{draft.review_note}”
+          </div>
+        )}
+        <button type="button" onClick={() => setOpen(true)}
+          style={{ height: 48, borderRadius: 13, border: primary ? 'none' : `1.5px solid ${tone.border}`, background: primary ? accent : '#fff', color: primary ? '#fff' : '#14123a', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', padding: '0 16px' }}>
+          {cta}
+        </button>
+      </div>
 
       {open && (
         <div onClick={() => setOpen(false)} role="dialog" aria-modal="true" aria-label="Draft video"
