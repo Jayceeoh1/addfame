@@ -11,6 +11,7 @@ import { ArrowLeft, CheckCircle, AlertCircle, X, Check, Star, MessageSquare, Arr
 import Link from 'next/link'
 import { LeaveReview } from '@/components/shared/leave-review'
 import DraftReview from '@/components/shared/DraftReview'
+import { CollabCard, CollabToolbar, collabCss } from '@/components/brand/campaigns/CollabCard'
 
 import { CampaignHero } from '@/components/brand/campaigns/CampaignHero'
 import { CampaignAnalytics } from '@/components/brand/campaigns/CampaignAnalytics'
@@ -395,6 +396,7 @@ export default function CampaignDetailPage() {
         .toast-anim { animation:slideD .3s ease; }
         .dd-anim { animation:slideD .18s ease; }
         .card-anim { animation:fadeUp .35s ease both; }
+        ${collabCss}
         @media (max-width: 640px) {
           .cl-card { flex-wrap: wrap; gap: 10px !important; padding: 14px !important; }
           .cl-avatar { width: 44px !important; height: 44px !important; }
@@ -493,65 +495,35 @@ export default function CampaignDetailPage() {
       {/* ── Colaborări ── */}
       {view === 'collabs' && (
       <div className="card p-5 card-anim" style={{ animationDelay: '.08s' }}>
-        <div className="cl-toolbar flex items-center justify-between gap-3 flex-wrap mb-4">
-          <div>
-            <h2 className="font-black text-gray-900 text-lg">Aplicanți & Colaborări</h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {counts.pending > 0 && <span className="text-amber-600 font-bold">{counts.pending} aplicate · </span>}
-              {counts.invited > 0 && <span className="text-blue-600 font-bold">{counts.invited} invitați · </span>}
-              {counts.active > 0 && <span className="text-purple-600 font-bold">{counts.active} activi · </span>}
-              {collabs.length} total
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {bulkRejectMode ? (
-              <>
-                <button onClick={() => { setBulkRejectMode(false); setSelectedRejectIds([]) }} className="text-xs font-bold text-gray-500 border border-gray-200 px-3 py-2 rounded-xl hover:bg-gray-50 transition">Anulează</button>
-                <button onClick={() => { const pendingIds = collabs.filter(c => c.status === 'PENDING').map(c => c.id); setSelectedRejectIds(selectedRejectIds.length === pendingIds.length ? [] : pendingIds) }} className="text-xs font-bold text-red-600 border border-red-200 px-3 py-2 rounded-xl hover:bg-red-50 transition">{selectedRejectIds.length === collabs.filter(c => c.status === 'PENDING').length ? 'Deselectează tot' : 'Selectează tot'}</button>
-                <button onClick={bulkReject} disabled={selectedRejectIds.length === 0 || bulkRejecting} className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3.5 py-2 rounded-xl transition disabled:opacity-50">
-                  {bulkRejecting ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : '✕'}
-                  Refuză {selectedRejectIds.length > 0 ? `(${selectedRejectIds.length})` : 'selectați'}
-                </button>
-              </>
-            ) : (
-              <>
-                {tab === 'pending' && counts.pending > 0 && <button onClick={() => { setBulkRejectMode(true); setBulkMode(false) }} className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-3.5 py-2 rounded-xl hover:bg-red-100 transition">✕ Refuză bulk</button>}
-                {bulkMode ? (
-                  <>
-                    <button onClick={() => { setBulkMode(false); setSelectedInfs([]) }} className="text-xs font-bold text-gray-500 border border-gray-200 px-3 py-2 rounded-xl hover:bg-gray-50 transition">Anulează</button>
-                    <button onClick={bulkInvite} disabled={selectedInfs.length === 0 || bulkInviting} className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 px-3.5 py-2 rounded-xl transition disabled:opacity-50">
-                      {bulkInviting ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                      Invită {selectedInfs.length > 0 ? `(${selectedInfs.length})` : 'selectați'}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => setBulkMode(true)} className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-3.5 py-2 rounded-xl hover:bg-orange-100 transition"><Users className="w-3.5 h-3.5" /> Invită bulk</button>
-                    <Link href="/brand/influencers" className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-3.5 py-2 rounded-xl hover:bg-orange-100 transition">+ Invită influencer</Link>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Tabs + Sort */}
-        <div className="flex items-center justify-between gap-3 flex-wrap mb-4 border-b border-gray-100 pb-3">
-          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-            {([{ key: 'all', label: 'Toți' }, { key: 'pending', label: 'Aplicate' }, { key: 'invited', label: 'Invitați' }, { key: 'active', label: 'Activi' }, { key: 'completed', label: 'Finalizați' }, { key: 'rejected', label: 'Refuzați' }] as const).map(t => (
-              <button key={t.key} className={`tab-btn flex-shrink-0 ${tab === t.key ? 'on' : ''}`} onClick={() => setTab(t.key)}>
-                {t.label}{counts[t.key] > 0 && <span className={`ml-1.5 text-[11px] font-black px-1.5 py-0.5 rounded-full ${tab === t.key ? 'bg-white/25' : 'bg-gray-200 text-gray-500'}`}>{counts[t.key]}</span>}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 flex-shrink-0">
-            {(['date', 'followers', 'rating'] as const).map(s => (
-              <button key={s} onClick={() => setSortBy(s)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${sortBy === s ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                ↓ {s === 'date' ? 'Dată' : s === 'followers' ? 'Followeri' : 'Rating'}
-              </button>
-            ))}
-          </div>
-        </div>
+        <CollabToolbar
+          title="Aplicanți și colaborări"
+          subtitle={<>
+            {counts.pending > 0 && <b style={{ color: '#854d0e' }}>{counts.pending} aplicate · </b>}
+            {counts.invited > 0 && <b style={{ color: '#1d4ed8' }}>{counts.invited} invitați · </b>}
+            {counts.active > 0 && <b style={{ color: '#4423c4' }}>{counts.active} activi · </b>}
+            {collabs.length} total
+          </>}
+          actions={bulkRejectMode ? (
+            <>
+              <button className="cx-btn" onClick={() => { setBulkRejectMode(false); setSelectedRejectIds([]) }}>Anulează</button>
+              <button className="cx-btn" onClick={() => { const pendingIds = collabs.filter(c => c.status === 'PENDING').map(c => c.id); setSelectedRejectIds(selectedRejectIds.length === pendingIds.length ? [] : pendingIds) }}>{selectedRejectIds.length === collabs.filter(c => c.status === 'PENDING').length ? 'Deselectează tot' : 'Selectează tot'}</button>
+              <button className="cx-btn p" style={{ background: '#b42318', borderColor: '#b42318' }} onClick={bulkReject} disabled={selectedRejectIds.length === 0 || bulkRejecting}>{bulkRejecting ? '…' : 'Refuză'} {selectedRejectIds.length > 0 ? `(${selectedRejectIds.length})` : 'selectați'}</button>
+            </>
+          ) : bulkMode ? (
+            <>
+              <button className="cx-btn" onClick={() => { setBulkMode(false); setSelectedInfs([]) }}>Anulează</button>
+              <button className="cx-btn p" onClick={bulkInvite} disabled={selectedInfs.length === 0 || bulkInviting}>{bulkInviting ? '…' : <Send className="w-3.5 h-3.5" />} Invită {selectedInfs.length > 0 ? `(${selectedInfs.length})` : 'selectați'}</button>
+            </>
+          ) : (
+            <>
+              {tab === 'pending' && counts.pending > 0 && <button className="cx-btn d" onClick={() => { setBulkRejectMode(true); setBulkMode(false) }}>Refuză în masă</button>}
+              <button className="cx-btn" onClick={() => setBulkMode(true)}>Invită în masă</button>
+              <Link href="/brand/influencers" className="cx-btn p">Invită creator</Link>
+            </>
+          )}
+          filters={[{ key: 'all', label: 'Toți', count: counts.all }, { key: 'pending', label: 'Aplicate', count: counts.pending }, { key: 'invited', label: 'Invitați', count: counts.invited }, { key: 'active', label: 'Activi', count: counts.active }, { key: 'completed', label: 'Finalizați', count: counts.completed }, { key: 'rejected', label: 'Refuzați', count: counts.rejected }]}
+          tab={tab} onTab={setTab} sortBy={sortBy} onSort={setSortBy}
+        />
 
         {/* Collab list */}
         {visible.length === 0 ? (
@@ -563,7 +535,7 @@ export default function CampaignDetailPage() {
           </div>
         ) : (
           <>
-          <div className="cl-list space-y-3" style={{ maxHeight: 640, overflowY: 'auto', paddingRight: 6 }}>
+          <div className="cx-list">
             {visible.map(collab => {
               const inf = influencerData[collab.influencer_id]
               const cst = COLLAB_CFG[collab.status] ?? COLLAB_CFG.PENDING
@@ -578,80 +550,43 @@ export default function CampaignDetailPage() {
               const infSlug = inf?.slug || collab.influencer_id
               const needsAttention = hasPendingDeliverable || draftPending.includes(collab.id)
               const expanded = openCards[collab.id] ?? needsAttention
-              const cardBorder = (hasPendingDeliverable || draftPending.includes(collab.id)) ? 'border-orange-200 bg-orange-50/30' : packageReceived ? 'border-green-200 bg-green-50/20' : packageSent ? 'border-blue-200 bg-blue-50/20' : noPackage && isActive ? 'border-gray-200 bg-gray-50/30' : 'border-gray-100 hover:border-orange-100 hover:bg-orange-50/20'
-
+              const tone = ({ INVITED: 'blue', PENDING: 'amber', ACTIVE: 'purple', COMPLETED: 'green', REJECTED: 'gray' } as any)[collab.status] || 'gray'
+              const reach = getFollowers(inf)
+              const sub = [inf?.niches?.slice(0, 2).join(', '), reach > 0 ? `${fmtNum(reach)} urmăritori` : null].filter(Boolean).join(' · ')
+              const openProfile = () => setProfileModal({ ...inf, _slug: infSlug })
+              const spin = <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full" />
               return (
-                <div key={collab.id} id={`collab-${collab.id}`} className={`cl-card flex items-start gap-4 p-4 rounded-2xl border transition ${cardBorder}`} style={{ scrollMarginTop: 90 }}>
-                  {bulkMode && collab.status === 'INVITED' && <div className="flex items-center pt-1"><input type="checkbox" checked={selectedInfs.includes(collab.influencer_id)} onChange={e => setSelectedInfs(prev => e.target.checked ? [...prev, collab.influencer_id] : prev.filter(id => id !== collab.influencer_id))} className="w-4 h-4 accent-orange-500 cursor-pointer" /></div>}
-                  {bulkRejectMode && collab.status === 'PENDING' && <div className="flex items-center pt-1"><input type="checkbox" checked={selectedRejectIds.includes(collab.id)} onChange={e => setSelectedRejectIds(prev => e.target.checked ? [...prev, collab.id] : prev.filter(id => id !== collab.id))} className="w-4 h-4 accent-red-500 cursor-pointer" /></div>}
-
-                  <button type="button" onClick={() => setProfileModal({ ...inf, _slug: infSlug })} className="cl-avatar w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center flex-shrink-0 overflow-hidden hover:ring-2 hover:ring-orange-300 transition cursor-pointer">
-                    {inf?.avatar ? <img src={inf.avatar} alt={inf.name} className="w-full h-full object-cover" /> : <span className="font-black text-orange-500 text-lg">{inf?.name?.[0]?.toUpperCase() ?? '?'}</span>}
-                  </button>
-
-                  <div className="cl-body flex-1 min-w-0">
-                    <div className="cl-head flex items-start justify-between gap-2 flex-wrap">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <button type="button" onClick={() => setProfileModal({ ...inf, _slug: infSlug })} className="font-black text-gray-900 hover:text-orange-500 transition text-left">{inf?.name ?? 'Influencer necunoscut'}</button>
-                          {inf?.avg_rating > 0 && <span className="text-xs font-bold text-amber-500">⭐ {inf.avg_rating.toFixed(1)}</span>}
-                          {hasPendingDeliverable && <span className="text-[10px] font-black text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">Post trimis</span>}
-                        </div>
-                        {inf?.niches && inf.niches.length > 0 && <div className="flex flex-wrap gap-1 mt-1.5">{inf.niches.slice(0, 3).map((n: string) => <span key={n} className="text-[11px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{n}</span>)}</div>}
-                      </div>
-
-                      <div className="cl-actions flex flex-col items-end gap-2 min-w-0 max-w-full">
-                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                          <span className={`badge ${cst.bg} ${cst.text}`}><span className={`w-1.5 h-1.5 rounded-full ${cst.dot}`} /> {cst.label}</span>
-                          {packageSent && <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">📦 Trimis</span>}
-                          {packageReceived && <span className="text-[10px] font-black text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">✅ Primit</span>}
-                          {noPackage && isActive && <span className="text-[10px] font-black text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">⏳ Netrimis</span>}
-                          {campaign?.delivery_method === 'pickup' && isActive && (collab.checked_in_at ? <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">📍 La locație</span> : <span className="text-[10px] font-black text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">📍 Neconfirmat</span>)}
-                          <a href={`/influencer/${infSlug}`} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold text-gray-400 hover:text-orange-500 border border-gray-200 hover:border-orange-200 px-2 py-1 rounded-lg transition flex items-center gap-1"><ArrowUpRight className="w-3 h-3" /> Profil</a>
-                        </div>
-                        {isInvited && (
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
-                              ⏳ Așteaptă răspunsul influencerului
-                            </span>
-                            <button className="btn-decline" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>
-                              {isBusy ? <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <X className="w-3.5 h-3.5" />} Anulează
-                            </button>
-                          </div>
-                        )}
-                        {isPending && (
-                          <div className="flex items-center gap-1.5">
-                            <button className="btn-decline" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>{isBusy ? <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <X className="w-3.5 h-3.5" />} Refuză</button>
-                            <button className="btn-approve" onClick={() => collabAction(collab.id, 'ACTIVE')} disabled={isBusy}>{isBusy ? <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Check className="w-3.5 h-3.5" />} Aprobă</button>
-                          </div>
-                        )}
-                        {isActive && <button className="btn-decline" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>{isBusy ? <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <X className="w-3.5 h-3.5" />} Refuză</button>}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 mt-2 flex-wrap">
-                      {inf?.platforms && inf.platforms.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          {inf.platforms.slice(0, 3).map((p: any) => (
-                            <div key={p.platform} className="flex items-center gap-1 bg-gray-50 rounded-full px-2 py-0.5">
-                              {PLATFORM_ICON[p.platform?.toLowerCase()] ?? <Star className="w-3.5 h-3.5 text-gray-300" />}
-                              {p.followers && <span className="text-xs font-black text-gray-700">{p.followers}</span>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {(() => { const reach = getFollowers(inf); if (reach > 0) return <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">~{fmtNum(Math.round(reach * 0.08))} impresii est.</span> })()}
-                      <span className="text-xs text-gray-300">·</span>
-                      <span className="text-xs text-gray-400">{collab.status === 'INVITED' ? 'Invitat' : 'Aplicat'} {new Date(collab.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}</span>
-                    </div>
-                    <div>
-                      <button type="button" onClick={() => setOpenCards(o => ({ ...o, [collab.id]: !expanded }))} aria-expanded={expanded}
-                        className="text-xs font-black text-violet-600 hover:text-violet-800 transition mt-2">
-                        {expanded ? 'Mai puțin ▲' : 'Vezi mai mult ▼'}
-                      </button>
-                    </div>
-                    {expanded && (
-                      <>
+                <CollabCard
+                  key={collab.id} id={collab.id} attention={needsAttention}
+                  select={(bulkMode && isInvited) ? <input type="checkbox" className="cx-check" checked={selectedInfs.includes(collab.influencer_id)} onChange={e => setSelectedInfs(prev => e.target.checked ? [...prev, collab.influencer_id] : prev.filter(id => id !== collab.influencer_id))} aria-label="Selectează" />
+                    : (bulkRejectMode && isPending) ? <input type="checkbox" className="cx-check" checked={selectedRejectIds.includes(collab.id)} onChange={e => setSelectedRejectIds(prev => e.target.checked ? [...prev, collab.id] : prev.filter(id => id !== collab.id))} aria-label="Selectează" /> : undefined}
+                  avatar={inf?.avatar ? <img src={inf.avatar} alt="" /> : <span>{inf?.name?.[0]?.toUpperCase() ?? '?'}</span>}
+                  onAvatar={openProfile} name={inf?.name ?? 'Creator necunoscut'} onName={openProfile} sub={sub}
+                  status={cst.label} tone={tone}
+                  badges={isActive ? (
+                    <>
+                      {packageSent && <span className="cx-pill blue">Produs trimis</span>}
+                      {packageReceived && <span className="cx-pill green">Produs primit</span>}
+                      {noPackage && <span className="cx-pill">Produs netrimis</span>}
+                      {campaign?.delivery_method === 'pickup' && (collab.checked_in_at ? <span className="cx-pill indigo">La locație</span> : <span className="cx-pill">Neconfirmat la locație</span>)}
+                    </>
+                  ) : undefined}
+                  profileHref={`/influencer/${infSlug}`}
+                  notice={isInvited ? <div className="cx-note">Așteaptă răspunsul creatorului</div> : undefined}
+                  actions={isInvited ? (
+                    <button className="cx-btn d" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>{isBusy ? spin : 'Anulează invitația'}</button>
+                  ) : isPending ? (
+                    <>
+                      <button className="cx-btn" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>{isBusy ? spin : 'Refuză'}</button>
+                      <button className="cx-btn p" onClick={() => collabAction(collab.id, 'ACTIVE')} disabled={isBusy} style={{ flexGrow: 1.4 }}>{isBusy ? spin : 'Aprobă'}</button>
+                    </>
+                  ) : isActive ? (
+                    <button className="cx-btn d s" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>{isBusy ? spin : 'Refuză colaborarea'}</button>
+                  ) : undefined}
+                  actionsEnd={isActive}
+                  meta={`${collab.status === 'INVITED' ? 'Invitat' : 'Aplicat'} ${new Date(collab.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}`}
+                  expanded={expanded} onToggle={() => setOpenCards(o => ({ ...o, [collab.id]: !expanded }))}
+                >
                     {collab.delivery_name && (
                       <div className="mt-3 p-3 rounded-xl border border-orange-200 bg-orange-50">
                         <div className="flex items-center justify-between mb-2">
@@ -693,10 +628,7 @@ export default function CampaignDetailPage() {
                       </div>
                     )}
 
-                      </>
-                    )}
-                  </div>
-                </div>
+                </CollabCard>
               )
             })}
           </div>
