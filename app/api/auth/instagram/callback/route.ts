@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
         redirect_uri: savedRedirect,
       })
       const msg = encodeURIComponent(
-        tokenData.error_message || tokenData.error?.message || `HTTP ${tokenRes.status}`
+        `${tokenData.error_message || tokenData.error?.message || `HTTP ${tokenRes.status}`} | redirect=${savedRedirect} | host=${host} | appid=${(INSTAGRAM_APP_ID || '').slice(0, 4)}…(${(INSTAGRAM_APP_ID || '').length}) | secretlen=${(INSTAGRAM_APP_SECRET || '').length}`
       )
       return NextResponse.redirect(profileUrl(host, `instagram=error&reason=token_exchange&msg=${msg}`))
     }
