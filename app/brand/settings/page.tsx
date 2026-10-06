@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 import {
   Building2, Bell, Lock, Shield, Trash2, Download, Eye, EyeOff,
   CheckCircle, AlertCircle, User, Mail, Smartphone, Globe,
-  CreditCard, LogOut, ChevronRight, Upload, Link2, X, Package
+  CreditCard, LogOut, ChevronRight, Upload, Link2, X, Package, Instagram
 } from 'lucide-react'
 import { BillingDetailsForm } from '@/components/stripe/stripe-payment'
 
@@ -95,6 +95,10 @@ export default function BrandSettingsPage() {
 
   // Brand info
   const [userId, setUserId] = useState<string | null>(null)
+  const [ig, setIg] = useState<{ handle: string; followers: number; posts: number; engagement: number; avatar: string | null; lastSync: string | null } | null>(null)
+  const [igStatus, setIgStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [igMsg, setIgMsg] = useState('')
+  const [igBusy, setIgBusy] = useState(false)
   const [brandId, setBrandId] = useState<string | null>(null)
   const [logo, setLogo] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -138,6 +142,36 @@ export default function BrandSettingsPage() {
 
   useEffect(() => { fetchSettings() }, [])
 
+  // feedback după întoarcerea din Instagram
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const st = params.get('instagram')
+    if (!st) return
+    if (st === 'success') setIgStatus('success')
+    else {
+      const reason = params.get('reason') || ''
+      setIgStatus('error')
+      setIgMsg(
+        reason === 'not_professional' ? 'Contul trebuie să fie Professional (Business sau Creator). În Instagram: Setări → Tip cont → Comută la cont profesional, apoi reconectează-te.'
+        : reason === 'already_linked' ? 'Acest cont Instagram este deja conectat la alt cont AddFame.'
+        : reason === 'denied' ? 'Ai refuzat permisiunile cerute de Instagram.'
+        : 'Conectarea a eșuat. Încearcă din nou. ' + [reason, params.get('msg')].filter(Boolean).join(' — '))
+    }
+    window.history.replaceState({}, '', '/brand/settings')
+    setTimeout(() => setIgStatus('idle'), 20000)
+  }, [])
+
+  async function disconnectIg() {
+    if (!confirm('Sigur vrei să deconectezi contul Instagram?')) return
+    setIgBusy(true)
+    try {
+      const r = await fetch('/api/auth/instagram/disconnect', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'brand' }),
+      })
+      if (r.ok) setIg(null)
+    } finally { setIgBusy(false) }
+  }
+
   async function fetchSettings() {
     try {
       const supabase = createClient()
@@ -163,6 +197,16 @@ export default function BrandSettingsPage() {
         setDescription(data.description || '')
         setLogo(data.logo || null)
         setLogoPreview(data.logo || null)
+        if (data.instagram_connected) {
+          setIg({
+            handle: data.instagram_handle || '',
+            followers: data.ig_followers || 0,
+            posts: data.ig_posts_count || 0,
+            engagement: data.ig_engagement_rate || 0,
+            avatar: data.ig_avatar || null,
+            lastSync: data.ig_last_sync || null,
+          })
+        } else setIg(null)
         if (data.settings) {
           if (data.settings.notifications) setNotifications({ ...DEFAULT_NOTIFICATIONS, ...data.settings.notifications })
           if (data.settings.privacy) setPrivacy({ ...DEFAULT_PRIVACY, ...data.settings.privacy })
@@ -601,6 +645,42 @@ export default function BrandSettingsPage() {
                     {saving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </div>
+              </div>
+
+              {/* Instagram */}
+              <div className="bu-card bu-card-pad">
+                <h2 className="font-bold text-lg mb-1 flex items-center gap-2"><Instagram className="w-5 h-5" /> Instagram</h2>
+                <p className="text-sm text-muted-foreground mb-4">Conectează contul Instagram al brandului. Creatorii văd @contul și numărul de urmăritori pe pagina brandului tău, iar cifrele sunt verificate direct de la Instagram.</p>
+                {igStatus === 'success' && (
+                  <div className="mb-4 rounded-xl px-4 py-3 text-sm font-semibold" style={{ background: '#dcf5ec', color: '#14532d' }}>Instagram conectat cu succes.</div>
+                )}
+                {igStatus === 'error' && (
+                  <div className="mb-4 rounded-xl px-4 py-3 text-sm font-semibold" style={{ background: '#fde8e6', color: '#b42318', wordBreak: 'break-word' }}>{igMsg}</div>
+                )}
+                {ig ? (
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {ig.avatar
+                        ? <img src={ig.avatar} alt="" className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+                        : <div className="w-12 h-12 rounded-full flex-shrink-0" style={{ background: '#efeaff' }} />}
+                      <div className="min-w-0">
+                        <p className="font-bold truncate">@{ig.handle}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {ig.followers.toLocaleString('ro-RO')} urmăritori · {ig.posts.toLocaleString('ro-RO')} postări{ig.engagement > 0 ? ` · ER ${ig.engagement}%` : ''}
+                          {ig.lastSync ? ` · sincronizat ${new Date(ig.lastSync).toLocaleDateString('ro-RO')}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={disconnectIg} disabled={igBusy}>Deconectează</Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => { window.location.href = '/api/auth/instagram?kind=brand' }}
+                    className="bg-gradient-to-r from-primary to-accent"
+                  >
+                    Conectează cu Instagram
+                  </Button>
+                )}
               </div>
 
               {/* Export */}

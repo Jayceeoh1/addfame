@@ -8,8 +8,8 @@ const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET!
 
 // Toate redirect-urile de succes/eroare merg pe același host pe care a
 // aterizat callback-ul, ca să nu introducem inutil 307-uri.
-function profileUrl(host: string, query: string) {
-  return `https://${host}/influencer/profile?${query}`
+function backUrl(host: string, kind: string, query: string) {
+  return `https://${host}${kind === 'brand' ? '/brand/settings' : '/influencer/profile'}?${query}`
 }
 
 function clearOauthCookies(store: Awaited<ReturnType<typeof cookies>>) {
@@ -17,6 +17,7 @@ function clearOauthCookies(store: Awaited<ReturnType<typeof cookies>>) {
   store.delete({ name: 'ig_oauth_state', ...opts })
   store.delete({ name: 'ig_oauth_redirect', ...opts })
   store.delete({ name: 'ig_oauth_user', ...opts })
+  store.delete({ name: 'ig_oauth_kind', ...opts })
 }
 
 export async function GET(req: NextRequest) {
@@ -32,6 +33,8 @@ export async function GET(req: NextRequest) {
   const savedState = cookieStore.get('ig_oauth_state')?.value
   const savedRedirect = cookieStore.get('ig_oauth_redirect')?.value
   const savedUserId = cookieStore.get('ig_oauth_user')?.value
+  const kind: 'brand' | 'influencer' = cookieStore.get('ig_oauth_kind')?.value === 'brand' ? 'brand' : 'influencer'
+  const profileUrl = (h: string, q: string) => backUrl(h, kind, q)
 
   // Cookie-urile sunt one-time — le ștergem imediat.
   clearOauthCookies(cookieStore)
@@ -112,27 +115,34 @@ export async function GET(req: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const { data: inf } = await admin.from('influencers').select('id').eq('user_id', savedUserId).maybeSingle()
-    if (!inf) return NextResponse.redirect(profileUrl(host, 'instagram=error&reason=no_influencer'))
+    const table = kind === 'brand' ? 'brands' : 'influencers'
+    const privTable = kind === 'brand' ? 'brand_instagram_private' : 'instagram_private'
+    const fk = kind === 'brand' ? 'brand_id' : 'influencer_id'
 
-    // Un cont Instagram poate fi legat de un singur creator
+    const { data: inf } = await admin.from(table).select('id').eq('user_id', savedUserId).maybeSingle()
+    if (!inf) return NextResponse.redirect(profileUrl(host, 'instagram=error&reason=no_profile'))
+
+    // Un cont Instagram poate fi legat de un singur profil (creator sau brand)
     if (igUserId) {
-      const { data: taken } = await admin.from('influencers').select('id')
-        .eq('instagram_user_id', igUserId).neq('id', inf.id).limit(1)
-      if (taken?.length) return NextResponse.redirect(profileUrl(host, 'instagram=error&reason=already_linked'))
+      for (const t of ['influencers', 'brands']) {
+        const { data: taken } = await admin.from(t).select('id')
+          .eq('instagram_user_id', igUserId).limit(2)
+        if ((taken || []).some((r: any) => !(t === table && r.id === inf.id)))
+          return NextResponse.redirect(profileUrl(host, 'instagram=error&reason=already_linked'))
+      }
     }
 
-    const sync = await syncInstagram(admin, inf.id, accessToken)
+    const sync = await syncInstagram(admin, kind, inf.id, accessToken)
     if (!sync.ok) {
       const reason = sync.reason === 'not_professional' ? 'not_professional' : 'api'
       return NextResponse.redirect(profileUrl(host, `instagram=error&reason=${reason}&msg=${encodeURIComponent(sync.message || '')}`))
     }
 
-    await admin.from('instagram_private').upsert({
-      influencer_id: inf.id, ig_user_id: igUserId || null, access_token: accessToken,
+    await admin.from(privTable).upsert({
+      [fk]: inf.id, ig_user_id: igUserId || null, access_token: accessToken,
       token_expires: expiresAt, updated_at: new Date().toISOString(),
     })
-    await admin.from('influencers').update({ instagram_user_id: igUserId || null }).eq('id', inf.id)
+    await admin.from(table).update({ instagram_user_id: igUserId || null }).eq('id', inf.id)
 
     return NextResponse.redirect(profileUrl(host, 'instagram=success'))
   } catch (e: any) {

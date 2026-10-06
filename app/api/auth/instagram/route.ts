@@ -6,15 +6,11 @@ const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID!
 
 // Scopurile pentru App Review — includem TOATE ce declarăm în Meta ca să
 // ne asigurăm că reviewer-ul vede fluxul complet.
-const SCOPES = [
-  'instagram_business_basic',
-  'instagram_business_manage_insights',
-  'instagram_business_content_publish',
-  'instagram_business_manage_comments',
-].join(',')
+const SCOPES = ['instagram_business_basic'].join(',')
 
 export async function GET(req: NextRequest) {
   const cookieStore = await cookies()
+  const kind = req.nextUrl.searchParams.get('kind') === 'brand' ? 'brand' : 'influencer'
 
   // ── Verifică că userul e logat înainte să pornim OAuth ────────────────────
   // Altfel primim codul înapoi și nu știm în ce influencer să-l salvăm.
@@ -30,7 +26,7 @@ export async function GET(req: NextRequest) {
   )
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.redirect(new URL('/auth/login?redirect=/influencer/profile', req.url))
+    return NextResponse.redirect(new URL(`/auth/login?redirect=${kind === 'brand' ? '/brand/settings' : '/influencer/profile'}`, req.url))
   }
 
   // ── Detectăm host-ul curent și construim redirect_uri dinamic ─────────────
@@ -62,6 +58,7 @@ export async function GET(req: NextRequest) {
   // Legăm cookie-ul de user-ul curent — dacă cineva reia URL-ul, tot userul
   // corect primește token-ul.
   cookieStore.set('ig_oauth_user', user.id, cookieOpts)
+  cookieStore.set('ig_oauth_kind', kind, cookieOpts)
 
   // ── Construim URL-ul de autorizare ────────────────────────────────────────
   // Folosim www.instagram.com/oauth/authorize (endpoint-ul nou, recomandat

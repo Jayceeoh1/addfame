@@ -1,10 +1,13 @@
 // Sincronizare Instagram (Instagram API with Instagram Login).
 // Folosit de callback (la conectare) și de cron (zilnic). Doar pe server.
+// Funcționează pentru influenceri ȘI pentru branduri.
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const GRAPH = 'https://graph.instagram.com/v21.0'
 const PROFESSIONAL = ['BUSINESS', 'MEDIA_CREATOR', 'CREATOR']
 const REFRESH_WHEN_DAYS_LEFT = 12 // tokenul trăiește 60 de zile; reînnoim cu mult înainte
+
+export type IgKind = 'influencer' | 'brand'
 
 export type IgResult = {
   ok: boolean
@@ -13,9 +16,14 @@ export type IgResult = {
   followers?: number; engagement?: number; media?: number
 }
 
+const CFG = {
+  influencer: { table: 'influencers', priv: 'instagram_private', fk: 'influencer_id' },
+  brand: { table: 'brands', priv: 'brand_instagram_private', fk: 'brand_id' },
+} as const
+
 /** Reînnoiește tokenul dacă mai are puține zile (doar după 24h de la emitere). */
 export async function refreshTokenIfNeeded(
-  admin: SupabaseClient, influencerId: string, token: string, expires: string | null,
+  admin: SupabaseClient, kind: IgKind, id: string, token: string, expires: string | null,
 ): Promise<string | null> {
   if (!expires) return token
   const left = (new Date(expires).getTime() - Date.now()) / 86400000
@@ -26,18 +34,20 @@ export async function refreshTokenIfNeeded(
   )
   const d = await r.json().catch(() => ({}))
   if (!d.access_token) return token // încercăm din nou mâine, tokenul încă e valid
-  await admin.from('instagram_private').update({
+  const c = CFG[kind]
+  await admin.from(c.priv).update({
     access_token: d.access_token,
     token_expires: new Date(Date.now() + (d.expires_in || 5184000) * 1000).toISOString(),
     updated_at: new Date().toISOString(),
-  }).eq('influencer_id', influencerId)
+  }).eq(c.fk, id)
   return d.access_token
 }
 
-/** Trage profilul + ultimele postări și le scrie în baza de date. */
+/** Trage profilul (+ ultimele postări) și le scrie în baza de date. */
 export async function syncInstagram(
-  admin: SupabaseClient, influencerId: string, token: string,
+  admin: SupabaseClient, kind: IgKind, id: string, token: string,
 ): Promise<IgResult> {
+  const c = CFG[kind]
   const pr = await fetch(`${GRAPH}/me?fields=user_id,username,account_type,media_count,followers_count,follows_count,biography,profile_picture_url&access_token=${encodeURIComponent(token)}`)
   const profile = await pr.json().catch(() => ({}))
   if (!pr.ok || profile.error) {
@@ -61,7 +71,7 @@ export async function syncInstagram(
   }
 
   const now = new Date().toISOString()
-  const { error: upErr } = await admin.from('influencers').update({
+  const { error: upErr } = await admin.from(c.table).update({
     instagram_connected: true,
     instagram_handle: profile.username || null,
     ig_account_type: profile.account_type || null,
@@ -72,13 +82,14 @@ export async function syncInstagram(
     ig_avatar: profile.profile_picture_url || null,
     ig_engagement_rate: engagement,
     ig_last_sync: now,
-  }).eq('id', influencerId)
+  }).eq('id', id)
   if (upErr) return { ok: false, reason: 'api', message: 'db: ' + upErr.message }
 
-  if (media.length) {
+  // postările se păstrează doar pentru creatori
+  if (kind === 'influencer' && media.length) {
     await admin.from('instagram_media').upsert(
       media.map(m => ({
-        influencer_id: influencerId,
+        influencer_id: id,
         media_id: String(m.id),
         media_type: m.media_type || null,
         permalink: m.permalink || null,
@@ -95,20 +106,34 @@ export async function syncInstagram(
   return { ok: true, followers: profile.followers_count ?? 0, engagement, media: media.length }
 }
 
-/** Șterge tot ce știm despre contul Instagram al unui influencer. */
-export async function wipeInstagram(admin: SupabaseClient, match: { id?: string; instagram_user_id?: string }) {
-  let q = admin.from('influencers').select('id')
-  q = match.id ? q.eq('id', match.id) : q.eq('instagram_user_id', match.instagram_user_id!)
-  const { data: rows } = await q
-  const ids = (rows || []).map((r: any) => r.id)
-  if (!ids.length) return 0
-  await admin.from('instagram_private').delete().in('influencer_id', ids)
-  await admin.from('instagram_media').delete().in('influencer_id', ids)
-  await admin.from('influencers').update({
-    instagram_connected: false, instagram_access_token: null, instagram_token_expires: null,
-    instagram_handle: null, instagram_user_id: null, ig_followers: null, ig_following: null,
-    ig_posts_count: null, ig_bio: null, ig_avatar: null, ig_engagement_rate: null,
-    ig_account_type: null, ig_last_sync: null,
-  }).in('id', ids)
-  return ids.length
+const CLEAR = {
+  instagram_connected: false, instagram_handle: null, instagram_user_id: null,
+  ig_followers: null, ig_following: null, ig_posts_count: null, ig_bio: null, ig_avatar: null,
+  ig_engagement_rate: null, ig_account_type: null, ig_last_sync: null,
+}
+
+/** Șterge tot ce știm despre contul Instagram: după id (un cont) sau după id-ul Instagram (toate). */
+export async function wipeInstagram(
+  admin: SupabaseClient,
+  match: { kind: IgKind; id: string } | { instagram_user_id: string },
+) {
+  const kinds: IgKind[] = 'kind' in match ? [match.kind] : ['influencer', 'brand']
+  let n = 0
+  for (const kind of kinds) {
+    const c = CFG[kind]
+    let q = admin.from(c.table).select('id')
+    q = 'kind' in match ? q.eq('id', match.id) : q.eq('instagram_user_id', match.instagram_user_id)
+    const { data: rows } = await q
+    const ids = (rows || []).map((r: any) => r.id)
+    if (!ids.length) continue
+    await admin.from(c.priv).delete().in(c.fk, ids)
+    if (kind === 'influencer') {
+      await admin.from('instagram_media').delete().in('influencer_id', ids)
+      await admin.from(c.table).update({ ...CLEAR, instagram_access_token: null, instagram_token_expires: null }).in('id', ids)
+    } else {
+      await admin.from(c.table).update(CLEAR).in('id', ids)
+    }
+    n += ids.length
+  }
+  return n
 }

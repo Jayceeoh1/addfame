@@ -53,7 +53,7 @@ export default function CastingDetailPage() {
 
       let brand = Array.isArray(camp.brand) ? camp.brand[0] : camp.brand
       if (camp.brand_id) {
-        const { data: pubBrand } = await supabase.from('brands_public').select('id, name, logo, verification_status, website').eq('id', camp.brand_id).maybeSingle()
+        const { data: pubBrand } = await supabase.from('brands_public').select('id, name, logo, verification_status, website, instagram_connected, instagram_handle, ig_followers').eq('id', camp.brand_id).maybeSingle()
         if (pubBrand) brand = pubBrand
       }
       setCampaign({ ...camp, brand })
@@ -149,6 +149,11 @@ export default function CastingDetailPage() {
         <div className="iu-col" style={{ minWidth: 0, flex: 1 }}>
           <b style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{campaign.brand?.name}</b>
           {campaign.brand?.website && <span className="iu-xs iu-muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{campaign.brand.website}</span>}
+          {campaign.brand?.instagram_connected && campaign.brand?.instagram_handle && (
+            <a href={`https://www.instagram.com/${campaign.brand.instagram_handle}/`} target="_blank" rel="noopener noreferrer" className="iu-xs iu-muted" style={{ textDecoration: 'none' }}>
+              @{campaign.brand.instagram_handle}{campaign.brand.ig_followers ? ` · ${Number(campaign.brand.ig_followers).toLocaleString('ro-RO')} urmăritori` : ''}
+            </a>
+          )}
         </div>
         {campaign.brand?.verification_status === 'verified' && (
           <span className="iu-chip" style={{ background: '#e6f0ff', color: '#1d4fb8' }}>✓ Brand verificat</span>

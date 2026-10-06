@@ -23,29 +23,34 @@ export async function GET(req: NextRequest) {
   console.log('[Cron] Starting social sync...')
   let igSynced = 0, igErrors = 0
 
-  const { data: rows } = await admin
-    .from('instagram_private')
-    .select('influencer_id, access_token, token_expires')
+  const jobs: { kind: 'influencer' | 'brand'; priv: string; fk: string; table: string }[] = [
+    { kind: 'influencer', priv: 'instagram_private', fk: 'influencer_id', table: 'influencers' },
+    { kind: 'brand', priv: 'brand_instagram_private', fk: 'brand_id', table: 'brands' },
+  ]
 
-  for (const r of rows || []) {
-    try {
-      const token = await refreshTokenIfNeeded(admin, r.influencer_id, r.access_token, r.token_expires)
-      if (!token) {
-        // expirat — creatorul trebuie să se reconecteze
-        await admin.from('influencers').update({ instagram_connected: false }).eq('id', r.influencer_id)
-        igErrors++; continue
-      }
-      const res = await syncInstagram(admin, r.influencer_id, token)
-      if (res.ok) igSynced++
-      else {
+  for (const job of jobs) {
+    const { data: rows } = await admin.from(job.priv).select(`${job.fk}, access_token, token_expires`)
+    for (const r of (rows || []) as any[]) {
+      const id = r[job.fk]
+      try {
+        const token = await refreshTokenIfNeeded(admin, job.kind, id, r.access_token, r.token_expires)
+        if (!token) {
+          // expirat — trebuie să se reconecteze
+          await admin.from(job.table).update({ instagram_connected: false }).eq('id', id)
+          igErrors++; continue
+        }
+        const res = await syncInstagram(admin, job.kind, id, token)
+        if (res.ok) igSynced++
+        else {
+          igErrors++
+          if (res.reason === 'token' || res.reason === 'not_professional')
+            await admin.from(job.table).update({ instagram_connected: false }).eq('id', id)
+        }
+        await new Promise(r => setTimeout(r, 250))
+      } catch (e: any) {
+        console.error(`[Cron] IG error for ${job.kind} ${id}:`, e.message)
         igErrors++
-        if (res.reason === 'token' || res.reason === 'not_professional')
-          await admin.from('influencers').update({ instagram_connected: false }).eq('id', r.influencer_id)
       }
-      await new Promise(r => setTimeout(r, 250))
-    } catch (e: any) {
-      console.error(`[Cron] IG error for ${r.influencer_id}:`, e.message)
-      igErrors++
     }
   }
 
