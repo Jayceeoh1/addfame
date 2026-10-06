@@ -44,6 +44,7 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
   const [prog, setProg] = useState<number | null>(null)
   const vref = useRef<HTMLVideoElement>(null)
   const first = useRef(true)
+  const [verr, setVerr] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -60,6 +61,14 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
     setLoading(false)
   }, [collabId, role])
   useEffect(() => { load() }, [load])
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKey)
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+  }, [open])
 
   const draft = drafts.find(d => d.id === sel) || null
   const latest = drafts[0] || null
@@ -165,16 +174,24 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
         <span style={{ fontSize: 14, fontWeight: 800, color: '#14123a' }}>{summary}{draft ? ` · ${fmtMB(draft.file_size)}` : ''}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {draft ? chip(draft.status) : <span style={{ fontSize: 12, fontWeight: 700, color: accent }}>Trimite la aprobare</span>}
-          <span style={{ color: '#6a6690', fontSize: 12 }}>{open ? '▲' : '▼'}</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: accent }}>{draft ? 'Vezi draftul' : 'Deschide'}</span>
         </span>
       </button>
 
       {open && (
-        <>
+        <div onClick={() => setOpen(false)} role="dialog" aria-modal="true" aria-label="Draft video"
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(20,18,58,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+        <div onClick={e => e.stopPropagation()}
+          style={{ background: '#f6f6fc', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '92vh', overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 30px 80px -20px rgba(20,18,58,.5)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: '#14123a' }}>{summary}</span>
+            <button type="button" onClick={() => setOpen(false)} aria-label="Închide"
+              style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid #e5e3f3', background: '#fff', cursor: 'pointer', fontSize: 16, color: '#14123a' }}>✕</button>
+          </div>
           {drafts.length > 1 && (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {drafts.map(d => (
-                <button key={d.id} type="button" onClick={() => { setSel(d.id); setCur(0) }}
+                <button key={d.id} type="button" onClick={() => { setSel(d.id); setCur(0); setVerr(false) }}
                   style={{ padding: '6px 12px', borderRadius: 9, border: '1px solid #e5e3f3', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
                     fontWeight: sel === d.id ? 800 : 600, background: sel === d.id ? '#efeaff' : '#fff', color: sel === d.id ? '#4423c4' : '#6a6690' }}>
                   v{d.version}{d.id === latest?.id ? ' · actuală' : ''}
@@ -189,8 +206,10 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
                 <div style={{ background: '#14123a', borderRadius: 16, padding: 12 }}>
                   <video ref={vref} src={draft.viewUrl} controls playsInline preload="metadata"
                     onTimeUpdate={e => setCur(e.currentTarget.currentTime)}
-                    onLoadedMetadata={e => setDur(e.currentTarget.duration)}
+                    onLoadedMetadata={e => { setDur(e.currentTarget.duration); setVerr(false) }}
+                    onError={() => setVerr(true)}
                     style={{ display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: '60vh', borderRadius: 10, background: '#000' }} />
+                  {verr && <div style={{ color: '#fff', fontSize: 12, marginTop: 8, textAlign: 'center' }}>Browserul nu poate reda acest format. Folosește „Descarcă materialul”.</div>}
                   {dur > 0 && draft.comments.some(c => c.at_second !== null) && (
                     <div style={{ position: 'relative', height: 14, marginTop: 10 }}>
                       {draft.comments.filter(c => c.at_second !== null).map(c => (
@@ -295,8 +314,10 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
             </div>
           )}
           {err && <div role="alert" style={{ color: '#b42318', fontSize: 13, fontWeight: 600 }}>{err}</div>}
-        </>
+        </div>
+        </div>
       )}
+      {err && !open && <div role="alert" style={{ color: '#b42318', fontSize: 13, fontWeight: 600 }}>{err}</div>}
     </div>
   )
 }
