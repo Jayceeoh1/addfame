@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser, unauthorized, forbidden } from '@/lib/api-auth'
-import { getCollabAccess, isUuid, notify } from '@/lib/drafts'
+import { getCollabAccess, isUuid, notify, postDraftMessage, summarizeComments } from '@/lib/drafts'
 
 // Brandul aprobă draftul sau cere modificări. NU atinge plata / escrow.
 export async function POST(req: NextRequest) {
@@ -37,6 +37,15 @@ export async function POST(req: NextRequest) {
         ? `Draftul tău pentru „${access.title}” a fost aprobat. Poți posta.`
         : `Brandul a cerut modificări la draftul pentru „${access.title}”.`,
       '/influencer/collaborations')
+    if (action === 'approve') {
+      await postDraftMessage(admin, d.collaboration_id, user.id, 'approved',
+        `Draftul v${d.version} a fost aprobat. Poți posta exact varianta aprobată.`)
+    } else {
+      const { data: cs } = await admin.from('deliverable_draft_comments')
+        .select('at_second, body').eq('draft_id', draftId).eq('author_role', 'brand').order('at_second', { ascending: true })
+      await postDraftMessage(admin, d.collaboration_id, user.id, 'changes',
+        `Cer modificări la draftul v${d.version}: ${text}${summarizeComments(cs || [])}`)
+    }
     return NextResponse.json({ ok: true, status: next })
   } catch {
     return NextResponse.json({ error: 'Eroare server' }, { status: 500 })

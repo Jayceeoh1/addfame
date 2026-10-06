@@ -71,3 +71,24 @@ export async function notify(
     await admin.from('notifications').insert({ user_id: userId, title, body, link, read: false })
   } catch { /* notificarea nu trebuie să blocheze fluxul */ }
 }
+
+export type DraftEvent = 'uploaded' | 'changes' | 'approved'
+const fmtSec = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`
+
+/** Postează în inbox-ul colaborării un mesaj de sistem despre draft (apare la ambele părți, în timp real). */
+export async function postDraftMessage(
+  admin: SupabaseClient, collabId: string, actorUserId: string, event: DraftEvent, text: string,
+) {
+  try {
+    await admin.from('messages').insert({
+      collaboration_id: collabId, sender_id: actorUserId, sender_role: 'system',
+      content: `::draft:${event}::\n${text}`,
+    })
+  } catch { /* mesajul nu trebuie să blocheze fluxul */ }
+}
+
+/** Rezumat scurt al comentariilor pe secunde (primele 5). */
+export function summarizeComments(cs: { at_second: number | null; body: string }[]): string {
+  const rows = cs.filter(c => c.at_second !== null).slice(0, 5).map(c => `${fmtSec(c.at_second!)} – ${c.body.slice(0, 120)}`)
+  return rows.length ? '\n' + rows.join('\n') : ''
+}

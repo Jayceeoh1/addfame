@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser, unauthorized, forbidden } from '@/lib/api-auth'
-import { getCollabAccess, isUuid, notify, DRAFT_BUCKET, MAX_DRAFT_BYTES } from '@/lib/drafts'
+import { getCollabAccess, isUuid, notify, postDraftMessage, DRAFT_BUCKET, MAX_DRAFT_BYTES } from '@/lib/drafts'
 
 // După încărcare: verifică fișierul din Storage, trece draftul în „pending" și anunță brandul.
 export async function POST(req: NextRequest) {
@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
       `Draft nou de revizuit (v${d.version})`,
       `${access.influencerName} a trimis un draft video pentru „${access.title}”.`,
       '/brand/collaborations')
+    await postDraftMessage(admin, d.collaboration_id, user.id, 'uploaded',
+      `Am trimis draftul video v${d.version} pentru „${access.title}”. Îl poți revizui acum.`)
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Eroare server' }, { status: 500 })

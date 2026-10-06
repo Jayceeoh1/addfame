@@ -1,5 +1,6 @@
 'use client'
 
+import DraftMessage, { DRAFT_MSG } from '@/components/shared/DraftMessage'
 import { useEffect, useState, useCallback, useRef, Suspense, Fragment } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -357,6 +358,14 @@ function InboxContent() {
               )}
               {messages.map((m, i) => {
                 const isMe = m.sender_role === 'brand'
+                if (m.sender_role === 'system' && DRAFT_MSG.test(m.content || '')) {
+                  return (
+                    <Fragment key={m.id}>
+                      {(i === 0 || fmtDay(messages[i - 1].created_at) !== fmtDay(m.created_at)) && <div className="ib-day">{fmtDay(m.created_at)}</div>}
+                      <DraftMessage content={m.content} collabId={selected.id} role="brand" />
+                    </Fragment>
+                  )
+                }
                 const showDay = i === 0 || fmtDay(messages[i - 1].created_at) !== fmtDay(m.created_at)
                 return (
                   <Fragment key={m.id}>

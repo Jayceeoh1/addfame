@@ -1,5 +1,6 @@
 'use client'
 
+import DraftMessage, { DRAFT_MSG } from '@/components/shared/DraftMessage'
 import { useEffect, useState, useCallback, useRef, Suspense, Fragment } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
@@ -407,12 +408,15 @@ function InboxContent() {
               )}
               {messages.map((m, i) => {
                 const isMe = m.sender_role === 'influencer'
-                const isAI = m.sender_role === 'system'
+                const isAI = m.sender_role === 'system' && !DRAFT_MSG.test(m.content || '')
+                const isDraft = m.sender_role === 'system' && DRAFT_MSG.test(m.content || '')
                 const showDay = i === 0 || fmtDay(messages[i - 1].created_at) !== fmtDay(m.created_at)
                 return (
                   <Fragment key={m.id}>
                     {showDay && <div className="ib-day">{fmtDay(m.created_at)}</div>}
-                    {isAI ? (
+                    {isDraft ? (
+                      <DraftMessage content={m.content} collabId={selected.id} role="influencer" />
+                    ) : isAI ? (
                       <div className="ib-ai">
                         <p>{m.content}</p>
                         <span className="iu-muted" style={{ fontSize: 11, display: 'block', textAlign: 'right', marginTop: 4 }}>{fmtTime(m.created_at)}</span>
