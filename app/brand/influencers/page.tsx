@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import { INFLUENCER_NICHES } from '@/lib/constants/registration'
-import { TIERS, creatorTier } from '@/lib/tiers'
+import { TIERS, creatorTier, parseCount } from '@/lib/tiers'
 import TierChip from '@/components/shared/TierChip'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ function PlatformIcon({ platform }: { platform: string }) {
 
 function formatFollowers(val: string | number | undefined): string {
   if (!val) return '—'
-  const n = typeof val === 'string' ? parseInt(val.replace(/[^0-9]/g, ''), 10) : val
+  const n = typeof val === 'string' ? parseCount(val) : val
   if (isNaN(n)) return String(val)
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`
@@ -94,9 +94,8 @@ function formatFollowers(val: string | number | undefined): string {
 function totalFollowers(platforms: Platform[] | null | undefined): number {
   if (!platforms) return 0
   return platforms.reduce((sum, p) => {
-    const raw = p.followers ?? ''
-    const n = parseInt(String(raw).replace(/[^0-9]/g, ''), 10)
-    return sum + (isNaN(n) ? 0 : n)
+    const n = parseCount(p.followers)
+    return sum + n
   }, 0)
 }
 

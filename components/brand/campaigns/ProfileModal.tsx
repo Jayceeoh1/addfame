@@ -2,7 +2,7 @@
 'use client'
 import { Instagram, X, MapPin, ExternalLink } from 'lucide-react'
 import { fmtNum } from './types'
-import { creatorTier } from '@/lib/tiers'
+import { creatorTier, parseCount } from '@/lib/tiers'
 import TierChip from '@/components/shared/TierChip'
 
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -24,8 +24,8 @@ export function ProfileModal({ profileModal, onClose }: { profileModal: any; onC
 
   const igUrl = igPlatform?.url || (igHandle ? `https://instagram.com/${igHandle}` : null)
   const ttUrl = ttPlatform?.url || (ttHandle ? `https://tiktok.com/@${ttHandle}` : null)
-  const igFollowers = igPlatform?.followers ? parseInt(igPlatform.followers) : (p.ig_followers || p.instagram_followers || 0)
-  const ttFollowers = ttPlatform?.followers ? parseInt(ttPlatform.followers) : (p.tt_followers || 0)
+  const igFollowers = igPlatform?.followers ? parseCount(igPlatform.followers) : (p.ig_followers || p.instagram_followers || 0)
+  const ttFollowers = ttPlatform?.followers ? parseCount(ttPlatform.followers) : (p.tt_followers || 0)
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>

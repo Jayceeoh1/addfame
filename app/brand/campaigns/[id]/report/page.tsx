@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { parseCount } from '@/lib/tiers'
 import React from 'react'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -96,7 +97,7 @@ export default function CampaignReportPage() {
     .reduce((sum, c) => {
       const platforms: any[] = c.influencers?.platforms ?? []
       return sum + platforms.reduce((ps: number, p: any) => {
-        const f = parseInt(String(p.followers ?? '0').replace(/[^0-9]/g, '')) || 0
+        const f = parseCount(p.followers)
         return ps + f
       }, 0)
     }, 0)
@@ -140,7 +141,7 @@ export default function CampaignReportPage() {
       c.influencers?.name ?? 'Necunoscut',
       c.status,
       (c.influencers?.platforms ?? []).map((p: any) => p.platform).join(';'),
-      (c.influencers?.platforms ?? []).reduce((s: number, p: any) => s + (parseInt(String(p.followers ?? '0').replace(/\D/g, '')) || 0), 0),
+      (c.influencers?.platforms ?? []).reduce((s: number, p: any) => s + parseCount(p.followers), 0),
       c.deliverable_url ?? '',
       c.payment_amount ?? 0,
       c.deliverable_submitted_at ? fmtDate(c.deliverable_submitted_at) : '',
@@ -397,7 +398,7 @@ export default function CampaignReportPage() {
                     ACTIVE: 'bg-purple-50 text-purple-700', COMPLETED: 'bg-green-50 text-green-700',
                     PENDING: 'bg-amber-50 text-amber-700', INVITED: 'bg-blue-50 text-blue-700',
                   }
-                  const totalF = (inf?.platforms ?? []).reduce((s: number, p: any) => s + (parseInt(String(p.followers ?? '0').replace(/\D/g, '')) || 0), 0)
+                  const totalF = (inf?.platforms ?? []).reduce((s: number, p: any) => s + parseCount(p.followers), 0)
                   return (
                     <tr key={c.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
                       <td className="px-5 py-4">

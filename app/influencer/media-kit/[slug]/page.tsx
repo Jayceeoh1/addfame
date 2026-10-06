@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { parseCount } from '@/lib/tiers'
 
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
@@ -22,7 +23,7 @@ const PLATFORM_CFG = {
 }
 
 function fmtNum(v) {
-  const n = typeof v === 'string' ? parseInt(v.replace(/\D/g, '')) : Number(v)
+  const n = typeof v === 'string' ? parseCount(v) : Number(v)
   if (!n || isNaN(n)) return v || '—'
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
   if (n >= 1_000) return (n / 1_000).toFixed(0) + 'K'
@@ -42,7 +43,9 @@ export default function MediaKitPage() {
     async function load() {
       const sb = createClient()
       // Find by slug — no approval_status restriction (owner must always see their kit)
-      const { data } = await sb.from('influencers').select('*').eq('slug', slug).single()
+      // Profilul public (fără date private); propriul profil / partenerii se citesc din tabel
+      let { data } = await sb.from('influencers_public').select('*').eq('slug', slug).maybeSingle()
+      if (!data) ({ data } = await sb.from('influencers').select('*').eq('slug', slug).maybeSingle())
       if (!data) { setLoading(false); return }
       setInf(data)
 
@@ -53,23 +56,35 @@ export default function MediaKitPage() {
         if (own) setIsOwner(true)
       }
 
-      // Collab stats
-      const { data: collabs } = await sb.from('collaborations').select('status, payment_amount').eq('influencer_id', data.id)
-      if (collabs) {
-        const completed = collabs.filter(c => c.status === 'COMPLETED').length
-        const total = collabs.length
-        setStats({
-          completed, total,
-          successRate: total > 0 ? Math.round(completed / total * 100) : 0,
-          earned: collabs.filter(c => c.status === 'COMPLETED').reduce((s, c) => s + (c.payment_amount || 0), 0),
-        })
+      // Collab stats (cifre agregate; citirea directă doar ca rezervă până rulează SQL 09)
+      const { data: statRows, error: statErr } = await sb.rpc('public_collab_stats', { p_influencer_ids: [data.id] })
+      if (!statErr && Array.isArray(statRows)) {
+        const r: any = statRows[0] || {}
+        const completed = Number(r.completed) || 0, total = Number(r.total_all) || 0
+        setStats({ completed, total, successRate: total > 0 ? Math.round(completed / total * 100) : 0, earned: Number(r.earned) || 0 })
+      } else {
+        const { data: collabs } = await sb.from('collaborations').select('status, payment_amount').eq('influencer_id', data.id)
+        if (collabs) {
+          const completed = collabs.filter(c => c.status === 'COMPLETED').length
+          const total = collabs.length
+          setStats({
+            completed, total,
+            successRate: total > 0 ? Math.round(completed / total * 100) : 0,
+            earned: collabs.filter(c => c.status === 'COMPLETED').reduce((s, c) => s + (c.payment_amount || 0), 0),
+          })
+        }
       }
 
       // Reviews
-      const { data: collabIds } = await sb.from('collaborations').select('id').eq('influencer_id', data.id)
-      if (collabIds?.length) {
-        const { data: revs } = await sb.from('reviews').select('rating, comment, created_at').eq('reviewer_role', 'brand').in('collaboration_id', collabIds.map(c => c.id)).limit(3)
-        if (revs) setReviews(revs)
+      const { data: revRows, error: revErr } = await sb.rpc('influencer_brand_reviews', { p_influencer_id: data.id, p_limit: 3 })
+      if (!revErr && Array.isArray(revRows)) {
+        setReviews(revRows)
+      } else {
+        const { data: collabIds } = await sb.from('collaborations').select('id').eq('influencer_id', data.id)
+        if (collabIds?.length) {
+          const { data: revs } = await sb.from('reviews').select('rating, comment, created_at').eq('reviewer_role', 'brand').in('collaboration_id', collabIds.map(c => c.id)).limit(3)
+          if (revs) setReviews(revs)
+        }
       }
       setLoading(false)
     }
@@ -100,8 +115,7 @@ export default function MediaKitPage() {
   )
 
   const totalFollowers = (inf.platforms || []).reduce((s, p) => {
-    const n = parseInt(String(p.followers || '0').replace(/\D/g, ''))
-    return s + (isNaN(n) ? 0 : n)
+    return s + parseCount(p.followers)
   }, 0)
 
   const avgER = (() => {
