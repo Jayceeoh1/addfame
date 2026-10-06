@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import { INFLUENCER_NICHES } from '@/lib/constants/registration'
+import { TIERS, creatorTier } from '@/lib/tiers'
+import TierChip from '@/components/shared/TierChip'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -264,6 +266,7 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
                 {influencer.approval_status === 'approved' && !influencer.is_verified && (
                   <CheckCircle className="w-4 h-4" style={{ color: '#5a35e6' }} />
                 )}
+                <TierChip tier={creatorTier(influencer)} unverified={!influencer.instagram_connected} />
               </div>
               {influencer.city && (
                 <div className="bu-row bu-xs" style={{ gap: 4, marginTop: 4, color: '#5a35e6', fontWeight: 700 }}>
@@ -427,9 +430,10 @@ function InfluencerCard({ influencer, isSaved, onSave, onClick, stats }: {
         </button>
       </div>
 
-      {influencer.is_verified && (
-        <div><span className="bu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star className="w-3 h-3" /> Verified</span></div>
-      )}
+      <div className="bu-row" style={{ gap: 6, flexWrap: 'wrap' }}>
+        <TierChip tier={creatorTier(influencer)} unverified={!influencer.instagram_connected} />
+        {influencer.is_verified && <span className="bu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star className="w-3 h-3" /> Verified</span>}
+      </div>
 
       {influencer.bio && <p className="bu-muted bu-sm" style={{ margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{influencer.bio}</p>}
 
@@ -481,6 +485,7 @@ export default function BrandInfluencersPage() {
   const [maxFollowers, setMaxFollowers] = useState('')
   const [scoreFilter, setScoreFilter] = useState('Toate nivelurile')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
+  const [tierFilter, setTierFilter] = useState<string[]>([])
   const [aiRecs, setAiRecs] = useState<any[]>([])
   const [aiSummary, setAiSummary] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
@@ -626,7 +631,15 @@ export default function BrandInfluencersPage() {
     }
   }
 
-  useEffect(() => { setCurrentPage(1) }, [search, platformFilter, sortBy, showSavedOnly, cityFilter, minFollowers, maxFollowers, scoreFilter, verifiedOnly, nicheFilter])
+  useEffect(() => { setCurrentPage(1) }, [search, platformFilter, sortBy, showSavedOnly, cityFilter, minFollowers, maxFollowers, scoreFilter, verifiedOnly, nicheFilter, tierFilter])
+
+  // Câți creatori are fiecare categorie (doar Instagram conectat)
+  const tierCounts = useMemo(() => {
+    const c: Record<string, number> = {}
+    for (const i of influencers) { const t = creatorTier(i); if (t) c[t.key] = (c[t.key] || 0) + 1 }
+    return c
+  }, [influencers])
+  const toggleTier = (k: string) => setTierFilter(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k])
 
   // Normalizare pentru filtrare oraș
   const normalizeStr = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
@@ -651,6 +664,7 @@ export default function BrandInfluencersPage() {
       list = list.filter(i => totalFollowers(i.platforms) <= max)
     }
     if (verifiedOnly) list = list.filter(i => i.is_verified)
+    if (tierFilter.length) list = list.filter(i => { const t = creatorTier(i); return !!t && tierFilter.includes(t.key) })
     if (scoreFilter !== 'Toate nivelurile') {
       const scoreMap: Record<string, number[]> = {
         'Starter': [0, 199],
@@ -679,7 +693,7 @@ export default function BrandInfluencersPage() {
       return 0
     })
     return list
-  }, [influencers, search, platformFilter, nicheFilter, sortBy, minFollowers, maxFollowers, cityFilter, showSavedOnly, savedIds, scoreFilter, verifiedOnly, statsMap])
+  }, [influencers, search, platformFilter, nicheFilter, sortBy, minFollowers, maxFollowers, cityFilter, showSavedOnly, savedIds, scoreFilter, verifiedOnly, statsMap, tierFilter])
 
   const activeFilterCount = [
     platformFilter !== 'Toate Platformele',
@@ -690,6 +704,7 @@ export default function BrandInfluencersPage() {
     cityFilter !== '',
     scoreFilter !== 'Toate nivelurile',
     verifiedOnly,
+    tierFilter.length > 0,
   ].filter(Boolean).length
 
   if (loading) return (
@@ -698,7 +713,7 @@ export default function BrandInfluencersPage() {
     </div>
   )
 
-  const resetFilters = () => { setPlatformFilter('Toate Platformele'); setNicheFilter('Toate Nișele'); setMinFollowers(''); setMaxFollowers(''); setShowSavedOnly(false); setCityFilter(''); setScoreFilter('Toate nivelurile'); setVerifiedOnly(false) }
+  const resetFilters = () => { setPlatformFilter('Toate Platformele'); setNicheFilter('Toate Nișele'); setMinFollowers(''); setMaxFollowers(''); setShowSavedOnly(false); setCityFilter(''); setScoreFilter('Toate nivelurile'); setVerifiedOnly(false); setTierFilter([]) }
   const totalPages = Math.max(1, Math.ceil(displayed.length / ITEMS_PER_PAGE))
 
   return (
@@ -843,6 +858,30 @@ export default function BrandInfluencersPage() {
                 <SlidersHorizontal className="w-4 h-4" /> Filtre
                 {activeFilterCount > 0 && <span className="n">{activeFilterCount}</span>}
               </button>
+            </div>
+
+            {/* Categorie (Nano … Mega), din urmăritorii de pe Instagram verificat */}
+            <div style={{ marginTop: 14 }}>
+              <div className="bu-label" style={{ marginBottom: 8 }}>Categorie</div>
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+                <button type="button" onClick={() => setTierFilter([])} className={`bu-pill${tierFilter.length === 0 ? ' on' : ''}`} style={{ height: 40, flex: '0 0 auto' }}>Toate</button>
+                {TIERS.map(t => {
+                  const on = tierFilter.includes(t.key)
+                  return (
+                    <button key={t.key} type="button" onClick={() => toggleTier(t.key)} aria-pressed={on} title={`${t.range} urmăritori`}
+                      className={`bu-pill${on ? ' on' : ''}`} style={{ height: 40, flex: '0 0 auto', gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.dot, flex: 'none' }} />
+                      {t.label}
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: t.bg, color: t.fg }}>{tierCounts[t.key] || 0}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              {tierFilter.length > 0 && (
+                <p className="bu-muted bu-xs" style={{ margin: '8px 0 0' }}>
+                  {tierFilter.map(k => TIERS.find(t => t.key === k)).filter(Boolean).map(t => `${t!.label}: ${t!.range}`).join(' · ')} urmăritori
+                </p>
+              )}
             </div>
 
             {showFilters && (

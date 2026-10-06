@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 
 
+import TierCard from '@/components/influencer/TierCard'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 
 const SOCIAL_PLATFORMS = [
@@ -704,6 +705,9 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        {/* Nivelul creatorului (Nano … Mega) */}
+        <TierCard connected={!!igData?.connected} followers={igData?.followers || 0} onConnect={() => { window.location.href = '/api/auth/instagram' }} />
 
         {/* Social Accounts */}
         <div className="iu-card iu-card-pad">

@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     const admin = await getAdminClient()
     const { data, error } = await admin
       .from('influencers')
-      .select('id, name, avatar, bio, niches, platforms, avg_rating, review_count, country, city, ig_followers, tt_followers, instagram_followers, instagram_handle, slug, price_story, price_reel, price_post, price_youtube, price_min, portfolio_urls, recent_posts_urls')
+      .select('id, name, avatar, bio, niches, platforms, avg_rating, review_count, country, city, instagram_connected, ig_followers, tt_followers, instagram_followers, instagram_handle, slug, price_story, price_reel, price_post, price_youtube, price_min, portfolio_urls, recent_posts_urls')
       .in('id', ids)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -2,6 +2,8 @@
 'use client'
 import { Instagram, X, MapPin, ExternalLink } from 'lucide-react'
 import { fmtNum } from './types'
+import { creatorTier } from '@/lib/tiers'
+import TierChip from '@/components/shared/TierChip'
 
 const TikTokIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -46,6 +48,7 @@ export function ProfileModal({ profileModal, onClose }: { profileModal: any; onC
         {/* Body scrollabil */}
         <div className="px-6 pt-16 pb-6 overflow-y-auto text-center">
           <h3 className="font-black text-xl text-gray-900">{p.name ?? 'Influencer necunoscut'}</h3>
+          <div style={{ marginTop: 6 }}><TierChip tier={creatorTier(p)} unverified={!p.instagram_connected} /></div>
 
           {p.avg_rating > 0 && (
             <p className="text-sm font-bold text-amber-500 mt-1">

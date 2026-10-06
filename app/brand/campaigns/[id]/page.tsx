@@ -19,6 +19,8 @@ import { CampaignSavings } from '@/components/brand/campaigns/CampaignSavings'
 import { ProfileModal } from '@/components/brand/campaigns/ProfileModal'
 import { PauseModal, DraftModal, RejectModal } from '@/components/brand/campaigns/CampaignModals'
 import { COLLAB_CFG, fmt, fmtNum, daysLeft, type Tab } from '@/components/brand/campaigns/types'
+import { TIERS, creatorTier } from '@/lib/tiers'
+import TierChip from '@/components/shared/TierChip'
 
 const TikTokIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -51,6 +53,7 @@ export default function CampaignDetailPage() {
   const [collabLoading, setCollabLoading] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('all')
   const [sortBy, setSortBy] = useState<'date' | 'followers' | 'rating'>('date')
+  const [tierFilter, setTierFilter] = useState<string[]>([])
   const [menuOpen, setMenuOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState<any>({})
@@ -338,7 +341,24 @@ export default function CampaignDetailPage() {
 
   const tabFilter: Record<Tab, string[]> = { all: ['INVITED', 'PENDING', 'ACTIVE', 'COMPLETED', 'REJECTED'], pending: ['PENDING'], invited: ['INVITED'], active: ['ACTIVE'], completed: ['COMPLETED'], rejected: ['REJECTED'] }
 
-  const visible = collabs.filter(c => tabFilter[tab].includes(c.status)).sort((a, b) => {
+  // Categorii (Nano … Mega): distribuția pe toți aplicanții + numărul din fila curentă
+  const tierOfCollab = (c: any) => creatorTier(influencerData[c.influencer_id])
+  const tierTotals: Record<string, number> = {}
+  const tierInTab: Record<string, number> = {}
+  let unverifiedTotal = 0
+  for (const c of collabs) {
+    const t = tierOfCollab(c)
+    if (t) tierTotals[t.key] = (tierTotals[t.key] || 0) + 1
+    else unverifiedTotal++
+    if (t && tabFilter[tab].includes(c.status)) tierInTab[t.key] = (tierInTab[t.key] || 0) + 1
+  }
+  const toggleTier = (k: string) => setTierFilter(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k])
+
+  const visible = collabs.filter(c => tabFilter[tab].includes(c.status)).filter(c => {
+    if (!tierFilter.length) return true
+    const t = tierOfCollab(c)
+    return !!t && tierFilter.includes(t.key)
+  }).sort((a, b) => {
     const infA = influencerData[a.influencer_id], infB = influencerData[b.influencer_id]
     if (sortBy === 'followers') { const fa = (infA?.ig_followers || 0) + (infA?.tt_followers || 0), fb = (infB?.ig_followers || 0) + (infB?.tt_followers || 0); if (fb !== fa) return fb - fa; return (infB?.avg_rating || 0) - (infA?.avg_rating || 0) }
     if (sortBy === 'rating') return (infB?.avg_rating || 0) - (infA?.avg_rating || 0)
@@ -495,6 +515,31 @@ export default function CampaignDetailPage() {
       {/* ── Colaborări ── */}
       {view === 'collabs' && (
       <div className="card p-5 card-anim" style={{ animationDelay: '.08s' }}>
+        {/* Aplicanți pe nivel */}
+        {collabs.length > 0 && (
+          <div style={{ marginBottom: 16, padding: 14, border: '1px solid #e5e3f3', borderRadius: 16, background: '#fff' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#6a6690' }}>Aplicanți pe nivel</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#6a6690' }}>{collabs.length} în total</span>
+            </div>
+            <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', gap: 2, background: '#f1f0f8' }}>
+              {TIERS.filter(t => tierTotals[t.key]).map(t => <div key={t.key} title={`${t.label}: ${tierTotals[t.key]}`} style={{ flex: tierTotals[t.key], background: t.dot }} />)}
+              {unverifiedTotal > 0 && <div title={`Neverificat: ${unverifiedTotal}`} style={{ flex: unverifiedTotal, background: '#cfcce6' }} />}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', marginTop: 10, fontSize: 13 }}>
+              {TIERS.filter(t => tierTotals[t.key]).map(t => (
+                <span key={t.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <b style={{ width: 10, height: 10, borderRadius: 3, background: t.dot }} />{t.label} <b style={{ fontVariantNumeric: 'tabular-nums' }}>{tierTotals[t.key]}</b>
+                </span>
+              ))}
+              {unverifiedTotal > 0 && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#6a6690' }}>
+                  <b style={{ width: 10, height: 10, borderRadius: 3, background: '#cfcce6' }} />Neverificat <b style={{ fontVariantNumeric: 'tabular-nums' }}>{unverifiedTotal}</b>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
         <CollabToolbar
           title="Aplicanți și colaborări"
           subtitle={<>
@@ -524,6 +569,28 @@ export default function CampaignDetailPage() {
           filters={[{ key: 'all', label: 'Toți', count: counts.all }, { key: 'pending', label: 'Aplicate', count: counts.pending }, { key: 'invited', label: 'Invitați', count: counts.invited }, { key: 'active', label: 'Activi', count: counts.active }, { key: 'completed', label: 'Finalizați', count: counts.completed }, { key: 'rejected', label: 'Refuzați', count: counts.rejected }]}
           tab={tab} onTab={setTab} sortBy={sortBy} onSort={setSortBy}
         />
+
+        {/* Filtru pe nivel */}
+        {collabs.length > 0 && Object.keys(tierTotals).length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+              {TIERS.filter(t => tierTotals[t.key]).map(t => {
+                const on = tierFilter.includes(t.key)
+                return (
+                  <button key={t.key} type="button" onClick={() => toggleTier(t.key)} aria-pressed={on} title={`${t.range} urmăritori`}
+                    style={{ flex: '0 0 auto', height: 34, padding: '0 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 6,
+                      background: on ? t.bg : '#fff', color: on ? t.fg : '#6a6690', border: on ? `1.5px solid ${t.dot}` : '1px solid #e5e3f3' }}>
+                    <b style={{ width: 8, height: 8, borderRadius: '50%', background: t.dot }} />{t.label}
+                    <span style={{ fontSize: 11, opacity: .8 }}>{tierInTab[t.key] || 0}</span>
+                  </button>
+                )
+              })}
+              {tierFilter.length > 0 && (
+                <button type="button" onClick={() => setTierFilter([])} style={{ flex: '0 0 auto', height: 34, padding: '0 12px', borderRadius: 999, border: 0, background: 'none', color: '#5a35e6', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>Șterge filtrul</button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Collab list */}
         {visible.length === 0 ? (
@@ -563,14 +630,17 @@ export default function CampaignDetailPage() {
                   avatar={inf?.avatar ? <img src={inf.avatar} alt="" /> : <span>{inf?.name?.[0]?.toUpperCase() ?? '?'}</span>}
                   onAvatar={openProfile} name={inf?.name ?? 'Creator necunoscut'} onName={openProfile} sub={sub}
                   status={cst.label} tone={tone}
-                  badges={isActive ? (
+                  badges={(
                     <>
+                      <TierChip tier={creatorTier(inf)} unverified={!!inf && !inf.instagram_connected} />
+                      {isActive && <>
                       {packageSent && <span className="cx-pill blue">Produs trimis</span>}
                       {packageReceived && <span className="cx-pill green">Produs primit</span>}
                       {noPackage && <span className="cx-pill">Produs netrimis</span>}
                       {campaign?.delivery_method === 'pickup' && (collab.checked_in_at ? <span className="cx-pill indigo">La locație</span> : <span className="cx-pill">Neconfirmat la locație</span>)}
+                      </>}
                     </>
-                  ) : undefined}
+                  )}
                   profileHref={`/influencer/${infSlug}`}
                   notice={isInvited ? <div className="cx-note">Așteaptă răspunsul creatorului</div> : undefined}
                   actions={isInvited ? (
