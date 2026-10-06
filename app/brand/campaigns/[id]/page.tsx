@@ -632,7 +632,7 @@ export default function CampaignDetailPage() {
                   status={cst.label} tone={tone}
                   badges={(
                     <>
-                      <TierChip tier={creatorTier(inf)} unverified={!!inf && !inf.instagram_connected} />
+                      {inf && <TierChip of={inf} />}
                       {isActive && <>
                       {packageSent && <span className="cx-pill blue">Produs trimis</span>}
                       {packageReceived && <span className="cx-pill green">Produs primit</span>}

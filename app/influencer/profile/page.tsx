@@ -12,6 +12,7 @@ import {
 
 
 import TierCard from '@/components/influencer/TierCard'
+import { manualFollowers } from '@/lib/tiers'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 
 const SOCIAL_PLATFORMS = [
@@ -707,7 +708,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Nivelul creatorului (Nano … Mega) */}
-        <TierCard connected={!!igData?.connected} followers={igData?.followers || 0} onConnect={() => { window.location.href = '/api/auth/instagram' }} />
+        <TierCard connected={!!igData?.connected} followers={igData?.followers || 0} manual={manualFollowers({ instagram_followers: igFollowers, tt_followers: ttFollowers, platforms: socialLinks })} onConnect={() => { window.location.href = '/api/auth/instagram' }} />
 
         {/* Social Accounts */}
         <div className="iu-card iu-card-pad">

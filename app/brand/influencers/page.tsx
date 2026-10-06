@@ -266,7 +266,7 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
                 {influencer.approval_status === 'approved' && !influencer.is_verified && (
                   <CheckCircle className="w-4 h-4" style={{ color: '#5a35e6' }} />
                 )}
-                <TierChip tier={creatorTier(influencer)} unverified={!influencer.instagram_connected} />
+                <TierChip of={influencer} />
               </div>
               {influencer.city && (
                 <div className="bu-row bu-xs" style={{ gap: 4, marginTop: 4, color: '#5a35e6', fontWeight: 700 }}>
@@ -431,7 +431,7 @@ function InfluencerCard({ influencer, isSaved, onSave, onClick, stats }: {
       </div>
 
       <div className="bu-row" style={{ gap: 6, flexWrap: 'wrap' }}>
-        <TierChip tier={creatorTier(influencer)} unverified={!influencer.instagram_connected} />
+        <TierChip of={influencer} />
         {influencer.is_verified && <span className="bu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star className="w-3 h-3" /> Verified</span>}
       </div>
 
@@ -872,14 +872,14 @@ export default function BrandInfluencersPage() {
                       className={`bu-pill${on ? ' on' : ''}`} style={{ height: 40, flex: '0 0 auto', gap: 6 }}>
                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.dot, flex: 'none' }} />
                       {t.label}
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: t.bg, color: t.fg }}>{tierCounts[t.key] || 0}</span>
+                      {(tierCounts[t.key] || 0) > 0 && <span style={{ fontSize: 11, fontWeight: 800, padding: '1px 7px', borderRadius: 999, background: t.bg, color: t.fg }}>{tierCounts[t.key]}</span>}
                     </button>
                   )
                 })}
               </div>
               {tierFilter.length > 0 && (
                 <p className="bu-muted bu-xs" style={{ margin: '8px 0 0' }}>
-                  {tierFilter.map(k => TIERS.find(t => t.key === k)).filter(Boolean).map(t => `${t!.label}: ${t!.range}`).join(' · ')} urmăritori
+                  {tierFilter.map(k => TIERS.find(t => t.key === k)).filter(Boolean).map(t => `${t!.label}: ${t!.range}`).join(' · ')} urmăritori · include și nivelurile estimate din numărul introdus de creator
                 </p>
               )}
             </div>

@@ -1,7 +1,7 @@
 // Categoriile de influenceri (Nano … Mega), calculate AUTOMAT din numărul de urmăritori
 // al contului de Instagram conectat (ig_followers, adus din API-ul oficial Meta).
-// Fără Instagram conectat → fără nivel („Neverificat"): numărul scris manual nu poate fi verificat,
-// deci nu intră în nivel (altfel creatorii și-ar putea alege singuri o categorie mai mare).
+// Instagram conectat → nivel VERIFICAT (număr din API). Fără Instagram, dar cu număr scris manual →
+// nivel ESTIMAT (marcat distinct, pentru că numărul nu poate fi verificat).
 //
 // Pragurile se schimbă DOAR aici.
 
@@ -36,10 +36,57 @@ export function getTier(followers: number | null | undefined): Tier | null {
   return TIERS.find(t => n >= t.min && n < t.max) ?? null
 }
 
-/** Nivelul unui creator: doar din Instagram conectat și verificat prin API. */
-export function creatorTier(c: { instagram_connected?: boolean | null; ig_followers?: number | null } | null | undefined): Tier | null {
-  if (!c || !c.instagram_connected) return null
-  return getTier(c.ig_followers)
+/** „12K" → 12000, „1,2M" → 1200000, „12.500" → 12500. Orice altceva → 0. */
+export function parseCount(raw: unknown): number {
+  if (typeof raw === 'number') return Number.isFinite(raw) && raw > 0 ? Math.round(raw) : 0
+  const s = String(raw ?? '').trim().toUpperCase()
+  if (!s) return 0
+  const m = s.match(/^([\d.,\s]+)\s*([KM])$/)
+  if (m) {
+    const n = parseFloat(m[1].replace(/\s/g, '').replace(',', '.'))
+    return Number.isFinite(n) ? Math.round(n * (m[2] === 'M' ? 1_000_000 : 1_000)) : 0
+  }
+  const d = parseInt(s.replace(/\D/g, ''), 10)
+  return Number.isFinite(d) ? d : 0
+}
+
+export type TierSource = 'verified' | 'estimated'
+
+type TierInput = {
+  instagram_connected?: boolean | null
+  ig_followers?: number | null
+  instagram_followers?: number | string | null
+  tt_followers?: number | string | null
+  platforms?: { platform?: string; followers?: string | number }[] | null
+}
+
+/** Cel mai mare număr de urmăritori introdus manual (platforms JSON + câmpurile manuale), pe o singură platformă. */
+export function manualFollowers(c: TierInput | null | undefined): number {
+  if (!c) return 0
+  const nums = [parseCount(c.instagram_followers), parseCount(c.tt_followers)]
+  if (Array.isArray(c.platforms)) for (const p of c.platforms) nums.push(parseCount(p?.followers))
+  return Math.max(0, ...nums)
+}
+
+/**
+ * Nivelul unui creator + sursa:
+ *  - „verified": Instagram conectat, număr din API-ul Meta;
+ *  - „estimated": numărul scris manual de creator (nu se poate verifica);
+ *  - null: nu avem date.
+ */
+export function creatorTierInfo(c: TierInput | null | undefined): { tier: Tier | null; source: TierSource | null; followers: number } {
+  if (!c) return { tier: null, source: null, followers: 0 }
+  if (c.instagram_connected) {
+    const f = Number(c.ig_followers) || 0
+    return { tier: getTier(f), source: 'verified', followers: f }
+  }
+  const f = manualFollowers(c)
+  return f > 0 ? { tier: getTier(f), source: 'estimated', followers: f } : { tier: null, source: null, followers: 0 }
+}
+
+/** Nivelul (verificat sau estimat) — pentru filtre și contoare. */
+export function creatorTier(c: TierInput | null | undefined): Tier | null {
+  return creatorTierInfo(c).tier
 }
 
 export function tierByKey(key: string): Tier | undefined {
