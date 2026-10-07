@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { SessionGuard } from '@/components/shared/session-guard'
 import { LangProvider } from '@/lib/i18n/context'
-import { Geist, Geist_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import PWAInstallBanner from '@/components/PWAInstallBanner'
@@ -9,8 +9,8 @@ import CookieBanner from '@/components/CookieBanner'
 import ErrorReporter from '@/components/shared/ErrorReporter'
 import '../styles/mobile.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const _geist = localFont({ src: '../lib/fonts/geist-latin-wght-normal.woff2', weight: '100 900', display: 'swap' });
+const _geistMono = localFont({ src: '../lib/fonts/geist-mono-latin-wght-normal.woff2', weight: '100 900', display: 'swap' });
 
 export const metadata: Metadata = {
   title: {

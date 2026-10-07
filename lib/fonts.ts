@@ -1,18 +1,29 @@
-// Fonturile paginii principale și ale paginilor de autentificare.
-// next/font le descarcă la build și le servește de pe addfame.ro —
-// pagina nu depinde de Google Fonts la încărcare.
-import { Bricolage_Grotesque, Figtree } from 'next/font/google'
+import localFont from 'next/font/local'
 
-export const fontDisplay = Bricolage_Grotesque({
-  subsets: ['latin', 'latin-ext'],
-  weight: ['500', '700', '800'],
+// Bricolage Grotesque este self-hosted (fișiere în lib/fonts) pentru că loaderul
+// Toate fonturile sunt self-hosted: next/font/google eșuează la build cu noile URL-uri fonts.gstatic.com/l/font?kit=...
+export const fontDisplay = localFont({
+  src: [
+    {
+      path: './fonts/bricolage-grotesque-latin-ext-wght-normal.woff2',
+      weight: '200 800',
+      style: 'normal',
+    },
+    {
+      path: './fonts/bricolage-grotesque-latin-wght-normal.woff2',
+      weight: '200 800',
+      style: 'normal',
+    },
+  ],
   variable: '--font-display',
   display: 'swap',
 })
 
-export const fontBody = Figtree({
-  subsets: ['latin', 'latin-ext'],
-  weight: ['400', '500', '600', '700', '800'],
+export const fontBody = localFont({
+  src: [
+    { path: './fonts/figtree-latin-ext-wght-normal.woff2', weight: '300 900', style: 'normal' },
+    { path: './fonts/figtree-latin-wght-normal.woff2', weight: '300 900', style: 'normal' },
+  ],
   variable: '--font-body',
   display: 'swap',
 })
