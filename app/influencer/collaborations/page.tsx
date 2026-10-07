@@ -24,6 +24,7 @@ type Collaboration = {
   id: string
   campaign_id: string
   admin_invited?: boolean | null
+  draft_status?: string | null
   status: string
   created_at: string
   reserved_amount?: number
@@ -267,6 +268,8 @@ const isPickupBarter = (c: any) => c.campaigns?.campaign_type === 'BARTER' && c.
 const isPendingReview = (c: any) =>
   c.status === 'ACTIVE' && !!c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at
 const isRejectedPost = (c: any) => c.status === 'ACTIVE' && !!c.deliverable_rejected_at && !c.deliverable_submitted_at
+// Există un draft video care nu e încă aprobat de brand → nu se postează și nu se trimite dovada
+const waitingDraft = (c: any) => c.status === 'ACTIVE' && !c.deliverable_submitted_at && (c.draft_status === 'pending' || c.draft_status === 'changes_requested')
 const needsAddress = (c: any) => c.status === 'ACTIVE' && isDeliveryBarter(c) && !c.delivery_name
 const isLatePost = (c: any) =>
   c.status === 'ACTIVE' && !!c.package_received_at && !c.deliverable_submitted_at && !!c.post_deadline_days &&
@@ -291,6 +294,7 @@ function collabStatus(c: any, expired: boolean): Pastel {
   if (c.status === 'ACTIVE') {
     if (isPendingReview(c)) return { label: 'În revizuire la brand', ...AMB }
     if (isRejectedPost(c)) return { label: 'Post respins', ...RED }
+    if (waitingDraft(c)) return c.draft_status === 'pending' ? { label: 'Draft la brand', ...AMB } : { label: 'Modificări cerute la draft', ...ORG }
     if (isLatePost(c)) return { label: 'Întârziat', ...ORG }
     if (needsAddress(c)) return { label: 'Adresă necesară', ...AMB }
     if (isDeliveryBarter(c) && !c.package_sent_at) return { label: 'Brandul pregătește pachetul', ...BLU }
@@ -765,7 +769,11 @@ export default function CollaborationsPage() {
         .select('*, reserved_amount, payment_amount, campaigns(id, title, brand_name, budget, budget_per_influencer, max_influencers, deadline, platforms, description, product_name, content_type, content_tone, min_duration, required_caption, required_hashtags, min_days_online, forbidden_mentions, forbidden_content, proof_requirements, key_messages, campaign_type, delivery_method, offer_name, offer_value, offer_description, story_instructions, offer_image_url, offer_image_urls, registrations_open, registration_opened_at, registration_deadline_days, deliverables, promotion_link, promotion_link_placement, tasks_stories_count, tasks_include_post, tasks_ig_reel, tasks_ig_reel_duration, tasks_ig_post, tasks_ig_live, tasks_ig_days_online, tasks_tt_video, tasks_tt_video_duration, tasks_tt_live, tasks_tt_duet, tasks_tt_days_online, tasks_yt_short, tasks_yt_short_duration, tasks_yt_video, tasks_yt_video_duration, tasks_yt_mention, tasks_fb_post, tasks_fb_story, tasks_fb_reel, tasks_fb_share, brief_pdf_url), package_sent_at, package_tracking, package_courier, package_received_at, post_deadline_days, checked_in_at')
         .eq('influencer_id', inf.id)
         .order('created_at', { ascending: false })
-      if (!error && data) setCollabs(data as Collaboration[])
+      if (!error && data) {
+        // statusul ultimului draft video (pentru nota „Trimite dovada”); fără el pagina merge ca înainte
+        const st: Record<string, string> = await fetch('/api/deliverables/mine').then(r => r.ok ? r.json() : {}).then((j: any) => j?.statuses || {}).catch(() => ({}))
+        setCollabs((data as Collaboration[]).map(c => ({ ...c, draft_status: st[c.id] || null })))
+      }
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }, [])
@@ -1142,7 +1150,16 @@ export default function CollaborationsPage() {
         )}
 
         {/* Dovadă: de trimis / în revizuire */}
-        {c.status === 'ACTIVE' && !c.deliverable_submitted_at && !isRejectedPost(c) && !needsAddress(c) && (
+        {waitingDraft(c) && (
+          <Note tone="amber" title={c.draft_status === 'pending' ? 'Așteaptă aprobarea draftului' : 'Brandul a cerut modificări la draft'}>
+            <span className="iu-xs">
+              {c.draft_status === 'pending'
+                ? 'Nu posta încă. După ce brandul aprobă draftul, publici exact varianta aprobată și trimiți aici linkul postării.'
+                : 'Trimite o versiune nouă a draftului mai sus. Postezi abia după aprobare.'}
+            </span>
+          </Note>
+        )}
+        {c.status === 'ACTIVE' && !c.deliverable_submitted_at && !isRejectedPost(c) && !needsAddress(c) && !waitingDraft(c) && (
           <Note tone="violet" title="Trimite dovada postului">
             <span className="iu-xs">Publică postul și trimite link-ul pentru a primi plata.</span>
             <button className="iu-btn p" style={{ alignSelf: 'flex-start' }} onClick={() => setDeliverableModalId(c.id)}><Upload size={15} /> Trimite dovada</button>
@@ -1286,6 +1303,7 @@ export default function CollaborationsPage() {
       else if (isDeliveryBarter(c) && c.package_sent_at && !c.package_received_at) main = <button className="iu-btn p" onClick={() => confirmPackageReceived(c)}><Package size={15} /> Am primit coletul</button>
       else if (isPickupBarter(c) && !c.checked_in_at) main = <button className="iu-btn p" onClick={toggle}><Check size={15} /> Check-in</button>
       else if (isPendingReview(c)) main = <Link href={`/influencer/inbox?collab=${c.id}`} className="iu-btn"><MessageSquare size={15} /> Deschide chat</Link>
+      else if (waitingDraft(c)) main = <button className="iu-btn" onClick={toggle}><Eye size={15} /> Vezi draftul</button>
       else if (!c.deliverable_submitted_at && !(isDeliveryBarter(c) && !c.package_received_at)) main = <button className="iu-btn p" onClick={() => setDeliverableModalId(c.id)}><Upload size={15} /> Trimite dovada</button>
       else main = <Link href={`/influencer/inbox?collab=${c.id}`} className="iu-btn"><MessageSquare size={15} /> Deschide chat</Link>
     } else if (c.status === 'COMPLETED') {

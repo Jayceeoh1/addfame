@@ -1,6 +1,7 @@
 'use client'
 import { AvatarWithBadge } from '@/components/shared/CreatorBadge'
 // @ts-nocheck
+import { parseCount } from '@/lib/tiers'
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
@@ -230,18 +231,7 @@ export default function PublicInfluencerProfile() {
     </div>
   )
 
-  const totalFollowers = (inf.platforms || []).reduce((s, p) => {
-    const raw = String(p.followers || '0').trim().toLowerCase().replace(/\s/g, '')
-    let n = 0
-    if (raw.endsWith('m')) {
-      n = Math.round(parseFloat(raw) * 1_000_000)
-    } else if (raw.endsWith('k')) {
-      n = Math.round(parseFloat(raw) * 1_000)
-    } else {
-      n = parseInt(raw.replace(/\D/g, ''))
-    }
-    return s + (isNaN(n) ? 0 : n)
-  }, 0)
+  const totalFollowers = (inf.platforms || []).reduce((s, p) => s + parseCount(p.followers), 0)
 
   const avgRating = inf.avg_rating || 0
   const reviewCount = inf.review_count || 0

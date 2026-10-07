@@ -12,7 +12,7 @@ import {
 
 
 import TierCard from '@/components/influencer/TierCard'
-import { manualFollowers } from '@/lib/tiers'
+import { manualFollowers, parseCount } from '@/lib/tiers'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 
 const SOCIAL_PLATFORMS = [
@@ -437,15 +437,14 @@ export default function ProfilePage() {
         price_story: priceStory ? parseInt(priceStory) : null,
         price_reel: priceReel ? parseInt(priceReel) : null,
         price_post: pricePost ? parseInt(pricePost) : null,
+        // „12,4K” → 12400 (înainte se păstrau doar cifrele: „12,4K” devenea 124)
         instagram_followers: (() => {
           const ig = socialLinks.find((s: any) => s.platform === 'instagram' || s.key === 'instagram')
-          const manual = igFollowers ? parseInt(igFollowers.replace(/[^0-9]/g, '')) : null
-          return ig?.followers || manual || null
+          return parseCount(ig?.followers) || parseCount(igFollowers) || null
         })(),
         tt_followers: (() => {
           const tt = socialLinks.find((s: any) => s.platform === 'tiktok' || s.key === 'tiktok')
-          const manual = ttFollowers ? parseInt(ttFollowers.replace(/[^0-9]/g, '')) : null
-          return tt?.followers || manual || null
+          return parseCount(tt?.followers) || parseCount(ttFollowers) || null
         })(),
         price_youtube: priceYoutube ? parseInt(priceYoutube) : null,
         price_min: priceMin ? parseInt(priceMin) : null,
@@ -1011,6 +1010,11 @@ export default function ProfilePage() {
                         value={socialFollowers}
                         onChange={e => setSocialFollowers(e.target.value)}
                       />
+                      {socialFollowers.trim() && (
+                        <p className={`text-xs mt-1 ${parseCount(socialFollowers) > 0 ? 'text-muted-foreground' : 'text-red-600'}`}>
+                          {parseCount(socialFollowers) > 0 ? `Se salvează ca ${parseCount(socialFollowers).toLocaleString('ro-RO')} urmăritori` : 'Scrie un număr, de ex. 12400 sau 12,4K'}
+                        </p>
+                      )}
                     </div>
 
                     <div>

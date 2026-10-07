@@ -140,7 +140,7 @@ async function loadTargeting(admin: SupabaseClient, id: string) {
   return error ? {} : (data || {})
 }
 
-async function loadCreators(admin: SupabaseClient): Promise<AlertCreator[]> {
+export async function loadCreators(admin: SupabaseClient): Promise<AlertCreator[]> {
   const out: AlertCreator[] = []
   for (let from = 0; from < 20000; from += 1000) {
     const { data, error } = await admin.from('influencers').select(CREATOR_COLS)
@@ -152,7 +152,7 @@ async function loadCreators(admin: SupabaseClient): Promise<AlertCreator[]> {
   return out
 }
 
-async function sendEmailBatch(items: { to: string; subject: string; html: string }[]) {
+export async function sendEmailBatch(items: { to: string; subject: string; html: string }[]) {
   const key = process.env.RESEND_API_KEY
   if (!key || !items.length) return 0
   let sent = 0

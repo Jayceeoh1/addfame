@@ -40,15 +40,19 @@ export function getTier(followers: number | null | undefined): Tier | null {
 /** „12K" → 12000, „1,2M" → 1200000, „12.500" → 12500. Orice altceva → 0. */
 export function parseCount(raw: unknown): number {
   if (typeof raw === 'number') return Number.isFinite(raw) && raw > 0 ? Math.round(raw) : 0
-  const s = String(raw ?? '').trim().toUpperCase()
+  const s = String(raw ?? '').replace(/\u00a0/g, ' ').trim().toUpperCase()
   if (!s) return 0
-  const m = s.match(/^([\d.,\s]+)\s*([KM])$/)
+  // „12,4K”, „12.4 k”, „1,2M”, „15 mii”, „1,5 mil” (+ eventual „urmăritori” după)
+  const m = s.match(/^(\d[\d.,\s]*?)\s*(MILIOANE|MILION|MIL|MII|K|M)(?![A-Z])/)
   if (m) {
     const n = parseFloat(m[1].replace(/\s/g, '').replace(',', '.'))
-    return Number.isFinite(n) ? Math.round(n * (m[2] === 'M' ? 1_000_000 : 1_000)) : 0
+    const mult = m[2] === 'K' || m[2] === 'MII' ? 1_000 : 1_000_000
+    return Number.isFinite(n) && n > 0 ? Math.round(n * mult) : 0
   }
-  const d = parseInt(s.replace(/\D/g, ''), 10)
-  return Number.isFinite(d) ? d : 0
+  // „12.400”, „12 400 urmăritori” → doar numărul de la început
+  const lead = s.match(/^\d[\d.,\s]*/)
+  const d = parseInt((lead ? lead[0] : s).replace(/\D/g, ''), 10)
+  return Number.isFinite(d) && d > 0 ? d : 0
 }
 
 export type TierSource = 'verified' | 'estimated'

@@ -725,13 +725,15 @@ export default function BrandInfluencersPage() {
       list = list.filter(i => (i.platforms ?? []).some(p => p.platform.toLowerCase() === platformFilter.toLowerCase()))
     }
     if (nicheFilter !== 'Toate Nișele') list = list.filter(i => i.niches.includes(nicheFilter))
+    // urmăritori: cel mai mare dintre platformele declarate și Instagram-ul conectat (verificat)
+    const reachOf = (i: Influencer) => Math.max(totalFollowers(i.platforms), i.instagram_connected ? Number(i.ig_followers) || 0 : 0)
     if (minFollowers) {
-      const min = parseInt(minFollowers.replace(/[^0-9]/g, ''), 10) * 1000
-      list = list.filter(i => totalFollowers(i.platforms) >= min)
+      const min = (parseFloat(minFollowers.replace(',', '.')) || 0) * 1000
+      list = list.filter(i => reachOf(i) >= min)
     }
     if (maxFollowers) {
-      const max = parseInt(maxFollowers.replace(/[^0-9]/g, ''), 10) * 1000
-      list = list.filter(i => totalFollowers(i.platforms) <= max)
+      const max = (parseFloat(maxFollowers.replace(',', '.')) || 0) * 1000
+      if (max > 0) list = list.filter(i => reachOf(i) <= max)
     }
     if (verifiedOnly) list = list.filter(i => i.is_verified)
     if (tierFilter.length) list = list.filter(i => { const t = creatorTier(i); return !!t && tierFilter.includes(t.key) })
