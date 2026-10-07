@@ -17,6 +17,7 @@ import { notifyCollabApproved, notifyCollabRejected, notifyPaymentReceived, noti
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isFeeModelCampaign, countSelectedInfluencers } from '@/lib/campaign-fee'
+import { eligibility, hasTargeting, ELIG_MESSAGE } from '@/lib/eligibility'
 import {
   emailCollaborationApproved,
   emailPaymentReleased,
@@ -724,6 +725,19 @@ export async function applyToCampaign(campaignId: string, message?: string, deli
       if (expiry < new Date()) {
         return { error: 'Perioada de înscriere pentru această campanie a expirat.' }
       }
+    }
+
+    // Țintirea brandului (categorii / nișe), verificată pe server — nu doar ascunsă în listă.
+    // Coloanele pot lipsi până rulează SQL 17: atunci eroarea se ignoră și campania se comportă ca înainte.
+    const { data: targeting, error: targetErr } = await admin
+      .from('campaigns').select('elig_tiers, elig_niches').eq('id', campaignId).maybeSingle()
+    if (!targetErr && hasTargeting(targeting)) {
+      const { data: me } = await admin
+        .from('influencers')
+        .select('niches, platforms, instagram_connected, ig_followers, tt_followers, instagram_followers')
+        .eq('id', inf.id).maybeSingle()
+      const el = eligibility(targeting, me)
+      if (!el.ok) return { error: ELIG_MESSAGE[el.reason!] }
     }
 
     const { data: existing } = await admin

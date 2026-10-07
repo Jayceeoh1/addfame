@@ -1,7 +1,8 @@
 // Categoriile de influenceri (Nano … Mega), calculate AUTOMAT din numărul de urmăritori
 // al contului de Instagram conectat (ig_followers, adus din API-ul oficial Meta).
-// Instagram conectat → nivel VERIFICAT (număr din API). Fără Instagram, dar cu număr scris manual →
-// nivel ESTIMAT (marcat distinct, pentru că numărul nu poate fi verificat).
+// Instagram conectat → nivel VERIFICAT (număr din API), cu excepția cazului în care altă rețea introdusă manual
+// are mai mulți urmăritori (atunci nivelul e „estimat"). Fără Instagram, dar cu număr scris manual → ESTIMAT
+// (marcat distinct, pentru că numărul nu poate fi verificat).
 //
 // Pragurile se schimbă DOAR aici.
 
@@ -60,25 +61,37 @@ type TierInput = {
   platforms?: { platform?: string; followers?: string | number }[] | null
 }
 
-/** Cel mai mare număr de urmăritori introdus manual (platforms JSON + câmpurile manuale), pe o singură platformă. */
-export function manualFollowers(c: TierInput | null | undefined): number {
+/**
+ * Cel mai mare număr de urmăritori introdus manual, pe o singură platformă
+ * (platforms JSON + câmpurile manuale). `excludeInstagram`: ignoră Instagram (folosit când Instagram e conectat și verificat).
+ */
+export function manualFollowers(c: TierInput | null | undefined, opts?: { excludeInstagram?: boolean }): number {
   if (!c) return 0
-  const nums = [parseCount(c.instagram_followers), parseCount(c.tt_followers)]
-  if (Array.isArray(c.platforms)) for (const p of c.platforms) nums.push(parseCount(p?.followers))
+  const nums = [opts?.excludeInstagram ? 0 : parseCount(c.instagram_followers), parseCount(c.tt_followers)]
+  if (Array.isArray(c.platforms)) {
+    for (const p of c.platforms) {
+      if (opts?.excludeInstagram && String(p?.platform || '').toLowerCase() === 'instagram') continue
+      nums.push(parseCount(p?.followers))
+    }
+  }
   return Math.max(0, ...nums)
 }
 
 /**
  * Nivelul unui creator + sursa:
- *  - „verified": Instagram conectat, număr din API-ul Meta;
- *  - „estimated": numărul scris manual de creator (nu se poate verifica);
+ *  - „verified": numărul vine din Instagram conectat (API Meta) și e cel mai mare;
+ *  - „estimated": numărul scris manual de creator (nu se poate verifica) — fie fără Instagram conectat,
+ *    fie pe altă rețea (ex. TikTok) cu mai mulți urmăritori decât Instagram-ul verificat;
  *  - null: nu avem date.
+ * Se ia cel mai mare număr: un creator cu 24K pe Instagram și 200K pe TikTok e Mid, nu Micro.
  */
 export function creatorTierInfo(c: TierInput | null | undefined): { tier: Tier | null; source: TierSource | null; followers: number } {
   if (!c) return { tier: null, source: null, followers: 0 }
   if (c.instagram_connected) {
-    const f = Number(c.ig_followers) || 0
-    return { tier: getTier(f), source: 'verified', followers: f }
+    const ig = Number(c.ig_followers) || 0
+    const other = manualFollowers(c, { excludeInstagram: true })
+    if (other > ig) return { tier: getTier(other), source: 'estimated', followers: other }
+    return { tier: getTier(ig), source: 'verified', followers: ig }
   }
   const f = manualFollowers(c)
   return f > 0 ? { tier: getTier(f), source: 'estimated', followers: f } : { tier: null, source: null, followers: 0 }

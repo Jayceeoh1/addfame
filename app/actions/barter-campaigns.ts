@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { chargeCampaignFee } from '@/lib/campaign-fee'
 import { haversineDistance, normalizeCity, extractCityFromAddress } from '@/lib/geo-utils'
+import { cleanTiers, cleanNiches } from '@/lib/eligibility'
 
 export interface CreateBarterCampaignInput {
   offer_type: 'product' | 'service'
@@ -67,6 +68,8 @@ export interface CreateBarterCampaignInput {
   forbidden_content?: string
   min_days_online?: number
   min_followers_target: number
+  elig_tiers?: string[]
+  elig_niches?: string[]
   platforms: string[]
   deadline?: string
 }
@@ -91,6 +94,20 @@ function buildDeliverables(data: CreateBarterCampaignInput): string {
   if (data.tasks_facebook_story)
     parts.push('1 Facebook Story')
   return parts.join(' + ') || 'Conținut creat de influencer'
+}
+
+/**
+ * Țintirea creatorilor (categorii + nișe). Se trimite spre baza de date DOAR când e setată,
+ * ca salvarea campaniilor să meargă și înainte de rularea SQL 17 (coloanele noi).
+ */
+function eligFields(d: { elig_tiers?: unknown; elig_niches?: unknown }, forceClear = false) {
+  const tiers = cleanTiers(d?.elig_tiers)
+  const niches = cleanNiches(d?.elig_niches)
+  const out: Record<string, string[]> = {}
+  // forceClear: draftul avea deja țintire; trimitem și listele goale ca brandul s-o poată scoate
+  if (tiers.length || forceClear) out.elig_tiers = tiers
+  if (niches.length || forceClear) out.elig_niches = niches
+  return out
 }
 
 export async function createBarterCampaign(data: CreateBarterCampaignInput) {
@@ -159,6 +176,7 @@ export async function createBarterCampaign(data: CreateBarterCampaignInput) {
       story_include_product: data.story_include_product,
       story_instructions: data.story_instructions?.trim() || null,
       min_followers_target: data.min_followers_target || 0,
+      ...eligFields(data),
       tasks_stories_count: data.tasks_stories_count,
       tasks_include_post: data.tasks_include_post,
       // Instagram
@@ -235,11 +253,13 @@ export async function saveDraftBarterCampaign(data: Partial<CreateBarterCampaign
       .from('brands').select('id, name, city').eq('user_id', user.id).single()
     if (brandError || !brand) throw new Error('Profilul brandului nu a fost găsit.')
 
+    let existingRow: any = null
     // Dacă există un draft, verificăm că aparține acestui brand
     if (existingId) {
       const { data: existing } = await supabase
-        .from('campaigns').select('id, brand_id, status').eq('id', existingId).single()
+        .from('campaigns').select('*').eq('id', existingId).single()
       if (!existing || existing.brand_id !== brand.id) throw new Error('Draft invalid.')
+      existingRow = existing
       if (!['DRAFT', 'REJECTED'].includes(existing.status)) throw new Error('Campania nu mai este draft.')
     }
 
@@ -287,6 +307,7 @@ export async function saveDraftBarterCampaign(data: Partial<CreateBarterCampaign
       story_include_product: data.story_include_product || false,
       story_instructions: data.story_instructions?.trim() || null,
       min_followers_target: data.min_followers_target || 0,
+      ...eligFields(data, !!((existingRow as any)?.elig_tiers?.length || (existingRow as any)?.elig_niches?.length)),
       tasks_stories_count: data.tasks_stories_count || 0,
       tasks_include_post: data.tasks_include_post || false,
       tasks_ig_reel: data.tasks_ig_reel || false,
@@ -448,6 +469,7 @@ export async function duplicateBarterCampaign(campaignId: string) {
       story_include_product: src.story_include_product,
       story_instructions: src.story_instructions,
       min_followers_target: src.min_followers_target,
+      ...eligFields(src),
       tasks_stories_count: src.tasks_stories_count,
       tasks_include_post: src.tasks_include_post,
       tasks_ig_reel: src.tasks_ig_reel,

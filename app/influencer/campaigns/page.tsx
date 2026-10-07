@@ -5,6 +5,7 @@ import React from 'react'
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { eligibility } from '@/lib/eligibility'
 import {
   Search, Clock, CheckCircle, AlertCircle, X, ArrowRight,
   Zap, Filter, Globe, SlidersHorizontal, ChevronDown,
@@ -304,7 +305,8 @@ function CampaignScoreTimer({ acceptedAt }: { acceptedAt?: string }) {
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [barterCampaigns, setBarterCampaigns] = useState<any[]>([])
+  const [barterAll, setBarterCampaigns] = useState<any[]>([])
+  const [creatorRow, setCreatorRow] = useState<any>(null)
   const [noReplyCollabs, setNoReplyCollabs] = useState<any[]>([])
   const [showArchived, setShowArchived] = useState(false)
   const [activeTab, setActiveTab] = useState<'paid' | 'barter' | 'noReply'>('paid')
@@ -348,7 +350,7 @@ export default function CampaignsPage() {
       const sb = createClient()
       const { data: { user } } = await sb.auth.getUser()
       if (!user) return
-      const { data: inf } = await sb.from('influencers').select('id, identity_verified, verification_status, name, bio, niches, platforms, avatar').eq('user_id', user.id).single()
+      const { data: inf } = await sb.from('influencers').select('id, identity_verified, verification_status, name, bio, niches, platforms, avatar, instagram_connected, ig_followers, tt_followers, instagram_followers').eq('user_id', user.id).single()
       if (inf) {
         // Verifică ce lipsește din profil
         const missing: string[] = []
@@ -361,6 +363,7 @@ export default function CampaignsPage() {
       }
       if (inf) {
         setInfluencerId(inf.id)
+        setCreatorRow(inf)
         setIdentityVerified(!!inf.identity_verified)
       }
       // profileMissing already set above
@@ -463,6 +466,10 @@ export default function CampaignsPage() {
   if (sortBy === 'Deadline: Cel mai aproape') filtered = [...filtered].sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
 
   const activeFilters = [filterPlatform !== 'Toate', filterBudget !== 0, !!filterNiche, !!filterCountry].filter(Boolean).length
+
+  // Țintire: ascundem ofertele pentru care creatorul nu e eligibil (le păstrăm pe cele la care a aplicat sau a fost invitat)
+  const barterCampaigns = barterAll.filter(c =>
+    appliedIds.has(c.id) || invitedIds.has(c.id) || !creatorRow || eligibility(c, creatorRow).ok)
 
   // Barter filtered + sorted
   let filteredBarter = barterCampaigns.filter(c => {

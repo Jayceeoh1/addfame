@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { TIERS } from '@/lib/tiers'
+import { INFLUENCER_NICHES } from '@/lib/constants/registration'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -85,6 +87,8 @@ interface WizardData {
   min_days_online: number
   // Step 7
   min_followers_target: number
+  elig_tiers: string[]
+  elig_niches: string[]
   // Coordonate GPS locație pickup
   pickup_lat?: number
   pickup_lon?: number
@@ -682,6 +686,8 @@ const INITIAL: WizardData = {
   forbidden_content: '',
   min_days_online: 30,
   min_followers_target: 500,
+  elig_tiers: [],
+  elig_niches: [],
   pickup_lat: undefined,
   pickup_lon: undefined,
 }
@@ -755,6 +761,8 @@ function BarterCampaignWizardContent() {
         forbidden_content: c.forbidden_content || prev.forbidden_content,
         min_days_online: c.min_days_online || prev.min_days_online,
         min_followers_target: c.min_followers_target || prev.min_followers_target,
+        elig_tiers: c.elig_tiers || prev.elig_tiers,
+        elig_niches: c.elig_niches || prev.elig_niches,
       }))
     })
   }, [])
@@ -772,21 +780,34 @@ function BarterCampaignWizardContent() {
   const [activeTab, setActiveTab] = useState('instagram')
   const [influencerCount, setInfluencerCount] = useState<number | null>(null)
   const [countLoading, setCountLoading] = useState(false)
+  const [tierCounts, setTierCounts] = useState<Record<string, number>>({})
+  const [networkTotal, setNetworkTotal] = useState<number | null>(null)
 
-  // Fetch influencer count când se schimbă min_followers_target (step 6)
+  // Contor live: câți creatori ajung la oferta ta (step 6)
   useEffect(() => {
     if (step !== 6) return
     setCountLoading(true)
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/public/influencer-count?min_followers=${data.min_followers_target}`)
+        const qs = new URLSearchParams({
+          tiers: data.elig_tiers.join(','),
+          niches: data.elig_niches.join(','),
+          min_followers: String(data.min_followers_target || 0),
+        })
+        const res = await fetch(`/api/public/influencer-count?${qs}`)
         const json = await res.json()
+        if (!res.ok) throw new Error('count')
         setInfluencerCount(json.count ?? 0)
+        setTierCounts(json.byTier || {})
+        setNetworkTotal(json.total ?? null)
       } catch { setInfluencerCount(null) }
       finally { setCountLoading(false) }
     }, 400)
     return () => clearTimeout(timer)
-  }, [data.min_followers_target, step])
+  }, [data.min_followers_target, data.elig_tiers, data.elig_niches, step])
+
+  const toggleElig = (field: 'elig_tiers' | 'elig_niches', v: string) =>
+    setData(d => ({ ...d, [field]: d[field].includes(v) ? d[field].filter(x => x !== v) : [...d[field], v] }))
 
   // Platform tabs pentru step 5 (folosește data — definit mai sus)
   const platformTabs = [
@@ -929,6 +950,8 @@ function BarterCampaignWizardContent() {
         forbidden_content: data.forbidden_content,
         min_days_online: data.min_days_online,
         min_followers_target: data.min_followers_target,
+        elig_tiers: data.elig_tiers,
+        elig_niches: data.elig_niches,
         platforms: [
           ...(data.tasks_stories_count > 0 || data.tasks_ig_reel || data.tasks_ig_post || data.tasks_ig_live ? ['INSTAGRAM'] : []),
           ...(data.tasks_tt_video || data.tasks_tt_live || data.tasks_tt_duet ? ['TIKTOK'] : []),
@@ -1021,6 +1044,8 @@ function BarterCampaignWizardContent() {
         forbidden_content: data.forbidden_content,
         min_days_online: data.min_days_online,
         min_followers_target: data.min_followers_target,
+        elig_tiers: data.elig_tiers,
+        elig_niches: data.elig_niches,
         platforms: [
           ...(data.tasks_stories_count > 0 || data.tasks_ig_reel || data.tasks_ig_post || data.tasks_ig_live ? ['INSTAGRAM'] : []),
           ...(data.tasks_tt_video || data.tasks_tt_live || data.tasks_tt_duet ? ['TIKTOK'] : []),
@@ -1662,14 +1687,68 @@ function BarterCampaignWizardContent() {
             <div className="bz-note green" style={{ alignItems: 'center', padding: 18, gap: 14 }}>
               <span className="bu-ico" style={{ background: '#fff', color: '#14532d' }}><Users className="w-5 h-5" /></span>
               <div>
-                <b style={{ fontSize: 15 }}>🎯 Toți influencerii din rețea</b>
+                <b style={{ fontSize: 15 }}>
+                  🎯 {countLoading && influencerCount === null ? 'Se numără…' : influencerCount === null ? 'Creatori eligibili' : `Ajungi la ${influencerCount} ${influencerCount === 1 ? 'creator' : 'creatori'}`}
+                </b>
                 <p style={{ margin: '4px 0 0' }}>
-                  Oferta ta va fi vizibilă tuturor celor <strong>179+ influenceri</strong> verificați din AddFame. Ei aplică, tu alegi cu cine colaborezi.
+                  {data.elig_tiers.length === 0 && data.elig_niches.length === 0
+                    ? <>Fără restricții: oferta e vizibilă tuturor creatorilor aprobați{networkTotal ? <> (<strong>{networkTotal}</strong>)</> : null}. Ei aplică, tu alegi cu cine colaborezi.</>
+                    : <>Doar creatorii care se potrivesc cu alegerile de mai jos vor vedea oferta și vor putea aplica.</>}
                 </p>
               </div>
             </div>
-            <div className="bz-note blue" style={{ fontWeight: 600 }}>
-              💡 În curând vei putea filtra după numărul de followeri, nișă și locație.
+
+            <div className="bz-f">
+              <label className="bz-lbl">Categorie creator <span style={{ fontWeight: 500, color: '#6a6690' }}>(după urmăritori; nimic bifat = toate)</span></label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {TIERS.map(t => {
+                  const on = data.elig_tiers.includes(t.key)
+                  return (
+                    <button key={t.key} type="button" onClick={() => toggleElig('elig_tiers', t.key)}
+                      aria-pressed={on}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 13px', borderRadius: 999,
+                        fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                        background: on ? t.bg : '#fff', color: on ? t.fg : '#14123a',
+                        border: `2px solid ${on ? t.dot : '#e5e3f3'}`,
+                      }}>
+                      <span style={{ width: 9, height: 9, borderRadius: 99, background: t.dot }} />
+                      {t.label}
+                      {tierCounts[t.key] > 0 && <span style={{ fontWeight: 600, opacity: .7 }}>{tierCounts[t.key]}</span>}
+                      {on && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  )
+                })}
+              </div>
+              <p style={{ margin: '6px 0 0', fontSize: 12, color: '#6a6690' }}>
+                Creatorii fără date de urmăritori nu pot aplica dacă alegi categorii.
+              </p>
+            </div>
+
+            <div className="bz-f">
+              <label className="bz-lbl">Nișe <span style={{ fontWeight: 500, color: '#6a6690' }}>(nimic bifat = toate)</span></label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {INFLUENCER_NICHES.map((n: string) => {
+                  const on = data.elig_niches.includes(n)
+                  return (
+                    <button key={n} type="button" onClick={() => toggleElig('elig_niches', n)}
+                      aria-pressed={on}
+                      style={{
+                        padding: '7px 13px', borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                        background: on ? '#efeaff' : '#fff', color: on ? '#4423c4' : '#14123a',
+                        border: `2px solid ${on ? '#5a35e6' : '#e5e3f3'}`,
+                      }}>
+                      {n}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="bz-f">
+              <label className="bz-lbl">Followeri minimi <span style={{ fontWeight: 500, color: '#6a6690' }}>(Instagram + TikTok verificate)</span></label>
+              <input type="number" min={0} step={100} className="bz-input" value={data.min_followers_target}
+                onChange={e => setData(d => ({ ...d, min_followers_target: Math.max(0, parseInt(e.target.value || '0', 10) || 0) }))} />
             </div>
           </Section>
         )}
@@ -1721,6 +1800,8 @@ function BarterCampaignWizardContent() {
                 value={`${data.tasks_stories_count} Instagram Stor${data.tasks_stories_count > 1 ? 'ies' : 'y'}${data.tasks_include_post ? ' + 1 Post' : ''}`}
               />
               <ReviewField label="Accept influenceri" value={data.auto_accept_influencers ? 'Automat' : 'Manual (eu aprob)'} />
+              <ReviewField label="Categorii creatori" value={data.elig_tiers.length ? data.elig_tiers.map(k => TIERS.find(t => t.key === k)?.label || k).join(', ') : 'Toate'} />
+              <ReviewField label="Nișe" value={data.elig_niches.length ? data.elig_niches.join(', ') : 'Toate'} />
               <ReviewField
                 label="Followeri minimi"
                 value={data.min_followers_target === 0 ? 'Fără restricții' : `${data.min_followers_target.toLocaleString()}+`}
