@@ -316,7 +316,7 @@ function BrandWalletPageInner() {
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const thisMonthSpend = transactions
-    .filter(tx => tx.type === 'SPEND' && new Date(tx.created_at) >= monthStart)
+    .filter(tx => (tx.type === 'SPEND' || tx.type === 'CAMPAIGN_FEE') && new Date(tx.created_at) >= monthStart)
     .reduce((s, tx) => s + Math.abs(tx.amount), 0)
 
   const pendingTx = transactions.filter(tx => tx.status === 'pending')
