@@ -6,6 +6,7 @@ import { refundRejectedCampaign, refundUnusedSlots } from '@/lib/campaign-fee'
 import { revalidatePath } from 'next/cache'
 import { emailInfluencerApproved, emailInfluencerRejected, emailBrandVerified, emailBrandVerificationRejected, emailTopupConfirmed, emailWithdrawalApproved, emailWithdrawalRejected } from '@/lib/email'
 import { createSmartBillInvoice } from '@/lib/smartbill'
+import { after } from 'next/server'
 
 // Helper: Generate URL-friendly slug
 function generateSlugFromName(name: string): string {
@@ -546,56 +547,16 @@ export async function adminUpdateCampaignStatus(id: string, status: string, shou
       }
     }
 
-    // Când campania devine ACTIVE și shouldNotify = true → notifică influencerii
-    if (status === 'ACTIVE' && shouldNotify) {
-      try {
-        const { data: camp } = await sb.from('campaigns')
-          .select('title, brand_name, campaign_type, niches, platforms, budget_per_influencer, offer_value, offer_name')
-          .eq('id', id).single()
-
-        if (camp) {
-          const isBarter = camp.campaign_type === 'BARTER'
-          const { data: influencers } = await sb.from('influencers')
-            .select('user_id, niches, telegram_chat_id')
-            .eq('approval_status', 'approved')
-
-          if (influencers?.length) {
-            const campNiches = camp.niches || []
-
-            // Insereaza notificari in batch
-            const notifications = influencers
-              .filter(inf => campNiches.length === 0 || campNiches.some((n: string) => (inf.niches || []).includes(n)))
-              .map(inf => ({
-                user_id: inf.user_id,
-                title: isBarter
-                  ? `🎁 Ofertă barter nouă de la ${camp.brand_name}`
-                  : `🚀 Campanie nouă de la ${camp.brand_name}`,
-                body: isBarter
-                  ? `"${camp.offer_name || camp.title}" — primești gratuit în schimbul unui post. Aplică acum!`
-                  : `"${camp.title}" — câștigă ${camp.budget_per_influencer || 0} RON. Aplică acum!`,
-                link: '/influencer/campaigns',
-                read: false,
-              }))
-
-            if (notifications.length > 0) {
-              // Insert în batch-uri de 100 pentru a evita timeout
-              for (let i = 0; i < notifications.length; i += 100) {
-                await sb.from('notifications').insert(notifications.slice(i, i + 100))
-              }
-            }
-
-            // Telegram pentru cei care au chat_id
-            if (camp.budget_per_influencer) {
-              const { notifyNewCampaign } = await import('@/lib/telegram')
-              for (const inf of influencers) {
-                if (inf.telegram_chat_id) {
-                  notifyNewCampaign(inf.telegram_chat_id, camp.title, camp.budget_per_influencer || 0).catch(() => {})
-                }
-              }
-            }
-          }
-        }
-      } catch (e) { console.error('[adminUpdateCampaignStatus] notify error:', e) }
+    // Când campania devine ACTIVE: anunță creatorii potriviți (o singură dată, după răspuns),
+    // sau, dacă adminul a ales să nu notifice, o marchează ca anunțată ca să nu plece alerte mai târziu.
+    if (status === 'ACTIVE') {
+      if (shouldNotify) {
+        const { announceCampaign } = await import('@/lib/campaign-alerts')
+        after(() => announceCampaign(createAdminClient(), id).then(() => undefined))
+      } else {
+        const { error: supErr } = await sb.from('campaigns').update({ alerts_sent_at: new Date().toISOString() }).eq('id', id).is('alerts_sent_at', null)
+        if (supErr && supErr.code !== '42703') console.error('[adminUpdateCampaignStatus] alerts_sent_at', supErr.message)
+      }
     }
 
     // La completare — restituie creditele neutilizate brandului

@@ -791,7 +791,7 @@ export default function AdminCampaigns() {
   const [editInstructionsText, setEditInstructionsText] = useState('')
   const [editingDeliverableUrl, setEditingDeliverableUrl] = useState('')
   const [savingDeliverableUrl, setSavingDeliverableUrl] = useState(false)
-  const [activeSection, setActiveSection] = useState<'brief' | 'influencers' | 'actions' | 'collabs'>('brief')
+  const [activeSection, setActiveSection] = useState<'brief' | 'influencers' | 'actions' | 'collabs' | 'registrations'>('brief')
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
   const [adminNote, setAdminNote] = useState('')
   const [savingNote, setSavingNote] = useState(false)
@@ -963,14 +963,7 @@ export default function AdminCampaigns() {
       if (selectedCampaign?.id === id) setSelectedCampaign((p: any) => ({ ...p, status }))
       notify(status === 'ACTIVE' && (shouldNotify ?? notifyInfluencers) ? '✅ Campanie aprobată și influencerii notificați!' : '✅ Status actualizat.')
 
-      // Notifică influencerii când campania devine ACTIVE
-      if (status === 'ACTIVE') {
-        fetch('/api/notify/campaign-launched', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ campaignId: id }),
-        }).catch(console.error)
-      }
+      // Alertele către creatori pleacă din adminUpdateCampaignStatus (o singură dată, după opțiunea „Notifică”)
     } else notify((res as any).error || 'Eroare.', false)
     setActionId(null)
   }

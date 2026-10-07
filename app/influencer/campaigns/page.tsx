@@ -1,6 +1,7 @@
 'use client'
 // @ts-nocheck
 import { applyToCampaign } from '@/app/actions/collaborations'
+import { PushToggle } from '@/components/shared/PushToggle'
 import React from 'react'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -634,6 +635,8 @@ export default function CampaignsPage() {
           </p>
         </div>
       </section>
+
+      <PushToggle variant="banner" accent="#7040f0" />
 
       {/* Tab selector */}
       <div className="iu-tabs cm-tabs">

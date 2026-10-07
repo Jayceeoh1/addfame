@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { creatorPlatforms } from '@/lib/campaign-alerts'
 import { createClient } from '@supabase/supabase-js'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
@@ -72,7 +73,7 @@ export async function GET(req: NextRequest) {
 
     let query = admin
       .from('influencers')
-      .select('id, user_id, name, email, platforms, niches')
+      .select('id, user_id, name, email, platforms, niches, instagram_connected, tiktok_connected')
       .eq('approval_status', 'approved')
       .neq('email_reminders_enabled', false)
 
@@ -80,19 +81,22 @@ export async function GET(req: NextRequest) {
       query = query.not('id', 'in', `(${appliedIds.join(',')})`)
     }
 
-    // Filtrare după platformă dacă campania are platforme specifice
-    if (camp.platforms?.length) {
-      query = query.overlaps('platforms', camp.platforms)
-    }
+    const { data: allInfluencers } = await query
 
-    const { data: influencers } = await query
+    // Filtrare după platformă (platforms e o listă de obiecte {platform, ...}, nu se poate filtra în SQL cu overlaps)
+    const wanted = (camp.platforms || []).map((p: string) => String(p).toUpperCase())
+    const influencers = (allInfluencers || []).filter((inf: any) => {
+      if (!wanted.length) return true
+      const has = creatorPlatforms(inf)
+      return has.size === 0 || wanted.some((p: string) => has.has(p))
+    })
 
     if (!influencers?.length) continue
 
     for (const inf of influencers) {
       if (!inf.email) continue
 
-      const isBarter = camp.campaign_type === 'barter'
+      const isBarter = String(camp.campaign_type || '').toUpperCase() === 'BARTER'
       const rewardText = isBarter
         ? `Primești gratuit: <strong>${camp.offer_name || 'produs'}</strong>`
         : `Câștiguri: <strong>${camp.budget_per_influencer || 0} RON</strong>`

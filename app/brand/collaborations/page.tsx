@@ -1170,6 +1170,11 @@ export default function BrandCollaborations() {
           <button onClick={load} className="bu-btn" aria-label="Reîncarcă" style={{ width: 44, padding: 0 }}>
             <RefreshCw size={16} className={loading ? 'cl-spin' : ''} />
           </button>
+          {collabs.length > 0 && (
+            <a href="/api/brand/export?type=collaborations" className="bu-btn" title="Toate colaborările, din toate campaniile (Excel / CSV)">
+              <Download size={16} /> Export CSV
+            </a>
+          )}
           <div className="cl-seg" role="tablist" aria-label="Mod de afișare">
             <button className={viewMode === 'grouped' ? 'on' : ''} onClick={() => setViewMode('grouped')}>Pe campanii</button>
             <button className={viewMode === 'list' ? 'on' : ''} onClick={() => setViewMode('list')}>Listă</button>

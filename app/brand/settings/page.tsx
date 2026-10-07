@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { PushToggle } from '@/components/shared/PushToggle'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -702,7 +703,7 @@ export default function BrandSettingsPage() {
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Channels</p>
               <div className="divide-y divide-border mb-5">
                 <SettingRow label="Notificări Email" description="Primește notificări prin email" checked={notifications.email_notifications} onChange={v => setNotifications(p => ({ ...p, email_notifications: v }))} />
-                <SettingRow label="Notificări Push" description="Notificări push în browser" checked={notifications.push_notifications} onChange={v => setNotifications(p => ({ ...p, push_notifications: v }))} />
+                  <PushToggle />
               </div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Campaign Activity</p>
               <div className="divide-y divide-border">

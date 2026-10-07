@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, Suspense } from 'react'
+import { PushToggle } from '@/components/shared/PushToggle'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -808,7 +809,7 @@ function SettingsPageInner() {
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Canale</p>
                 <div className="divide-y divide-border">
                   <SettingRow label="Notificări Email" description="Primește notificări prin email" checked={notifications.email_notifications} onChange={v => setNotifications(p => ({ ...p, email_notifications: v }))} />
-                  <SettingRow label="Notificări Push" description="Notificări push în browser" checked={notifications.push_notifications} onChange={v => setNotifications(p => ({ ...p, push_notifications: v }))} />
+                  <PushToggle />
                 </div>
 
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-5 mb-2">Activitate</p>

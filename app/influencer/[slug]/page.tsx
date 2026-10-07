@@ -81,8 +81,8 @@ function StarRow({ rating, count }) {
           <Star key={s} className={`w-4 h-4 ${s <= Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
         ))}
       </div>
-      <span className="text-sm font-bold text-gray-600">{rating.toFixed(1)}</span>
-      {count > 0 && <span className="text-xs text-gray-400">({count} review{count !== 1 ? 's' : ''})</span>}
+      <span className="text-sm font-bold text-gray-600">{Number(rating).toFixed(1).replace('.', ',')}</span>
+      {count > 0 && <span className="text-xs text-gray-400">({count} {count === 1 ? 'recenzie' : 'recenzii'})</span>}
     </div>
   )
 }
@@ -99,6 +99,7 @@ export default function PublicInfluencerProfile() {
   const [invited, setInvited] = useState(false)
   const [brandId, setBrandId] = useState(null)
   const [reviews, setReviews] = useState([])
+  const [showAllReviews, setShowAllReviews] = useState(false)
   const [thumbnails, setThumbnails] = useState<Record<string, string | null>>({})
   const [stats, setStats] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -107,17 +108,19 @@ export default function PublicInfluencerProfile() {
     async function load() {
       const sb = createClient()
       // Cauta dupa slug sau dupa id (UUID fallback pentru brand)
-      let query = sb.from('influencers').select('id, slug, name, avatar, cover_image, bio, country, niches, platforms, engagement_rate, avg_views, is_verified, badge_expires_at, approval_status, avg_rating, review_count, price_story, price_reel, price_post, price_youtube, price_min, creator_score, portfolio_urls, recent_posts_urls')
-      
+      const COLS = 'id, slug, name, avatar, cover_image, bio, country, niches, platforms, engagement_rate, avg_views, is_verified, badge_expires_at, approval_status, avg_rating, review_count, price_story, price_reel, price_post, price_youtube, price_min, creator_score, portfolio_urls, recent_posts_urls'
       // Detectam daca e UUID sau slug
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug as string)
-      if (isUUID) {
-        query = query.eq('id', slug)
-      } else {
-        query = query.eq('slug', slug).eq('approval_status', 'approved')
+      const byKey = (q: any) => isUUID ? q.eq('id', slug) : q.eq('slug', slug)
+
+      // 1) profilul public (vederea fără date private)
+      let { data, error: viewErr } = await byKey(sb.from('influencers_public').select(COLS)).maybeSingle()
+      // 2) tabelul direct: propriul profil, un partener de colaborare sau (până rulează SQL 09) orice profil aprobat
+      if (!data) {
+        let q = byKey(sb.from('influencers').select(COLS))
+        if (!isUUID && viewErr) q = q.eq('approval_status', 'approved')
+        ;({ data } = await q.maybeSingle())
       }
-      
-      let { data } = await query.single()
 
       // Fallback: daca RLS blocheaza citirea directa (ex: profil neaprobat dar activ in campanii),
       // incercam prin API public cu service role
@@ -134,28 +137,42 @@ export default function PublicInfluencerProfile() {
       if (!data) { setNotFound(true); setLoading(false); return }
       setInf(data)
 
-      // Load collab stats
-      const { data: collabs } = await sb
-        .from('collaborations')
-        .select('status, payment_amount')
-        .eq('influencer_id', data.id)
-      if (collabs) {
-        const completed = collabs.filter(c => c.status === 'COMPLETED').length
-        const accepted = collabs.filter(c => c.status !== 'PENDING' && c.status !== 'INVITED').length
-        const total = collabs.length // toate aplicarile (inclusiv PENDING/INVITED)
-        const earned = collabs.filter(c => c.status === 'COMPLETED').reduce((s, c) => s + (c.payment_amount || 0), 0)
-        setStats({ completed, total, successRate: accepted > 0 ? Math.round(completed / accepted * 100) : 0, earned })
+      // Load collab stats (cifre agregate din baza de date; citirea directă doar ca rezervă)
+      const { data: statRows, error: statErr } = await sb.rpc('public_collab_stats', { p_influencer_ids: [data.id] })
+      if (!statErr && Array.isArray(statRows)) {
+        const r: any = statRows[0] || {}
+        const completed = Number(r.completed) || 0, accepted = Number(r.accepted) || 0
+        setStats({ completed, total: Number(r.total_all) || 0, successRate: accepted > 0 ? Math.round(completed / accepted * 100) : 0, earned: Number(r.earned) || 0 })
+      } else {
+        const { data: collabs } = await sb
+          .from('collaborations')
+          .select('status, payment_amount')
+          .eq('influencer_id', data.id)
+        if (collabs) {
+          const completed = collabs.filter(c => c.status === 'COMPLETED').length
+          const accepted = collabs.filter(c => c.status !== 'PENDING' && c.status !== 'INVITED').length
+          const total = collabs.length // toate aplicarile (inclusiv PENDING/INVITED)
+          const earned = collabs.filter(c => c.status === 'COMPLETED').reduce((s, c) => s + (c.payment_amount || 0), 0)
+          setStats({ completed, total, successRate: accepted > 0 ? Math.round(completed / accepted * 100) : 0, earned })
+        }
       }
 
       // Load brand reviews
-      const { data: revs } = await sb
-        .from('reviews')
-        .select('rating, comment, created_at')
-        .eq('reviewer_role', 'brand')
-        .in('collaboration_id',
-          (await sb.from('collaborations').select('id').eq('influencer_id', data.id)).data?.map(c => c.id) || []
-        )
-      if (revs) setReviews(revs)
+      // SQL 24: recenziile publice (și pentru vizitatori nelogați), cu brandul și campania
+      let { data: revRows, error: revErr } = await sb.rpc('influencer_public_reviews', { p_influencer_id: data.id, p_limit: 50 })
+      if (revErr) ({ data: revRows, error: revErr } = await sb.rpc('influencer_brand_reviews', { p_influencer_id: data.id, p_limit: 20 }))
+      if (!revErr && Array.isArray(revRows)) {
+        setReviews(revRows)
+      } else {
+        const { data: revs } = await sb
+          .from('reviews')
+          .select('rating, comment, created_at')
+          .eq('reviewer_role', 'brand')
+          .in('collaboration_id',
+            (await sb.from('collaborations').select('id').eq('influencer_id', data.id)).data?.map(c => c.id) || []
+          )
+        if (revs) setReviews(revs)
+      }
       // Fetch thumbnails pentru postari si portfolio
       const allUrls = [
         ...(data.recent_posts_urls || []),
@@ -576,32 +593,64 @@ export default function PublicInfluencerProfile() {
           </div>
         )}
 
-        {/* Reviews */}
-        {reviews.length > 0 && (
-          <div className="card p-5 mt-5 fade-up" style={{ animationDelay: '.14s' }}>
-            <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2">
-              <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Reviews de la branduri
-              <span className="text-sm font-bold text-gray-400 ml-auto">{reviews.length} total</span>
-            </h2>
-            <div className="space-y-3">
-              {reviews.slice(0, 5).map((r, i) => (
-                <div key={i} className="bg-gray-50 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map(s => (
-                        <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-400 ml-auto">
-                      {new Date(r.created_at).toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' })}
-                    </span>
+        {/* Recenzii */}
+        {reviews.length > 0 && (() => {
+          const avg = reviews.reduce((t, r) => t + Number(r.rating || 0), 0) / reviews.length
+          const dist = [5, 4, 3, 2, 1].map(st => ({ st, n: reviews.filter(r => Math.round(Number(r.rating)) === st).length }))
+          const shown = showAllReviews ? reviews : reviews.slice(0, 4)
+          return (
+            <div className="card p-5 mt-5 fade-up" style={{ animationDelay: '.14s' }}>
+              <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2">
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Recenzii de la branduri
+              </h2>
+              <div className="flex flex-wrap items-center gap-5 mb-5">
+                <div className="text-center" style={{ minWidth: 92 }}>
+                  <div className="text-4xl font-black text-gray-900" style={{ fontVariantNumeric: 'tabular-nums' }}>{avg.toFixed(1).replace('.', ',')}</div>
+                  <div className="flex gap-0.5 justify-center my-1">
+                    {[1, 2, 3, 4, 5].map(st => <Star key={st} className={`w-3.5 h-3.5 ${st <= Math.round(avg) ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />)}
                   </div>
-                  {r.comment && <p className="text-sm text-gray-600 italic">"{r.comment}"</p>}
+                  <div className="text-xs font-bold text-gray-400">{reviews.length} {reviews.length === 1 ? 'recenzie' : 'recenzii'}</div>
                 </div>
-              ))}
+                <div className="flex-1 space-y-1" style={{ minWidth: 180 }}>
+                  {dist.map(({ st, n }) => (
+                    <div key={st} className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="w-3 font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>{st}</span>
+                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                      <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
+                        <div className="h-full rounded-full bg-amber-400" style={{ width: `${reviews.length ? (n / reviews.length) * 100 : 0}%` }} />
+                      </div>
+                      <span className="w-6 text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-3">
+                {shown.map((r, i) => (
+                  <div key={i} className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map(st => (
+                          <Star key={st} className={`w-3.5 h-3.5 ${st <= r.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
+                        ))}
+                      </div>
+                      {r.brand_name && <span className="text-xs font-bold text-gray-700">{r.brand_name}</span>}
+                      <span className="text-xs text-gray-400 ml-auto">
+                        {new Date(r.created_at).toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                    {r.comment && <p className="text-sm text-gray-600 italic">„{r.comment}”</p>}
+                    {r.campaign_title && <p className="text-[11px] text-gray-400 mt-1.5">Campania: {r.campaign_title}</p>}
+                  </div>
+                ))}
+              </div>
+              {reviews.length > 4 && (
+                <button onClick={() => setShowAllReviews(v => !v)} className="mt-3 text-sm font-bold text-violet-600 hover:text-violet-800">
+                  {showAllReviews ? 'Arată mai puține' : `Vezi toate cele ${reviews.length} recenzii`}
+                </button>
+              )}
             </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
 
       {/* Invite modal */}

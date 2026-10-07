@@ -49,6 +49,9 @@ type Influencer = {
   // TikTok
   tiktok_connected?: boolean
   tt_followers?: number
+  // Recenzii de la branduri
+  avg_rating?: number | null
+  review_count?: number | null
 }
 
 type InfluencerStat = {
@@ -58,7 +61,11 @@ type InfluencerStat = {
   totalEarned: number
 }
 
-type Campaign = { id: string; title: string; status: string }
+type Campaign = {
+  id: string; title: string; status: string
+  campaign_type?: string | null; platforms?: string[] | null; min_followers_target?: number | null
+  offer_description?: string | null; description?: string | null; niches?: string[] | null
+}
 
 type AccessState =
   | { granted: true }
@@ -105,6 +112,7 @@ const SORT_OPTIONS = [
   { value: 'followers', label: 'Cei mai urmăriți' },
   { value: 'engagement', label: 'Engagement rate' },
   { value: 'success', label: 'Success rate' },
+  { value: 'rating', label: 'Cele mai bune recenzii' },
   { value: 'name', label: 'Nume A–Z' },
 ]
 
@@ -266,6 +274,7 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
                   <CheckCircle className="w-4 h-4" style={{ color: '#5a35e6' }} />
                 )}
                 <TierChip of={influencer} />
+                <RatingChip of={influencer} />
               </div>
               {influencer.city && (
                 <div className="bu-row bu-xs" style={{ gap: 4, marginTop: 4, color: '#5a35e6', fontWeight: 700 }}>
@@ -342,6 +351,11 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
           </div>
         </div>
 
+        <div className="if-sec">
+          <div className="bu-label" style={{ marginBottom: 10 }}>Recenzii de la branduri</div>
+          <DrawerReviews influencer={influencer} />
+        </div>
+
         <div className="if-sec" style={{ marginTop: 'auto', borderBottom: 0 }}>
           <div className="bu-label" style={{ marginBottom: 10 }}>Invită la campanie</div>
           {inviteState.success ? (
@@ -383,6 +397,62 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── Recenzii ──────────────────────────────────────────────────────────────────
+
+/** Nota pentru sortare: media trasă spre 4 când sunt puține recenzii (o singură notă de 5 nu bate zece note de 4,9). */
+function ratingScore(i: Influencer) {
+  const n = Number(i.review_count) || 0, avg = Number(i.avg_rating) || 0
+  return n > 0 ? (avg * n + 4 * 2) / (n + 2) : 0
+}
+
+function RatingChip({ of }: { of: Influencer }) {
+  const n = Number(of.review_count) || 0
+  if (!n || !of.avg_rating) return null
+  return (
+    <span className="bu-chip" style={{ background: '#fff7e0', color: '#854d0e' }} title={`${n} ${n === 1 ? 'recenzie' : 'recenzii'} de la branduri`}>
+      <Star className="w-3 h-3" style={{ fill: '#f59e0b', color: '#f59e0b' }} /> {Number(of.avg_rating).toFixed(1).replace('.', ',')} <span style={{ fontWeight: 600, opacity: .75 }}>({n})</span>
+    </span>
+  )
+}
+
+type PublicReview = { rating: number; comment: string | null; created_at: string; brand_name?: string | null; campaign_title?: string | null }
+
+function DrawerReviews({ influencer }: { influencer: Influencer }) {
+  const [rows, setRows] = useState<PublicReview[] | null>(null)
+  useEffect(() => {
+    let off = false
+    const sb = createClient()
+    ;(async () => {
+      let { data, error } = await sb.rpc('influencer_public_reviews', { p_influencer_id: influencer.id, p_limit: 10 })
+      if (error) ({ data, error } = await sb.rpc('influencer_brand_reviews', { p_influencer_id: influencer.id, p_limit: 10 }))
+      if (!off) setRows(!error && Array.isArray(data) ? data as PublicReview[] : [])
+    })()
+    return () => { off = true }
+  }, [influencer.id])
+
+  if (rows === null) return <p className="bu-muted bu-sm" style={{ margin: 0 }}>Se încarcă…</p>
+  if (rows.length === 0) return <p className="bu-muted bu-sm" style={{ margin: 0 }}>Încă nu are recenzii de la branduri.</p>
+  return (
+    <div className="bu-col" style={{ gap: 10 }}>
+      {rows.slice(0, 5).map((r, i) => (
+        <div key={i} style={{ background: '#f6f6fc', borderRadius: 14, padding: 12 }}>
+          <div className="bu-row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            <span className="bu-row" style={{ gap: 1 }}>
+              {[1, 2, 3, 4, 5].map(st => <Star key={st} className="w-3 h-3" style={st <= r.rating ? { fill: '#f59e0b', color: '#f59e0b' } : { color: '#d9d6ea' }} />)}
+            </span>
+            {r.brand_name && <b className="bu-xs">{r.brand_name}</b>}
+            <span className="bu-muted bu-xs" style={{ marginLeft: 'auto' }}>{new Date(r.created_at).toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' })}</span>
+          </div>
+          {r.comment && <p className="bu-sm" style={{ margin: '6px 0 0', color: '#3d3a63', fontStyle: 'italic' }}>„{r.comment}”</p>}
+        </div>
+      ))}
+      {influencer.slug && rows.length > 5 && (
+        <Link href={`/influencer/${influencer.slug}`} target="_blank" className="bu-xs" style={{ fontWeight: 800, color: '#5a35e6' }}>Vezi toate cele {rows.length} recenzii →</Link>
+      )}
     </div>
   )
 }
@@ -431,6 +501,7 @@ function InfluencerCard({ influencer, isSaved, onSave, onClick, stats }: {
 
       <div className="bu-row" style={{ gap: 6, flexWrap: 'wrap' }}>
         <TierChip of={influencer} />
+        <RatingChip of={influencer} />
         {influencer.is_verified && <span className="bu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star className="w-3 h-3" /> Verified</span>}
       </div>
 
@@ -510,7 +581,7 @@ export default function BrandInfluencersPage() {
         body: JSON.stringify({
           type: 'recommend',
           data: {
-            campaign: { title: campaign.title, type: campaign.campaign_type, platforms: campaign.platforms, min_followers: campaign.min_followers_target, description: campaign.offer_description, niche: campaign.target_niche },
+            campaign: { title: campaign.title, type: campaign.campaign_type, platforms: campaign.platforms, min_followers: campaign.min_followers_target, description: campaign.offer_description || campaign.description, niche: (campaign.niches || []).join(', ') },
             influencers: influencers.map(i => ({ name: i.name, niches: i.niches, city: i.city, ig_followers: i.ig_followers, ig_engagement_rate: i.ig_engagement_rate, tt_followers: i.tt_followers, is_verified: i.is_verified }))
           }
         })
@@ -550,11 +621,11 @@ export default function BrandInfluencersPage() {
       setAccess(accessState)
 
       if (accessState.granted) {
-        const INF_COLS = 'id, user_id, name, slug, bio, avatar, niches, platforms, approval_status, is_verified, verified_at, total_earned, created_at, price_story, price_reel, price_post, price_youtube, price_min, city, instagram_connected, instagram_handle, ig_followers, ig_engagement_rate, tiktok_connected, tt_followers'
+        const INF_COLS = 'id, user_id, name, slug, bio, avatar, niches, platforms, approval_status, is_verified, verified_at, total_earned, created_at, price_story, price_reel, price_post, price_youtube, price_min, city, instagram_connected, instagram_handle, ig_followers, ig_engagement_rate, tiktok_connected, tt_followers, avg_rating, review_count'
         // Profilurile publice (vederea fără date private); tabelul direct doar ca rezervă până rulează SQL 09
         let [infRes, campRes] = await Promise.all([
           supabase.from('influencers_public').select(INF_COLS).order('created_at', { ascending: false }),
-          supabase.from('campaigns').select('id, title, status').eq('brand_id', brand.id),
+          supabase.from('campaigns').select('id, title, status, campaign_type, platforms, min_followers_target, offer_description, description, niches').eq('brand_id', brand.id),
         ])
         if (infRes.error) {
           infRes = await supabase.from('influencers').select(INF_COLS).eq('approval_status', 'approved').order('created_at', { ascending: false })
@@ -686,6 +757,7 @@ export default function BrandInfluencersPage() {
     else if (sortBy === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
     else if (sortBy === 'engagement') list.sort((a, b) => (b.ig_engagement_rate || 0) - (a.ig_engagement_rate || 0))
     else if (sortBy === 'success') list.sort((a, b) => (statsMap[b.id]?.successRate || 0) - (statsMap[a.id]?.successRate || 0))
+    else if (sortBy === 'rating') list.sort((a, b) => ratingScore(b) - ratingScore(a))
     list.sort((a, b) => {
       if (a.is_verified && !b.is_verified) return -1
       if (!a.is_verified && b.is_verified) return 1

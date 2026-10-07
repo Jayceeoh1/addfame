@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Bell, X, CheckCheck } from 'lucide-react'
+import { PushToggle } from '@/components/shared/PushToggle'
 
 export function NotificationsBell({ accentColor = '#8b5cf6' }: { accentColor?: string }) {
   const [notifs, setNotifs] = useState<any[]>([])
@@ -59,10 +60,10 @@ export function NotificationsBell({ accentColor = '#8b5cf6' }: { accentColor?: s
   const unread = notifs.filter(n => !n.read).length
   const fmtTime = (d: string) => {
     const diff = Math.floor((Date.now() - new Date(d).getTime()) / 60000)
-    if (diff < 1) return 'just now'
-    if (diff < 60) return `${diff}m ago`
-    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`
-    return `${Math.floor(diff / 1440)}d ago`
+    if (diff < 1) return 'acum'
+    if (diff < 60) return `acum ${diff} min`
+    if (diff < 1440) return `acum ${Math.floor(diff / 60)} h`
+    return `acum ${Math.floor(diff / 1440)} z`
   }
 
   return (
@@ -80,12 +81,12 @@ export function NotificationsBell({ accentColor = '#8b5cf6' }: { accentColor?: s
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl z-50 overflow-hidden"
+        <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-2xl z-50 overflow-hidden"
           style={{ border: '1.5px solid #f0f0f0', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}>
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1.5px solid #f5f5f5' }}>
-            <p className="font-black text-gray-900 text-sm">Notifications {unread > 0 && <span className="text-xs font-black text-white px-1.5 py-0.5 rounded-full ml-1" style={{ background: accentColor }}>{unread}</span>}</p>
+            <p className="font-black text-gray-900 text-sm">Notificări {unread > 0 && <span className="text-xs font-black text-white px-1.5 py-0.5 rounded-full ml-1" style={{ background: accentColor }}>{unread}</span>}</p>
             <div className="flex items-center gap-2">
-              {unread > 0 && <button onClick={markAllRead} className="text-xs font-bold text-gray-400 hover:text-gray-700 flex items-center gap-1"><CheckCheck className="w-3.5 h-3.5" /> All read</button>}
+              {unread > 0 && <button onClick={markAllRead} className="text-xs font-bold text-gray-400 hover:text-gray-700 flex items-center gap-1"><CheckCheck className="w-3.5 h-3.5" /> Toate citite</button>}
               <button onClick={() => setOpen(false)} className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition"><X className="w-3 h-3 text-gray-500" /></button>
             </div>
           </div>
@@ -93,7 +94,7 @@ export function NotificationsBell({ accentColor = '#8b5cf6' }: { accentColor?: s
             {notifs.length === 0 ? (
               <div className="text-center py-10">
                 <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-                <p className="text-sm font-bold text-gray-400">No notifications</p>
+                <p className="text-sm font-bold text-gray-400">Nicio notificare</p>
               </div>
             ) : notifs.map(n => (
               <button key={n.id} onClick={() => { markRead(n.id); if (n.link) window.location.href = n.link }}
@@ -109,6 +110,7 @@ export function NotificationsBell({ accentColor = '#8b5cf6' }: { accentColor?: s
               </button>
             ))}
           </div>
+          <PushToggle variant="compact" accent={accentColor} />
         </div>
       )}
     </div>

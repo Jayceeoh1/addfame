@@ -1,5 +1,5 @@
-// addfame-v8 — logo nou
-const CACHE_NAME = 'addfame-v8'
+// addfame-v9 — notificări push
+const CACHE_NAME = 'addfame-v9'
 
 self.addEventListener('install', () => {
   self.skipWaiting()
@@ -52,19 +52,49 @@ self.addEventListener('fetch', (event) => {
 })
 
 self.addEventListener('push', (event) => {
-  if (!event.data) return
-  const data = event.data.json()
+  let data = {}
+  try { data = event.data ? event.data.json() : {} } catch (_) { data = { body: event.data ? event.data.text() : '' } }
+  const url = typeof data.url === 'string' && data.url.startsWith('/') ? data.url : '/'
   event.waitUntil(
     self.registration.showNotification(data.title || 'AddFame', {
       body: data.body || '',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
-      data: { url: data.url || '/' },
+      tag: data.tag || undefined,
+      data: { url },
     })
   )
 })
 
+// Click pe notificare: folosește fereastra AddFame deja deschisă, altfel deschide una nouă
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  event.waitUntil(clients.openWindow(event.notification.data?.url || '/'))
+  const target = new URL(event.notification.data?.url || '/', self.location.origin).href
+  event.waitUntil((async () => {
+    const wins = await clients.matchAll({ type: 'window', includeUncontrolled: true })
+    for (const w of wins) {
+      if (new URL(w.url).origin === self.location.origin && 'focus' in w) {
+        await w.focus()
+        if ('navigate' in w) { try { await w.navigate(target) } catch (_) {} }
+        return
+      }
+    }
+    await clients.openWindow(target)
+  })())
+})
+
+// Browserul a reînnoit abonamentul → îl salvăm din nou pe server
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil((async () => {
+    try {
+      const key = event.oldSubscription && event.oldSubscription.options && event.oldSubscription.options.applicationServerKey
+      const sub = event.newSubscription || (key ? await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }) : null)
+      if (!sub) return
+      await fetch('/api/push/subscribe', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub.toJSON() }),
+      })
+    } catch (_) {}
+  })())
 })

@@ -15,6 +15,7 @@ import {
 import Link from 'next/link'
 import { checkInWithCode } from '@/app/actions/collaborations'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
+import { PostStatsForm } from '@/components/shared/PostStatsForm'
 import { LeaveReview } from '@/components/shared/leave-review'
 import DraftReview from '@/components/shared/DraftReview'
 import DisputeButton from '@/components/shared/DisputeButton'
@@ -22,6 +23,7 @@ import DisputeButton from '@/components/shared/DisputeButton'
 type Collaboration = {
   id: string
   campaign_id: string
+  admin_invited?: boolean | null
   status: string
   created_at: string
   reserved_amount?: number
@@ -1167,6 +1169,9 @@ export default function CollaborationsPage() {
             {c.payment_amount ? <span className="iu-xs iu-muted">Plată eliberată: <b style={{ color: '#14532d' }}>{fmtRon(c.payment_amount)}</b></span> : null}
           </Note>
         )}
+
+        {/* Statisticile postării (apar în raportul brandului) */}
+        {(c.status === 'ACTIVE' || c.status === 'COMPLETED') && c.deliverable_url && <PostStatsForm collabId={c.id} />}
 
         {/* Mesaj de la brand */}
         {c.message && c.message !== 'You have been invited to collaborate on a campaign.' && (

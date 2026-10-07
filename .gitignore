@@ -12,6 +12,20 @@ node_modules/
 
 .vercel
 .env*.local
-".env.locale" 
-".env.locale" 
-"*.zip" 
+
+# arhive și fișiere de mediu
+*.zip
+.env
+.env.*
+
+# build / editor
+*.tsbuildinfo
+*.bak
+
+# proiectul folosește pnpm (Vercel) — un singur lockfile
+package-lock.json
+yarn.lock
+
+# fișiere temporare de livrare
+DEPLOY_*
+INSTRUCTIUNI*.txt

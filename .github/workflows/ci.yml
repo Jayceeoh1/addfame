@@ -1,0 +1,48 @@
+# Verificare automată la fiecare push: tipuri (TypeScript), teste și build-ul de producție.
+# Dacă ceva pică, primești email de la GitHub și vezi eroarea în tab-ul „Actions”.
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifica:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # valori false, doar ca build-ul să poată rula (nu se conectează nicăieri)
+      NEXT_PUBLIC_SUPABASE_URL: https://ci.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-service-key
+      STRIPE_SECRET_KEY: sk_test_ci
+      RESEND_API_KEY: re_ci
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalare
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript
+        run: pnpm typecheck
+
+      - name: Teste
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

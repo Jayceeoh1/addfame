@@ -7,7 +7,7 @@ import { updateCampaignStatus, getCampaignFeeInfo } from '@/app/actions/campaign
 import { approveApplication, approveDeliverable } from '@/app/actions/collaborations'
 import { duplicateBarterCampaign } from '@/app/actions/barter-campaigns'
 import { getPlatformSettings } from '@/app/actions/admin'
-import { ArrowLeft, CheckCircle, AlertCircle, X, Check, Star, MessageSquare, ArrowUpRight, Send, Users } from 'lucide-react'
+import { ArrowLeft, CheckCircle, AlertCircle, X, Check, Star, MessageSquare, ArrowUpRight, Send, Users, Download, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 import { LeaveReview } from '@/components/shared/leave-review'
 import DraftReview from '@/components/shared/DraftReview'
@@ -563,6 +563,8 @@ export default function CampaignDetailPage() {
             <>
               {tab === 'pending' && counts.pending > 0 && <button className="cx-btn d" onClick={() => { setBulkRejectMode(true); setBulkMode(false) }}>Refuză în masă</button>}
               <button className="cx-btn" onClick={() => setBulkMode(true)}>Invită în masă</button>
+              {collabs.length > 0 && <a href={`/api/brand/export?type=applicants&campaign=${campaignId}`} className="cx-btn" title="Descarcă lista aplicanților (Excel / CSV)"><Download className="w-3.5 h-3.5" /> Export CSV</a>}
+              <Link href={`/brand/campaigns/${campaignId}/report`} className="cx-btn"><BarChart3 className="w-3.5 h-3.5" /> Raport</Link>
               <Link href="/brand/influencers" className="cx-btn p">Invită creator</Link>
             </>
           )}

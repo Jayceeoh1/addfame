@@ -22,6 +22,16 @@ import { INFLUENCER_NICHES } from '@/lib/constants/registration'
 type OfferType = 'product' | 'service'
 type DeliveryMethod = 'pickup' | 'delivery'
 
+/** Platformele campaniei, deduse din sarcinile alese (aceeași regulă la draft, publicare și generatorul AI). */
+function derivePlatforms(data: WizardData): string[] {
+  return [
+    ...(data.tasks_stories_count > 0 || data.tasks_ig_reel || data.tasks_ig_post || data.tasks_ig_live ? ['INSTAGRAM'] : []),
+    ...(data.tasks_tt_video || data.tasks_tt_live || data.tasks_tt_duet ? ['TIKTOK'] : []),
+    ...(data.tasks_yt_short || data.tasks_yt_video || data.tasks_yt_mention ? ['YOUTUBE'] : []),
+    ...(data.tasks_fb_post || data.tasks_fb_story || data.tasks_fb_reel || data.tasks_fb_share ? ['FACEBOOK'] : []),
+  ]
+}
+
 interface WizardData {
   // Step 1
   offer_type: OfferType | null
@@ -952,12 +962,7 @@ function BarterCampaignWizardContent() {
         min_followers_target: data.min_followers_target,
         elig_tiers: data.elig_tiers,
         elig_niches: data.elig_niches,
-        platforms: [
-          ...(data.tasks_stories_count > 0 || data.tasks_ig_reel || data.tasks_ig_post || data.tasks_ig_live ? ['INSTAGRAM'] : []),
-          ...(data.tasks_tt_video || data.tasks_tt_live || data.tasks_tt_duet ? ['TIKTOK'] : []),
-          ...(data.tasks_yt_short || data.tasks_yt_video || data.tasks_yt_mention ? ['YOUTUBE'] : []),
-          ...(data.tasks_fb_post || data.tasks_fb_story || data.tasks_fb_reel || data.tasks_fb_share ? ['FACEBOOK'] : []),
-        ],
+        platforms: derivePlatforms(data),
       }, draftId || undefined)
       if (result.success && result.campaignId) {
         setDraftId(result.campaignId)
@@ -1046,12 +1051,7 @@ function BarterCampaignWizardContent() {
         min_followers_target: data.min_followers_target,
         elig_tiers: data.elig_tiers,
         elig_niches: data.elig_niches,
-        platforms: [
-          ...(data.tasks_stories_count > 0 || data.tasks_ig_reel || data.tasks_ig_post || data.tasks_ig_live ? ['INSTAGRAM'] : []),
-          ...(data.tasks_tt_video || data.tasks_tt_live || data.tasks_tt_duet ? ['TIKTOK'] : []),
-          ...(data.tasks_yt_short || data.tasks_yt_video || data.tasks_yt_mention ? ['YOUTUBE'] : []),
-          ...(data.tasks_fb_post || data.tasks_fb_story || data.tasks_fb_reel || data.tasks_fb_share ? ['FACEBOOK'] : []),
-        ],
+        platforms: derivePlatforms(data),
         })
       }
       if (!result.success) {
@@ -1589,7 +1589,7 @@ function BarterCampaignWizardContent() {
               offerName={data.offer_name}
               offerValue={data.offer_value}
               offerDescription={data.offer_description}
-              platforms={data.platforms}
+              platforms={derivePlatforms(data)}
               campaignType="BARTER"
               onApply={(brief) => {
                 if (brief.story_instructions) set({ story_instructions: brief.story_instructions })
