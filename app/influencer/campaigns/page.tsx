@@ -375,7 +375,7 @@ export default function CampaignsPage() {
       if (camp) setCampaigns(camp)
       if (barter) setBarterCampaigns(barter)
       if (inf) {
-        const { data: colls } = await sb.from('collaborations').select('campaign_id, status, reserved_amount, payment_amount, admin_invited, created_at, campaigns(id, title, brand_name, campaign_type, offer_value, registration_opened_at, registration_deadline_days, status)').eq('influencer_id', inf.id)
+        const { data: colls } = await sb.from('collaborations').select('campaign_id, status, reserved_amount, payment_amount, admin_invited, created_at, campaigns(id, title, brand_name, campaign_type, offer_value, registration_opened_at, registration_deadline_days)').eq('influencer_id', inf.id)
         if (colls) {
           setAppliedIds(new Set(colls.filter((c: any) => c.status !== 'INVITED').map((c: any) => c.campaign_id)))
           setInvitedIds(new Set(colls.filter((c: any) => c.status === 'INVITED').map((c: any) => c.campaign_id)))
@@ -402,10 +402,6 @@ export default function CampaignsPage() {
             return expiry < now
           })
           setNoReplyCollabs(expired)
-          // Istoric: toate campaniile la care a participat și s-au încheiat
-          setArchivedCollabs(colls
-            .filter((c: any) => ['COMPLETED', 'REJECTED', 'CANCELLED', 'EXPIRED'].includes(c.status))
-            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()))
         }
       }
     } catch (e) { console.error(e) }
@@ -413,6 +409,9 @@ export default function CampaignsPage() {
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    fetch('/api/influencer/archived-campaigns').then(r => r.ok ? r.json() : null).then(j => { if (j?.campaigns) setArchivedCollabs(j.campaigns) }).catch(() => {})
+  }, [])
 
   async function handleApply() {
     if (!selected || !influencerId) return
@@ -681,25 +680,33 @@ export default function CampaignsPage() {
 
       {activeTab === 'archived' && (
         <div className="iu-col" style={{ gap: 12 }}>
+          <div className="iu-card iu-card-pad" style={{ background: '#efeaff', borderColor: '#d9cffa' }}>
+            <p style={{ margin: 0, fontWeight: 800, color: '#4423c4' }}>Campanii care au rulat pe AddFame</p>
+            <p className="iu-sm" style={{ margin: '2px 0 0', color: '#4423c4' }}>Un istoric al campaniilor încheiate, ca să vezi ce branduri colaborează cu creatori ca tine.</p>
+          </div>
           {archivedCollabs.length === 0 ? (
             <div className="iu-card iu-card-pad" style={{ textAlign: 'center' }}>
-              <p style={{ margin: 0, fontWeight: 800 }}>Nicio campanie arhivată încă</p>
-              <p className="iu-muted iu-sm" style={{ margin: '4px 0 0' }}>Campaniile încheiate sau respinse apar aici.</p>
+              <p style={{ margin: 0, fontWeight: 800 }}>Nicio campanie încheiată încă</p>
             </div>
-          ) : archivedCollabs.map((collab: any) => {
-            const st = collab.status as string
-            const chip = st === 'COMPLETED' ? { t: 'Finalizată', bg: '#dcf5ec', fg: '#14532d' } : st === 'REJECTED' ? { t: 'Respinsă', bg: '#fde8e8', fg: '#9b1c1c' } : { t: st === 'EXPIRED' ? 'Expirată' : 'Anulată', bg: '#f1f0f8', fg: '#4a4770' }
+          ) : archivedCollabs.map((c: any) => {
+            const img = coverImg(c)
+            const joined = appliedIds.has(c.id)
             return (
-              <a key={collab.campaign_id + st} href="/influencer/collaborations" className="iu-card iu-card-pad iu-row" style={{ gap: 12, textDecoration: 'none', color: 'inherit' }}>
-                <div className="iu-ico" style={{ background: '#efeaff', color: '#4423c4' }}><ArchiveX size={18} /></div>
+              <div key={c.id} className="iu-card iu-card-pad iu-row" style={{ gap: 12 }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, overflow: 'hidden', flexShrink: 0, background: 'linear-gradient(135deg,#7040f0,#9030f0)' }}>
+                  {img && <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{collab.campaigns?.title || 'Campanie'}</p>
+                  <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title || 'Campanie'}</p>
                   <p className="iu-muted iu-xs" style={{ margin: '2px 0 0' }}>
-                    {collab.campaigns?.brand_name} · {collab.campaigns?.campaign_type === 'BARTER' ? 'Barter' : 'Plătită'} · {new Date(collab.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {c.brand_name} · {c.campaign_type === 'BARTER' ? 'Barter' : 'Plătită'} · {new Date(c.created_at).toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' })}
+                    {c.current_influencers > 0 && <> · {c.current_influencers} {c.current_influencers === 1 ? 'creator' : 'creatori'}</>}
                   </p>
                 </div>
-                <span className="iu-chip" style={{ background: chip.bg, color: chip.fg }}>{chip.t}</span>
-              </a>
+                {joined
+                  ? <span className="iu-chip" style={{ background: '#dcf5ec', color: '#14532d' }}>Ai participat</span>
+                  : <span className="iu-chip" style={{ background: '#f1f0f8', color: '#4a4770' }}>Încheiată</span>}
+              </div>
             )
           })}
         </div>
