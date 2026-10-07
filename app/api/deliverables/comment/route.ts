@@ -1,3 +1,4 @@
+import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser, unauthorized, forbidden } from '@/lib/api-auth'
@@ -5,6 +6,7 @@ import { getCollabAccess, isUuid } from '@/lib/drafts'
 
 // Comentariu (opțional legat de o secundă) de la brand sau creator.
 export async function POST(req: NextRequest) {
+  { const limited = await limitRequest(req, 'comment', LIMITS.comment); if (limited) return limited }
   try {
     const user = await getSessionUser()
     if (!user) return unauthorized()

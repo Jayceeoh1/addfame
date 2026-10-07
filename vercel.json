@@ -1,6 +1,7 @@
 {
   "installCommand": "pnpm install --no-frozen-lockfile",
   "crons": [
+    { "path": "/api/cron/draft-deadlines", "schedule": "0 7 * * *" },
     { "path": "/api/cron/expire-badges", "schedule": "0 2 * * *" },
     { "path": "/api/cron/expire-campaigns", "schedule": "0 3 * * *" },
     { "path": "/api/cron/deadline-reminder", "schedule": "0 9 * * *" },

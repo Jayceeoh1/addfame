@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isFeeModelCampaign, countSelectedInfluencers } from '@/lib/campaign-fee'
 import { eligibility, hasTargeting, ELIG_MESSAGE } from '@/lib/eligibility'
+import { limitAction, LIMITS } from '@/lib/rate-limit'
 import {
   emailCollaborationApproved,
   emailPaymentReleased,
@@ -688,6 +689,7 @@ export async function applyToCampaign(campaignId: string, message?: string, deli
     const admin = createAdminClient()
     const { data: { user } } = await sb.auth.getUser()
     if (!user) return { error: 'Nu ești autentificat. Te rog să te loghezi din nou.' }
+    { const limited = await limitAction('apply', user.id, LIMITS.apply); if (limited) return { error: limited } }
 
     const { data: inf, error: infErr } = await admin
       .from('influencers')

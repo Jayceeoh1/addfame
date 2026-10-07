@@ -6,6 +6,7 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import PWAInstallBanner from '@/components/PWAInstallBanner'
 import CookieBanner from '@/components/CookieBanner'
+import ErrorReporter from '@/components/shared/ErrorReporter'
 import '../styles/mobile.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -87,6 +88,7 @@ export default function RootLayout({
         <Analytics />
         <PWAInstallBanner />
         <CookieBanner />
+        <ErrorReporter />
         <script dangerouslySetInnerHTML={{
           __html: `
           if ('serviceWorker' in navigator) {

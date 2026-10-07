@@ -1,3 +1,4 @@
+import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser, unauthorized, forbidden } from '@/lib/api-auth'
@@ -5,6 +6,7 @@ import { getCollabAccess, isUuid, notify, postDraftMessage, DRAFT_BUCKET, MAX_DR
 
 // După încărcare: verifică fișierul din Storage, trece draftul în „pending" și anunță brandul.
 export async function POST(req: NextRequest) {
+  { const limited = await limitRequest(req, 'complete', LIMITS.upload); if (limited) return limited }
   try {
     const user = await getSessionUser()
     if (!user) return unauthorized()

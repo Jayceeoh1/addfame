@@ -1,3 +1,4 @@
+import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser, unauthorized, forbidden } from '@/lib/api-auth'
@@ -7,6 +8,7 @@ import {
 
 // Creatorul cere un URL semnat de încărcare (fișierul merge direct din browser în Storage).
 export async function POST(req: NextRequest) {
+  { const limited = await limitRequest(req, 'upload', LIMITS.upload); if (limited) return limited }
   try {
     const user = await getSessionUser()
     if (!user) return unauthorized()

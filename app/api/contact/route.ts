@@ -1,9 +1,11 @@
+import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = process.env.FROM_EMAIL || 'AddFame <noreply@addfame.ro>'
 
 export async function POST(req: NextRequest) {
+  { const limited = await limitRequest(req, 'contact', LIMITS.contact); if (limited) return limited }
   try {
     const { name, email, subject, message, type } = await req.json()
 

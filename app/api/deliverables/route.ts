@@ -15,12 +15,17 @@ export async function GET(req: NextRequest) {
     const access = await getCollabAccess(admin, collabId, user.id)
     if (!access) return forbidden()
 
-    const { data: drafts } = await admin
+    const base = 'id, version, file_name, file_size, mime, duration_sec, caption, note, status, review_note, reviewed_at, created_at, file_path'
+    const run = (cols: string) => admin
       .from('deliverable_drafts')
-      .select('id, version, file_name, file_size, mime, duration_sec, caption, note, status, review_note, reviewed_at, created_at, file_path')
+      .select(cols)
       .eq('collaboration_id', collabId)
       .in('status', ['pending', 'approved', 'changes_requested'])
       .order('version', { ascending: false })
+    // Coloanele de termen există după SQL 22; până atunci revenim la varianta veche, ca să nu dispară drafturile.
+    let res: any = await run(base + ', revision_round, revision_due_at')
+    if (res.error) res = await run(base)
+    const drafts = res.data as any[] | null
     const list = drafts || []
     const ids = list.map(d => d.id)
     const { data: comments } = ids.length

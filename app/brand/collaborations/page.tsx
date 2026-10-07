@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { approveApplication, approveDeliverable, rejectDeliverable, cancelCollaboration } from '@/app/actions/collaborations'
 import { LeaveReview } from '@/components/shared/leave-review'
 import DraftReview from '@/components/shared/DraftReview'
+import DisputeButton from '@/components/shared/DisputeButton'
 
 const STATUS_CFG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
   PENDING:   { label: 'Aplicat',     bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-400' },
@@ -843,7 +844,10 @@ export default function BrandCollaborations() {
         )}
 
         {(c.status === 'ACTIVE' || c.status === 'COMPLETED') && (
+          <>
           <DraftReview collabId={c.id} role="brand" />
+          <DisputeButton collabId={c.id} role="brand" />
+          </>
         )}
 
         {c.status === 'ACTIVE' && !hasPendingDeliverable && !c.deliverable_rejected_at && (

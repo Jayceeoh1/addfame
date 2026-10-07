@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { chargeCampaignFee } from '@/lib/campaign-fee'
 import { haversineDistance, normalizeCity, extractCityFromAddress } from '@/lib/geo-utils'
 import { cleanTiers, cleanNiches } from '@/lib/eligibility'
+import { limitAction, LIMITS } from '@/lib/rate-limit'
 
 export interface CreateBarterCampaignInput {
   offer_type: 'product' | 'service'
@@ -115,6 +116,7 @@ export async function createBarterCampaign(data: CreateBarterCampaignInput) {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) throw new Error('Sesiune expirată. Te rugăm să te autentifici din nou.')
+    { const limited = await limitAction('createCampaign', user.id, LIMITS.createCampaign); if (limited) throw new Error(limited) }
 
     const { data: brand, error: brandError } = await supabase
       .from('brands').select('id, name, city, credits_balance').eq('user_id', user.id).single()
@@ -374,6 +376,7 @@ export async function publishBarterDraft(campaignId: string) {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) throw new Error('Sesiune expirată. Te rugăm să te autentifici din nou.')
+    { const limited = await limitAction('createCampaign', user.id, LIMITS.createCampaign); if (limited) throw new Error(limited) }
 
     const { data: brand, error: brandError } = await supabase
       .from('brands').select('id, name, credits_balance').eq('user_id', user.id).single()

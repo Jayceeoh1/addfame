@@ -17,6 +17,7 @@ import { checkInWithCode } from '@/app/actions/collaborations'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 import { LeaveReview } from '@/components/shared/leave-review'
 import DraftReview from '@/components/shared/DraftReview'
+import DisputeButton from '@/components/shared/DisputeButton'
 
 type Collaboration = {
   id: string
@@ -1132,7 +1133,10 @@ export default function CollaborationsPage() {
         )}
 
         {(c.status === 'ACTIVE' || c.status === 'COMPLETED') && (
+          <>
           <DraftReview collabId={c.id} role="influencer" canUpload={c.status === 'ACTIVE'} />
+          <DisputeButton collabId={c.id} role="influencer" />
+          </>
         )}
 
         {/* Dovadă: de trimis / în revizuire */}

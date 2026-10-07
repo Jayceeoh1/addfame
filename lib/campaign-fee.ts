@@ -2,6 +2,7 @@
 // ATENȚIE: fără 'use server' — funcțiile de aici NU sunt endpoint-uri publice.
 // Se apelează doar din acțiuni de server care au verificat deja utilizatorul.
 
+import { logDbError } from '@/lib/log-error'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const DEFAULT_INFLUENCER_FEE = 350
@@ -57,6 +58,7 @@ export async function chargeCampaignFee(campaignId: string, brandId: string, slo
     p_slots: n,
     p_fee: price,
   })
+  if (error) await logDbError('charge_campaign_fee', error, { campaignId, slots: n })
   if (error) return { ok: false, error: 'Eroare la procesarea plății: ' + error.message, price, slots: n }
 
   const r = data as any

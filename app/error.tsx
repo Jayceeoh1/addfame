@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { AlertCircle, RefreshCw, Home } from 'lucide-react'
+import { reportClientError } from '@/components/shared/ErrorReporter'
 
 export default function Error({
   error,
@@ -19,6 +20,8 @@ export default function Error({
       digest: error.digest,
       stack: error.stack,
     })
+
+    reportClientError(error.message, error.stack, { digest: error.digest })
 
     // Auto-retry după 5 secunde
     const timer = setInterval(() => {

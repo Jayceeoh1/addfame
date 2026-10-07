@@ -1,8 +1,10 @@
+import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
+  { const limited = await limitRequest(req, 'platform-review', LIMITS.contact); if (limited) return limited }
   try {
     const userClient = await createClient()
     const { data: { user } } = await userClient.auth.getUser()

@@ -1,3 +1,4 @@
+import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -17,6 +18,7 @@ function checkRateLimit(key: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  { const limited = await limitRequest(req, 'submit-payment', LIMITS.payment); if (limited) return limited }
   try {
     const cookieStore = await cookies()
     const supabase = createServerClient(

@@ -1,8 +1,10 @@
+import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionUser, unauthorized } from '@/lib/api-auth'
 import { getInfluencerFeePrice } from '@/lib/campaign-fee'
 
 export async function POST(req: NextRequest) {
+  { const limited = await limitRequest(req, 'ai', LIMITS.ai); if (limited) return limited }
   try {
     // Doar utilizatori logați — altfel oricine poate consuma creditele API Anthropic
     const user = await getSessionUser()

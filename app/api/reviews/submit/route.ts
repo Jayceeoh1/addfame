@@ -1,9 +1,11 @@
+import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
+  { const limited = await limitRequest(req, 'review-submit', LIMITS.comment); if (limited) return limited }
   try {
     const { collaboration_id, reviewer_role, rating, comment } = await req.json()
 

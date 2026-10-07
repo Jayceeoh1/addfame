@@ -104,3 +104,70 @@ export function summarizeComments(cs: { at_second: number | null; body: string }
   const rows = cs.filter(c => c.at_second !== null).slice(0, 5).map(c => `${fmtSec(c.at_second!)} – ${c.body.slice(0, 120)}`)
   return rows.length ? '\n' + rows.join('\n') : ''
 }
+
+// ── Termene pentru revizuiri (SQL 22) ──────────────────────────────────────
+/** Ore pentru a trimite versiunea nouă: prima cerere de modificări 48h, a doua 24h. */
+export const REVISION_HOURS = [48, 24] as const
+export const MAX_REVISION_ROUNDS = REVISION_HOURS.length
+/** Brandul e reamintit după 48h fără răspuns la un draft; după 5 zile problema ajunge la admin. */
+export const REVIEW_REMIND_HOURS = 48
+export const REVIEW_ESCALATE_HOURS = 120
+/** Cu câte ore înainte de termen primește creatorul memento. */
+export const REVISION_REMIND_BEFORE_HOURS = 12
+
+const HOUR = 3600 * 1000
+
+/** Se mai poate cere o rundă de modificări? `previousRounds` = câte cereri au existat deja. */
+export function canRequestChanges(previousRounds: number): boolean {
+  return previousRounds < MAX_REVISION_ROUNDS
+}
+
+/** Termenul pentru runda `round` (1-based), calculat din momentul cererii. */
+export function revisionDeadline(round: number, from: Date = new Date()): Date {
+  const hours = REVISION_HOURS[Math.min(Math.max(round, 1), MAX_REVISION_ROUNDS) - 1]
+  return new Date(from.getTime() + hours * HOUR)
+}
+
+export interface DeadlineDraft {
+  id: string; collaboration_id: string; version: number
+  status: 'pending' | 'changes_requested' | 'approved' | 'deleted' | 'uploading'
+  created_at: string
+  revision_due_at: string | null
+  reminder_sent_at: string | null
+  review_reminder_sent_at: string | null
+  overdue_notified_at: string | null
+}
+
+export type DeadlineAction =
+  | { kind: 'revision_reminder'; draft: DeadlineDraft }
+  | { kind: 'revision_overdue'; draft: DeadlineDraft }
+  | { kind: 'review_reminder'; draft: DeadlineDraft }
+  | { kind: 'review_overdue'; draft: DeadlineDraft }
+
+/**
+ * Ce trebuie făcut acum, pentru draftul CEL MAI NOU al fiecărei colaborări
+ * (o versiune veche rămasă la „modificări cerute" nu mai contează după ce a venit una nouă).
+ * Funcție pură: ușor de testat; ruta cron doar execută acțiunile.
+ */
+export function planDeadlineActions(drafts: DeadlineDraft[], now: Date = new Date()): DeadlineAction[] {
+  const latest = new Map<string, DeadlineDraft>()
+  for (const d of drafts) {
+    if (d.status === 'deleted' || d.status === 'uploading') continue
+    const cur = latest.get(d.collaboration_id)
+    if (!cur || d.version > cur.version) latest.set(d.collaboration_id, d)
+  }
+  const out: DeadlineAction[] = []
+  const t = now.getTime()
+  for (const d of latest.values()) {
+    if (d.status === 'changes_requested' && d.revision_due_at) {
+      const due = new Date(d.revision_due_at).getTime()
+      if (due <= t) { if (!d.overdue_notified_at) out.push({ kind: 'revision_overdue', draft: d }) }
+      else if (due - t <= REVISION_REMIND_BEFORE_HOURS * HOUR && !d.reminder_sent_at) out.push({ kind: 'revision_reminder', draft: d })
+    } else if (d.status === 'pending') {
+      const age = t - new Date(d.created_at).getTime()
+      if (age >= REVIEW_ESCALATE_HOURS * HOUR) { if (!d.overdue_notified_at) out.push({ kind: 'review_overdue', draft: d }) }
+      else if (age >= REVIEW_REMIND_HOURS * HOUR && !d.review_reminder_sent_at) out.push({ kind: 'review_reminder', draft: d })
+    }
+  }
+  return out
+}

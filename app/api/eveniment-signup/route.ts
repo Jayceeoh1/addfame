@@ -1,7 +1,9 @@
+import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
+  { const limited = await limitRequest(req, 'signup', LIMITS.signup); if (limited) return limited }
   try {
     const body = await req.json()
     const { first_name, last_name, email, phone, instagram, tiktok, category } = body

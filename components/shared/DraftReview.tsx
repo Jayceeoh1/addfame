@@ -9,6 +9,7 @@ interface Draft {
   id: string; version: number; file_name: string; file_size: number | null; duration_sec: number | null
   caption: string | null; note: string | null; status: 'pending' | 'approved' | 'changes_requested'
   review_note: string | null; created_at: string; viewUrl: string | null; comments: Comment[]
+  revision_round?: number | null; revision_due_at?: string | null
 }
 
 const MAX = 200 * 1024 * 1024
@@ -192,6 +193,18 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
           {draft && <span style={{ fontSize: 12, fontWeight: 700, color: tone.fg }}>v{draft.version} · {fmtMB(draft.file_size)}</span>}
         </div>
         <div style={{ fontSize: 13, lineHeight: 1.45, color: '#14123a' }}>{body}</div>
+        {st === 'changes' && draft?.revision_due_at && (() => {
+          const ms = new Date(draft.revision_due_at).getTime() - Date.now()
+          const late = ms <= 0
+          const hrs = Math.ceil(ms / 3600000)
+          const when = new Date(draft.revision_due_at).toLocaleString('ro-RO', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+          return (
+            <div style={{ background: late ? '#fde8e8' : '#fff', color: late ? '#9b1c1c' : '#14123a', borderRadius: 12, padding: '8px 12px', fontSize: 13, fontWeight: 700 }}>
+              {late ? 'Termenul a trecut' : `Termen: ${when} (mai sunt ${hrs} ${hrs === 1 ? 'oră' : 'ore'})`}
+              {draft.revision_round ? ` · runda ${draft.revision_round} din 2` : ''}
+            </div>
+          )
+        })()}
         {st === 'changes' && draft?.review_note && (
           <div style={{ background: '#fff', borderRadius: 12, padding: '10px 12px', fontSize: 14, lineHeight: 1.45, color: '#14123a', overflowWrap: 'anywhere' }}>
             <b style={{ fontSize: 12, color: tone.fg, display: 'block', marginBottom: 2 }}>{role === 'influencer' ? 'Ce a scris brandul' : 'Ce ai cerut'}</b>
