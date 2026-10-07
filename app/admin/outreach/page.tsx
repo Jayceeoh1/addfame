@@ -465,7 +465,7 @@ export default function OutreachPage() {
       // Folosim SheetJS pentru Excel
       try {
         // @ts-ignore - dynamic ESM import from CDN, no type declarations
-        const XLSX = await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/xlsx.mjs')
+        const XLSX = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/xlsx.mjs')
         const buffer = await file.arrayBuffer()
         const wb = XLSX.read(buffer, { type: 'array' })
         const ws = wb.Sheets[wb.SheetNames[0]]
