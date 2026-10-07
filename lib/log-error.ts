@@ -1,6 +1,5 @@
 // Înregistrează erorile în tabelul app_errors (vizibil în /admin/errors).
 // Nu aruncă niciodată: o eroare în logger nu trebuie să strice cererea care a eșuat.
-import { createHash } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export type ErrorSource = 'server' | 'client' | 'cron' | 'action'
@@ -22,10 +21,25 @@ export function scrub(text: string): string {
 }
 
 /** Aceeași eroare → aceeași amprentă (sursă + mesaj fără numere/uuid + prima linie din stack). */
+/** Hash simplu (cyrb53, două treceri), fără `crypto` din Node: instrumentation.ts e analizat și pentru runtime-ul edge. */
+function hash(str: string): string {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57, h3 = 0x9e3779b1, h4 = 0x85ebca6b
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i)
+    h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677)
+    h3 = Math.imul(h3 ^ c, 2246822519); h4 = Math.imul(h4 ^ c, 3266489917)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  h3 = Math.imul(h3 ^ (h3 >>> 16), 2246822507) ^ Math.imul(h4 ^ (h4 >>> 13), 3266489909)
+  h4 = Math.imul(h4 ^ (h4 >>> 16), 2246822507) ^ Math.imul(h3 ^ (h3 >>> 13), 3266489909)
+  return [h1, h2, h3, h4].map(n => (n >>> 0).toString(16).padStart(8, '0')).join('')
+}
+
 export function fingerprint(source: string, message: string, stack?: string): string {
   const msg = scrub(message).replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f-]{12,}/gi, '<id>').replace(/\d+/g, '#').slice(0, 200)
   const line = (stack || '').split('\n').find(l => /^\s*at\s/.test(l)) || ''
-  return createHash('sha1').update(`${source}|${msg}|${line.replace(/\d+/g, '#').trim().slice(0, 200)}`).digest('hex')
+  return hash(`${source}|${msg}|${line.replace(/\d+/g, '#').trim().slice(0, 200)}`)
 }
 
 export async function logError(err: unknown, opts: LogErrorOptions = {}): Promise<void> {
