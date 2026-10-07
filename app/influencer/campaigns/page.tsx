@@ -308,8 +308,9 @@ export default function CampaignsPage() {
   const [barterAll, setBarterCampaigns] = useState<any[]>([])
   const [creatorRow, setCreatorRow] = useState<any>(null)
   const [noReplyCollabs, setNoReplyCollabs] = useState<any[]>([])
+  const [archivedCollabs, setArchivedCollabs] = useState<any[]>([])
   const [showArchived, setShowArchived] = useState(false)
-  const [activeTab, setActiveTab] = useState<'paid' | 'barter' | 'noReply'>('paid')
+  const [activeTab, setActiveTab] = useState<'paid' | 'barter' | 'archived' | 'noReply'>('barter')
   const [identityVerified, setIdentityVerified] = useState(false)
   const [influencerId, setInfluencerId] = useState<string | null>(null)
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set())
@@ -374,7 +375,7 @@ export default function CampaignsPage() {
       if (camp) setCampaigns(camp)
       if (barter) setBarterCampaigns(barter)
       if (inf) {
-        const { data: colls } = await sb.from('collaborations').select('campaign_id, status, reserved_amount, payment_amount, admin_invited, created_at, campaigns(id, title, brand_name, campaign_type, offer_value, registration_opened_at, registration_deadline_days)').eq('influencer_id', inf.id)
+        const { data: colls } = await sb.from('collaborations').select('campaign_id, status, reserved_amount, payment_amount, admin_invited, created_at, campaigns(id, title, brand_name, campaign_type, offer_value, registration_opened_at, registration_deadline_days, status)').eq('influencer_id', inf.id)
         if (colls) {
           setAppliedIds(new Set(colls.filter((c: any) => c.status !== 'INVITED').map((c: any) => c.campaign_id)))
           setInvitedIds(new Set(colls.filter((c: any) => c.status === 'INVITED').map((c: any) => c.campaign_id)))
@@ -401,6 +402,10 @@ export default function CampaignsPage() {
             return expiry < now
           })
           setNoReplyCollabs(expired)
+          // Istoric: toate campaniile la care a participat și s-au încheiat
+          setArchivedCollabs(colls
+            .filter((c: any) => ['COMPLETED', 'REJECTED', 'CANCELLED', 'EXPIRED'].includes(c.status))
+            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()))
         }
       }
     } catch (e) { console.error(e) }
@@ -625,7 +630,7 @@ export default function CampaignsPage() {
         <div className="iu-col" style={{ gap: 4 }}>
           <h1>Campanii disponibile</h1>
           <p style={{ margin: 0, color: '#4a4770' }}>
-            {activeCount} {activeCount === 1 ? 'campanie plătită' : 'campanii plătite'} · {barterCampaigns.length} {barterCampaigns.length === 1 ? 'ofertă barter' : 'oferte barter'}
+            {barterCampaigns.length} {barterCampaigns.length === 1 ? 'ofertă barter' : 'oferte barter'} · {activeCount} {activeCount === 1 ? 'campanie plătită' : 'campanii plătite'}
             {appliedIds.size > 0 && <> · <b style={{ color: '#7040f0' }}>{appliedIds.size} {appliedIds.size === 1 ? 'aplicată' : 'aplicate'}</b></>}
           </p>
         </div>
@@ -633,11 +638,14 @@ export default function CampaignsPage() {
 
       {/* Tab selector */}
       <div className="iu-tabs cm-tabs">
+        <button className={`iu-pill ${activeTab === 'barter' ? 'on' : ''}`} onClick={() => setActiveTab('barter')}>
+          <Sparkles size={15} /> Free Offer / Barter <span className="n">{barterCampaigns.length}</span>
+        </button>
         <button className={`iu-pill ${activeTab === 'paid' ? 'on' : ''}`} onClick={() => setActiveTab('paid')}>
           <DollarSign size={15} /> Campanii plătite <span className="n">{activeCount}</span>
         </button>
-        <button className={`iu-pill ${activeTab === 'barter' ? 'on' : ''}`} onClick={() => setActiveTab('barter')}>
-          <Sparkles size={15} /> Free Offer / Barter <span className="n">{barterCampaigns.length}</span>
+        <button className={`iu-pill ${activeTab === 'archived' ? 'on' : ''}`} onClick={() => setActiveTab('archived')}>
+          <ArchiveX size={15} /> Arhivate <span className="n">{archivedCollabs.length}</span>
         </button>
         {noReplyCollabs.length > 0 && (
           <button className={`iu-pill ${activeTab === 'noReply' ? 'on' : ''}`} onClick={() => setActiveTab('noReply')}>
@@ -668,6 +676,32 @@ export default function CampaignsPage() {
             <p className="iu-muted iu-sm" style={{ margin: '0 0 12px' }}>Completează-ți profilul ca să primești invitații mai relevante</p>
             <a href="/influencer/settings" className="iu-btn" style={{ minHeight: 44 }}>Actualizează profilul</a>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'archived' && (
+        <div className="iu-col" style={{ gap: 12 }}>
+          {archivedCollabs.length === 0 ? (
+            <div className="iu-card iu-card-pad" style={{ textAlign: 'center' }}>
+              <p style={{ margin: 0, fontWeight: 800 }}>Nicio campanie arhivată încă</p>
+              <p className="iu-muted iu-sm" style={{ margin: '4px 0 0' }}>Campaniile încheiate sau respinse apar aici.</p>
+            </div>
+          ) : archivedCollabs.map((collab: any) => {
+            const st = collab.status as string
+            const chip = st === 'COMPLETED' ? { t: 'Finalizată', bg: '#dcf5ec', fg: '#14532d' } : st === 'REJECTED' ? { t: 'Respinsă', bg: '#fde8e8', fg: '#9b1c1c' } : { t: st === 'EXPIRED' ? 'Expirată' : 'Anulată', bg: '#f1f0f8', fg: '#4a4770' }
+            return (
+              <a key={collab.campaign_id + st} href="/influencer/collaborations" className="iu-card iu-card-pad iu-row" style={{ gap: 12, textDecoration: 'none', color: 'inherit' }}>
+                <div className="iu-ico" style={{ background: '#efeaff', color: '#4423c4' }}><ArchiveX size={18} /></div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{collab.campaigns?.title || 'Campanie'}</p>
+                  <p className="iu-muted iu-xs" style={{ margin: '2px 0 0' }}>
+                    {collab.campaigns?.brand_name} · {collab.campaigns?.campaign_type === 'BARTER' ? 'Barter' : 'Plătită'} · {new Date(collab.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+                <span className="iu-chip" style={{ background: chip.bg, color: chip.fg }}>{chip.t}</span>
+              </a>
+            )
+          })}
         </div>
       )}
 

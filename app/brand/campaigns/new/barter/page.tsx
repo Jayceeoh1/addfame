@@ -719,7 +719,7 @@ function BarterCampaignWizardContent() {
         offer_value: c.offer_value ? String(c.offer_value) : prev.offer_value,
         offer_description: c.offer_description || prev.offer_description,
         offer_count: c.offer_count || prev.offer_count,
-        offer_image_urls: c.offer_image_url ? [c.offer_image_url] : prev.offer_image_urls,
+        offer_image_urls: (Array.isArray(c.offer_images) && c.offer_images.length) ? c.offer_images : (c.offer_image_url ? [c.offer_image_url] : prev.offer_image_urls),
         delivery_method: c.delivery_method || prev.delivery_method,
         pickup_location_name: c.pickup_location_name || prev.pickup_location_name,
         pickup_location_address: c.pickup_location_address || prev.pickup_location_address,

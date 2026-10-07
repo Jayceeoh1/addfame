@@ -17,7 +17,7 @@ import { COMPANY, BANK, REVOLUT, WISE, PAYPAL, CRYPTO, TOPUP_MIN, TOPUP_MAX } fr
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Transaction = {
   id: string
-  type: 'TOPUP' | 'SPEND' | 'REFUND' | 'RESERVE'
+  type: 'TOPUP' | 'SPEND' | 'REFUND' | 'RESERVE' | 'CAMPAIGN_FEE'
   amount: number
   description: string
   status: 'completed' | 'pending' | 'failed'
