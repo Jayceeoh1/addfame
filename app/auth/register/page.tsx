@@ -30,7 +30,7 @@ function RegisterForm() {
     initialType === 'brand' ? 'BRAND' : initialType === 'influencer' ? 'INFLUENCER' : null
   )
 
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => (searchParams.get('email') || '').slice(0, 160))
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)

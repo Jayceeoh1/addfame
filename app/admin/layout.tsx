@@ -5,7 +5,7 @@ import { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Users, LayoutDashboard, LogOut, ShieldCheck, Briefcase, ChevronRight, DollarSign, Building2, Menu, X, Handshake, ArrowUpRight, TrendingUp, Crown, Mail, Send, Bell, Package, Settings, CheckSquare, FileSignature, MessageCircle, PartyPopper, Gift, AlertTriangle, Scale } from 'lucide-react'
+import { Users, LayoutDashboard, LogOut, ShieldCheck, Briefcase, ChevronRight, DollarSign, Building2, Menu, X, Handshake, ArrowUpRight, TrendingUp, Crown, Mail, Send, Bell, Package, Settings, CheckSquare, FileSignature, MessageCircle, PartyPopper, Gift, AlertTriangle, Scale, Megaphone } from 'lucide-react'
 import RoleSwitcher from '@/components/shared/role-switcher'
 
 const NAV = [
@@ -28,6 +28,7 @@ const NAV = [
   { icon: Crown, label: 'Admini', href: '/admin/admins', superAdminOnly: true },
   { icon: FileSignature, label: 'Contracte', href: '/admin/contracts' },
   { icon: MessageCircle, label: 'WhatsApp Logs', href: '/admin/whatsapp-logs' },
+  { icon: Megaphone, label: 'Castinguri', href: '/admin/castings' },
   { icon: PartyPopper, label: 'Eveniment Toamnă', href: '/admin/event-signups' },
   { icon: Gift, label: 'Point Events', href: '/admin/point-events' },
   { icon: Handshake, label: 'Brand Referrals', href: '/admin/brand-referrals' },
