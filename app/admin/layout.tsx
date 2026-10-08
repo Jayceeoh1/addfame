@@ -28,7 +28,7 @@ const NAV = [
   { icon: Crown, label: 'Admini', href: '/admin/admins', superAdminOnly: true },
   { icon: FileSignature, label: 'Contracte', href: '/admin/contracts' },
   { icon: MessageCircle, label: 'WhatsApp Logs', href: '/admin/whatsapp-logs' },
-  { icon: Megaphone, label: 'Castinguri', href: '/admin/castings' },
+  { icon: Megaphone, label: 'Înscrieri creatori', href: '/admin/inscrieri' },
   { icon: PartyPopper, label: 'Eveniment Toamnă', href: '/admin/event-signups' },
   { icon: Gift, label: 'Point Events', href: '/admin/point-events' },
   { icon: Handshake, label: 'Brand Referrals', href: '/admin/brand-referrals' },
