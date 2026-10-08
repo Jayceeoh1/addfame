@@ -118,7 +118,7 @@ export default function SignupForm({ form: c, open, preview }: { form: SignupFor
           <div className="cf-hero-main">
             <div className="cf-eyebrow">{c.eyebrow || 'Creatori AddFame'}</div>
             <h1 className="cf-h1">{c.title}</h1>
-            <p className="cf-lead">Strângem creatori din {c.zone_label} pentru campanii auto. {c.intro}</p>
+            <p className="cf-lead">Strângem creatori din {c.zone_label}. {c.intro}</p>
             <div className="cf-facts">
               <div><small>Prima campanie</small><b>Cu {brandDisplay(c)}</b></div>
               <div><small>Ce filmezi</small><b>{c.deliverable}</b></div>

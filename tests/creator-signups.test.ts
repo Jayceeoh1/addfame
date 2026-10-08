@@ -90,7 +90,7 @@ describe('SQL 27 · înscrieri creatori', () => {
     const sql = fs.readFileSync(path.resolve(__dirname, '../supabase/security/27_inscrieri_creatori.sql'), 'utf8')
     await db.exec(sql); await db.exec(sql)
     expect((await db.query<any>(`SELECT to_regclass('public.castings') AS t`)).rows[0].t).toBeNull()
-    const c = (await db.query<any>(`SELECT id, status, min_followers FROM signup_forms WHERE slug = 'auto-bucuresti'`)).rows
+    const c = (await db.query<any>(`SELECT id, status, min_followers FROM signup_forms WHERE slug = 'auto'`)).rows
     expect(c).toHaveLength(1); expect(c[0].status).toBe('draft')
     const ins = (email: string, consent = true) => db.query(
       `INSERT INTO signup_entries (form_id, first_name, last_name, email, phone, zone, consent_share) VALUES ($1,'A','B',$2,'0712345678','sector1',$3)`, [c[0].id, email, consent])
@@ -103,5 +103,17 @@ describe('SQL 27 · înscrieri creatori', () => {
     await db.exec('SET ROLE anon')
     await expect(db.query('SELECT * FROM signup_entries')).rejects.toThrow(/permission denied/)
     await db.exec('RESET ROLE')
+  })
+})
+
+describe('SQL 27 · adresa paginii', () => {
+  it('pagina creată înainte ca „auto-bucuresti” se mută pe „auto”, fără dublură', async () => {
+    const db = new PGlite()
+    await db.exec(`DO $$ BEGIN CREATE ROLE anon; CREATE ROLE authenticated; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`)
+    const sql = fs.readFileSync(path.resolve(__dirname, '../supabase/security/27_inscrieri_creatori.sql'), 'utf8')
+    await db.exec(sql)
+    await db.exec(`UPDATE signup_forms SET slug = 'auto-bucuresti'`)
+    await db.exec(sql)
+    expect((await db.query<any>(`SELECT slug FROM signup_forms ORDER BY slug`)).rows.map(r => r.slug)).toEqual(['auto'])
   })
 })

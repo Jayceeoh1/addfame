@@ -77,7 +77,7 @@ export default function AdminSignupFormsPage() {
           <h2 className="text-lg font-black m-0">{edit.id ? 'Editează pagina' : 'Pagină nouă'}</h2>
           <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
             {F('title', 'Titlu *', { placeholder: 'Prezintă un showroom auto comunității tale' })}
-            {F('slug', 'Adresa paginii *', { placeholder: 'auto-bucuresti' }, 'Litere mici, cifre, cratime')}
+            {F('slug', 'Adresa paginii *', { placeholder: 'auto' }, 'Litere mici, cifre, cratime')}
             {F('brand_name', 'Numele dealerului / brandului', { placeholder: 'gol = „un dealer auto partener”' })}
             {F('location', 'Unde se filmează', { placeholder: 'Showroom X, Bd. Y nr. Z, Sector 1' })}
             {F('shoot_period', 'Perioada filmării', { placeholder: '20–31 octombrie' })}
