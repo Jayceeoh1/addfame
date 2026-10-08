@@ -22,7 +22,7 @@ export default function SignupEntriesPage() {
   const [rows, setRows] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
-  const [filter, setFilter] = useState<ApplicationFilter>({ zone: 'priority', platform: '', licenseOnly: true, status: '', gender: '', audienceGender: '' })
+  const [filter, setFilter] = useState<ApplicationFilter>({ zone: 'priority', platform: '', status: '', gender: '', audienceGender: '' })
   const [minF, setMinF] = useState(''), [maxP, setMaxP] = useState('')
   const [sort, setSort] = useState<SortKey>('cost')
   const [open, setOpen] = useState<any | null>(null)
@@ -117,17 +117,16 @@ export default function SignupEntriesPage() {
           <select className={sel} value={sort} onChange={e => setSort(e.target.value as SortKey)}>
             <option value="cost">Cost / 1.000 vizualizări</option><option value="followers">Urmăritori</option><option value="price">Preț</option><option value="date">Cele mai noi</option>
           </select></label>
-        <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={!!filter.licenseOnly} onChange={e => setFilter(f => ({ ...f, licenseOnly: e.target.checked }))} className="w-4 h-4 accent-violet-600" /> Doar cu permis B</label>
       </div>
 
       {loading ? <p>Se încarcă…</p> : (
         <div className="bg-white border border-gray-100 rounded-2xl overflow-x-auto">
           <table className="w-full text-sm" style={{ borderCollapse: 'collapse', fontVariantNumeric: 'tabular-nums' }}>
             <thead><tr className="text-left text-[11px] uppercase tracking-wider text-gray-500" style={{ background: '#faf9fe' }}>
-              {['Creator', 'Zonă', 'Platformă principală', 'Viz. medii', 'Preț / video', 'Cost / 1.000 viz.', 'Permis', 'Status'].map(h => <th key={h} className="px-3 py-3 font-black whitespace-nowrap">{h}</th>)}
+              {['Creator', 'Zonă', 'Platformă principală', 'Viz. medii', 'Preț / video', 'Cost / 1.000 viz.', 'Status'].map(h => <th key={h} className="px-3 py-3 font-black whitespace-nowrap">{h}</th>)}
             </tr></thead>
             <tbody>
-              {list.length === 0 && <tr><td colSpan={8} className="px-3 py-10 text-center text-gray-400">Niciun aplicant pentru filtrele alese.</td></tr>}
+              {list.length === 0 && <tr><td colSpan={7} className="px-3 py-10 text-center text-gray-400">Niciun aplicant pentru filtrele alese.</td></tr>}
               {list.map(r => {
                 const main = PLATFORMS.find(p => p.key === r.main_platform)
                 const cs = costStyle(r.cost), ss = STATUS_STYLE[r.status] || STATUS_STYLE.new
@@ -139,7 +138,6 @@ export default function SignupEntriesPage() {
                     <td className="px-3 py-3 text-right">{fmt(r.main_avg_views)}</td>
                     <td className="px-3 py-3 text-right font-bold whitespace-nowrap">{ron(r.price_video)}</td>
                     <td className="px-3 py-3 text-right whitespace-nowrap"><span className="font-black px-2 py-1 rounded-lg" style={{ background: cs.bg, color: cs.fg }}>{r.cost == null ? '—' : `${r.cost} RON`}</span></td>
-                    <td className="px-3 py-3 whitespace-nowrap">{r.has_license ? `Da${r.driving_years ? ` · ${r.driving_years}` : ''}` : 'Nu'}</td>
                     <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
                       <select value={r.status} onChange={e => patch(r.id, { status: e.target.value })} className="text-xs font-bold rounded-full px-2.5 py-1 border-0" style={{ background: ss.bg, color: ss.fg }} aria-label={`Status ${r.first_name} ${r.last_name}`}>
                         {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -188,7 +186,7 @@ export default function SignupEntriesPage() {
                 ['Preț / video', ron(open.price_video)], ['Cost / 1.000 viz.', costPer1k(open.price_video, open.main_avg_views) ? `${costPer1k(open.price_video, open.main_avg_views)} RON` : '—'],
                 ['Integrare YouTube', ron(open.price_youtube)], ['3 story-uri', ron(open.price_stories)],
                 ['Facturare', open.invoicing || '—'], ['Drepturi reclame', open.usage_rights || '—'],
-                ['Acceptă barter', open.accepts_barter ? 'Da' : 'Nu'], ['Permis', open.has_license ? `Da${open.driving_years ? ` · ${open.driving_years}` : ''}` : 'Nu'],
+                ['Acceptă barter', open.accepts_barter ? 'Da' : 'Nu'], ['Experiență auto', open.auto_experience || '—'],
                 ['Audiență din București', open.audience_city_share || '—'], ['Vârstă audiență', open.audience_age || '—'],
                 ['Gen audiență', audienceGenderLabel(open.audience_gender)], ['Gen', genderLabel(open.gender)],
                 ['Disponibil', (open.availability || []).join(', ') || '—'], ['Postează', open.posting_time || '—'],

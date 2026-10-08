@@ -40,7 +40,6 @@ export const PLATFORMS = [
 export type PlatformKey = typeof PLATFORMS[number]['key']
 
 export const CONTENT_TYPES = ['Review-uri mașini', 'Tuning și motorsport', 'Lifestyle', 'Familie', 'Road trips', 'Tech și gadgeturi', 'Business', 'Umor']
-export const DRIVING_YEARS = ['Sub 1 an', '1–3 ani', '3–5 ani', 'Peste 5 ani']
 export const TRAVEL = ['Da, pe cont propriu', 'Da, dacă se decontează transportul', 'Nu']
 export const AUDIENCE_CITY = ['Nu știu', 'Sub 20%', '20–50%', 'Peste 50%']
 export const AUDIENCE_AGE = ['18–24', '25–34', '35–44', '45+']
@@ -81,7 +80,6 @@ export interface CleanApplication {
   first_name: string; last_name: string; email: string; phone: string; birth_date: string | null
   gender: string; audience_gender: string | null
   zone: string; other_city: string | null; can_travel: string | null
-  has_license: boolean; driving_years: string | null
   platforms: Partial<Record<PlatformKey, { handle: string; followers: number; avg_views: number }>>
   main_platform: PlatformKey; main_followers: number; main_avg_views: number; total_followers: number
   content_types: string[]; sample_links: string[]; auto_experience: string | null
@@ -134,8 +132,6 @@ export function validateApplication(raw: any, now = new Date()): ValidationResul
   if (zone === 'other' && !other_city) e.other_city = 'Scrie orașul.'
   const can_travel = zone === 'other' ? oneOf(raw?.can_travel, TRAVEL) : null
 
-  if (raw?.has_license !== true && raw?.has_license !== false) e.has_license = 'Spune-ne dacă ai permis.'
-  const has_license = raw?.has_license === true
 
   const platforms: CleanApplication['platforms'] = {}
   for (const p of PLATFORMS) {
@@ -171,7 +167,6 @@ export function validateApplication(raw: any, now = new Date()): ValidationResul
       first_name, last_name, email, phone, birth_date,
       gender: gender!, audience_gender: oneOf(raw?.audience_gender, AUDIENCE_GENDERS.map(g => g.value)),
       zone: zone!, other_city, can_travel,
-      has_license, driving_years: oneOf(raw?.driving_years, DRIVING_YEARS),
       platforms, main_platform: main_platform!, main_followers: main.followers, main_avg_views: main.avg_views,
       total_followers: keys.reduce((s, k) => s + platforms[k]!.followers, 0),
       content_types: someOf(raw?.content_types, CONTENT_TYPES), sample_links,
@@ -199,13 +194,12 @@ export interface ApplicationFilter {
   platform?: PlatformKey | ''
   minFollowers?: number
   maxPrice?: number
-  licenseOnly?: boolean
   status?: string
   gender?: string
   audienceGender?: string
 }
 
-export function filterApplications<T extends { zone: string; main_platform: string | null; platforms: any; main_followers: number; price_video: number | null; has_license: boolean; status: string; gender?: string | null; audience_gender?: string | null }>(rows: T[], f: ApplicationFilter): T[] {
+export function filterApplications<T extends { zone: string; main_platform: string | null; platforms: any; main_followers: number; price_video: number | null; status: string; gender?: string | null; audience_gender?: string | null }>(rows: T[], f: ApplicationFilter): T[] {
   return rows.filter(r => {
     if (f.zone === 'priority' && r.zone === 'other') return false
     if (f.zone === 'bucuresti' && !r.zone.startsWith('sector')) return false
@@ -213,7 +207,6 @@ export function filterApplications<T extends { zone: string; main_platform: stri
     const fol = f.platform ? Number(r.platforms?.[f.platform]?.followers) || 0 : r.main_followers
     if (f.minFollowers && fol < f.minFollowers) return false
     if (f.maxPrice && (r.price_video ?? Infinity) > f.maxPrice) return false
-    if (f.licenseOnly && !r.has_license) return false
     if (f.status && r.status !== f.status) return false
     if (f.gender && r.gender !== f.gender) return false
     if (f.audienceGender && r.audience_gender !== f.audienceGender) return false

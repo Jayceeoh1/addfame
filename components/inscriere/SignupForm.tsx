@@ -3,7 +3,7 @@
 // Aceeași validare rulează aici (mesaje imediate) și pe server (lib/creator-signups → validateApplication).
 import { useMemo, useRef, useState } from 'react'
 import {
-  ZONES, PLATFORMS, CONTENT_TYPES, DRIVING_YEARS, TRAVEL, AUDIENCE_CITY, AUDIENCE_AGE, INVOICING, USAGE_RIGHTS,
+  ZONES, PLATFORMS, CONTENT_TYPES, TRAVEL, AUDIENCE_CITY, AUDIENCE_AGE, INVOICING, USAGE_RIGHTS,
   AVAILABILITY, POSTING_TIME, GENDERS, AUDIENCE_GENDERS, validateApplication, brandDisplay, type SignupFormConfig, type PlatformKey,
 } from '@/lib/creator-signups'
 import { parseCount } from '@/lib/tiers'
@@ -22,7 +22,6 @@ export default function SignupForm({ form: c, open, preview }: { form: SignupFor
   const [f, setF] = useState({
     first_name: '', last_name: '', email: '', phone: '', birth_date: '', gender: '', audience_gender: '',
     zone: '', other_city: '', can_travel: '',
-    has_license: null as boolean | null, driving_years: '',
     main_platform: 'tiktok' as PlatformKey,
     content_types: [] as string[], sample_links: '', auto_experience: '',
     audience_city_share: '', audience_age: '',
@@ -128,7 +127,7 @@ export default function SignupForm({ form: c, open, preview }: { form: SignupFor
           </div>
           <div className="cf-req" role="complementary" aria-label="Cine se poate înscrie">
             <h2>Cine se poate înscrie</h2>
-            <p><Check /><span>Ai peste 18 ani și permis categoria B</span></p>
+            <p><Check /><span>Ai peste 18 ani</span></p>
             {c.min_followers > 0 && <p><Check /><span>Cel puțin {fmtNum(c.min_followers)} urmăritori pe o platformă</span></p>}
             <p><Check /><span>Locuiești în {c.zone_label}</span></p>
             <p><Check /><span>Postezi pe TikTok, Instagram sau YouTube</span></p>
@@ -191,21 +190,6 @@ export default function SignupForm({ form: c, open, preview }: { form: SignupFor
               <small className="cf-muted">Unele campanii caută anume creatoare sau creatori. Nu apare public.</small>
               {err('gender')}
             </fieldset>
-            <div className="cf-grid">
-              <fieldset data-field="has_license">
-                <legend>Ai permis categoria B? *</legend>
-                <div className="cf-row">
-                  <label className={`cf-choice ${f.has_license === true ? 'on' : ''}`}><input type="radio" name="permis" checked={f.has_license === true} onChange={() => set('has_license', true)} />Da</label>
-                  <label className={`cf-choice ${f.has_license === false ? 'on' : ''}`}><input type="radio" name="permis" checked={f.has_license === false} onChange={() => set('has_license', false)} />Nu</label>
-                </div>
-                {err('has_license')}
-              </fieldset>
-              {f.has_license && (
-                <label>De câți ani conduci?
-                  <select value={f.driving_years} onChange={e => set('driving_years', e.target.value)}><option value="">Alege</option>{DRIVING_YEARS.map(d => <option key={d}>{d}</option>)}</select>
-                </label>
-              )}
-            </div>
           </section>
 
           {/* 2 */}
@@ -276,7 +260,7 @@ export default function SignupForm({ form: c, open, preview }: { form: SignupFor
               <label data-field="invoicing">Cum facturezi? *<select className={cls('invoicing')} value={f.invoicing} onChange={e => set('invoicing', e.target.value)}>{INVOICING.map(i => <option key={i}>{i}</option>)}</select>{err('invoicing')}</label>
               <label>Drepturi de folosire a video-ului de către brand<select value={f.usage_rights} onChange={e => set('usage_rights', e.target.value)}>{USAGE_RIGHTS.map(u => <option key={u}>{u}</option>)}</select><small>Folosirea în reclame se negociază separat.</small></label>
             </div>
-            <label className="cf-inline box"><input type="checkbox" checked={f.accepts_barter} onChange={e => set('accepts_barter', e.target.checked)} />Accept și o variantă parțial barter (de exemplu, o mașină de test pentru un weekend), dacă brandul o propune.</label>
+            <label className="cf-inline box"><input type="checkbox" checked={f.accepts_barter} onChange={e => set('accepts_barter', e.target.checked)} />Accept și o variantă parțial barter (un produs sau un serviciu oferit de brand), dacă brandul o propune.</label>
           </section>
 
           {/* 5 */}

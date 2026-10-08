@@ -7,7 +7,7 @@ import { validateApplication, isSignupOpen, costPer1k, filterApplications, ageOn
 const NOW = new Date('2026-10-08T10:00:00Z')
 const good = (o: any = {}) => ({
   first_name: ' Maria ', last_name: 'Popescu', email: 'Maria@Email.com ', phone: '+40 712 345 678', birth_date: '1998-04-02',
-  gender: 'female', audience_gender: 'female', zone: 'sector3', has_license: true, driving_years: '3–5 ani',
+  gender: 'female', audience_gender: 'female', zone: 'sector3',
   platforms: { tiktok: { enabled: true, handle: '@maria', followers: '61K', avg_views: '38K' }, instagram: { enabled: true, handle: '@maria.p', followers: '12,4K', avg_views: '' }, youtube: { enabled: false } },
   main_platform: 'tiktok', sample_links: ['https://www.tiktok.com/@maria/video/1', 'nu e link'],
   price_video: '1.200', invoicing: 'PFA / II', consent_share: true, content_types: ['Lifestyle', 'Altceva'],
@@ -58,18 +58,18 @@ describe('admin · calcule și filtre', () => {
     expect(costPer1k(350, 4100)).toBe(85)
     expect(costPer1k(800, 0)).toBeNull()
   })
-  it('filtre: zonă, platformă, urmăritori, preț, permis', () => {
+  it('filtre: zonă, platformă, urmăritori, preț', () => {
     const rows: any[] = [
-      { id: 'a', zone: 'sector1', main_platform: 'tiktok', platforms: { tiktok: { followers: 60000 } }, main_followers: 60000, price_video: 1200, has_license: true, status: 'new' },
-      { id: 'b', zone: 'ilfov', main_platform: 'instagram', platforms: { instagram: { followers: 8000 } }, main_followers: 8000, price_video: 350, has_license: true, status: 'new' },
-      { id: 'c', zone: 'other', main_platform: 'tiktok', platforms: { tiktok: { followers: 90000 } }, main_followers: 90000, price_video: 900, has_license: true, status: 'new' },
-      { id: 'd', zone: 'sector4', main_platform: 'tiktok', platforms: { tiktok: { followers: 20000 } }, main_followers: 20000, price_video: 500, has_license: false, status: 'selected' },
+      { id: 'a', zone: 'sector1', main_platform: 'tiktok', platforms: { tiktok: { followers: 60000 } }, main_followers: 60000, price_video: 1200, status: 'new' },
+      { id: 'b', zone: 'ilfov', main_platform: 'instagram', platforms: { instagram: { followers: 8000 } }, main_followers: 8000, price_video: 350, status: 'new' },
+      { id: 'c', zone: 'other', main_platform: 'tiktok', platforms: { tiktok: { followers: 90000 } }, main_followers: 90000, price_video: 900, status: 'new' },
+      { id: 'd', zone: 'sector4', main_platform: 'tiktok', platforms: { tiktok: { followers: 20000 } }, main_followers: 20000, price_video: 500, status: 'selected' },
     ]
     const ids = (f: any) => filterApplications(rows, f).map(r => r.id)
     expect(ids({ zone: 'priority' })).toEqual(['a', 'b', 'd'])
     expect(ids({ zone: 'bucuresti' })).toEqual(['a', 'd'])
     expect(ids({ zone: 'all', platform: 'tiktok', minFollowers: 50000 })).toEqual(['a', 'c'])
-    expect(ids({ maxPrice: 600, licenseOnly: true })).toEqual(['b'])
+    expect(ids({ maxPrice: 600 })).toEqual(['b', 'd'])
     expect(ids({ status: 'selected' })).toEqual(['d'])
     rows[0].gender = 'male'; rows[1].gender = 'female'; rows[3].gender = 'female'; (rows[1] as any).audience_gender = 'male'
     expect(ids({ gender: 'female' })).toEqual(['b', 'd'])

@@ -18,14 +18,13 @@ export async function GET(req: NextRequest) {
   const { data: rows, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const headers = ['Status', 'Prenume', 'Nume', 'Gen', 'Email', 'Telefon', 'Zonă', 'Poate veni în București', 'Permis B', 'Ani condus',
+  const headers = ['Status', 'Prenume', 'Nume', 'Gen', 'Email', 'Telefon', 'Zonă', 'Poate veni în București',
     ...PLATFORMS.flatMap(p => [`${p.label} cont`, `${p.label} urmăritori`, `${p.label} vizualizări medii`]),
     'Platformă principală', 'Preț / video (RON)', 'Cost / 1.000 viz. (RON)', 'Preț YouTube (RON)', 'Preț 3 story-uri (RON)',
     'Facturare', 'Drepturi reclame', 'Acceptă barter', 'Conținut', 'Linkuri video', 'Experiență auto', 'Audiență din București',
     'Vârstă audiență', 'Gen audiență', 'Disponibilitate', 'Postează în', 'Observații creator', 'Notă admin', 'Înscris pe']
   const out: Cell[][] = (rows || []).map((r: any) => [
     STATUS_LABEL[r.status] || r.status, r.first_name, r.last_name, r.gender ? genderLabel(r.gender) : '', r.email, r.phone, zoneLabel(r.zone, r.other_city), r.can_travel,
-    r.has_license ? 'Da' : 'Nu', r.driving_years,
     ...PLATFORMS.flatMap(p => { const x = r.platforms?.[p.key]; return x ? [x.handle, x.followers, x.avg_views || ''] : ['', '', ''] }),
     PLATFORMS.find(p => p.key === r.main_platform)?.label || r.main_platform, r.price_video, costPer1k(r.price_video, r.main_avg_views) ?? '',
     r.price_youtube, r.price_stories, r.invoicing, r.usage_rights, r.accepts_barter ? 'Da' : 'Nu',
