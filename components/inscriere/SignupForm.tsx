@@ -94,7 +94,7 @@ export default function SignupForm({ form: c, open, preview }: { form: SignupFor
         <h1 className="cf-h1 cf-ink">{done.updated ? 'Ți-am actualizat înscrierea' : `Te-ai înscris, ${done.firstName}!`}</h1>
         <p className="cf-lead cf-ink2">Ți-am trimis o confirmare pe email. Echipa AddFame îți verifică profilul și te contactăm când apare o campanie potrivită.</p>
         <ol className="cf-steps">
-          <li><span className="on">1</span><div><b>Verificăm profilul</b><small>Cifrele, conținutul și linkurile trimise. 1–2 zile lucrătoare.</small></div></li>
+          <li><span className="on">1</span><div><b>Verificăm profilul</b><small>Cifrele, conținutul și linkurile trimise. Îți răspundem în maximum 5 ore.</small></div></li>
           <li><span>2</span><div><b>Te contactăm pentru campanii</b><small>Prima: cu {brandDisplay(c)}. Dacă ești ales(ă), primești pe email detaliile și contractul.</small></div></li>
           <li><span>3</span><div><b>Contul AddFame, doar dacă vrei</b><small>Nu e obligatoriu. Cu cont primești și alte campanii și îți urmărești colaborările.</small></div></li>
         </ol>
@@ -126,7 +126,7 @@ export default function SignupForm({ form: c, open, preview }: { form: SignupFor
               <div><small>Plată</small><b>Tariful tău, prin contract</b></div>
             </div>
           </div>
-          <aside className="cf-req">
+          <div className="cf-req" role="complementary" aria-label="Cine se poate înscrie">
             <h2>Cine se poate înscrie</h2>
             <p><Check /><span>Ai peste 18 ani și permis categoria B</span></p>
             {c.min_followers > 0 && <p><Check /><span>Cel puțin {fmtNum(c.min_followers)} urmăritori pe o platformă</span></p>}
@@ -136,7 +136,7 @@ export default function SignupForm({ form: c, open, preview }: { form: SignupFor
               {c.deadline && <>Înscrieri până pe <b>{fmtDate(c.deadline)}</b>. </>}
               Durează cam 4 minute și nu ai nevoie de cont AddFame. Ești din alt oraș? Înscrie-te oricum: te anunțăm la campaniile din zona ta.
             </div>
-          </aside>
+          </div>
         </div>
       </section>
 
@@ -300,7 +300,7 @@ export default function SignupForm({ form: c, open, preview }: { form: SignupFor
             {topErr && <div className="cf-top-err" role="alert">{topErr}</div>}
             <div className="cf-row">
               <button type="submit" className="cf-btn big" disabled={busy}>{busy ? 'Se trimite…' : 'Trimite înscrierea'}</button>
-              <span className="cf-muted">Primești răspuns pe email în cel mult 3 zile lucrătoare.</span>
+              <span className="cf-muted">Îți răspundem rapid, în maximum 5 ore.</span>
             </div>
           </section>
         </form>
@@ -323,7 +323,7 @@ const CSS = `
 .cf-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:620px}
 .cf-facts>div{border:1px solid #39355f;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
 .cf-facts small{font-size:12px;color:#b5b0d6;font-weight:600}.cf-facts b{font-size:15px}
-.cf-req{flex:1 1 300px;background:#fff;color:#14123a;border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:12px}
+.cf-req{position:static!important;flex:1 1 300px;background:#fff;color:#14123a;border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:12px}
 .cf-req h2{margin:0;font-family:var(--font-display),sans-serif;font-size:20px;font-weight:800}
 .cf-req p{margin:0;display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.45}
 .cf-req-foot{border-top:1px solid #ece9f6;padding-top:12px;font-size:13px;color:#5d5a80;line-height:1.5}

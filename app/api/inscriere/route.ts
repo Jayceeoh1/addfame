@@ -19,7 +19,7 @@ async function sendConfirmation(to: string, name: string, c: SignupFormConfig, u
 <div style="font-size:24px;font-weight:900;color:#14123a;margin-bottom:16px">AddFame</div>
 <p style="font-size:15px;color:#14123a;margin:0 0 12px">Bună, <strong>${esc(name)}</strong>!</p>
 <p style="font-size:14px;color:#3d3a63;line-height:1.6;margin:0 0 12px">${updated ? 'Ți-am actualizat înscrierea' : 'Am primit înscrierea ta'} în comunitatea de creatori AddFame (<strong>${esc(c.title)}</strong>).</p>
-<p style="font-size:14px;color:#3d3a63;line-height:1.6;margin:0 0 12px">Verificăm profilul în 1–2 zile lucrătoare. Când apare o campanie potrivită (prima: cu ${esc(brandDisplay(c))}), te contactăm cu detaliile și contractul.</p>
+<p style="font-size:14px;color:#3d3a63;line-height:1.6;margin:0 0 12px">Îți verificăm profilul și revenim în maximum 5 ore. Când apare o campanie potrivită (prima: cu ${esc(brandDisplay(c))}), te contactăm cu detaliile și contractul.</p>
 <p style="font-size:14px;color:#3d3a63;line-height:1.6;margin:0 0 18px">Contul AddFame e opțional: îl poți face oricând, ca să primești și alte campanii.</p>
 <a href="${APP_URL}/auth/register?type=influencer&email=${encodeURIComponent(to)}" style="background:#5a35e6;color:#fff;text-decoration:none;font-weight:800;padding:12px 22px;border-radius:12px;display:inline-block">Creează-ți contul</a>
 </div></div></body></html>`
