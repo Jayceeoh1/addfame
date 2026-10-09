@@ -55,6 +55,44 @@ export function parseCount(raw: unknown): number {
   return Number.isFinite(d) && d > 0 ? d : 0
 }
 
+export type PlatformEntry = { platform?: string; url?: string; username?: string; followers?: string | number; [k: string]: unknown }
+
+const tryJson = (v: unknown): any => {
+  if (typeof v !== 'string') return v
+  const t = v.trim()
+  if (!t.startsWith('{') && !t.startsWith('[')) return v
+  try { return JSON.parse(t) } catch { return v }
+}
+
+/**
+ * Coloana influencers.platforms apare în mai multe forme: listă [{platform, url, followers}], obiect {tiktok: url},
+ * obiect {tiktok: {url, followers}}, sau valori salvate ca text JSON. Le aducem pe toate la o listă de intrări curate.
+ */
+export function normalizePlatforms(raw: unknown): PlatformEntry[] {
+  const v = tryJson(raw)
+  const out: PlatformEntry[] = []
+  const fromValue = (platform: string | undefined, val: unknown): PlatformEntry | null => {
+    const x = tryJson(val)
+    if (x && typeof x === 'object' && !Array.isArray(x)) {
+      const o = { ...(x as PlatformEntry) }
+      const inner = tryJson(o.followers)                       // followers: '{"url":…,"followers":"22.500"}'
+      if (inner && typeof inner === 'object') { delete o.followers; Object.assign(o, inner) }
+      const e: PlatformEntry = { ...o }
+      if (platform && !e.platform) e.platform = platform
+      return e
+    }
+    if (typeof x === 'string' && x.trim()) return /^https?:\/\/|^www\./i.test(x.trim()) ? { platform, url: x.trim() } : { platform, followers: x.trim() }
+    if (typeof x === 'number') return { platform, followers: x }
+    return null
+  }
+  if (Array.isArray(v)) {
+    for (const item of v) { const e = fromValue(undefined, item); if (e && (e.platform || e.url || e.followers)) out.push(e) }
+  } else if (v && typeof v === 'object') {
+    for (const [k, val] of Object.entries(v as Record<string, unknown>)) { const e = fromValue(k, val); if (e) out.push(e) }
+  }
+  return out
+}
+
 export type TierSource = 'verified' | 'estimated'
 
 type TierInput = {
@@ -62,7 +100,7 @@ type TierInput = {
   ig_followers?: number | null
   instagram_followers?: number | string | null
   tt_followers?: number | string | null
-  platforms?: { platform?: string; followers?: string | number }[] | null
+  platforms?: unknown
 }
 
 /**
@@ -72,8 +110,8 @@ type TierInput = {
 export function manualFollowers(c: TierInput | null | undefined, opts?: { excludeInstagram?: boolean }): number {
   if (!c) return 0
   const nums = [opts?.excludeInstagram ? 0 : parseCount(c.instagram_followers), parseCount(c.tt_followers)]
-  if (Array.isArray(c.platforms)) {
-    for (const p of c.platforms) {
+  {
+    for (const p of normalizePlatforms(c.platforms)) {
       if (opts?.excludeInstagram && String(p?.platform || '').toLowerCase() === 'instagram') continue
       nums.push(parseCount(p?.followers))
     }

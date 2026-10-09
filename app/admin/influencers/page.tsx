@@ -6,12 +6,14 @@ import { getAllInfluencers, approveInfluencer, rejectInfluencer, deleteInfluence
 import { getCreatorLevel, LEVEL_CONFIG, BADGE_IMAGES } from '@/lib/creator-score'
 import { Users, Search, Check, X, Trash2, Eye, Plus, RefreshCw, Instagram, Youtube, Star, Mail, Shield, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { normalizePlatforms, parseCount } from '@/lib/tiers'
 
 const TikTokIcon = () => (
   <svg viewBox="0 0 24 24" style={{ width: 14, height: 14 }} fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z" /></svg>
 )
 
-function fmtFollowers(n: number) {
+function fmtFollowers(raw: unknown) {
+  const n = parseCount(raw)
   if (!n) return null
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`
@@ -135,7 +137,7 @@ export default function AdminInfluencers() {
     if (!inf.avatar) missing.push('Poză')
     if (!inf.bio) missing.push('Bio')
     if (!asList(inf.niches, 'niche').length) missing.push('Nișe')
-    if (!asList(inf.platforms).length) missing.push('Platforme')
+    if (!normalizePlatforms(inf.platforms).length) missing.push('Platforme')
     return missing
   }
 
@@ -318,11 +320,11 @@ export default function AdminInfluencers() {
                 </div>
               )}
 
-              {asList(selected.platforms).length > 0 && (
+              {normalizePlatforms(selected.platforms).length > 0 && (
                 <div className="mb-4">
                   <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Platforme</p>
                   <div className="space-y-2">
-                    {asList(selected.platforms).map((p: any, i: number) => {
+                    {normalizePlatforms(selected.platforms).map((p: any, i: number) => {
                       // Platformele sunt salvate cu câmpul 'url' direct
                       const rawUrl = p.url || (
                         p.username
@@ -512,7 +514,7 @@ export default function AdminInfluencers() {
           {paginated.map((inf: any) => {
             const busy = actionId === inf.id
             const status = STATUS_COLORS[inf.approval_status] || STATUS_COLORS.pending
-            const platforms = asList(inf.platforms)
+            const platforms = normalizePlatforms(inf.platforms)
             const missing = isIncomplete(inf)
 
             return (

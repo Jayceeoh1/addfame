@@ -5,6 +5,7 @@
 // plus platforma campaniei și minimul de urmăritori. O campanie se anunță O SINGURĂ DATĂ
 // (coloana campaigns.alerts_sent_at, revendicată atomic) — fără dubluri la aprobare + publicare.
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { normalizePlatforms } from '@/lib/tiers'
 import { eligibility, type EligCreator } from '@/lib/eligibility'
 import { creatorTierInfo } from '@/lib/tiers'
 import { logError } from '@/lib/log-error'
@@ -49,7 +50,7 @@ const up = (s: unknown) => String(s || '').trim().toUpperCase()
 /** Platformele pe care creatorul are cont (din profil + conturile conectate). */
 export function creatorPlatforms(c: AlertCreator): Set<string> {
   const out = new Set<string>()
-  for (const p of Array.isArray(c.platforms) ? c.platforms : []) {
+  for (const p of normalizePlatforms(c.platforms)) {
     const k = up((p as any)?.platform ?? p)
     if (k) out.add(k)
   }
