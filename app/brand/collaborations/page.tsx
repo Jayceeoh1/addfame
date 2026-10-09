@@ -414,7 +414,7 @@ export default function BrandCollaborations() {
         })
       }
       if (!brand) return
-      const { data: camps } = await sb.from('campaigns').select('id, title, budget').eq('brand_id', brand.id)
+      const { data: camps } = await sb.from('campaigns').select('id, title, budget, offer_name, campaign_type').eq('brand_id', brand.id)
       const campIds = (camps || []).map((c: any) => c.id)
       const campMap = Object.fromEntries((camps || []).map((c: any) => [c.id, c]))
       if (campIds.length === 0) { setCollabs([]); setLoading(false); return }
@@ -683,7 +683,7 @@ export default function BrandCollaborations() {
 
   const visible = collabs.filter(c => {
     const q = search.toLowerCase()
-    const matchQ = !q || c.influencer?.name?.toLowerCase().includes(q) || c.campaign?.title?.toLowerCase().includes(q)
+    const matchQ = !q || c.influencer?.name?.toLowerCase().includes(q) || (c.campaign?.title?.toLowerCase().includes(q) || c.campaign?.offer_name?.toLowerCase().includes(q))
     return matchQ && TAB_FILTER[tab](c)
   })
 
@@ -718,10 +718,8 @@ export default function BrandCollaborations() {
   const activeCollabs = collabs.filter(c => c.status === 'ACTIVE')
   const completedCollabs = collabs.filter(c => c.status === 'COMPLETED')
 
-  function openAwb(id: string) {
-    setAwbResult(null); setAwbPrices([]); setAwbCarrierId(null); setAwbServiceId(null); setAwbError('')
-    setAwbModal(id)
-  }
+  // Brandul nu generează AWB din platformă (doar adminul); marchează coletul ca trimis, cu curier/AWB opționale
+  function openAwb(id: string) { setPackageModal(id) }
   function openReview(c: any) {
     if (reviewCardVisible) {
       const i = reviewItems.findIndex(x => x.id === c.id)
@@ -731,7 +729,9 @@ export default function BrandCollaborations() {
       setExpandedId(c.id)
     }
   }
-  const campTitle = (c: any) => (c.campaign?.title || '').replace(/^\[Barter\]\s*/i, '') || 'Campanie'
+  // Numele campaniei = produsul (ex. „Imuno Beta Glucan”); titlul generat automat e identic la toate campaniile barter
+  const campName = (camp: any) => (camp?.offer_name || '').trim() || (camp?.title || '').replace(/^\[Barter\]\s*/i, '') || 'Campanie'
+  const campTitle = (c: any) => campName(c.campaign)
   const isBarterCampaign = (cs: any[]) => cs.some(c => c.campaign?.campaign_type === 'BARTER' || /^\[Barter\]/i.test(c.campaign?.title || ''))
 
   const renderDetails = (c: any) => {
@@ -774,8 +774,7 @@ export default function BrandCollaborations() {
               </button>
               {!c.package_sent_at && c.status === 'ACTIVE' && (
                 <>
-                  <button className="bu-btn p cl-sm" onClick={() => openAwb(c.id)}><Truck size={14} /> Generează AWB</button>
-                  <button className="bu-btn cl-sm" onClick={() => setPackageModal(c.id)}>Marchează ca trimis</button>
+                  <button className="bu-btn p cl-sm" onClick={() => openAwb(c.id)}><Truck size={14} /> Marchează ca trimis</button>
                 </>
               )}
             </div>
@@ -945,7 +944,7 @@ export default function BrandCollaborations() {
               </>
             )}
             {c.status === 'ACTIVE' && pend && <button className="bu-btn p" onClick={() => openReview(c)}>Revizuiește</button>}
-            {c.status === 'ACTIVE' && !pend && needsAwb(c) && <button className="bu-btn p" onClick={() => openAwb(c.id)}>Generează AWB</button>}
+            {c.status === 'ACTIVE' && !pend && needsAwb(c) && <button className="bu-btn p" onClick={() => openAwb(c.id)}>Marchează ca trimis</button>}
             {c.status === 'ACTIVE' && !pend && !needsAwb(c) && <Link href={`/brand/inbox?collab=${c.id}`} className="bu-btn">Deschide chat</Link>}
             {c.status === 'INVITED' && <Link href={`/brand/inbox?collab=${c.id}`} className="bu-btn">Deschide chat</Link>}
             {c.status === 'COMPLETED' && <button className="bu-btn" onClick={() => setExpandedId(isExp ? null : c.id)}>Lasă o evaluare</button>}
@@ -1128,7 +1127,7 @@ export default function BrandCollaborations() {
             </div>
             <div className="cl-mb">
               <label className="cl-col" style={{ gap: 6 }}>
-                <b className="bu-label">Curier</b>
+                <b className="bu-label">Curier <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>(opțional)</span></b>
                 <input value={courierName} onChange={e => setCourierName(e.target.value)} placeholder="ex. Fan Courier, DPD, Cargus..." className="bu-input" />
               </label>
               <label className="cl-col" style={{ gap: 6 }}>
@@ -1279,7 +1278,7 @@ export default function BrandCollaborations() {
                   <button className="cl-gh" onClick={() => toggleCampaign(campaignId)} aria-expanded={!isCollapsed}>
                     <span className="bu-row" style={{ gap: 10, minWidth: 0, flex: 1 }}>
                       <span className="bu-chip" style={barter ? { background: '#fff1c2', color: '#854d0e' } : { background: '#efeaff', color: '#4423c4' }}>{barter ? 'Barter' : 'Plătită'}</span>
-                      <h3 className="cl-gt">{group.campaign?.title?.replace(/^\[Barter\]\s*/i, '') || 'Campanie'}</h3>
+                      <h3 className="cl-gt">{campName(group.campaign)}</h3>
                     </span>
                     <span className="bu-row" style={{ gap: 10, flex: 'none' }}>
                       {unsentCount > 0 && <span className="bu-chip" style={{ background: '#e6f0ff', color: '#1d4fb8' }}>{unsentCount} {unsentCount === 1 ? 'colet netrimis' : 'colete netrimise'}</span>}
@@ -1323,11 +1322,11 @@ export default function BrandCollaborations() {
                 </div>
                 <div className="cl-col" style={{ gap: 6 }}>
                   <span className="bu-row bu-xs" style={{ gap: 8, color: '#14532d' }}><Check size={14} strokeWidth={2.8} />Adresă primită</span>
-                  <span className="bu-row bu-xs" style={{ gap: 8, color: '#4423c4', fontWeight: 700 }}><i className="cl-ring on" />Generează AWB</span>
-                  <span className="bu-row bu-xs bu-muted" style={{ gap: 8 }}><i className="cl-ring" />Predă coletul curierului</span>
+                  <span className="bu-row bu-xs" style={{ gap: 8, color: '#4423c4', fontWeight: 700 }}><i className="cl-ring on" />Trimite coletul</span>
+                  <span className="bu-row bu-xs bu-muted" style={{ gap: 8 }}><i className="cl-ring" />Marchează ca trimis</span>
                 </div>
-                <button className="bu-btn p" style={{ width: '100%' }} onClick={() => openAwb(c.id)}>Generează AWB</button>
-                <button className="cl-linkbtn" style={{ textAlign: 'center' }} onClick={() => setPackageModal(c.id)}>Marchează ca trimis (fără AWB)</button>
+                <span className="bu-xs bu-muted">{campName(c.campaign)}</span>
+                <button className="bu-btn p" style={{ width: '100%' }} onClick={() => setPackageModal(c.id)}>Marchează ca trimis</button>
               </div>
             ))}
             {awbQueue.length > 4 && <span className="bu-xs bu-muted">+ încă {awbQueue.length - 4} pachete în listă</span>}
