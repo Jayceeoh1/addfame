@@ -20,6 +20,21 @@ function fmtFollowers(n: number) {
 
 const PER_PAGE = 50
 
+// platforms / niches vin din coloane jsonb: la unii creatori sunt obiect sau text, nu listă → îi aducem la listă ca să nu crape pagina
+function asList(v: any, keyName = 'platform'): any[] {
+  if (Array.isArray(v)) return v
+  if (typeof v === 'string') {
+    const t = v.trim()
+    if (!t) return []
+    try { const j = JSON.parse(t); if (j && typeof j === 'object') return asList(j, keyName) } catch { /* nu e JSON */ }
+    return t.split(/\s*,\s*/).filter(Boolean)
+  }
+  if (v && typeof v === 'object') {
+    return Object.entries(v).map(([k, val]) => (val && typeof val === 'object' ? { [keyName]: k, ...(val as object) } : { [keyName]: k, followers: val }))
+  }
+  return []
+}
+
 export default function AdminInfluencers() {
   const [influencers, setInfluencers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -119,8 +134,8 @@ export default function AdminInfluencers() {
     const missing = []
     if (!inf.avatar) missing.push('Poză')
     if (!inf.bio) missing.push('Bio')
-    if (!inf.niches?.length) missing.push('Nișe')
-    if (!inf.platforms?.length) missing.push('Platforme')
+    if (!asList(inf.niches, 'niche').length) missing.push('Nișe')
+    if (!asList(inf.platforms).length) missing.push('Platforme')
     return missing
   }
 
@@ -294,20 +309,20 @@ export default function AdminInfluencers() {
                 </div>
               )}
 
-              {selected.niches?.length > 0 && (
+              {asList(selected.niches, 'niche').length > 0 && (
                 <div className="mb-4">
                   <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Nișe</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {selected.niches.map((n: string) => <span key={n} className="niche-pill">{n}</span>)}
+                    {asList(selected.niches, 'niche').map((n: any) => { const label = typeof n === 'string' ? n : String(n?.niche ?? ''); return <span key={label} className="niche-pill">{label}</span> })}
                   </div>
                 </div>
               )}
 
-              {selected.platforms?.length > 0 && (
+              {asList(selected.platforms).length > 0 && (
                 <div className="mb-4">
                   <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Platforme</p>
                   <div className="space-y-2">
-                    {selected.platforms.map((p: any, i: number) => {
+                    {asList(selected.platforms).map((p: any, i: number) => {
                       // Platformele sunt salvate cu câmpul 'url' direct
                       const rawUrl = p.url || (
                         p.username
@@ -497,7 +512,7 @@ export default function AdminInfluencers() {
           {paginated.map((inf: any) => {
             const busy = actionId === inf.id
             const status = STATUS_COLORS[inf.approval_status] || STATUS_COLORS.pending
-            const platforms = inf.platforms || []
+            const platforms = asList(inf.platforms)
             const missing = isIncomplete(inf)
 
             return (
@@ -553,10 +568,10 @@ export default function AdminInfluencers() {
                 </div>
 
                 {/* Nișe */}
-                {inf.niches?.length > 0 && (
+                {asList(inf.niches, 'niche').length > 0 && (
                   <div className="flex gap-1 flex-wrap mb-3">
-                    {inf.niches.slice(0, 2).map((n: string) => <span key={n} className="niche-pill">{n}</span>)}
-                    {inf.niches.length > 2 && <span className="niche-pill">+{inf.niches.length - 2}</span>}
+                    {asList(inf.niches, 'niche').slice(0, 2).map((n: any) => { const label = typeof n === 'string' ? n : String(n?.niche ?? ''); return <span key={label} className="niche-pill">{label}</span> })}
+                    {asList(inf.niches, 'niche').length > 2 && <span className="niche-pill">+{asList(inf.niches, 'niche').length - 2}</span>}
                   </div>
                 )}
 
