@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import SitePage from '@/components/site/SiteShell'
-import { Mosaic, AlbumCard, EV_CSS, type GalleryPhoto } from '@/components/events/EventsUI'
+import { Mosaic, AlbumCard, Story, EV_CSS, type GalleryPhoto } from '@/components/events/EventsUI'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { coverOf, formatEventDate, splitEvents, type SiteEvent, type SiteEventPhoto } from '@/lib/events'
 
@@ -35,6 +35,9 @@ export default async function EvenimentePage({ searchParams }: { searchParams: P
   const shown: GalleryPhoto[] = (active ? [active] : withPhotos)
     .flatMap(e => (byEvent.get(e.id) || []).map(p => ({ ...p, eventTitle: e.title })))
     .slice(0, GALLERY_MAX)
+
+  // Povestea afișată pe pagină: cel mai recent eveniment trecut care are text scris
+  const storyEvent = past.find(e => (e.story || '').trim()) || null
 
   const cities = new Set(past.map(e => (e.city || '').trim().toLowerCase()).filter(Boolean)).size
 
@@ -89,6 +92,8 @@ export default async function EvenimentePage({ searchParams }: { searchParams: P
           </div>
         </section>
       )}
+
+      {storyEvent && <Story event={storyEvent} photos={byEvent.get(storyEvent.id) || []} />}
 
       <section id="galerie" className="af-wrap ev-sec">
         <div className="ev-sec-head">

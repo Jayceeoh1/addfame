@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/supabase/verify-admin'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/drafts'
-import { EVENT_BUCKET, cleanUrl, slugify } from '@/lib/events'
+import { EVENT_BUCKET, cleanCount, cleanUrl, slugify } from '@/lib/events'
 
 const txt = (v: unknown, max: number) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null)
 
@@ -36,7 +36,10 @@ export async function POST(req: NextRequest) {
   const row = {
     slug, title, status: b.status, starts_at: startsAt,
     location: txt(b.location, 200), city: txt(b.city, 80), description: txt(b.description, 1500),
-    signup_url: cleanUrl(b.signup_url), updated_at: new Date().toISOString(),
+    signup_url: cleanUrl(b.signup_url),
+    summary: txt(b.summary, 400), story: txt(b.story, 20000),
+    creators_count: cleanCount(b.creators_count), brands_count: cleanCount(b.brands_count),
+    updated_at: new Date().toISOString(),
   }
   const admin = createAdminClient()
   const res = isUuid(b.id)

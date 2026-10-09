@@ -82,7 +82,7 @@ export default function EventPhotosPage({ params }: { params: Promise<{ id: stri
         <h1 className="text-2xl font-black m-0">{event?.title || 'Poze eveniment'}</h1>
         {event && <a href={`/evenimente/${event.slug}`} target="_blank" rel="noreferrer" className="ml-auto px-3 py-2 rounded-xl text-sm font-bold border bg-white flex items-center gap-1 no-underline text-gray-800"><ExternalLink size={14} /> Vezi albumul</a>}
       </div>
-      <p className="text-sm text-gray-500 mt-0 mb-4">Alege mai multe poze deodată. Se micșorează automat înainte de încărcare. Poza cu steluță e coperta albumului; dacă nu alegi una, e prima.</p>
+      <p className="text-sm text-gray-500 mt-0 mb-4">Alege mai multe poze deodată. Se micșorează automat înainte de încărcare. Coperta e poza mare a evenimentului; dacă nu alegi una, e prima. Numărul #N de pe fiecare poză îl scrii în poveste, ca [foto N], ca să apară între paragrafe.</p>
       {err && <div className="bg-red-50 text-red-700 rounded-xl p-3 text-sm font-semibold mb-3">{err}</div>}
 
       <div className="mb-5 flex items-center gap-3 flex-wrap">
@@ -100,6 +100,7 @@ export default function EventPhotosPage({ params }: { params: Promise<{ id: stri
             <div key={p.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col">
               <div style={{ aspectRatio: '4 / 3', background: '#f0eff7', position: 'relative' }}>
                 <img src={photoUrl(p.path)} alt={p.caption || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <span className="absolute top-2 right-2 text-xs font-black bg-white/90 text-gray-900 px-2 py-1 rounded-lg" title="Numărul pozei, pentru [foto N] în poveste">#{i + 1}</span>
                 {cover === p.id && <span className="absolute top-2 left-2 text-xs font-black bg-amber-300 text-amber-900 px-2 py-1 rounded-lg flex items-center gap-1"><Star size={12} /> Copertă</span>}
               </div>
               <div className="p-3 flex flex-col gap-2">

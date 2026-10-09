@@ -11,6 +11,10 @@ export type SiteEvent = {
   description: string | null
   signup_url: string | null
   cover_photo_id: string | null
+  summary?: string | null
+  story?: string | null
+  creators_count?: number | null
+  brands_count?: number | null
 }
 
 export type SiteEventPhoto = {
@@ -108,4 +112,44 @@ export function tileClass(i: number): string {
 /** Poza de copertă: cea aleasă, altfel prima din eveniment. */
 export function coverOf(event: Pick<SiteEvent, 'cover_photo_id'>, photos: SiteEventPhoto[]): SiteEventPhoto | null {
   return photos.find(p => p.id === event.cover_photo_id) || photos[0] || null
+}
+
+// ─── Povestea evenimentului ──────────────────────────────────────────────────
+// Adminul scrie textul simplu:  paragrafe separate prin rând gol · „## Subtitlu” · „> Citat — Nume, rol” ·
+// „[foto 1]”, „[foto 2 3]” = pozele cu numerele din galeria evenimentului (cum apar în Admin).
+export type StoryBlock =
+  | { t: 'p'; text: string }
+  | { t: 'h'; text: string }
+  | { t: 'quote'; text: string; by: string | null }
+  | { t: 'photos'; nums: number[] }
+
+export function parseStory(raw: string | null | undefined): StoryBlock[] {
+  const chunks = String(raw || '').replace(/\r\n?/g, '\n').split(/\n\s*\n/).map(c => c.trim()).filter(Boolean)
+  const out: StoryBlock[] = []
+  for (const c of chunks) {
+    const photos = /^\[\s*fot[oi]\s+([\d\s,]+)\]$/i.exec(c)
+    if (photos) {
+      const nums = photos[1].split(/[\s,]+/).map(Number).filter(n => Number.isInteger(n) && n >= 1).slice(0, 8)
+      if (nums.length) out.push({ t: 'photos', nums })
+      continue
+    }
+    if (c.startsWith('## ')) { out.push({ t: 'h', text: c.slice(3).trim() }); continue }
+    if (c.startsWith('>')) {
+      const body = c.split('\n').map(l => l.replace(/^>\s?/, '')).join(' ').trim()
+      const i = body.lastIndexOf(' — ')
+      const text = (i > 0 ? body.slice(0, i) : body).replace(/^[„"“]\s*/, '').replace(/\s*[”"“]$/, '').trim()
+      const by = i > 0 ? body.slice(i + 3).trim() || null : null
+      if (text) out.push({ t: 'quote', text, by })
+      continue
+    }
+    out.push({ t: 'p', text: c })
+  }
+  return out
+}
+
+/** Întreg pozitiv sau null (pentru cifrele evenimentului). */
+export function cleanCount(v: unknown): number | null {
+  if (v === '' || v === null || v === undefined) return null
+  const n = Math.round(Number(v))
+  return Number.isFinite(n) && n >= 0 && n <= 1_000_000 ? n : null
 }

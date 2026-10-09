@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { PGlite } from '@electric-sql/pglite'
 import fs from 'fs'
 import path from 'path'
-import { isUpcoming, splitEvents, formatEventDate, localInputToIso, isoToLocalInput, photoUrl, cleanUrl, slugify, tileClass, coverOf } from '@/lib/events'
+import { parseStory, cleanCount, isUpcoming, splitEvents, formatEventDate, localInputToIso, isoToLocalInput, photoUrl, cleanUrl, slugify, tileClass, coverOf } from '@/lib/events'
 
 const NOW = new Date('2026-10-09T10:00:00Z')
 const ev = (o: any = {}) => ({ id: 'x', slug: 'x', title: 'T', status: 'published', starts_at: null, location: null, city: null, description: null, signup_url: null, cover_photo_id: null, ...o })
@@ -58,13 +58,40 @@ describe('evenimente · funcții', () => {
   })
 })
 
+describe('povestea evenimentului', () => {
+  it('parsează paragrafe, subtitluri, citate și poze', () => {
+    const b = parseStory('Primul paragraf.\nContinuă pe rând nou.\n\n## Ce am făcut\n\nAl doilea.\n\n[foto 1 2]\n\n> „Cea mai bună seară.” — Maria P., creator\n\n[Foto 3, 4]\n\nFinal.')
+    expect(b).toEqual([
+      { t: 'p', text: 'Primul paragraf.\nContinuă pe rând nou.' },
+      { t: 'h', text: 'Ce am făcut' },
+      { t: 'p', text: 'Al doilea.' },
+      { t: 'photos', nums: [1, 2] },
+      { t: 'quote', text: 'Cea mai bună seară.', by: 'Maria P., creator' },
+      { t: 'photos', nums: [3, 4] },
+      { t: 'p', text: 'Final.' },
+    ])
+  })
+  it('citat fără autor, poze invalide, text gol, Windows newlines', () => {
+    expect(parseStory('> Doar un citat')).toEqual([{ t: 'quote', text: 'Doar un citat', by: null }])
+    expect(parseStory('[foto 0]')).toEqual([])
+    expect(parseStory('[foto abc]')).toEqual([{ t: 'p', text: '[foto abc]' }])
+    expect(parseStory('')).toEqual([]); expect(parseStory(null)).toEqual([])
+    expect(parseStory('A.\r\n\r\nB.')).toEqual([{ t: 'p', text: 'A.' }, { t: 'p', text: 'B.' }])
+    expect(parseStory('[foto 1 2 3 4 5 6 7 8 9 10]')).toEqual([{ t: 'photos', nums: [1, 2, 3, 4, 5, 6, 7, 8] }])
+  })
+  it('cifrele evenimentului', () => {
+    expect(cleanCount('45')).toBe(45); expect(cleanCount('')).toBeNull(); expect(cleanCount(-3)).toBeNull(); expect(cleanCount('abc')).toBeNull(); expect(cleanCount(12.6)).toBe(13)
+  })
+})
+
 describe('SQL 28 · evenimente', () => {
   it('creează tabelele, închide accesul public, rulează de două ori, șterge pozele odată cu evenimentul', async () => {
     const db = new PGlite()
     await db.exec(`DO $$ BEGIN CREATE ROLE anon; CREATE ROLE authenticated; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`)
     const sql = fs.readFileSync(path.resolve(__dirname, '../supabase/security/28_evenimente_galerie.sql'), 'utf8')
     await db.exec(sql); await db.exec(sql)
-    await db.exec(`INSERT INTO site_events (id, slug, title) VALUES ('11111111-1111-1111-1111-111111111111', 'seara-1', 'Seara 1')`)
+    await db.exec(`INSERT INTO site_events (id, slug, title, story, creators_count) VALUES ('11111111-1111-1111-1111-111111111111', 'seara-1', 'Seara 1', 'Text', 40)`)
+    await expect(db.exec(`INSERT INTO site_events (slug, title, brands_count) VALUES ('seara-9', 't', -1)`)).rejects.toThrow(/check/)
     await db.exec(`INSERT INTO site_event_photos (event_id, path) VALUES ('11111111-1111-1111-1111-111111111111', 'a/b.jpg')`)
     await expect(db.exec(`INSERT INTO site_events (slug, title) VALUES ('Ab C', 't')`)).rejects.toThrow(/check/)
     await expect(db.exec(`INSERT INTO site_events (slug, title, status) VALUES ('seara-2', 't', 'public')`)).rejects.toThrow(/check/)

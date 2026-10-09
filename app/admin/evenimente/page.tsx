@@ -8,8 +8,10 @@ import { formatEventDate, isoToLocalInput, localInputToIso, slugify } from '@/li
 type Row = {
   id?: string; slug: string; title: string; status: 'draft' | 'published'; starts_at: string; location: string; city: string
   description: string; signup_url: string; photos?: number
+  summary: string; story: string; creators_count: string | number; brands_count: string | number
 }
-const EMPTY: Row = { slug: '', title: '', status: 'draft', starts_at: '', location: '', city: 'București', description: '', signup_url: '' }
+const EMPTY: Row = { slug: '', title: '', status: 'draft', starts_at: '', location: '', city: 'București', description: '', signup_url: '',
+  summary: '', story: '', creators_count: '', brands_count: '' }
 const input = 'w-full h-11 px-3 rounded-xl border-2 border-gray-100 text-sm font-medium focus:border-violet-400 outline-none'
 
 export default function AdminEventsPage() {
@@ -81,6 +83,8 @@ export default function AdminEventsPage() {
             {F('starts_at', 'Data și ora', { type: 'datetime-local' }, 'Ora României. Poți lăsa goală pentru evenimente vechi.')}
             {F('location', 'Locația', { placeholder: 'Numele locului, strada, numărul' })}
             {F('city', 'Orașul')}
+            {F('creators_count', 'Creatori prezenți', { type: 'number', min: 0 }, 'Apare în „Pe scurt”. Gol = nu apare.')}
+            {F('brands_count', 'Branduri prezente', { type: 'number', min: 0 })}
             {F('signup_url', 'Link rezervare locuri', { placeholder: 'https://…' }, 'Gol = butonul „Rezervă-ți locul” nu apare.')}
             <label className="flex flex-col gap-1.5 text-xs font-bold text-gray-600">
               Status
@@ -94,6 +98,22 @@ export default function AdminEventsPage() {
             Descriere scurtă
             <textarea className="w-full min-h-[80px] p-3 rounded-xl border-2 border-gray-100 text-sm font-medium focus:border-violet-400 outline-none" value={edit.description || ''} onChange={e => setEdit(p => p ? { ...p, description: e.target.value } : p)} />
           </label>
+          <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: '#f6f5ff', border: '1px solid #e5e3f3' }}>
+            <b className="text-sm">Povestea evenimentului (opțional)</b>
+            <span className="text-xs text-gray-500 -mt-2">Dacă o scrii, evenimentul trecut apare pe pagina /evenimente ca articol, cu poze între paragrafe.</span>
+            <label className="flex flex-col gap-1.5 text-xs font-bold text-gray-600">
+              Fraza-rezumat (sub titlu)
+              <input className={input} maxLength={400} value={edit.summary || ''} onChange={e => setEdit(p => p ? { ...p, summary: e.target.value } : p)} placeholder="Într-o frază: cine s-a întâlnit, unde și ce a rămas după" />
+            </label>
+            <label className="flex flex-col gap-1.5 text-xs font-bold text-gray-600">
+              Textul poveștii
+              <textarea className="w-full min-h-[260px] p-3 rounded-xl border-2 border-gray-100 text-sm font-medium focus:border-violet-400 outline-none" style={{ lineHeight: 1.6 }} value={edit.story || ''} onChange={e => setEdit(p => p ? { ...p, story: e.target.value } : p)}
+                placeholder={'Primul paragraf.\n\n## Un subtitlu\n\nAl doilea paragraf.\n\n[foto 1 2]\n\n> „Un citat scurt.” — Nume, creator\n\nUltimul paragraf.'} />
+            </label>
+            <div className="text-xs text-gray-500 leading-relaxed">
+              <b>Cum scrii:</b> paragrafele se despart printr-un rând gol. <code>## Titlu</code> = subtitlu. <code>&gt; „Citat.” — Nume, rol</code> = citat evidențiat. <code>[foto 1]</code>, <code>[foto 2 3]</code> sau <code>[foto 4 5 6]</code> = pune pozele cu acele numere între paragrafe (numerele le vezi pe poze, în „Poze”). Coperta evenimentului e poza mare de la început.
+            </div>
+          </div>
           <div className="flex gap-2 flex-wrap">
             <button onClick={save} disabled={saving} className="px-4 py-2.5 rounded-xl text-sm font-black bg-violet-600 text-white disabled:opacity-60">{saving ? 'Se salvează…' : 'Salvează'}</button>
             <button onClick={() => setEdit(null)} className="px-4 py-2.5 rounded-xl text-sm font-bold border bg-white">Renunță</button>
@@ -117,7 +137,7 @@ export default function AdminEventsPage() {
                 </div>
               </div>
               <Link href={`/admin/evenimente/${e.id}`} className="px-3 py-2 rounded-xl text-sm font-black bg-gray-900 text-white flex items-center gap-1.5"><Images size={14} /> {e.photos} poze</Link>
-              <button onClick={() => { setEdit({ ...EMPTY, ...e, starts_at: isoToLocalInput(e.starts_at), location: e.location || '', city: e.city || '', description: e.description || '', signup_url: e.signup_url || '' }); setOk(''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="px-3 py-2 rounded-xl text-sm font-bold border bg-white">Editează</button>
+              <button onClick={() => { setEdit({ ...EMPTY, ...e, starts_at: isoToLocalInput(e.starts_at), location: e.location || '', city: e.city || '', description: e.description || '', signup_url: e.signup_url || '', summary: e.summary || '', story: e.story || '', creators_count: e.creators_count ?? '', brands_count: e.brands_count ?? '' }); setOk(''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="px-3 py-2 rounded-xl text-sm font-bold border bg-white">Editează</button>
               <a href={`/evenimente/${e.slug}`} target="_blank" rel="noreferrer" className="px-3 py-2 rounded-xl text-sm font-bold border bg-white flex items-center gap-1"><ExternalLink size={14} /> Pagina</a>
               {confirmDel === e.id
                 ? <button onClick={() => remove(e.id)} className="px-3 py-2 rounded-xl text-sm font-black bg-red-600 text-white">Sigur? Șterge tot</button>
