@@ -57,6 +57,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
 
     {
+      url: `${APP_URL}/evenimente`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
+    {
       url: `${APP_URL}/intrebari-frecvente`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
