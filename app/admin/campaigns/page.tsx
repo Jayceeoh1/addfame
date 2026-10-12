@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
 import { useState, useEffect, useCallback } from 'react'
 import { getAllCampaigns, adminUpdateCampaignStatus, deleteCampaign, getAllInfluencers, adminUpdateDeliveryAddress, adminUpdateCampaign, adminImpersonateUser, updateCampaignImages } from '@/app/actions/admin'
 import { getManagedCampaigns, assignInfluencersToManaged, inviteInfluencersToBarter, inviteInfluencersToOpenCall } from '@/app/actions/managed-campaigns'
@@ -1546,7 +1547,7 @@ export default function AdminCampaigns() {
               {[
                 { id: 'brief', label: 'Brief & Detalii', icon: FileText },
                 ...(selectedCampaign.campaign_type === 'OPEN_CALL' ? [
-                  { id: 'registrations', label: `Înscrieri (${(openCallRegistrations.length + (selectedCampaign.manual_registrations || 0))})`, icon: Users },
+                  { id: 'registrations', label: 'Înscrieri', icon: Users },
                 ] : [
                   { id: 'influencers', label: `Influenceri (${(selectedInfluencers[selectedCampaign.id] || []).length} sel.)`, icon: Users },
                   { id: 'collabs', label: `Colaborări (${campaignCollabs.length})`, icon: CheckCircle },
@@ -2767,6 +2768,8 @@ export default function AdminCampaigns() {
               {/* ── ACȚIUNI ADMIN ── */}
               {activeSection === 'registrations' && selectedCampaign.campaign_type === 'OPEN_CALL' && (
                 <div className="space-y-4">
+                  {/* Înscrieri „Vreau să vin” — aprobare / respingere (AddFame vede și telefon, adresă) */}
+                  <EventApplicationsPanel campaignId={selectedCampaign.id} />
                   {/* Manual registrations control */}
                   <div className="border-2 border-orange-200 rounded-2xl p-4 bg-orange-50">
                     <p className="text-xs font-black text-orange-600 uppercase tracking-wider mb-3">⚙️ Setare manuală inscrieri</p>

@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Calendar, MapPin, Users, ArrowRight, Loader2, Megaphone } from 'lucide-react'
 import Link from 'next/link'
+import { getEventsForInfluencer } from '@/app/actions/event-signup'
 
-type OpenCall = {
+type EventItem = {
   id: string
   title: string
   description: string | null
@@ -15,16 +15,10 @@ type OpenCall = {
   min_followers: number
   application_deadline: string | null
   platforms: string[]
-  created_at: string
-  brand: {
-    name: string
-    logo: string | null
-    verified: boolean
-  } | null
-  registration_count?: number
-  manual_registrations?: number
-  // Dacă influencerul a aplicat deja
-  my_application?: { status: string } | null
+  brand: { name: string; logo: string | null; verification_status?: string } | null
+  interested: number
+  my_status: string | null
+  open: boolean
 }
 
 function fmt(date: string) {
@@ -36,92 +30,24 @@ function fmtNum(n: number) {
   return String(n)
 }
 
-export default function CastinguriPage() {
-  const [campaigns, setCampaigns] = useState<OpenCall[]>([])
+// Tabul „Evenimente”: evenimentele brandurilor și ale AddFame. Influencerul apasă „Vreau să vin”.
+export default function EvenimentePage() {
+  const [campaigns, setCampaigns] = useState<EventItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [influencerId, setInfluencerId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // Obținem influencer id
-      const { data: inf } = await supabase
-        .from('influencers')
-        .select('id')
-        .eq('user_id', user.id)
-        .single()
-
-      if (inf) setInfluencerId(inf.id)
-
-      // Campanii Open Call active
-      const { data: camps } = await supabase
-        .from('campaigns')
-        .select(`
-          id, title, description, banner_url, event_date, event_location,
-          min_followers, application_deadline, manual_registrations, platforms, created_at, brand_id,
-          brand:brands(name, logo, verification_status)
-        `)
-        .eq('campaign_type', 'OPEN_CALL')
-        .eq('status', 'ACTIVE')
-        .order('created_at', { ascending: false })
-
-      if (!camps) { setLoading(false); return }
-
-      // Numele / logo-ul brandului din vederea publică
-      const castBrandIds = [...new Set(camps.map((c: any) => c.brand_id).filter(Boolean))]
-      if (castBrandIds.length) {
-        const { data: pubBrands } = await supabase.from('brands_public').select('id, name, logo, verification_status').in('id', castBrandIds as string[])
-        const bMap = Object.fromEntries((pubBrands || []).map((b: any) => [b.id, b]))
-        camps.forEach((c: any) => { if (bMap[c.brand_id]) c.brand = bMap[c.brand_id] })
-      }
-
-      // Verificăm aplicațiile existente ale influencerului
-      // Număr înscrieri pentru fiecare campanie
-      const campIds = camps.map((c: any) => c.id)
-      const { data: regCounts } = await supabase
-        .from('event_registrations')
-        .select('campaign_id')
-        .in('campaign_id', campIds)
-
-      const countMap = new Map<string, number>()
-      regCounts?.forEach((r: any) => {
-        countMap.set(r.campaign_id, (countMap.get(r.campaign_id) || 0) + 1)
-      })
-
-      if (inf) {
-        const { data: apps } = await supabase
-          .from('campaign_applications')
-          .select('campaign_id, status')
-          .eq('influencer_id', inf.id)
-
-        const appMap = new Map(apps?.map(a => [a.campaign_id, a.status]) ?? [])
-
-        setCampaigns(camps.map((c: any) => ({
-          ...c,
-          brand: Array.isArray(c.brand) ? c.brand[0] : c.brand,
-          my_application: appMap.has(c.id) ? { status: appMap.get(c.id)! } : null,
-          registration_count: (countMap.get(c.id) || 0) + (c.manual_registrations || 0),
-        })))
-      } else {
-        setCampaigns(camps.map((c: any) => ({
-          ...c,
-          brand: Array.isArray(c.brand) ? c.brand[0] : c.brand,
-          registration_count: (countMap.get(c.id) || 0) + (c.manual_registrations || 0),
-        })))
-      }
-
-      setLoading(false)
-    }
-    load()
+    getEventsForInfluencer().then(r => {
+      if ('success' in r) setCampaigns(r.events as EventItem[])
+      else setError(r.error || 'Eroare')
+    }).catch(() => setError('Nu am putut încărca evenimentele.')).finally(() => setLoading(false))
   }, [])
 
   const appChip = (st: string) =>
-    st === 'approved' ? { bg: '#dcf5ec', fg: '#14532d', t: 'Aprobat' }
-    : st === 'rejected' ? { bg: '#fdeceb', fg: '#b42318', t: 'Respins' }
-    : { bg: '#fff1c2', fg: '#854d0e', t: 'Aplicație trimisă' }
+    st === 'approved' ? { bg: '#dcf5ec', fg: '#14532d', t: '✓ Ești pe lista de invitați' }
+    : st === 'rejected' ? { bg: '#fdeceb', fg: '#b42318', t: 'Nu ai fost selectat' }
+    : st === 'cancelled' ? { bg: '#f0eff7', fg: '#4a4770', t: 'Te-ai retras' }
+    : { bg: '#fff1c2', fg: '#854d0e', t: 'Înscriere trimisă' }
 
   return (
     <div className="iu cs">
@@ -143,13 +69,15 @@ export default function CastinguriPage() {
 
       <div className="iu-head">
         <div className="iu-col" style={{ gap: 6 }}>
-          <h1>Castinguri &amp; Open Call</h1>
-          <span className="iu-muted iu-sm">Brandurile organizează evenimente și castinguri. Aplică dacă vrei să participi!</span>
+          <h1>Evenimente</h1>
+          <span className="iu-muted iu-sm">Lansări, petreceri și întâlniri organizate de branduri și de AddFame. Apasă „Vreau să vin” și organizatorul îți răspunde aici.</span>
         </div>
         {!loading && campaigns.length > 0 && (
           <span className="iu-chip" style={{ background: '#efeaff', color: '#5b2fd0' }}>{campaigns.length} {campaigns.length === 1 ? 'eveniment activ' : 'evenimente active'}</span>
         )}
       </div>
+
+      {error && <div className="iu-card" style={{ padding: 16, color: '#b42318' }}>{error}</div>}
 
       {loading ? (
         <div className="iu-card cs-empty"><Loader2 className="animate-spin" size={28} color="#7040f0" /><span className="iu-muted iu-sm">Se încarcă…</span></div>
@@ -189,28 +117,30 @@ export default function CastinguriPage() {
                   {c.min_followers > 0 && (
                     <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}><Users size={12} /> Min {fmtNum(c.min_followers)} followeri</span>
                   )}
-                  {c.platforms.map(p => (
+                  {(c.platforms || []).map(p => (
                     <span key={p} className="iu-chip" style={{ background: '#efeaff', color: '#5b2fd0' }}>{p}</span>
                   ))}
                 </div>
 
-                {(c.registration_count || 0) > 0 && (
+                {c.interested > 0 && (
                   <div className="cs-hot">
                     <span className="cs-dot" />
-                    {c.registration_count} {c.registration_count === 1 ? 'influencer s-a înscris' : 'influenceri s-au înscris'} deja
+                    {c.interested} {c.interested === 1 ? 'influencer vrea să vină' : 'influenceri vor să vină'}
                   </div>
                 )}
 
-                {c.my_application ? (
+                {c.my_status ? (
                   <div className="cs-foot">
-                    <span className="iu-chip" style={{ background: appChip(c.my_application.status).bg, color: appChip(c.my_application.status).fg }}>{appChip(c.my_application.status).t}</span>
+                    <span className="iu-chip" style={{ background: appChip(c.my_status).bg, color: appChip(c.my_status).fg }}>{appChip(c.my_status).t}</span>
                   </div>
                 ) : (
                   <div className="cs-foot">
                     {c.application_deadline && (
-                      <span className="iu-xs iu-muted">Deadline: {fmt(c.application_deadline)}</span>
+                      <span className="iu-xs iu-muted">Înscrieri până pe {fmt(c.application_deadline)}</span>
                     )}
-                    <span className="iu-btn p" style={{ marginLeft: 'auto' }}>Aplică acum <ArrowRight size={14} /></span>
+                    {c.open
+                      ? <span className="iu-btn p" style={{ marginLeft: 'auto' }}>Vreau să vin <ArrowRight size={14} /></span>
+                      : <span className="iu-chip" style={{ marginLeft: 'auto', background: '#f0eff7', color: '#4a4770' }}>Înscrieri închise</span>}
                   </div>
                 )}
               </div>

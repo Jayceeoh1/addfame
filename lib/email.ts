@@ -542,3 +542,35 @@ export async function emailIdentityRejected(to: string, name: string, reason: st
     <a href="${APP_URL}/influencer/verify" class="btn">Reîncearcă verificarea →</a>
   `))
 }
+
+// ── Evenimente (Open Call) ──────────────────────────────────────────────────
+const escHtml = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
+
+/** Brandului: au apărut înscrieri noi la eveniment. */
+export async function emailEventApplicationsToBrand(to: string, brandName: string, eventTitle: string, pending: number, campaignId: string) {
+  return sendEmail(to, `🎟️ ${pending} ${pending === 1 ? 'influencer vrea' : 'influenceri vor'} să vină la „${eventTitle}”`, baseTemplate(`
+    <h1>Înscrieri noi la eveniment</h1>
+    <p>Salut <strong>${escHtml(brandName)}</strong>, la evenimentul <strong>${escHtml(eventTitle)}</strong> ai acum <strong>${pending}</strong> ${pending === 1 ? 'înscriere care așteaptă' : 'înscrieri care așteaptă'} răspunsul tău.</p>
+    <p>Intră în AddFame, vezi profilurile și aprobă-i pe cei pe care îi vrei la eveniment.</p>
+    <a href="${APP_URL}/brand/campaigns/${campaignId}?view=participanti" class="btn">Vezi înscrierile →</a>
+  `))
+}
+
+/** Influencerului: răspunsul brandului. */
+export async function emailEventDecision(to: string, name: string, ev: {
+  title: string; approved: boolean; code?: string | null; date?: string | null; location?: string | null; campaignId: string
+}) {
+  const when = ev.date ? new Date(ev.date).toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : null
+  const body = ev.approved ? `
+    <h1>Ești pe lista de invitați! 🎉</h1>
+    <p>Salut <strong>${escHtml(name)}</strong>, organizatorul te-a aprobat la <strong>${escHtml(ev.title)}</strong>.</p>
+    ${when || ev.location ? `<p>${when ? `📅 <strong>${escHtml(when)}</strong><br>` : ''}${ev.location ? `📍 <strong>${escHtml(ev.location)}</strong>` : ''}</p>` : ''}
+    ${ev.code ? `<p>Codul tău de intrare: <span class="badge badge-green" style="font-size:16px;letter-spacing:1px">${escHtml(ev.code)}</span><br>Arată-l la intrare.</p>` : ''}
+    <a href="${APP_URL}/influencer/castinguri/${ev.campaignId}" class="btn">Vezi detaliile evenimentului →</a>
+  ` : `
+    <h1>Răspuns la înscriere</h1>
+    <p>Salut <strong>${escHtml(name)}</strong>, de data aceasta organizatorul nu te-a putut include la <strong>${escHtml(ev.title)}</strong>. Locurile sunt limitate — urmărește tabul Evenimente pentru următoarele ocazii.</p>
+    <a href="${APP_URL}/influencer/castinguri" class="btn">Vezi alte evenimente →</a>
+  `
+  return sendEmail(to, ev.approved ? `✅ Ești invitat la „${ev.title}”` : `Răspuns pentru „${ev.title}”`, baseTemplate(body, to))
+}

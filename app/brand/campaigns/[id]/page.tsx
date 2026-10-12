@@ -22,6 +22,7 @@ import { PauseModal, DraftModal, RejectModal } from '@/components/brand/campaign
 import { COLLAB_CFG, fmt, fmtNum, daysLeft, type Tab } from '@/components/brand/campaigns/types'
 import { TIERS, creatorTier } from '@/lib/tiers'
 import TierChip from '@/components/shared/TierChip'
+import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
 
 const TikTokIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -73,7 +74,7 @@ export default function CampaignDetailPage() {
   const [rejectReason, setRejectReason] = useState('')
   const [rejecting, setRejecting] = useState(false)
   const [profileModal, setProfileModal] = useState<any | null>(null)
-  const [view, setView] = useState<'collabs' | 'stats'>('collabs')
+  const [view, setView] = useState<'collabs' | 'stats' | 'participanti'>('collabs')
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({})
   const [draftPending, setDraftPending] = useState<string[]>([])
 
@@ -93,6 +94,7 @@ export default function CampaignDetailPage() {
       const { data: camp, error: campErr } = await sb.from('campaigns').select('*').eq('id', campaignId).eq('brand_id', brand.id).single()
       if (campErr || !camp) { router.replace('/brand/campaigns'); return }
       setCampaign(camp)
+      if (camp?.campaign_type === 'OPEN_CALL') setView(v => (v === 'collabs' ? 'participanti' : v))
       setEditForm(camp)
       const { data: collabData } = await sb.from('collaborations')
         .select('*, reserved_amount, payment_amount, platform_fee, deliverable_url, deliverable_note, deliverable_submitted_at, deliverable_approved_at, deliverable_rejected_at, deliverable_rejection_reason, completed_at, delivery_name, delivery_phone, delivery_address, delivery_city, delivery_county, delivery_postal_code, checked_in_at')
@@ -520,11 +522,18 @@ export default function CampaignDetailPage() {
       )}
 
       {/* ── Navigare principală ── */}
-      <div className="flex gap-2 mb-5">
-        {([{ k: 'collabs', l: `Colaborări (${collabs.length})` }, { k: 'stats', l: 'Statistici și economii' }] as const).map(t => (
-          <button key={t.k} className={`tab-btn ${view === t.k ? 'on' : ''}`} onClick={() => setView(t.k)}>{t.l}</button>
+      <div className="flex gap-2 mb-5" style={{ overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {(campaign?.campaign_type === 'OPEN_CALL'
+          ? [{ k: 'participanti', l: 'Cine vrea să vină' }, { k: 'collabs', l: `Invitații (${collabs.length})` }, { k: 'stats', l: 'Statistici' }]
+          : [{ k: 'collabs', l: `Colaborări (${collabs.length})` }, { k: 'stats', l: 'Statistici și economii' }]
+        ).map(t => (
+          <button key={t.k} className={`tab-btn flex-shrink-0 ${view === t.k ? 'on' : ''}`} onClick={() => setView(t.k as any)}>{t.l}</button>
         ))}
       </div>
+
+      {view === 'participanti' && campaign?.campaign_type === 'OPEN_CALL' && (
+        <div className="mb-5"><EventApplicationsPanel campaignId={campaignId} /></div>
+      )}
 
       {view === 'stats' && (
         <>

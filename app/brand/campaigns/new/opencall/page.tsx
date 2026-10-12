@@ -259,7 +259,7 @@ export default function NewOpenCallPage() {
       <div className="nw-top">
         <Link href="/brand/campaigns" className="nw-back" aria-label="Înapoi"><ArrowLeft size={18} /></Link>
         <div className="tt">
-          <h1>Open Call / Casting</h1>
+          <h1>Eveniment (Open Call)</h1>
           <p>Influencerii se înscriu singuri la campania ta</p>
         </div>
         <span className="bu-chip" style={{ background: '#dff4fd', color: '#0c4a6e' }}>Open Call</span>
@@ -313,7 +313,7 @@ export default function NewOpenCallPage() {
             {sec(2, 'Detalii campanie', 'Titlul și brief-ul pe care îl văd creatorii.')}
             <div className="nw-f">
               <label>Titlu campanie *</label>
-              <input className="nw-in" placeholder="ex: World of Digital — Casting influenceri"
+              <input className="nw-in" placeholder="ex: Lansare colecția de toamnă — seară cu influenceri"
                 value={form.title} onChange={e => set('title', e.target.value)} />
             </div>
             <div className="nw-f">
@@ -366,10 +366,10 @@ export default function NewOpenCallPage() {
               </div>
             </div>
             <div className="nw-f">
-              <label>Link înscriere <small>(opțional)</small></label>
-              <input className="nw-in" placeholder="ex: https://forms.gle/... sau orice link de înregistrare"
+              <label>Link cu mai multe detalii <small>(opțional)</small></label>
+              <input className="nw-in" placeholder="ex: pagina evenimentului, meniul, programul"
                 value={form.registration_link} onChange={e => set('registration_link', e.target.value)} />
-              <p className="nw-hint">Influencerii vor vedea un buton "Înscrie-te" care îi duce la acest link.</p>
+              <p className="nw-hint">Înscrierea se face în AddFame: influencerii apasă „Vreau să vin” și își completează datele, iar tu îi aprobi din pagina campaniei.</p>
             </div>
           </div>
 
