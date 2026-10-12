@@ -15,15 +15,15 @@ import {
 } from 'lucide-react'
 
 const STATUS_CFG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  DRAFT: { label: 'Draft', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
-  ACTIVE: { label: 'Active', bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500' },
-  PAUSED: { label: 'Paused', bg: 'bg-gray-100', text: 'text-gray-500', dot: 'bg-gray-400' },
-  COMPLETED: { label: 'Completed', bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-400' },
-  PENDING_REVIEW: { label: 'Pending Review', bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-400' },
+  DRAFT: { label: 'Ciornă', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
+  ACTIVE: { label: 'Activă', bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500' },
+  PAUSED: { label: 'Pe pauză', bg: 'bg-gray-100', text: 'text-gray-500', dot: 'bg-gray-400' },
+  COMPLETED: { label: 'Încheiată', bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-400' },
+  PENDING_REVIEW: { label: 'De aprobat', bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-400' },
 }
 
 const TYPE_CFG: Record<string, { label: string; bg: string; text: string; emoji: string }> = {
-  PAID: { label: 'Paid', bg: 'bg-green-100', text: 'text-green-700', emoji: '💰' },
+  PAID: { label: 'Plătită', bg: 'bg-green-100', text: 'text-green-700', emoji: '💰' },
   BARTER: { label: 'Barter', bg: 'bg-orange-100', text: 'text-orange-700', emoji: '🎁' },
   MANAGED: { label: 'Managed', bg: 'bg-purple-100', text: 'text-purple-700', emoji: '✨' },
   STANDARD: { label: 'Standard', bg: 'bg-gray-100', text: 'text-gray-700', emoji: '📋' },
@@ -1255,11 +1255,11 @@ export default function AdminCampaigns() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       <style>{`
         .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
         .tab-btn { padding:6px 14px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:none;white-space:nowrap;font-family:inherit;transition:all .15s; }
-        .tab-btn.on { background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;box-shadow:0 3px 10px rgba(99,102,241,.3); }
+        .tab-btn.on { background:linear-gradient(135deg,#2f6fe0,#5a35e6);color:white;box-shadow:0 3px 10px rgba(99,102,241,.3); }
         .tab-btn:not(.on) { background:#f3f4f6;color:#6b7280; }
         .tab-btn:not(.on):hover { background:#eef2ff;color:#4f46e5; }
         .field { padding:9px 14px 9px 40px;border:2px solid #f0f0f0;border-radius:12px;font-size:14px;font-weight:500;outline:none;background:white;transition:border-color .2s;font-family:inherit;width:100%; }
@@ -1308,7 +1308,7 @@ export default function AdminCampaigns() {
         </button>
         <button className={`tab-btn flex items-center gap-2 ${tab === 'managed' ? 'on' : ''}`}
           onClick={() => setTab('managed')}
-          style={tab === 'managed' ? { background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' } : {}}>
+          style={tab === 'managed' ? { background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' } : {}}>
           <Sparkles className="w-3.5 h-3.5" /> Managed
           {pendingManaged > 0 && (
             <span className={`text-[11px] font-black px-1.5 py-0.5 rounded-full ${tab === 'managed' ? 'bg-white bg-opacity-25' : 'bg-purple-100 text-purple-600'}`}>
@@ -1329,7 +1329,7 @@ export default function AdminCampaigns() {
             <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
               {(['all', 'ACTIVE', 'PENDING_REVIEW', 'DRAFT', 'PAUSED', 'COMPLETED'] as const).map(f => (
                 <button key={f} className={`tab-btn flex-shrink-0 ${filter === f ? 'on' : ''}`} onClick={() => setFilter(f)}>
-                  {f === 'all' ? 'All' : f === 'PENDING_REVIEW' ? 'În așteptare' : f.charAt(0) + f.slice(1).toLowerCase()}
+                  {f === 'all' ? 'Toate' : ({ PENDING_REVIEW: 'De aprobat', ACTIVE: 'Active', DRAFT: 'Ciorne', PAUSED: 'Pe pauză', COMPLETED: 'Încheiate', CANCELLED: 'Anulate' } as Record<string, string>)[f] ?? f.charAt(0) + f.slice(1).toLowerCase()}
                   <span className={`ml-1.5 text-[11px] font-black px-1.5 py-0.5 rounded-full ${filter === f ? 'bg-white bg-opacity-25' : 'bg-gray-200 text-gray-500'}`}>
                     {f === 'all' ? counts.all : counts[f as keyof typeof counts] || 0}
                   </span>
@@ -1443,7 +1443,7 @@ export default function AdminCampaigns() {
             </div>
           ) : managed.length === 0 ? (
             <div className="card p-16 text-center">
-              <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+              <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
               <p className="font-black text-gray-700 text-lg mb-2">Nicio campanie Managed</p>
@@ -1940,7 +1940,7 @@ export default function AdminCampaigns() {
                       <div><p className="text-xs text-gray-400">Tip ofertă</p><p className="font-black">{selectedCampaign.offer_type === 'product' ? '📦 Produs' : '🛠️ Serviciu'}</p></div>
                       <div><p className="text-xs text-gray-400">Valoare ofertă</p><p className="font-black text-orange-600">{selectedCampaign.offer_value} RON</p></div>
                       <div><p className="text-xs text-gray-400">Ridicare</p><p className="font-black">{selectedCampaign.delivery_method === 'pickup' ? '📍 Din locație' : '🚚 Livrare'}</p></div>
-                      <div><p className="text-xs text-gray-400">Slots</p><p className="font-black">{selectedCampaign.current_influencers || 0}/{selectedCampaign.max_influencers}</p></div>
+                      <div><p className="text-xs text-gray-400">Locuri</p><p className="font-black">{selectedCampaign.current_influencers || 0}/{selectedCampaign.max_influencers}</p></div>
                       {selectedCampaign.pickup_location_name && (
                         <div className="col-span-2"><p className="text-xs text-gray-400">Locație pickup</p><p className="font-black">📍 {selectedCampaign.pickup_location_name}</p></div>
                       )}
@@ -1996,7 +1996,7 @@ export default function AdminCampaigns() {
                           <div className="h-full rounded-full transition-all"
                             style={{
                               width: `${Math.min(100, (totalDistributed / distributable) * 100)}%`,
-                              background: remaining < 0 ? '#ef4444' : 'linear-gradient(90deg,#8b5cf6,#06b6d4)'
+                              background: remaining < 0 ? '#ef4444' : 'linear-gradient(90deg,#2f6fe0,#5a35e6)'
                             }} />
                         </div>
                         {remaining < 0 && (
@@ -3119,7 +3119,7 @@ export default function AdminCampaigns() {
 
                   {/* Danger zone */}
                   <div className="border-t border-gray-100 pt-4">
-                    <p className="text-xs font-black text-red-400 uppercase tracking-wider mb-3">Danger Zone</p>
+                    <p className="text-xs font-black text-red-400 uppercase tracking-wider mb-3">Zonă periculoasă</p>
                     <button onClick={() => handleDelete(selectedCampaign.id)}
                       className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black text-red-600 bg-red-50 hover:bg-red-100 transition border border-red-200">
                       <Trash2 className="w-4 h-4" /> Șterge campania definitiv
@@ -3559,7 +3559,7 @@ export default function AdminCampaigns() {
       {/* ── Confirm Complete Dialog ── */}
       {showCompleteConfirm && completingId && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl">
             <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🏁</span>
             </div>

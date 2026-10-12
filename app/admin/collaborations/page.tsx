@@ -126,8 +126,7 @@ export default function AdminCollaborations() {
   const pendingReview = items.filter(i => i.deliverable_submitted_at && !i.deliverable_approved_at && !i.deliverable_rejected_at && i.status !== 'COMPLETED')
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{``}</style>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
 
       {/* Toast */}
       {toast && (

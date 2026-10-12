@@ -124,13 +124,13 @@ export default function EditInfluencerPage() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex items-center justify-center min-h-[60vh]">
       <div className="w-10 h-10 rounded-full border-t-indigo-500 border-indigo-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
     </div>
   )
 
   if (error && !form.name) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-8" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
       <AlertCircle className="w-12 h-12 text-red-300 mb-4" />
       <p className="font-black text-gray-700 text-lg mb-2">Could not load influencer</p>
       <p className="text-sm text-gray-400 mb-6">{error}</p>
@@ -141,9 +141,8 @@ export default function EditInfluencerPage() {
   )
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-4xl mx-auto">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px;padding:24px; }
         .field { width:100%;padding:10px 14px;border:2px solid #e5e7eb;border-radius:12px;font-size:14px;font-weight:500;outline:none;transition:border-color .2s,box-shadow .2s;font-family:inherit;color:#111; background:white; }
         .field:focus { border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.08); }
@@ -155,7 +154,7 @@ export default function EditInfluencerPage() {
         .niche-pill { padding:6px 14px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid #e5e7eb;transition:all .15s;background:white;color:#6b7280;font-family:inherit; }
         .niche-pill.active { background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(139,92,246,.07));border-color:#6366f1;color:#4f46e5; }
         .niche-pill:hover:not(.active) { border-color:#c7d2fe;color:#4f46e5; }
-        .btn-save { display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:14px;font-size:15px;font-weight:800;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;cursor:pointer;transition:all .2s;font-family:inherit; }
+        .btn-save { display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:14px;font-size:15px;font-weight:800;background:linear-gradient(135deg,#2f6fe0,#5a35e6);color:white;border:none;cursor:pointer;transition:all .2s;font-family:inherit; }
         .btn-save:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.38); }
         .btn-save:disabled { opacity:.6;cursor:not-allowed;transform:none; }
         .btn-cancel { display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:14px;font-size:15px;font-weight:700;background:white;color:#6b7280;border:2px solid #e5e7eb;cursor:pointer;transition:all .18s;font-family:inherit; }

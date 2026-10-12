@@ -167,7 +167,7 @@ export default function CampaignPerformancePage() {
   )
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
       <style>{`
         .card { background: white; border: 1px solid #f1f5f9; border-radius: 12px; }
         .input-sm { padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 7px; font-size: 12px; outline: none; width: 100%; }

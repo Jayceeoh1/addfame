@@ -140,7 +140,7 @@ export default function EmailBlastPage() {
 
   const htmlPreview = `
     <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;border:1.5px solid #f0f0f0">
-      <div style="background:linear-gradient(135deg,#f97316,#ec4899);padding:24px;text-align:center">
+      <div style="background:linear-gradient(135deg,#22c8f0,#7040f0);padding:24px;text-align:center">
         <span style="color:white;font-size:22px;font-weight:900">AddFame</span>
       </div>
       <div style="padding:32px">
@@ -153,8 +153,7 @@ export default function EmailBlastPage() {
   `
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
 
       {/* Toast */}
       {toast && (
@@ -168,7 +167,7 @@ export default function EmailBlastPage() {
       <div className="flex items-center justify-between mb-7">
         <div>
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-            <Mail className="w-6 h-6 text-indigo-500" /> Email Blast
+            <Mail className="w-6 h-6 text-indigo-500" /> Email în masă
           </h1>
           <p className="text-sm text-gray-400 mt-0.5">Trimite emailuri personalizate în masă</p>
         </div>
@@ -354,7 +353,7 @@ export default function EmailBlastPage() {
             {/* Buton trimitere */}
             <button onClick={handleSend} disabled={sending || filtered.length === 0 || !subject || !body}
               className="w-full py-4 rounded-2xl font-black text-base text-white disabled:opacity-40 transition flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 16px rgba(99,102,241,0.35)' }}>
+              style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', boxShadow: '0 4px 16px rgba(99,102,241,0.35)' }}>
               {sending
                 ? <><Loader2 className="w-5 h-5 animate-spin" /> Se trimite… ({filtered.length} emailuri)</>
                 : <><Send className="w-5 h-5" /> Trimite {filtered.length} emailuri</>

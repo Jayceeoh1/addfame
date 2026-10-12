@@ -256,9 +256,8 @@ export default function AdminIdentityVerificationsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         .card { background: white; border: 1.5px solid #f0f0f0; border-radius: 20px; }
         .tab-btn { padding: 6px 16px; border-radius: 99px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all .18s; font-family: inherit; }
         .tab-btn.active { background: #6366f1; color: white; }
@@ -285,7 +284,7 @@ export default function AdminIdentityVerificationsPage() {
           </p>
         </div>
         <button onClick={load} className="text-sm font-bold text-gray-400 hover:text-indigo-600 transition px-3 py-2 rounded-xl border border-gray-200 bg-white">
-          Refresh
+          Actualizează
         </button>
       </div>
 
@@ -468,7 +467,7 @@ export default function AdminIdentityVerificationsPage() {
                       onClick={analyzeWithAI}
                       disabled={aiLoading}
                       className="w-full py-3 rounded-xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-                      style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
+                      style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}
                     >
                       {aiLoading
                         ? <><Loader2 className="w-4 h-4 animate-spin" /> Analizez cu Gemini AI…</>

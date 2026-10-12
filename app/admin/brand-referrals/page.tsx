@@ -73,13 +73,13 @@ export default function BrandReferralsPage() {
   const totalPaid = bonus1Count * 50 + bonus2Count * 100
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 900, color: '#111827', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Handshake size={22} color="#7c3aed" /> Brand Referrals
+            <Handshake size={22} color="#7c3aed" /> Recomandări branduri
           </h1>
           <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
             Influenceri care au invitat branduri · +50 RON la înregistrare · +100 RON la prima campanie
@@ -96,7 +96,7 @@ export default function BrandReferralsPage() {
       {/* KPI tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
-          { icon: <Users size={16} color="#7c3aed" />, label: 'Total referrals', value: total, bg: '#f5f3ff' },
+          { icon: <Users size={16} color="#7c3aed" />, label: 'Total recomandări', value: total, bg: '#f5f3ff' },
           { icon: <Clock size={16} color="#1e40af" />, label: 'Bonus 1 plătit (50 RON)', value: bonus1Count, bg: '#eff6ff' },
           { icon: <TrendingUp size={16} color="#166534" />, label: 'Bonus 2 plătit (100 RON)', value: bonus2Count, bg: '#f0fdf4' },
           { icon: <DollarSign size={16} color="#92400e" />, label: 'Total bonusuri plătite', value: `${totalPaid} RON`, bg: '#fefce8' },

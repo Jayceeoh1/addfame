@@ -244,8 +244,7 @@ export default function AdminDeliveriesPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
@@ -529,7 +528,7 @@ export default function AdminDeliveriesPage() {
       {/* ── AWB Modal ── */}
       {awbModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h2 className="font-black text-gray-900">📦 Generează AWB</h2>

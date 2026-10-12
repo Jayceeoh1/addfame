@@ -195,7 +195,7 @@ export default function AdminReviewsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-4xl mx-auto">
 
       {/* Toast */}
       {toast && (
@@ -472,7 +472,7 @@ export default function AdminReviewsPage() {
       {/* Modal respingere */}
       {rejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6">
             <h2 className="font-black text-gray-900 text-lg mb-1">Respinge postarea</h2>
             <p className="text-sm text-gray-400 mb-4">{rejectModal.influencers?.name} · {rejectModal.campaigns?.title}</p>
 

@@ -219,13 +219,13 @@ export default function InfluencerDetailPage() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex items-center justify-center min-h-[60vh]">
       <div className="w-10 h-10 rounded-full border-t-indigo-500 border-indigo-100 animate-spin" style={{ borderWidth: '3px', borderStyle: 'solid' }} />
     </div>
   )
 
   if (error) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-8" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
       <AlertCircle className="w-12 h-12 text-red-300 mb-4" />
       <p className="font-black text-gray-700 text-lg mb-2">Could not load influencer</p>
       <p className="text-sm text-gray-400 mb-6">{error}</p>
@@ -246,7 +246,7 @@ export default function InfluencerDetailPage() {
   const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
       <style>{`
         .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
         .field-label { font-size:10px;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px; }

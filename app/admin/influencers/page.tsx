@@ -189,7 +189,7 @@ export default function AdminInfluencers() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       <style>{`
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideD { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
@@ -255,7 +255,7 @@ export default function AdminInfluencers() {
               <div className="text-center mb-5">
                 <div style={{ position: 'relative', display: 'inline-block', marginBottom: 12 }}>
                   <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center font-black text-white text-2xl"
-                    style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+                    style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
                     {selected.avatar
                       ? <img src={selected.avatar} className="w-full h-full object-cover" alt="" />
                       : selected.name?.[0]?.toUpperCase()}
@@ -417,8 +417,8 @@ export default function AdminInfluencers() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 fu">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Influencers</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{counts.all} total · pagina {page} din {totalPages || 1}</p>
+          <h1 className="text-2xl font-black text-gray-900">Influenceri</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{counts.all} în total · pagina {page} din {totalPages || 1}</p>
         </div>
         <div className="flex items-center gap-3">
           {incompleteInfluencers.length > 0 && (
@@ -438,8 +438,8 @@ export default function AdminInfluencers() {
           </button>
           <Link href="/admin/influencers/create"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm text-white"
-            style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
-            <Plus className="w-4 h-4" /> Add
+            style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
+            <Plus className="w-4 h-4" /> Adaugă
           </Link>
         </div>
       </div>
@@ -454,9 +454,9 @@ export default function AdminInfluencers() {
         <div className="flex gap-2 flex-wrap">
           {[
             { key: 'all', label: `Toți ${counts.all}` },
-            { key: 'pending', label: `Pending ${counts.pending}` },
-            { key: 'approved', label: `Approved ${counts.approved}` },
-            { key: 'rejected', label: `Rejected ${counts.rejected}` },
+            { key: 'pending', label: `De aprobat ${counts.pending}` },
+            { key: 'approved', label: `Aprobați ${counts.approved}` },
+            { key: 'rejected', label: `Respinși ${counts.rejected}` },
             { key: 'strikes', label: `⚠️ Strikes ${counts.strikes}`, warn: counts.strikes > 0 },
             { key: 'blacklisted', label: `🚫 Blacklist ${counts.blacklisted}`, danger: counts.blacklisted > 0 },
           ].map(f => (
@@ -526,7 +526,7 @@ export default function AdminInfluencers() {
                 <div className="flex items-start gap-3 mb-3">
                   <div style={{ position: 'relative', flexShrink: 0 }}>
                     <div className="w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center font-black text-white text-base"
-                      style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+                      style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
                       {inf.avatar
                         ? <img src={inf.avatar} className="w-full h-full object-cover" alt="" />
                         : inf.name?.[0]?.toUpperCase() || '?'}

@@ -161,7 +161,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="min-h-full bg-gray-50/60" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="min-h-full bg-gray-50/60">
       {/* Page header */}
       <div className="bg-white border-b border-gray-100 px-8 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">

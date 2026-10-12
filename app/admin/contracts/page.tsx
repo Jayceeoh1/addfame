@@ -47,9 +47,9 @@ const STATUS_CFG = {
 
 // path/endpoint + culori per tip de contract
 const CFG: Record<TabKey, { label: string; list: string; pdf: string; api: string; accent: string; grad: string; shadow: string }> = {
-  ugc:      { label: 'UGC',           list: 'contract',            pdf: 'ugc-contracts',       api: 'ugc',       accent: '#6366f1', grad: 'linear-gradient(135deg,#6366f1,#8b5cf6)', shadow: 'rgba(99,102,241,0.35)' },
-  campanii: { label: 'Colaborare',    list: 'contract-colaborare', pdf: 'colaborare-contracts',api: 'colaborare',accent: '#f97316', grad: 'linear-gradient(135deg,#f97316,#ec4899)', shadow: 'rgba(249,115,22,0.35)' },
-  cesiune:  { label: 'Cesiune Autor', list: 'contract-cesiune',    pdf: 'cesiune-contracts',   api: 'cesiune',   accent: '#0ea5e9', grad: 'linear-gradient(135deg,#0ea5e9,#6366f1)', shadow: 'rgba(14,165,233,0.35)' },
+  ugc:      { label: 'UGC',           list: 'contract',            pdf: 'ugc-contracts',       api: 'ugc',       accent: '#6366f1', grad: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', shadow: 'rgba(99,102,241,0.35)' },
+  campanii: { label: 'Colaborare',    list: 'contract-colaborare', pdf: 'colaborare-contracts',api: 'colaborare',accent: '#f97316', grad: 'linear-gradient(135deg,#22c8f0,#7040f0)', shadow: 'rgba(249,115,22,0.35)' },
+  cesiune:  { label: 'Cesiune Autor', list: 'contract-cesiune',    pdf: 'cesiune-contracts',   api: 'cesiune',   accent: '#0ea5e9', grad: 'linear-gradient(135deg,#22c8f0,#5a35e6)', shadow: 'rgba(14,165,233,0.35)' },
 }
 
 export default function ContractsPage() {
@@ -219,8 +219,7 @@ export default function ContractsPage() {
   const accentGrad = CFG[tab].grad
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#f8f9fb', minHeight: '100vh' }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+    <div>
       <div className="max-w-6xl mx-auto px-6 py-8">
 
         {/* Header */}

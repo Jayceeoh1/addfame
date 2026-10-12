@@ -13,7 +13,7 @@ function MiniBar({ data }: { data: { label: string; commission: number }[] }) {
       {data.map((d, i) => (
         <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
           <div className="w-full rounded-t-lg transition-all"
-            style={{ height: `${Math.max(4, Math.round((d.commission / max) * 112))}px`, background: d.commission > 0 ? 'linear-gradient(180deg,#6366f1,#8b5cf6)' : '#f3f4f6', opacity: d.commission === 0 ? 0.4 : 1 }} />
+            style={{ height: `${Math.max(4, Math.round((d.commission / max) * 112))}px`, background: d.commission > 0 ? 'linear-gradient(180deg,#2f6fe0,#5a35e6)' : '#f3f4f6', opacity: d.commission === 0 ? 0.4 : 1 }} />
           <span className="text-[10px] font-black text-gray-400">{d.label}</span>
           {d.commission > 0 && <span className="text-[9px] font-bold text-indigo-400">{d.commission.toFixed(0)}</span>}
         </div>
@@ -67,8 +67,7 @@ export default function AdminRevenue() {
   ]
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
 
       <div className="flex items-center justify-between mb-7">
         <div>
@@ -76,7 +75,7 @@ export default function AdminRevenue() {
           <p className="text-sm text-gray-400 mt-0.5">Comisioane și fluxuri financiare</p>
         </div>
         <button onClick={load} className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-indigo-600 px-3 py-2 rounded-xl border border-gray-200 bg-white transition">
-          <RefreshCw className="w-4 h-4" /> Refresh
+          <RefreshCw className="w-4 h-4" /> Actualizează
         </button>
       </div>
 

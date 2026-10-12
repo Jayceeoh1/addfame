@@ -99,7 +99,7 @@ function LeadDrawer({ lead, type, onClose, onUpdate, onSendEmail, onDelete }) {
           <div className="flex items-center gap-3">
             {/* Avatar */}
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+              style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
               {initials}
             </div>
             <div>
@@ -323,7 +323,7 @@ function LeadDrawer({ lead, type, onClose, onUpdate, onSendEmail, onDelete }) {
                   </button>
                   <button onClick={saveNotes} disabled={saving}
                     className="flex-1 py-2 rounded-xl text-xs font-black text-white transition flex items-center justify-center gap-1.5 disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+                    style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
                     <Save className="w-3 h-3" />
                     {saving ? 'Salvez...' : 'Salvează'}
                   </button>
@@ -346,7 +346,7 @@ function LeadDrawer({ lead, type, onClose, onUpdate, onSendEmail, onDelete }) {
           <button
             onClick={() => onSendEmail(lead.id)}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black text-white transition"
-            style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+            style={{ background: 'linear-gradient(135deg,#22c8f0,#7040f0)' }}>
             <Send className="w-4 h-4" /> Trimite email
           </button>
           <button
@@ -591,8 +591,7 @@ export default function OutreachPage() {
   const templates = activeTab === 'brand' ? BRAND_TEMPLATES : INF_TEMPLATES
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
 
       {/* Toast */}
       {toast && (
@@ -617,7 +616,7 @@ export default function OutreachPage() {
           {selected.size > 0 && (
             <button onClick={() => setShowSend(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black text-white"
-              style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+              style={{ background: 'linear-gradient(135deg,#22c8f0,#7040f0)' }}>
               <Send className="w-4 h-4" /> Trimite ({selected.size})
             </button>
           )}
@@ -636,7 +635,7 @@ export default function OutreachPage() {
           )}
           <button onClick={() => setShowAdd(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black text-white"
-            style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+            style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
             <Plus className="w-4 h-4" /> Adaugă
           </button>
         </div>
@@ -820,7 +819,7 @@ export default function OutreachPage() {
       {/* Add Modal */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
               <h2 className="font-black text-gray-900">
                 {activeTab === 'brand' ? 'Adaugă brand extern' : 'Adaugă influencer extern'}
@@ -929,7 +928,7 @@ export default function OutreachPage() {
                   className="flex-1 py-3 rounded-xl font-bold text-sm text-gray-600 border-2 border-gray-200 hover:bg-gray-50 transition">Anulează</button>
                 <button onClick={addLead}
                   className="flex-1 py-3 rounded-xl font-black text-sm text-white transition"
-                  style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>Adaugă</button>
+                  style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>Adaugă</button>
               </div>
             </div>
           </div>
@@ -939,7 +938,7 @@ export default function OutreachPage() {
       {/* CSV Import Modal */}
       {showCsvImport && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", maxHeight: '90vh' }}>
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h2 className="font-black text-gray-900">Import Branduri (CSV / Excel)</h2>
@@ -1009,7 +1008,7 @@ export default function OutreachPage() {
                 {!csvResult && (
                   <button onClick={importCsv} disabled={!csvData.length || csvImporting}
                     className="flex-1 py-3 rounded-xl font-black text-sm text-white disabled:opacity-40 transition flex items-center justify-center gap-2"
-                    style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+                    style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
                     {csvImporting
                       ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Importez…</>
                       : <><Upload className="w-4 h-4" /> Importă {csvData.length} branduri</>}
@@ -1024,7 +1023,7 @@ export default function OutreachPage() {
       {/* Send Modal */}
       {showSend && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
                 <h2 className="font-black text-gray-900">Trimite email</h2>
@@ -1100,7 +1099,7 @@ export default function OutreachPage() {
                   className="flex-1 py-3 rounded-xl font-bold text-sm text-gray-600 border-2 border-gray-200 hover:bg-gray-50 transition">Anulează</button>
                 <button onClick={sendEmails} disabled={sending || (template === 'custom' && (!customSubject || !customHtml))}
                   className="flex-1 py-3 rounded-xl font-black text-sm text-white disabled:opacity-40 transition flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+                  style={{ background: 'linear-gradient(135deg,#22c8f0,#7040f0)' }}>
                   {sending
                     ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Trimit…</>
                     : <><Send className="w-4 h-4" /> Trimite {selected.size} email{selected.size !== 1 ? 'uri' : ''}</>}

@@ -89,7 +89,7 @@ export default function PointEventsPage() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
       {/* Toast */}
       {toast && (
         <div style={{
@@ -108,7 +108,7 @@ export default function PointEventsPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 900, color: '#111827', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Gift size={22} color="#7c3aed" /> Point Events
+            <Gift size={22} color="#7c3aed" /> Evenimente cu puncte
           </h1>
           <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>Creează bonusuri de puncte cu timp și locuri limitate pentru influenceri</p>
         </div>
@@ -118,7 +118,7 @@ export default function PointEventsPage() {
           </button>
           <button
             onClick={() => setShowForm(s => !s)}
-            style={{ background: 'linear-gradient(135deg,#7c3aed,#9d79fd)', color: 'white', border: 'none', borderRadius: 10, padding: '8px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, boxShadow: '0 3px 10px rgba(124,92,252,0.35)' }}
+            style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', color: 'white', border: 'none', borderRadius: 10, padding: '8px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, boxShadow: '0 3px 10px rgba(124,92,252,0.35)' }}
           >
             <Plus size={15} /> Eveniment nou
           </button>
@@ -192,7 +192,7 @@ export default function PointEventsPage() {
             <button
               type="submit"
               disabled={submitting}
-              style={{ background: 'linear-gradient(135deg,#7c3aed,#9d79fd)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 24px', cursor: submitting ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700, flex: 1, boxShadow: '0 3px 10px rgba(124,92,252,0.3)' }}
+              style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 24px', cursor: submitting ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700, flex: 1, boxShadow: '0 3px 10px rgba(124,92,252,0.3)' }}
             >
               {submitting ? '⏳ Se creează...' : '✨ Creează evenimentul'}
             </button>

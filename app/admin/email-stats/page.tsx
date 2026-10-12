@@ -128,8 +128,7 @@ export default function EmailTrackingPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-7">
@@ -170,7 +169,7 @@ export default function EmailTrackingPage() {
           <div className="flex gap-3">
             <button onClick={sendFollowUpAll} disabled={sendingFollowUp}
               className="flex-1 py-3 rounded-2xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+              style={{ background: 'linear-gradient(135deg,#22c8f0,#7040f0)' }}>
               {sendingFollowUp
                 ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Se trimit…</>
                 : <><Mail className="w-4 h-4" /> Trimite follow-up tuturor</>}

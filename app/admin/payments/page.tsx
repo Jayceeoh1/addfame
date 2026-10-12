@@ -99,8 +99,7 @@ export default function AdminPayments() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
 
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl font-bold text-sm text-white ${toast.ok ? 'bg-green-500' : 'bg-red-500'}`}>
@@ -110,11 +109,11 @@ export default function AdminPayments() {
 
       <div className="flex items-center justify-between mb-7">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Plăți Branduri</h1>
+          <h1 className="text-2xl font-black text-gray-900">Încărcări branduri</h1>
           <p className="text-sm text-gray-400 mt-0.5">Confirmă top-up-urile primite manual și adaugă creditele</p>
         </div>
         <button onClick={load} className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-indigo-600 px-3 py-2 rounded-xl border border-gray-200 bg-white transition">
-          <RefreshCw className="w-4 h-4" /> Refresh
+          <RefreshCw className="w-4 h-4" /> Actualizează
         </button>
       </div>
 
@@ -139,7 +138,7 @@ export default function AdminPayments() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-2xl border border-amber-200 p-5">
           <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">În așteptare</p>
           <p className="text-2xl font-black text-amber-600">{fmt(totals.pending)}</p>

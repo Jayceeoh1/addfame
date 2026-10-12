@@ -8,13 +8,14 @@ import {
   FileText, Globe, Linkedin, X, Mail, Send, Smartphone} from 'lucide-react'
 
 const VERIF_CFG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  unverified: { label: 'Unverified', bg: 'bg-gray-100', text: 'text-gray-500', dot: 'bg-gray-400' },
-  pending: { label: 'Pending', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
-  verified: { label: 'Verified', bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500' },
-  rejected: { label: 'Rejected', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500' },
+  unverified: { label: 'Neverificat', bg: 'bg-gray-100', text: 'text-gray-500', dot: 'bg-gray-400' },
+  pending: { label: 'De verificat', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
+  verified: { label: 'Verificat', bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500' },
+  rejected: { label: 'Respins', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500' },
 }
 
 const TABS = ['All', 'Pending', 'Verified', 'Unverified', 'Rejected'] as const
+const TAB_LABEL: Record<string, string> = { All: 'Toate', Pending: 'De verificat', Verified: 'Verificate', Unverified: 'Neverificate', Rejected: 'Respinse' }
 type Tab = typeof TABS[number]
 
 export default function AdminBrands() {
@@ -181,15 +182,14 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
 
   return (
     <>
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         .card { background:white;border:1.5px solid #f0f0f0;border-radius:20px; }
         .field { padding:9px 14px 9px 40px;border:2px solid #f0f0f0;border-radius:12px;font-size:14px;font-weight:500;outline:none;background:white;transition:border-color .2s;font-family:inherit;width:100%; }
         .field:focus { border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08); }
         .field::placeholder { color:#9ca3af;font-weight:400; }
         .tab-btn { padding:6px 14px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap; }
-        .tab-btn.on { background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;box-shadow:0 3px 10px rgba(99,102,241,.3); }
+        .tab-btn.on { background:linear-gradient(135deg,#2f6fe0,#5a35e6);color:white;box-shadow:0 3px 10px rgba(99,102,241,.3); }
         .tab-btn:not(.on) { background:#f3f4f6;color:#6b7280; }
         .tab-btn:not(.on):hover { background:#ede9fe;color:#6366f1; }
         .btn-approve { display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:9px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;cursor:pointer;transition:all .15s;font-family:inherit; }
@@ -217,7 +217,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-black text-gray-900">Reject Verification</h2>
+              <h2 className="font-black text-gray-900">Respinge verificarea</h2>
               <button onClick={() => { setShowRejectModal(null); setRejectReason('') }}
                 className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition">
                 <X className="w-4 h-4 text-gray-500" />
@@ -307,7 +307,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
 
               {/* Verification status */}
               <div className="mb-5">
-                <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Verification Status</p>
+                <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Starea verificării</p>
                 {(() => {
                   const cfg = VERIF_CFG[selected.verification_status || 'unverified']
                   return (
@@ -389,7 +389,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
                     {!isPdf && !isImage && (
                       <div className="flex flex-col items-center justify-center h-24 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 gap-2">
                         <FileText className="w-5 h-5 text-gray-300" />
-                        <p className="text-xs text-gray-400 font-bold">Unknown document format</p>
+                        <p className="text-xs text-gray-400 font-bold">Format de document necunoscut</p>
                         <a href={doc} target="_blank" className="text-xs font-bold text-indigo-500 hover:underline flex items-center gap-1">
                           Open <ExternalLink className="w-3 h-3" />
                         </a>
@@ -401,7 +401,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
 
               {!selected.website && !selected.verification_linkedin && !selected.verification_document_url && (
                 <div className="p-4 bg-gray-50 rounded-xl text-center mb-5">
-                  <p className="text-sm text-gray-400">No verification materials submitted yet</p>
+                  <p className="text-sm text-gray-400">Brandul n-a trimis încă documente</p>
                 </div>
               )}
 
@@ -421,7 +421,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
                     className="btn-approve flex-1 justify-center py-3 text-sm">
                     {actionId === selected.id
                       ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                      : <><CheckCircle className="w-4 h-4" /> Approve</>}
+                      : <><CheckCircle className="w-4 h-4" /> Aprobă</>}
                   </button>
                   <button
                     onClick={() => setShowRejectModal(selected.id)}
@@ -438,7 +438,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
                 </div>
               )}
               {['unverified', 'rejected'].includes(selected.verification_status || 'unverified') && (
-                <p className="text-xs text-center text-gray-400">Waiting for brand to submit verification</p>
+                <p className="text-xs text-center text-gray-400">Așteptăm documentele brandului</p>
               )}
 
               {/* ── EMAIL CALL INVITATION ── */}
@@ -446,7 +446,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
                 <button
                   onClick={() => openEmailModal(selected)}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-black text-sm text-white transition"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)', boxShadow: '0 3px 12px rgba(249,115,22,0.3)' }}
+                  style={{ background: 'linear-gradient(135deg,#22c8f0,#7040f0)', boxShadow: '0 3px 12px rgba(249,115,22,0.3)' }}
                 >
                   <Mail className="w-4 h-4" /> Trimite Email Invitație Call
                 </button>
@@ -559,10 +559,10 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
 
       <div className="flex items-center justify-between mb-6 fade-up">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Brands</h1>
+          <h1 className="text-2xl font-black text-gray-900">Branduri</h1>
           <p className="text-sm text-gray-400 mt-0.5">
-            {brands.length} total
-            {counts.Pending > 0 && <span className="ml-2 font-black text-amber-600">· {counts.Pending} pending review</span>}
+            {brands.length} în total
+            {counts.Pending > 0 && <span className="ml-2 font-black text-amber-600">· {counts.Pending} de verificat</span>}
           </p>
         </div>
         <button onClick={load} className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-indigo-600 transition px-3 py-2 rounded-xl border border-gray-200 bg-white">
@@ -573,12 +573,12 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
       <div className="card p-4 mb-5 fade-up" style={{ animationDelay: '.05s' }}>
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input className="field" placeholder="Search by name, email or industry…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="field" placeholder="Caută după nume, email sau domeniu…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           {TABS.map(t => (
             <button key={t} className={`tab-btn flex-shrink-0 ${tab === t ? 'on' : ''}`} onClick={() => setTab(t)}>
-              {t}
+              {TAB_LABEL[t] ?? t}
               {counts[t] > 0 && <span className={`ml-1.5 text-[11px] font-black px-1.5 py-0.5 rounded-full ${tab === t ? 'bg-white/25' : t === 'Pending' ? 'bg-amber-200 text-amber-700' : 'bg-gray-200 text-gray-500'}`}>{counts[t]}</span>}
             </button>
           ))}
@@ -593,7 +593,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
         ) : visible.length === 0 ? (
           <div className="text-center py-16">
             <Building2 className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="font-bold text-gray-400">No brands found</p>
+            <p className="font-bold text-gray-400">Niciun brand găsit</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -657,7 +657,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
                               🔑 Login
                             </button>
                           )}
-                          <button className="btn-del" onClick={() => handleDelete(b.id)} disabled={busy} title="Delete">
+                          <button className="btn-del" onClick={() => handleDelete(b.id)} disabled={busy} title="Șterge">
                             {busy ? <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                           </button>
                         </div>
@@ -678,7 +678,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden" style={{ fontFamily: "inherit" }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#22c8f0,#7040f0)' }}>
                   <Mail className="w-4 h-4 text-white" />
                 </div>
                 <div>
@@ -718,7 +718,7 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
                 </button>
                 <button onClick={sendEmail} disabled={sendingEmail || !emailSubject.trim() || !emailBody.trim()}
                   className="flex-1 py-3 rounded-xl font-black text-sm text-white disabled:opacity-50 transition flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ec4899)' }}>
+                  style={{ background: 'linear-gradient(135deg,#22c8f0,#7040f0)' }}>
                   {sendingEmail
                     ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Se trimite…</>
                     : <><Send className="w-4 h-4" /> Trimite Email</>

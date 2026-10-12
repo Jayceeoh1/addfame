@@ -63,7 +63,7 @@ export default function WhatsAppLogsPage() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 max-w-6xl mx-auto">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -73,14 +73,14 @@ export default function WhatsAppLogsPage() {
             <MessageCircle className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-gray-900">WhatsApp Logs</h1>
+            <h1 className="text-xl font-black text-gray-900">Mesaje WhatsApp</h1>
             <p className="text-xs text-gray-500">Istoric mesaje trimise influencerilor</p>
           </div>
         </div>
         <button onClick={fetchLogs}
           className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+          Actualizează
         </button>
       </div>
 

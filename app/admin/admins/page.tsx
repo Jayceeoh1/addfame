@@ -88,8 +88,7 @@ export default function AdminsPage() {
   )
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');`}</style>
+    <div className="p-6 lg:p-8 max-w-4xl mx-auto">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
@@ -101,7 +100,7 @@ export default function AdminsPage() {
         </div>
         <button onClick={() => setShowCreate(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black text-white"
-          style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+          style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
           <Plus className="w-4 h-4" /> Admin nou
         </button>
       </div>
@@ -174,7 +173,7 @@ export default function AdminsPage() {
       {/* Create modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <h2 className="text-lg font-black text-gray-900 mb-5">Crează admin nou</h2>
 
             <div className="space-y-4">
@@ -232,7 +231,7 @@ export default function AdminsPage() {
               </button>
               <button onClick={createAdmin} disabled={creating || !newEmail.trim()}
                 className="flex-1 py-3 rounded-xl font-black text-sm text-white disabled:opacity-40 transition"
-                style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+                style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
                 {creating ? 'Se creează…' : 'Crează admin'}
               </button>
             </div>

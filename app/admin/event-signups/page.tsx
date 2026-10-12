@@ -79,10 +79,9 @@ export default function EventSignupsPage() {
   })
 
   return (
-    <div className="p-6 max-w-7xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 max-w-7xl mx-auto">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-        .brand-grad { background: linear-gradient(135deg, #f97316, #ec4899); }
+        .brand-grad { background: linear-gradient(135deg, #22c8f0, #7040f0); }
         .stat-card { background: white; border: 1.5px solid #f0f0f0; border-radius: 16px; padding: 20px 24px; }
         .table-row { border-bottom: 1px solid #f5f5f5; transition: background .12s; }
         .table-row:hover { background: #fafafa; }

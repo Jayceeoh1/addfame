@@ -144,3 +144,44 @@
   .acp-hero .big { font-size: 32px; }
   .acp-chart { gap: 6px; height: 160px; }
 }
+
+/* ══ Stratul comun pentru paginile vechi de admin ═══════════════════════════════
+   Paginile folosesc clase Tailwind (gray/indigo). Tailwind 4 citește culorile din variabile CSS,
+   așa că le redefinim DOAR în zona de conținut a adminului: aceleași clase, paleta AddFame.
+   Nu se schimbă nimic din logica paginilor. */
+.acp-content {
+  font-family: var(--font-body, system-ui), system-ui, sans-serif;
+  color: #14123a;
+  /* violet AddFame în loc de indigo */
+  --color-indigo-50: #f4f0ff; --color-indigo-100: #ebe4ff; --color-indigo-200: #e0d6ff; --color-indigo-300: #c9b9fb;
+  --color-indigo-400: #9d85f5; --color-indigo-500: #6f4ef0; --color-indigo-600: #5a35e6; --color-indigo-700: #4423c4;
+  --color-indigo-800: #371c9e; --color-indigo-900: #2a1677;
+  --color-violet-50: #f4f0ff; --color-violet-100: #ebe4ff; --color-violet-200: #e0d6ff; --color-violet-300: #c9b9fb;
+  --color-violet-400: #9d85f5; --color-violet-500: #6f4ef0; --color-violet-600: #5a35e6; --color-violet-700: #4423c4;
+  /* gri cu nuanța mărcii (cerneală #14123a) */
+  --color-gray-50: #f6f6fc; --color-gray-100: #eeecf7; --color-gray-200: #e5e3f3; --color-gray-300: #d0cde6;
+  --color-gray-400: #8783a8; --color-gray-500: #6a6690; --color-gray-600: #57537d; --color-gray-700: #4a4770;
+  --color-gray-800: #2b2856; --color-gray-900: #14123a;
+  --color-slate-50: #f6f6fc; --color-slate-100: #eeecf7; --color-slate-200: #e5e3f3; --color-slate-400: #8783a8;
+  --color-slate-500: #6a6690; --color-slate-600: #57537d; --color-slate-700: #4a4770; --color-slate-900: #14123a;
+}
+/* titluri în fontul de afișare */
+.acp-content h1, .acp-content h2, .acp-content h3 { font-family: var(--font-display, system-ui), system-ui, sans-serif; letter-spacing: -0.015em; }
+.acp-content h1 { letter-spacing: -0.025em; }
+/* carduri: colțuri și margini uniforme */
+.acp-content .bg-white.rounded-2xl, .acp-content .bg-white.rounded-3xl { border-radius: 18px; }
+.acp-content .bg-white.rounded-2xl.border, .acp-content .bg-white.rounded-2xl.border-2 { border-width: 1px; border-color: #e5e3f3; }
+/* butoanele principale: gradientul AddFame */
+.acp-content .bg-indigo-600, .acp-content .bg-violet-600 { background-image: linear-gradient(135deg, #2f6fe0, #5a35e6); }
+.acp-content .bg-indigo-600:hover, .acp-content .bg-violet-600:hover { background-image: linear-gradient(135deg, #2a5fc4, #4423c4); }
+/* câmpuri și selecții */
+.acp-content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.acp-content select, .acp-content textarea { border-color: #e5e3f3; }
+.acp-content input:focus, .acp-content select:focus, .acp-content textarea:focus { border-color: #5a35e6; outline: none; box-shadow: 0 0 0 3px rgba(90,53,230,.12); }
+/* tabele */
+.acp-content table thead th { color: #8783a8; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.acp-content table tbody tr:hover { background: #faf9ff; }
+/* cifrele să stea aliniate */
+.acp-content .font-black, .acp-content td { font-variant-numeric: tabular-nums; }
+/* paginile cu propriul fundal gri se contopesc cu fundalul adminului */
+.acp-content .min-h-screen.bg-gray-50 { background: transparent; }

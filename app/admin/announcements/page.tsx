@@ -131,9 +131,8 @@ export default function AdminAnnouncements() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         @keyframes slideD { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
         .toast-anim { animation: slideD .3s ease; }
         .field { width:100%;padding:10px 14px;border:1.5px solid #f0f0f0;border-radius:12px;font-size:14px;outline:none;background:white;font-family:inherit;transition:border-color .2s; }
@@ -157,7 +156,7 @@ export default function AdminAnnouncements() {
         </div>
         <button onClick={() => { resetForm(); setShowForm(true) }}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm text-white"
-          style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+          style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
           <Plus className="w-4 h-4" /> Anunț nou
         </button>
       </div>
@@ -238,7 +237,7 @@ export default function AdminAnnouncements() {
 
             <button onClick={handleSave}
               className="w-full py-3 rounded-xl font-black text-sm text-white"
-              style={{ background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' }}>
+              style={{ background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)' }}>
               {editId ? 'Salvează modificările' : 'Publică anunțul'}
             </button>
           </div>
@@ -340,7 +339,7 @@ export default function AdminAnnouncements() {
                     <span className="text-xs font-black text-purple-600">{totalReads}/{totalInfluencers}</span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${rateRead}%`, background: 'linear-gradient(90deg,#8b5cf6,#06b6d4)' }} />
+                    <div className="h-full rounded-full transition-all" style={{ width: `${rateRead}%`, background: 'linear-gradient(90deg,#2f6fe0,#5a35e6)' }} />
                   </div>
                   <button onClick={() => fetchViewers(a)} className="mt-2 flex items-center gap-1.5 text-xs font-black text-purple-600 hover:text-purple-800 transition">
                     <Eye className="w-3.5 h-3.5" /> Vezi cine a văzut ({totalReads})
@@ -378,7 +377,7 @@ export default function AdminAnnouncements() {
               <div style={{ overflowY: 'auto', flex: 1 }}>
                 {viewers.map((v: any, i: number) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
-                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: 'white', flexShrink: 0, overflow: 'hidden' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg,#2f6fe0,#5a35e6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: 'white', flexShrink: 0, overflow: 'hidden' }}>
                       {v.influencers?.avatar ? <img src={v.influencers.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : v.influencers?.name?.[0] || '?'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
