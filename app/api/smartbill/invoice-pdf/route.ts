@@ -1,92 +1,44 @@
 /**
- * POST /api/smartbill/create-invoice
- *
- * Endpoint intern — apelat din:
- * 1. stripe webhook (plată card confirmată)
- * 2. confirm-payment route (transfer bancar confirmat manual de admin)
- *
- * NU e expus public — necesită ADMIN_SECRET_KEY în header.
+ * GET /api/smartbill/invoice-pdf?transaction_id=…
+ * Descarcă PDF-ul facturii SmartBill (seria ADDF) pentru o încărcare de credite.
+ * Acces: brandul care a făcut plata sau un admin.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { createSmartBillInvoice } from '@/lib/smartbill'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getSmartBillInvoicePdf, parseSmartBillNumber } from '@/lib/smartbill'
 
-export async function POST(req: NextRequest) {
-  // Autentificare internă
-  const adminKey = req.headers.get('x-admin-key')
-  if (adminKey !== process.env.ADMIN_SECRET_KEY) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+export async function GET(req: NextRequest) {
+  const txId = req.nextUrl.searchParams.get('transaction_id')
+  if (!txId) return NextResponse.json({ error: 'transaction_id lipsă' }, { status: 400 })
 
-  const { transaction_id } = await req.json()
-  if (!transaction_id) {
-    return NextResponse.json({ error: 'transaction_id required' }, { status: 400 })
-  }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Neautentificat' }, { status: 401 })
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const admin = createAdminClient()
+  const { data: tx } = await admin.from('brand_transactions')
+    .select('id, brand_id, smartbill_invoice_number').eq('id', txId).maybeSingle()
+  if (!tx) return NextResponse.json({ error: 'Plata nu există' }, { status: 404 })
 
-  // Citim tranzacția + datele brandului
-  const { data: tx } = await supabase
-    .from('brand_transactions')
-    .select(`
-      id, amount, status, smartbill_invoice_number,
-      billing_details,
-      brand:brands (
-        id, name, email, user_id
-      )
-    `)
-    .eq('id', transaction_id)
-    .single()
+  const [{ data: brand }, { data: adminRow }] = await Promise.all([
+    admin.from('brands').select('id').eq('id', tx.brand_id).eq('user_id', user.id).maybeSingle(),
+    admin.from('admins').select('is_active').eq('user_id', user.id).maybeSingle(),
+  ])
+  const isAdmin = !!adminRow && adminRow.is_active !== false
+  if (!brand && !isAdmin) return NextResponse.json({ error: 'Acces interzis' }, { status: 403 })
 
-  if (!tx) {
-    return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
-  }
+  const inv = parseSmartBillNumber(tx.smartbill_invoice_number)
+  if (!inv) return NextResponse.json({ error: 'Factura nu a fost încă emisă' }, { status: 404 })
 
-  // Nu emitem factură dacă deja există
-  if (tx.smartbill_invoice_number) {
-    return NextResponse.json({
-      success: true,
-      already_exists: true,
-      smartbill_number: tx.smartbill_invoice_number,
-    })
-  }
+  const pdf = await getSmartBillInvoicePdf(inv.series, inv.number)
+  if (!pdf) return NextResponse.json({ error: 'SmartBill nu a trimis factura. Încearcă din nou.' }, { status: 502 })
 
-  const brand = tx.brand as any
-  const billing = tx.billing_details as any
-
-  try {
-    const result = await createSmartBillInvoice({
-      clientName: billing?.name || brand.name,
-      clientCif: billing?.vat || undefined,
-      clientAddress: billing?.address || undefined,
-      clientEmail: brand.email,
-      amountRon: tx.amount,
-      description: `Credite publicitare prepaid — platformă AddFame (${tx.amount.toLocaleString('ro-RO')} RON)`,
-    })
-
-    // Salvăm numărul SmartBill pe tranzacție
-    await supabase
-      .from('brand_transactions')
-      .update({ smartbill_invoice_number: result.smartbillNumber })
-      .eq('id', transaction_id)
-
-    console.log(`[SmartBill] ✅ Factură emisă: ${result.smartbillNumber} pentru ${brand.name} — ${tx.amount} RON`)
-
-    return NextResponse.json({
-      success: true,
-      smartbill_number: result.smartbillNumber,
-      series: result.series,
-      number: result.number,
-    })
-  } catch (err: any) {
-    console.error('[SmartBill] ❌ Eroare creare factură:', err.message)
-    return NextResponse.json(
-      { error: err.message || 'SmartBill error' },
-      { status: 500 }
-    )
-  }
+  return new NextResponse(pdf, {
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="Factura-${inv.series}${inv.number}.pdf"`,
+      'Cache-Control': 'private, max-age=3600',
+    },
+  })
 }

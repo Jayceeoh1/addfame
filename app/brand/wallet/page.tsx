@@ -7,12 +7,9 @@ import {
   Wallet, TrendingUp, ArrowUpRight, ArrowDownLeft, Clock,
   CheckCircle, XCircle, AlertCircle, X, Plus, CreditCard,
   Briefcase, Download, Receipt, BarChart3, Calendar,
-  Building2, Smartphone, Globe, ChevronRight, Copy, Check,
-  FileText, Shield, Info, Lock,
+  Building2, Copy, Check, FileText, Shield, Info, Loader2,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { COMPANY, BANK, REVOLUT, WISE, PAYPAL, CRYPTO, TOPUP_MIN, TOPUP_MAX } from '@/lib/payment-config'
+import { BANK, REVOLUT, WISE, PAYPAL, CRYPTO, TOPUP_MIN, TOPUP_MAX } from '@/lib/payment-config'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Transaction = {
@@ -35,132 +32,41 @@ type BrandInfo = {
   company_size?: string; industry?: string
   verification_status?: string
 }
-// ─── Payment methods config (din lib/payment-config.ts) ──────────────────────
-const ALL_PAYMENT_METHODS = [
-  {
-    id: 'bank_transfer',
-    label: 'Transfer Bancar',
-    icon: Building2,
-    color: 'text-blue-600',
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/30',
-    description: `${BANK.name} · IBAN`,
-    active: true, // mereu activ
-    details: {
-      'Bancă': BANK.name,
-      'IBAN': BANK.iban,
-      'BIC / SWIFT': BANK.bic,
-      'Beneficiar': BANK.holder,
-      'Referință': '← folosește numărul facturii',
-    },
-    note: 'Creditele sunt adăugate în 1-3 zile lucrătoare după confirmarea plății.',
-  },
-  {
-    id: 'revolut',
-    label: 'Revolut',
-    icon: Smartphone,
-    color: 'text-cyan-600',
-    bg: 'bg-cyan-500/10',
-    border: 'border-cyan-500/30',
-    description: 'Transfer Revolut Business',
-    active: REVOLUT.active,
-    details: {
-      'Revolut Tag': REVOLUT.tag,
-      'Cont Business': REVOLUT.account,
-      'Notă': '← include numărul facturii',
-    },
-    note: 'Instant sau până la 1 zi lucrătoare. Creditat după confirmare.',
-  },
-  {
-    id: 'wise',
-    label: 'Wise',
-    icon: Globe,
-    color: 'text-green-600',
-    bg: 'bg-green-500/10',
-    border: 'border-green-500/30',
-    description: 'Transfer internațional',
-    active: WISE.active,
-    details: {
-      'Email Wise': WISE.email,
-      'Beneficiar': WISE.holder,
-      'Notă': '← include numărul facturii',
-    },
-    note: 'Comisioane mici pentru transferuri internaționale. Creditat în 1-2 zile.',
-  },
-  {
-    id: 'paypal',
-    label: 'PayPal',
-    icon: CreditCard,
-    color: 'text-indigo-600',
-    bg: 'bg-indigo-500/10',
-    border: 'border-indigo-500/30',
-    description: 'Trimite prin PayPal',
-    active: PAYPAL.active,
-    details: {
-      'Email PayPal': PAYPAL.email,
-      'Notă': '← include numărul facturii',
-    },
-    note: 'Creditele sunt adăugate în câteva ore după confirmarea plății.',
-  },
-  {
-    id: 'crypto',
-    label: 'Crypto',
-    icon: Shield,
-    color: 'text-orange-600',
-    bg: 'bg-violet-600/10',
-    border: 'border-orange-500/30',
-    description: 'USDT / USDC',
-    active: CRYPTO.active,
-    details: {
-      'Rețea': CRYPTO.network,
-      'Adresă Wallet': CRYPTO.address,
-      'Acceptat și pe': CRYPTO.also,
-      'Notă': '← include numărul facturii în memo',
-    },
-    note: 'Valoare echivalentă RON la momentul primirii. Creditat în câteva ore.',
-  },
-]
 
-// Afișăm doar metodele active
+// ─── Metode de plată (din lib/payment-config.ts) ─────────────────────────────
+const ALL_PAYMENT_METHODS = [
+  { id: 'bank_transfer', label: 'Transfer bancar', sub: `${BANK.name} · IBAN`, active: true,
+    details: [['Beneficiar', BANK.holder], ['IBAN', BANK.iban], ['Banca', BANK.name], ['BIC / SWIFT', BANK.bic]] },
+  { id: 'revolut', label: 'Revolut', sub: 'Revolut Business', active: REVOLUT.active,
+    details: [['Revolut tag', REVOLUT.tag], ['Cont', REVOLUT.account]] },
+  { id: 'wise', label: 'Wise', sub: 'Transfer internațional', active: WISE.active,
+    details: [['Email Wise', WISE.email], ['Beneficiar', WISE.holder]] },
+  { id: 'paypal', label: 'PayPal', sub: 'PayPal Business', active: PAYPAL.active,
+    details: [['Email PayPal', PAYPAL.email]] },
+  { id: 'crypto', label: 'Crypto', sub: 'USDT / USDC', active: CRYPTO.active,
+    details: [['Rețea', CRYPTO.network], ['Adresă', CRYPTO.address], ['Acceptat și pe', CRYPTO.also]] },
+] as const
 const PAYMENT_METHODS = ALL_PAYMENT_METHODS.filter(m => m.active)
 
-const PRESET_AMOUNTS = [
-  { value: 100, popular: false },
-  { value: 250, popular: false },
-  { value: 500, popular: true },
-  { value: 1000, popular: false },
-  { value: 2500, popular: false },
-  { value: 5000, popular: false },
-]
+const PRESET_AMOUNTS = [250, 500, 1000, 2500, 5000, 10000]
+const POPULAR = 1000
 
-const TX_META: Record<string, { text: string; bg: string; badge: string; label: string }> = {
-  TOPUP: { text: 'text-green-600', bg: 'bg-green-500/10', badge: 'bg-green-500/10 text-green-600', label: 'Top-up' },
-  REFUND: { text: 'text-blue-600', bg: 'bg-blue-500/10', badge: 'bg-blue-500/10 text-blue-600', label: 'Refund' },
-  SPEND: { text: 'text-destructive', bg: 'bg-destructive/10', badge: 'bg-destructive/10 text-destructive', label: 'Spend' },
-  RESERVE: { text: 'text-amber-600', bg: 'bg-amber-500/10', badge: 'bg-amber-500/10 text-amber-600', label: 'Reserved' },
-}
+const fmt = (n: number) => `${n.toLocaleString('ro-RO', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} RON`
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })
+const fmtDateTime = (d: string) => new Date(d).toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const hasInvoice = (tx: Transaction) => !!tx.smartbill_invoice_number && tx.smartbill_invoice_number !== 'EMITERE'
 
-const CAMPAIGN_COLORS: Record<string, string> = {
-  ACTIVE: 'bg-blue-500/10 text-blue-600', LIVE: 'bg-blue-500/10 text-blue-600',
-  COMPLETED: 'bg-green-500/10 text-green-600', DRAFT: 'bg-muted text-muted-foreground',
-  PAUSED: 'bg-amber-500/10 text-amber-600',
-}
-
-const fmt = (n: number) => `${n.toLocaleString('ro-RO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RON`
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-const fmtDateTime = (d: string) => new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-
-
-// ─── Copy helper ───────────────────────────────────────────────────────────────
-function CopyButton({ text }: { text: string }) {
+// ─── Copiere ───────────────────────────────────────────────────────────────────
+function CopyButton({ text, label }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false)
+  async function copy() {
+    try { await navigator.clipboard.writeText(text) } catch { /* unele browsere refuză; textul rămâne selectabil */ }
+    setCopied(true); setTimeout(() => setCopied(false), 1800)
+  }
   return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-      className="ml-2 text-muted-foreground hover:text-primary transition flex-shrink-0"
-      title="Copiază"
-    >
-      {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+    <button type="button" onClick={copy} className="tp-copy" aria-label={`Copiază ${label || ''}`.trim()}>
+      {copied ? <Check className="w-4 h-4" style={{ color: '#14804a' }} /> : <Copy className="w-4 h-4" />}
+      <span>{copied ? 'Copiat' : 'Copiază'}</span>
     </button>
   )
 }
@@ -168,7 +74,6 @@ function CopyButton({ text }: { text: string }) {
 // ─── Main ──────────────────────────────────────────────────────────────────────
 function BrandWalletPageInner() {
   const searchParams = useSearchParams()
-  const isLocked = searchParams.get('locked') === '1'
   const [wallet, setWallet] = useState<BrandWallet>({ credits_balance: 0, credits_reserved: 0, total_spent: 0, credits_expires_at: null })
   const [brand, setBrand] = useState<BrandInfo | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -178,26 +83,36 @@ function BrandWalletPageInner() {
   const [activeTab, setActiveTab] = useState<'transactions' | 'campaigns'>('transactions')
   const [filterType, setFilterType] = useState('ALL')
 
-  // Modal state machine: null | 'select_method' | 'enter_amount' | 'instructions' | 'success'
-  const [modal, setModal] = useState<null | 'select_method' | 'enter_amount' | 'instructions' | 'success'>(null)
-  const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
-  const [amount, setAmount] = useState<number | null>(null)
+  // Fereastra de încărcare: 'amount' (sumă + facturare) → 'transfer' (detalii plată, referință unică)
+  const [modal, setModal] = useState<null | 'amount' | 'transfer'>(null)
+  const [selectedMethod, setSelectedMethod] = useState<string>(PAYMENT_METHODS[0]?.id ?? 'bank_transfer')
+  const [amount, setAmount] = useState<number | null>(500)
   const [customAmount, setCustomAmount] = useState('')
   const [billingType, setBillingType] = useState<'pf' | 'pj'>('pj')
   const [billingName, setBillingName] = useState('')
   const [billingAddress, setBillingAddress] = useState('')
   const [billingVat, setBillingVat] = useState('')
   const [billingRegCom, setBillingRegCom] = useState('')
+  const [savedBilling, setSavedBilling] = useState<{ type: 'pf' | 'pj'; name: string; vat: string; address: string } | null>(null)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [successTx, setSuccessTx] = useState<Transaction | null>(null)
-
-  // Invoice viewer
+  const [requestTx, setRequestTx] = useState<Transaction | null>(null)
+  const [invoiceMsg, setInvoiceMsg] = useState<string | null>(null)
 
   useEffect(() => { fetchAll() }, [])
+  // ?topup=1 deschide direct încărcarea (din alte pagini)
+  useEffect(() => { if (searchParams.get('topup') === '1') setModal('amount') }, [searchParams])
+  // pe telefon: pagina din spate nu se mai derulează cât e deschisă fereastra
+  useEffect(() => {
+    if (!modal) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal() }
+    window.addEventListener('keydown', onKey)
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey) }
+  }, [modal])
 
   async function fetchAll() {
-    setLoading(true)
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -211,15 +126,11 @@ function BrandWalletPageInner() {
 
       if (!b) return
 
-      // Autofill billing din datele salvate în Settings → Facturare
-      if (b.billing_company || b.billing_cui) {
-        setBillingType('pj')
-        setBillingName(b.billing_company || b.name || '')
-        setBillingVat(b.billing_cui || '')
-        setBillingAddress(b.billing_address || '')
-      } else {
-        setBillingName(b.name || '')
-      }
+      // Datele de facturare salvate în Setări → Facturare
+      const saved = b.billing_company || b.billing_cui
+        ? { type: 'pj' as const, name: b.billing_company || b.name || '', vat: b.billing_cui || '', address: b.billing_address || '' }
+        : { type: 'pj' as const, name: b.name || '', vat: '', address: '' }
+      setSavedBilling(saved)
       setBrand(b)
       setWallet({ credits_balance: b.credits_balance ?? 0, credits_reserved: b.credits_reserved ?? 0, total_spent: b.total_spent ?? 0, credits_expires_at: b.credits_expires_at ?? null })
 
@@ -237,14 +148,30 @@ function BrandWalletPageInner() {
     }
   }
 
-  const resolvedAmount = amount ?? (customAmount ? parseFloat(customAmount) : 0)
-  const methodObj = PAYMENT_METHODS.find(m => m.id === selectedMethod)
+  function applySavedBilling() {
+    if (!savedBilling) return
+    setBillingType(savedBilling.type); setBillingName(savedBilling.name)
+    setBillingVat(savedBilling.vat); setBillingAddress(savedBilling.address); setBillingRegCom('')
+  }
+
+  function openTopup() {
+    applySavedBilling()
+    setAmount(500); setCustomAmount(''); setSubmitError(null); setRequestTx(null)
+    setModal('amount')
+  }
+
+  const customParsed = customAmount ? Number(customAmount.replace(/\s/g, '').replace(',', '.')) : NaN
+  const resolvedAmount = amount ?? (Number.isFinite(customParsed) ? Math.round(customParsed * 100) / 100 : 0)
+  const amountValid = resolvedAmount >= TOPUP_MIN && resolvedAmount <= TOPUP_MAX
+  const methodObj = PAYMENT_METHODS.find(m => m.id === selectedMethod) ?? PAYMENT_METHODS[0]
+  const isVerified = brand?.verification_status === 'verified'
 
   async function handleSubmitPayment() {
     setSubmitError(null)
-    if (!resolvedAmount || isNaN(resolvedAmount) || resolvedAmount < TOPUP_MIN) { setSubmitError(`Suma minimă este ${TOPUP_MIN} RON.`); return }
-    if (resolvedAmount > TOPUP_MAX) { setSubmitError(`Suma maximă este ${TOPUP_MAX.toLocaleString('ro-RO')} RON.`); return }
-    if (!selectedMethod) return
+    if (!amountValid) { setSubmitError(`Suma trebuie să fie între ${TOPUP_MIN} și ${TOPUP_MAX.toLocaleString('ro-RO')} RON.`); return }
+    if (!billingName.trim()) { setSubmitError(billingType === 'pj' ? 'Completează denumirea firmei.' : 'Completează numele complet.'); return }
+    if (billingType === 'pj' && !billingVat.trim()) { setSubmitError('CUI-ul este obligatoriu pentru firme.'); return }
+    if (billingType === 'pj' && !billingAddress.trim()) { setSubmitError('Adresa sediului este obligatorie pentru firme.'); return }
 
     setSubmitLoading(true)
     try {
@@ -253,26 +180,19 @@ function BrandWalletPageInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: resolvedAmount,
-          method: selectedMethod,
+          method: methodObj.id,
           billing: { type: billingType, name: billingName, address: billingAddress, vat: billingVat, reg_com: billingRegCom },
         }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-
-      const newTx: Transaction = {
-        id: data.transaction_id,
-        type: 'TOPUP',
-        amount: resolvedAmount,
-        description: `Credit top-up via ${methodObj?.label} — ${fmt(resolvedAmount)}`,
-        status: 'pending',
-        payment_method: selectedMethod,
-        invoice_number: data.invoice_number,
-        created_at: data.created_at,
-      }
-      setSuccessTx(newTx)
-      setModal('success')
-      await fetchAll()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Cererea nu a putut fi trimisă.')
+      setRequestTx({
+        id: data.transaction_id, type: 'TOPUP', amount: resolvedAmount,
+        description: `Încărcare credite — ${fmt(resolvedAmount)}`, status: 'pending',
+        payment_method: methodObj.id, invoice_number: data.invoice_number, created_at: data.created_at,
+      })
+      setModal('transfer')
+      fetchAll()
     } catch (err: any) {
       setSubmitError(err.message || 'Trimitere eșuată. Încearcă din nou.')
     } finally {
@@ -280,33 +200,33 @@ function BrandWalletPageInner() {
     }
   }
 
+  /** Reafișează detaliile de transfer pentru o cerere încă neconfirmată. */
+  function showTransfer(tx: Transaction) {
+    setRequestTx(tx)
+    if (tx.payment_method && PAYMENT_METHODS.some(m => m.id === tx.payment_method)) setSelectedMethod(tx.payment_method)
+    setModal('transfer')
+  }
+
   function openInvoice(tx: Transaction) {
-    if (!tx.smartbill_invoice_number) {
-      alert('Factura este în curs de generare. Încearcă din nou în câteva minute.')
+    if (!hasInvoice(tx)) {
+      setInvoiceMsg(tx.status === 'completed'
+        ? 'Factura se emite în câteva minute. Revino puțin mai târziu.'
+        : 'Factura se emite automat după ce confirmăm plata.')
+      setTimeout(() => setInvoiceMsg(null), 4000)
       return
     }
-    window.open(`/api/smartbill/invoice-pdf?transaction_id=${tx.id}`, '_blank')
-  }
-
-  function printInvoiceAsPDF(tx: Transaction) {
-    openInvoice(tx)
-  }
-
-  function downloadInvoiceHTML(tx: Transaction) {
-    openInvoice(tx)
+    window.open(`/api/smartbill/invoice-pdf?transaction_id=${tx.id}`, '_blank', 'noopener')
   }
 
   function closeModal() {
-    setModal(null); setSelectedMethod(null); setAmount(null); setCustomAmount('')
-    setBillingName(''); setBillingAddress(''); setBillingVat(''); setBillingRegCom(''); setBillingType('pj')
-    setSubmitError(null); setSuccessTx(null)
+    setModal(null); setSubmitError(null); setRequestTx(null)
   }
 
   function exportCSV() {
-    const rows = [['Date', 'Type', 'Description', 'Amount (RON)', 'Status', 'Invoice'],
-    ...transactions.map(tx => [fmtDate(tx.created_at), tx.type, `"${tx.description}"`,
-    Math.abs(tx.amount).toFixed(2), tx.status, tx.invoice_number ?? ''])]
-    const blob = new Blob([rows.map(r => r.join(',')).join('\n')], { type: 'text/csv' })
+    const rows = [['Data', 'Tip', 'Descriere', 'Suma (RON)', 'Status', 'Referință', 'Factură'],
+    ...transactions.map(tx => [fmtDate(tx.created_at), tx.type, `"${(tx.description || '').replace(/"/g, "'")}"`,
+    Math.abs(tx.amount).toFixed(2), tx.status, tx.invoice_number ?? '', hasInvoice(tx) ? tx.smartbill_invoice_number : ''])]
+    const blob = new Blob(['\ufeff' + rows.map(r => r.join(',')).join('\n')], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href = url
     a.download = `addfame-wallet-${new Date().toISOString().split('T')[0]}.csv`
@@ -319,7 +239,7 @@ function BrandWalletPageInner() {
     .filter(tx => (tx.type === 'SPEND' || tx.type === 'CAMPAIGN_FEE' || tx.type === 'ESCROW_LOCK') && new Date(tx.created_at) >= monthStart)
     .reduce((s, tx) => s + Math.abs(tx.amount), 0)
 
-  const pendingTx = transactions.filter(tx => tx.status === 'pending')
+  const pendingTx = transactions.filter(tx => tx.type === 'TOPUP' && tx.status === 'pending')
   const filteredTx = transactions.filter(tx => filterType === 'ALL' || tx.type === filterType)
 
   const TX_CHIP: Record<string, { bg: string; fg: string }> = {
@@ -327,7 +247,7 @@ function BrandWalletPageInner() {
     pending: { bg: '#fff1c2', fg: '#854d0e' },
     failed: { bg: '#fde8e6', fg: '#b42318' },
   }
-  const TX_STATUS_RO: Record<string, string> = { completed: 'Finalizat', pending: 'În așteptare', failed: 'Eșuat' }
+  const TX_STATUS_RO: Record<string, string> = { completed: 'Finalizat', pending: 'În așteptare', failed: 'Respins' }
   const TX_ICO: Record<string, { bg: string; fg: string }> = {
     TOPUP: { bg: '#dcf5ec', fg: '#14532d' },
     REFUND: { bg: '#e6f0ff', fg: '#1d4fb8' },
@@ -377,6 +297,79 @@ function BrandWalletPageInner() {
         .bw-ib { width: 44px; height: 44px; border-radius: 12px; border: 0; background: transparent; color: #6a6690; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
         .bw-ib:hover { background: #f7f4ff; color: #5a35e6; }
         .bw-empty { text-align: center; padding: 48px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .bw-inv { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 10px; border: 1.5px solid #e5e3f3; background: #fff; color: #4423c4; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .bw-inv:hover { background: #f7f4ff; border-color: #c9b9fb; }
+        .bw-inv.muted { color: #6a6690; }
+        .bw-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; background: #14123a; color: #fff; border-radius: 14px; padding: 12px 16px; font-size: 13.5px; font-weight: 600; box-shadow: 0 18px 40px -16px rgba(20,18,58,.6); max-width: calc(100vw - 32px); }
+
+        /* ── Fereastra de încărcare: centrată pe desktop, foaie de jos pe telefon ── */
+        .tp-ov { position: fixed; inset: 0; z-index: 60; background: rgba(20,18,58,.55); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .tp-sheet { width: 100%; max-width: 540px; max-height: min(92vh, 860px); background: #fff; border-radius: 24px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 40px 80px -30px rgba(20,18,58,.55); color: #14123a; }
+        .tp-head { display: flex; align-items: center; gap: 10px; padding: 18px 20px 14px; border-bottom: 1px solid #eeecf7; flex: none; }
+        .tp-head h2 { margin: 0; font-size: 18px; font-weight: 800; }
+        .tp-steps { display: flex; gap: 6px; margin-top: 6px; }
+        .tp-steps i { height: 4px; width: 22px; border-radius: 9px; background: #eeecf7; }
+        .tp-steps i.on { background: linear-gradient(90deg, #2f6fe0, #5a35e6); width: 34px; }
+        .tp-x { width: 40px; height: 40px; border-radius: 12px; border: 0; background: #f6f6fc; color: #4a4770; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+        .tp-x:hover { background: #efeaff; color: #4423c4; }
+        .tp-body { padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+        .tp-foot { padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid #eeecf7; background: #fff; flex: none; display: flex; flex-direction: column; gap: 8px; }
+        .tp-foot .bu-btn { width: 100%; }
+        .tp-sec { display: flex; flex-direction: column; gap: 10px; }
+        .tp-amts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+        .tp-amt { position: relative; height: 52px; border-radius: 14px; border: 1.5px solid #e5e3f3; background: #fff; font: inherit; font-weight: 800; font-size: 15px; color: #14123a; cursor: pointer; font-variant-numeric: tabular-nums; }
+        .tp-amt:hover { border-color: #c9b9fb; }
+        .tp-amt.on { border-color: #5a35e6; background: #f4f0ff; color: #4423c4; box-shadow: 0 0 0 3px rgba(90,53,230,.12); }
+        .tp-amt .pop { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); background: #5a35e6; color: #fff; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; padding: 2px 8px; border-radius: 99px; }
+        .tp-money { display: flex; align-items: center; border: 1.5px solid #e5e3f3; border-radius: 14px; height: 52px; padding: 0 14px; gap: 8px; background: #fff; }
+        .tp-money:focus-within { border-color: #5a35e6; box-shadow: 0 0 0 3px rgba(90,53,230,.1); }
+        .tp-money input { border: 0; outline: 0; font: inherit; font-size: 17px; font-weight: 700; flex: 1; min-width: 0; color: #14123a; background: transparent; font-variant-numeric: tabular-nums; }
+        .tp-money span { color: #8783a8; font-weight: 700; font-size: 14px; }
+        .tp-seg { display: grid; grid-template-columns: 1fr 1fr; background: #f6f6fc; border-radius: 12px; padding: 4px; gap: 4px; }
+        .tp-seg button { height: 40px; border: 0; border-radius: 9px; background: transparent; font: inherit; font-weight: 700; font-size: 14px; color: #6a6690; cursor: pointer; }
+        .tp-seg button.on { background: #fff; color: #14123a; box-shadow: 0 1px 3px rgba(20,18,58,.12); }
+        .tp-field { display: flex; flex-direction: column; gap: 6px; }
+        .tp-field label { font-size: 12.5px; font-weight: 700; color: #4a4770; }
+        .tp-field label em { font-style: normal; font-weight: 500; color: #8783a8; }
+        .tp-field .bu-input { width: 100%; height: 46px; }
+        .tp-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .tp-sum { border-radius: 16px; background: #f7f4ff; border: 1px solid #e0d6ff; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+        .tp-sum div { display: flex; justify-content: space-between; gap: 10px; }
+        .tp-sum b { font-variant-numeric: tabular-nums; }
+        .tp-method { display: flex; align-items: center; gap: 12px; border: 1.5px solid #e5e3f3; border-radius: 14px; padding: 12px 14px; background: #fff; font: inherit; text-align: left; cursor: pointer; width: 100%; color: #14123a; }
+        .tp-method.on { border-color: #5a35e6; background: #f4f0ff; }
+        .tp-method.off { cursor: not-allowed; opacity: .6; border-style: dashed; }
+        .tp-method p { margin: 0; }
+        .tp-alert { display: flex; gap: 10px; align-items: flex-start; border-radius: 14px; padding: 12px 14px; font-size: 13px; line-height: 1.5; }
+        .tp-alert p { margin: 0; }
+        .tp-hero { border-radius: 18px; background: #14123a; color: #fff; padding: 18px; display: flex; flex-direction: column; gap: 4px; position: relative; overflow: hidden; }
+        .tp-hero::after { content: ''; position: absolute; right: -60px; top: -70px; width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #22c8f0, #7040f0); opacity: .35; filter: blur(36px); }
+        .tp-hero > * { position: relative; }
+        .tp-hero .v { font-family: var(--font-display, system-ui), system-ui, sans-serif; font-weight: 800; font-size: 32px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+        .tp-rows { border: 1px solid #e5e3f3; border-radius: 16px; overflow: hidden; }
+        .tp-r { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid #eeecf7; }
+        .tp-r:first-child { border-top: 0; }
+        .tp-r .k { font-size: 12px; color: #6a6690; font-weight: 600; width: 92px; flex: none; }
+        .tp-r .val { flex: 1; min-width: 0; font-weight: 700; font-size: 14.5px; word-break: break-word; font-variant-numeric: tabular-nums; user-select: all; }
+        .tp-r.ref { background: #f7f4ff; }
+        .tp-r.ref .val { color: #4423c4; font-size: 16px; letter-spacing: .02em; }
+        .tp-copy { display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 10px; border-radius: 10px; border: 1.5px solid #e5e3f3; background: #fff; color: #4a4770; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; flex: none; }
+        .tp-copy:hover { border-color: #c9b9fb; color: #4423c4; }
+        .tp-ol { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: #4a4770; }
+        @media (max-width: 560px) {
+          .tp-ov { padding: 0; align-items: flex-end; }
+          .tp-sheet { max-width: none; border-radius: 22px 22px 0 0; max-height: 94dvh; animation: tpUp .22s ease-out; }
+          .tp-head { padding: 10px 16px 12px; flex-wrap: wrap; }
+          .tp-head::before { content: ''; flex-basis: 100%; height: 4px; margin: 0 auto 6px; max-width: 40px; border-radius: 9px; background: #d8d5ec; }
+          .tp-body { padding: 16px; }
+          .tp-foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+          .tp-two { grid-template-columns: 1fr; }
+          .tp-field .bu-input, .tp-money input { font-size: 16px; } /* fără zoom automat pe iPhone */
+          .tp-r { flex-wrap: wrap; } .tp-r .k { width: 100%; }
+          .tp-hero .v { font-size: 28px; }
+          .bw-tx > .bw-inv { margin-left: 52px; }
+        }
+        @keyframes tpUp { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
         @media (max-width: 860px) { .bw-grid { grid-template-columns: minmax(0,1fr); } .bw-stats { grid-template-rows: none; grid-template-columns: 1fr 1fr; } }
         @media (max-width: 560px) {
           .bw-bal { font-size: 36px; } .bw-wallet { padding: 20px; } .bw-cta { width: 100%; }
@@ -395,19 +388,19 @@ function BrandWalletPageInner() {
         </div>
       </div>
 
-      {/* Pending alert */}
+      {/* Încărcări în așteptare */}
       {pendingTx.length > 0 && (
-        <div className="bw-banner" style={{ background: '#fff8dc', border: '1px solid #f3dc8a', alignItems: 'center' }}>
+        <div className="bw-banner" style={{ background: '#fff8dc', border: '1px solid #f3dc8a', alignItems: 'center', flexWrap: 'wrap' }}>
           <div className="bu-ico" style={{ background: '#fff1c2', color: '#854d0e' }}><Clock className="w-5 h-5" /></div>
-          <div style={{ flex: 1, minWidth: 0, color: '#854d0e' }}>
+          <div style={{ flex: '1 1 220px', minWidth: 0, color: '#854d0e' }}>
             <p style={{ margin: 0, fontWeight: 800, fontSize: 14 }}>
-              {pendingTx.length} {pendingTx.length > 1 ? 'plăți' : 'plată'} în așteptarea confirmării
+              {pendingTx.length > 1 ? `${pendingTx.length} încărcări așteaptă confirmarea` : `${fmt(pendingTx[0].amount)} așteaptă confirmarea`}
             </p>
             <p className="bu-xs" style={{ margin: '2px 0 0' }}>
-              Creditele vor fi adăugate după verificarea transferului. Referință: {pendingTx[0]?.invoice_number}
+              Adăugăm creditele după ce transferul ajunge în cont (de obicei în 1 zi lucrătoare). Referință: <b>{pendingTx[0]?.invoice_number}</b>
             </p>
           </div>
-          <button onClick={fetchAll} className="bu-btn">Reîmprospătează</button>
+          <button onClick={() => showTransfer(pendingTx[0])} className="bu-btn">Detalii transfer</button>
         </div>
       )}
 
@@ -447,7 +440,7 @@ function BrandWalletPageInner() {
             </div>
           )}
 
-          <button onClick={() => setModal('select_method')} className="bw-cta"><Plus className="w-4 h-4" /> Adaugă credite</button>
+          <button onClick={() => openTopup()} className="bw-cta"><Plus className="w-4 h-4" /> Adaugă credite</button>
         </div>
 
         <div className="bw-stats">
@@ -483,9 +476,10 @@ function BrandWalletPageInner() {
           <div className="bu-row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
             <select value={filterType} onChange={e => setFilterType(e.target.value)} className="bu-input bw-select" style={{ height: 44 }}>
               <option value="ALL">Toate tranzacțiile</option>
-              <option value="TOPUP">Top-ups</option>
-              <option value="SPEND">Cheltuieli</option>
-              <option value="REFUND">Refunds</option>
+              <option value="TOPUP">Încărcări</option>
+              <option value="CAMPAIGN_FEE">Taxe campanii</option>
+              <option value="ESCROW_LOCK">Plăți influenceri blocate</option>
+              <option value="REFUND">Returnări</option>
             </select>
             {transactions.length > 0 && (
               <button className="bu-btn" style={{ height: 44 }} onClick={exportCSV}>
@@ -499,7 +493,7 @@ function BrandWalletPageInner() {
               <div className="bu-ico" style={{ background: '#efeaff', color: '#4423c4', width: 56, height: 56, borderRadius: 16 }}><Wallet className="w-6 h-6" /></div>
               <h3>Nicio tranzacție încă</h3>
               <p className="bu-muted bu-sm" style={{ margin: 0 }}>Adaugă credite pentru a lansa campanii</p>
-              <button onClick={() => setModal('select_method')} className="bu-btn p big" style={{ marginTop: 8 }}>Adaugă credite</button>
+              <button onClick={() => openTopup()} className="bu-btn p big" style={{ marginTop: 8 }}>Adaugă credite</button>
             </div>
           ) : (
             <div>
@@ -518,7 +512,7 @@ function BrandWalletPageInner() {
                       <p className="bu-xs bu-muted">
                         {fmtDateTime(tx.created_at)}
                         {method && ` · ${method.label}`}
-                        {tx.invoice_number && ` · ${tx.invoice_number}`}
+                        {tx.type === 'TOPUP' && tx.invoice_number && ` · Ref. ${tx.invoice_number}`}
                       </p>
                     </div>
                     <div className="bw-tx-r">
@@ -532,11 +526,14 @@ function BrandWalletPageInner() {
                         {TX_STATUS_RO[tx.status] ?? tx.status}
                       </span>
                     </div>
-                    {tx.invoice_number && (
-                      <div className="bu-row">
-                        <button onClick={() => openInvoice(tx)} title="Vezi factura" className="bw-ib"><FileText className="w-4 h-4" /></button>
-                        <button onClick={() => printInvoiceAsPDF(tx)} title="Descarcă PDF" className="bw-ib"><Download className="w-4 h-4" /></button>
-                      </div>
+                    {tx.type === 'TOPUP' && tx.status === 'completed' && (
+                      <button onClick={() => openInvoice(tx)} className={`bw-inv${hasInvoice(tx) ? '' : ' muted'}`}>
+                        <FileText className="w-4 h-4" />
+                        {hasInvoice(tx) ? `Factura ${tx.smartbill_invoice_number}` : 'Factura în curs'}
+                      </button>
+                    )}
+                    {tx.type === 'TOPUP' && tx.status === 'pending' && (
+                      <button onClick={() => showTransfer(tx)} className="bw-inv"><Building2 className="w-4 h-4" /> Detalii transfer</button>
                     )}
                   </div>
                 )
@@ -598,369 +595,178 @@ function BrandWalletPageInner() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* MODAL OVERLAY                                                          */}
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {modal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
 
-            {/* Modal header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-border sticky top-0 bg-card z-10 rounded-t-3xl">
-              <div className="flex items-center gap-2">
-                {modal !== 'select_method' && modal !== 'success' && (
-                  <button onClick={() => setModal(modal === 'instructions' ? 'enter_amount' : modal === 'enter_amount' ? 'select_method' : 'select_method')}
-                    className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground mr-1">
-                    <ChevronRight className="w-4 h-4 rotate-180" />
-                  </button>
-                )}
-                <div>
-                  <h2 className="font-bold text-base">
-                    {modal === 'select_method' && 'Alege metoda de plată'}
-                    {modal === 'enter_amount' && `Plătește via ${methodObj?.label}`}
-                    {modal === 'instructions' && 'Instrucțiuni transfer'}
-                    {modal === 'success' && 'Cerere înregistrată'}
-                  </h2>
-                  {modal !== 'success' && (
-                    <div className="flex items-center gap-1.5 mt-1">
-                      {['select_method', 'enter_amount', 'instructions'].map((s, i) => (
-                        <div key={s} className={`h-1 rounded-full transition-all ${modal === s ? 'w-6 bg-primary' : i < ['select_method', 'enter_amount', 'instructions'].indexOf(modal) ? 'w-3 bg-primary/50' : 'w-3 bg-muted'}`} />
-                      ))}
-                    </div>
-                  )}
-                </div>
+      {invoiceMsg && <div className="bw-toast" role="status">{invoiceMsg}</div>}
+
+      {/* ══ Încărcare credite ══════════════════════════════════════════════ */}
+      {modal && (
+        <div className="tp-ov" onClick={e => { if (e.target === e.currentTarget) closeModal() }}>
+          <div className="tp-sheet" role="dialog" aria-modal="true" aria-labelledby="tp-title">
+            <div className="tp-head">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2 id="tp-title">{modal === 'amount' ? 'Adaugă credite' : 'Fă transferul'}</h2>
+                <div className="tp-steps" aria-hidden><i className="on" /><i className={modal === 'transfer' ? 'on' : ''} /></div>
               </div>
-              <button onClick={closeModal} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground transition">
-                <X className="w-4 h-4" />
-              </button>
+              <button className="tp-x" onClick={closeModal} aria-label="Închide"><X className="w-4 h-4" /></button>
             </div>
 
-            {/* ── Step 1: Select method ─────────────────────────────────────── */}
-            {modal === 'select_method' && (
-              <div className="p-6 space-y-3">
-                {/* Banner securitate */}
-                <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 mb-2">
-                  <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-black text-blue-800">Pentru siguranța dumneavoastră</p>
-                    <p className="text-xs text-blue-700 mt-0.5 leading-relaxed">
-                      Echipa AddFame <strong>nu vă va solicita niciodată</strong> date bancare prin telefon, email sau chat. Toate plățile se fac exclusiv prin platformă.
-                      Dacă aveți nelămuriri, contactați-ne la{' '}
-                      <a href="mailto:ciprian@addfame.ro" className="underline font-bold">ciprian@addfame.ro</a>{' '}
-                      sau <a href="tel:+40724796883" className="underline font-bold">+40 724 796 883</a>.
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">Alege cum vrei să încarci credite în contul tău AddFame.</p>
-
-                {/* Card bancar — în curând */}
-                <div className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-gray-200 bg-gray-50 rounded-xl opacity-60 cursor-not-allowed relative">
-                  <span className="absolute top-2 right-3 text-[10px] font-black bg-gray-400 text-white px-2 py-0.5 rounded-full">ÎN CURÂND</span>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100">
-                    <CreditCard className="w-5 h-5 text-gray-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-black text-sm text-gray-400">Card bancar</p>
-                    <p className="text-xs text-gray-400">Visa, Mastercard · în curând disponibil</p>
-                  </div>
-                </div>
-
-                {/* Transfer bancar și alte metode */}
-                {PAYMENT_METHODS.map(m => {
-                  const Icon = m.icon
-                  return (
-                    <button key={m.id} onClick={() => { setSelectedMethod(m.id); setModal('enter_amount') }}
-                      className="w-full flex items-center gap-4 p-4 border-2 border-border rounded-xl hover:border-primary/50 hover:bg-muted/30 transition text-left group">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${m.bg}`}>
-                        <Icon className={`w-5 h-5 ${m.color}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm">{m.label}</p>
-                        <p className="text-xs text-muted-foreground">{m.description}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition" />
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* ── Step 2: Enter amount + billing ───────────────────────────── */}
-            {modal === 'enter_amount' && methodObj && (
-              <div className="p-6 space-y-5">
-                {/* Balance */}
-                <div className="flex items-center justify-between bg-muted/40 rounded-xl px-4 py-3">
-                  <div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Current balance</span></div>
-                  <span className="font-bold text-primary">{fmt(wallet.credits_balance)}</span>
-                </div>
-
-                {brand?.verification_status !== 'verified' && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-                    <span className="text-lg flex-shrink-0">⚠️</span>
-                    <div>
-                      <p className="text-sm font-black text-amber-800">Cont neverificat</p>
-                      <p className="text-xs text-amber-700 mt-0.5">Trebuie să îți verifici contul înainte de a adăuga credite. Mergi la <a href="/brand/verify" className="underline font-bold">Verificare cont</a> pentru a trimite documentele.</p>
+            {/* ── Pasul 1: suma și datele de facturare ── */}
+            {modal === 'amount' && (
+              <>
+                <div className="tp-body">
+                  {!isVerified && (
+                    <div className="tp-alert" style={{ background: '#fff8dc', border: '1px solid #f3dc8a', color: '#854d0e' }}>
+                      <AlertCircle className="w-4 h-4" style={{ flex: 'none', marginTop: 2 }} />
+                      <p><b>Contul nu e verificat încă.</b> Poți încărca credite după verificare. <a href="/brand/verify" style={{ color: 'inherit', fontWeight: 800 }}>Verifică acum →</a></p>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {submitError && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 flex items-center gap-2 text-sm text-destructive">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {submitError}
+                  <div className="tp-sec">
+                    <span className="bu-label">Suma</span>
+                    <div className="tp-amts">
+                      {PRESET_AMOUNTS.map(v => (
+                        <button key={v} type="button" onClick={() => { setAmount(v); setCustomAmount('') }} className={`tp-amt${amount === v ? ' on' : ''}`}>
+                          {v === POPULAR && <span className="pop">POPULAR</span>}
+                          {v.toLocaleString('ro-RO')}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="tp-money">
+                      <input inputMode="decimal" placeholder="Altă sumă" aria-label="Altă sumă în RON"
+                        value={customAmount} onChange={e => { setCustomAmount(e.target.value.replace(/[^0-9.,]/g, '')); setAmount(null) }} />
+                      <span>RON</span>
+                    </div>
+                    <p className="bu-xs bu-muted" style={{ margin: 0 }}>Între {TOPUP_MIN} și {TOPUP_MAX.toLocaleString('ro-RO')} RON · creditele sunt valabile 6 luni</p>
                   </div>
-                )}
 
-                {/* Preset grid */}
-                <div>
-                  <label className="block text-sm font-semibold mb-3">Selectează suma</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {PRESET_AMOUNTS.map(({ value, popular }) => (
-                      <button key={value} type="button" onClick={() => { setAmount(value); setCustomAmount('') }}
-                        className={`relative p-3.5 min-h-[48px] rounded-xl border-2 text-sm font-bold transition ${amount === value ? 'border-[#5a35e6] bg-[#efeaff] text-[#4423c4]' : 'border-[#e5e3f3] hover:border-[#c9b9fb]'}`}>
-                        {popular && <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary to-accent text-white text-[9px] font-bold px-2 py-0.5 rounded-full">POPULAR</span>}
-                        {value.toLocaleString('ro-RO')} RON
+                  <div className="tp-sec">
+                    <span className="bu-label">Metoda de plată</span>
+                    {PAYMENT_METHODS.map(m => (
+                      <button key={m.id} type="button" onClick={() => setSelectedMethod(m.id)} className={`tp-method${methodObj.id === m.id ? ' on' : ''}`}>
+                        <div className="bu-ico" style={{ background: '#e6f0ff', color: '#1d4fb8' }}><Building2 className="w-5 h-5" /></div>
+                        <div style={{ flex: 1, minWidth: 0 }}><p style={{ fontWeight: 700, fontSize: 14 }}>{m.label}</p><p className="bu-xs bu-muted">{m.sub}</p></div>
+                        {methodObj.id === m.id && <CheckCircle className="w-5 h-5" style={{ color: '#5a35e6' }} />}
                       </button>
                     ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Sau introdu o sumă personalizată</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold select-none">RON </span>
-                    <Input type="number" className="pl-8 h-11" placeholder="0.00" min={10} max={50000} step="0.01"
-                      value={customAmount} onChange={e => { setCustomAmount(e.target.value); setAmount(null) }} />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">Minim {TOPUP_MIN} RON · Maxim {TOPUP_MAX.toLocaleString('ro-RO')} RON</p>
-                </div>
-
-                {/* Preview */}
-                {resolvedAmount > 0 && (
-                  <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-xl p-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Credite adăugate</span>
-                      <span className="font-semibold">{fmt(resolvedAmount)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm border-t border-primary/10 pt-2">
-                      <span className="font-bold">Total de plătit</span>
-                      <span className="font-black text-primary text-base">{fmt(resolvedAmount)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm border-t border-primary/10 pt-2">
-                      <span className="text-muted-foreground">Sold după încărcare</span>
-                      <span className="font-bold text-green-600">{fmt(wallet.credits_balance + resolvedAmount)}</span>
+                    <div className="tp-method off" aria-disabled>
+                      <div className="bu-ico" style={{ background: '#f0eff7', color: '#8783a8' }}><CreditCard className="w-5 h-5" /></div>
+                      <div style={{ flex: 1, minWidth: 0 }}><p style={{ fontWeight: 700, fontSize: 14 }}>Card bancar</p><p className="bu-xs bu-muted">Visa, Mastercard</p></div>
+                      <span className="bu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}>În curând</span>
                     </div>
                   </div>
-                )}
 
-                {/* Billing */}
-                <div className="border border-border rounded-xl p-4 space-y-3">
-                  <p className="text-sm font-semibold">Date Facturare</p>
-
-                  {/* Toggle PF / PJ */}
-                  <div className="flex rounded-lg border border-border overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setBillingType('pf')}
-                      className={`flex-1 py-2 text-sm font-semibold transition ${billingType === 'pf' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
-                    >
-                      Persoană Fizică
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBillingType('pj')}
-                      className={`flex-1 py-2 text-sm font-semibold transition ${billingType === 'pj' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
-                    >
-                      Persoană Juridică
-                    </button>
+                  <div className="tp-sec">
+                    <span className="bu-label">Date pentru factură</span>
+                    <div className="tp-seg" role="tablist">
+                      <button type="button" className={billingType === 'pj' ? 'on' : ''} onClick={() => setBillingType('pj')}>Firmă</button>
+                      <button type="button" className={billingType === 'pf' ? 'on' : ''} onClick={() => setBillingType('pf')}>Persoană fizică</button>
+                    </div>
+                    {billingType === 'pj' ? (
+                      <>
+                        <div className="tp-field">
+                          <label htmlFor="tp-name">Denumire firmă</label>
+                          <input id="tp-name" className="bu-input" placeholder="FIRMA SRL" autoComplete="organization" value={billingName} onChange={e => setBillingName(e.target.value)} />
+                        </div>
+                        <div className="tp-two">
+                          <div className="tp-field">
+                            <label htmlFor="tp-cui">CUI</label>
+                            <input id="tp-cui" className="bu-input" placeholder="RO12345678" value={billingVat} onChange={e => setBillingVat(e.target.value)} />
+                          </div>
+                          <div className="tp-field">
+                            <label htmlFor="tp-reg">Nr. Reg. Comerțului <em>(opțional)</em></label>
+                            <input id="tp-reg" className="bu-input" placeholder="J40/1234/2020" value={billingRegCom} onChange={e => setBillingRegCom(e.target.value)} />
+                          </div>
+                        </div>
+                        <div className="tp-field">
+                          <label htmlFor="tp-addr">Adresa sediului</label>
+                          <input id="tp-addr" className="bu-input" placeholder="Strada, nr., oraș, județ" autoComplete="street-address" value={billingAddress} onChange={e => setBillingAddress(e.target.value)} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="tp-field">
+                          <label htmlFor="tp-pname">Nume complet</label>
+                          <input id="tp-pname" className="bu-input" placeholder="Ion Popescu" autoComplete="name" value={billingName} onChange={e => setBillingName(e.target.value)} />
+                        </div>
+                        <div className="tp-two">
+                          <div className="tp-field">
+                            <label htmlFor="tp-cnp">CNP <em>(opțional)</em></label>
+                            <input id="tp-cnp" className="bu-input" inputMode="numeric" placeholder="13 cifre" value={billingVat} onChange={e => setBillingVat(e.target.value)} />
+                          </div>
+                          <div className="tp-field">
+                            <label htmlFor="tp-paddr">Adresa <em>(opțional)</em></label>
+                            <input id="tp-paddr" className="bu-input" placeholder="Oraș, județ" value={billingAddress} onChange={e => setBillingAddress(e.target.value)} />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    <p className="bu-xs bu-muted" style={{ margin: 0 }}>Factura fiscală (seria ADDF) se emite pe aceste date după confirmarea plății. Le poți salva în Setări → Facturare.</p>
                   </div>
 
-                  {billingType === 'pf' ? (
-                    <>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">Nume Complet *</label>
-                        <Input placeholder="Ion Popescu" value={billingName} onChange={e => setBillingName(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">CNP <span className="text-muted-foreground">(opțional)</span></label>
-                        <Input placeholder="1234567890123" value={billingVat} onChange={e => setBillingVat(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">Denumire Firmă *</label>
-                        <Input placeholder={brand?.name ?? 'FIRMA SRL'} value={billingName} onChange={e => setBillingName(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">CUI / CIF *</label>
-                        <Input placeholder="ex: RO43782172" value={billingVat} onChange={e => setBillingVat(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">Adresă Sediu *</label>
-                        <Input placeholder="Strada, Nr., Oraș, Județ" value={billingAddress} onChange={e => setBillingAddress(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">Reg. Comerțului <span className="text-muted-foreground">(opțional)</span></label>
-                        <Input placeholder="ex: J40/1234/2020" value={billingRegCom} onChange={e => setBillingRegCom(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                    </>
+                  {submitError && (
+                    <div className="tp-alert" style={{ background: '#fde8e6', border: '1px solid #f3c9c4', color: '#b42318' }}>
+                      <AlertCircle className="w-4 h-4" style={{ flex: 'none', marginTop: 2 }} /><p>{submitError}</p>
+                    </div>
                   )}
                 </div>
 
-                <Button className="w-full h-12 bg-gradient-to-r from-primary to-accent font-semibold text-base"
-                  onClick={() => {
-                    if (!resolvedAmount || resolvedAmount < TOPUP_MIN) { setSubmitError(`Suma minimă este ${TOPUP_MIN} RON.`); return }
-                    setSubmitError(null)
-                    if (!billingName.trim()) { setSubmitError('Completează numele pentru factură.'); return }
-                    if (billingType === 'pj' && !billingVat.trim()) { setSubmitError('CUI-ul este obligatoriu pentru persoane juridice.'); return }
-                    if (billingType === 'pj' && !billingAddress.trim()) { setSubmitError('Adresa sediului este obligatorie pentru persoane juridice.'); return }
-                    setModal('instructions')
-                  }}
-                  disabled={resolvedAmount < TOPUP_MIN}>
-                  {resolvedAmount > 0 ? `Vezi instrucțiuni de plată — ${fmt(resolvedAmount)}` : 'Selectează o sumă'}
-                </Button>
-              </div>
+                <div className="tp-foot">
+                  {amountValid && (
+                    <div className="bu-row bu-sm" style={{ justifyContent: 'space-between', gap: 10 }}>
+                      <span className="bu-muted">Sold după încărcare</span>
+                      <b style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(wallet.credits_balance + resolvedAmount)}</b>
+                    </div>
+                  )}
+                  <button className="bu-btn p big" onClick={handleSubmitPayment} disabled={submitLoading || !amountValid || !isVerified}>
+                    {submitLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Se pregătește…</>
+                      : amountValid ? `Continuă — plătești ${fmt(resolvedAmount)}` : 'Alege o sumă'}
+                  </button>
+                </div>
+              </>
             )}
 
-            {/* ── Step 3: Instrucțiuni plată + confirmare ───────────────────── */}
-            {modal === 'instructions' && methodObj && (
-              <div className="p-6 space-y-5">
+            {/* ── Pasul 2: detaliile transferului, cu referința unică ── */}
+            {modal === 'transfer' && requestTx && (
+              <>
+                <div className="tp-body">
+                  <div className="tp-hero">
+                    <span className="bw-lbl">De plătit</span>
+                    <span className="v">{fmt(requestTx.amount)}</span>
+                    <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,.75)' }}>Trimite exact această sumă, cu referința de mai jos.</span>
+                  </div>
 
-                {/* Sumar comandă */}
-                <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">Suma de plătit</p>
-                    <p className="text-2xl font-black text-primary">{fmt(resolvedAmount ?? 0)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground mb-0.5">Metoda</p>
-                    <p className="font-bold text-sm">{methodObj.label}</p>
-                  </div>
-                </div>
-
-                {/* Instrucțiuni transfer */}
-                <div className="border-2 border-primary/20 rounded-2xl overflow-hidden">
-                  <div className={`flex items-center gap-3 px-4 py-3 ${methodObj.bg}`}>
-                    <methodObj.icon className={`w-5 h-5 ${methodObj.color}`} />
-                    <p className="font-black text-sm">Detalii transfer — trimite exact suma de mai sus</p>
-                  </div>
-                  <div className="p-4 space-y-3">
-                    {Object.entries(methodObj.details).filter(([, v]) => !String(v).startsWith('←')).map(([key, val]) => (
-                      <div key={key} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                        <span className="text-xs text-muted-foreground font-medium">{key}</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-black">{String(val)}</span>
-                          <CopyButton text={String(val)} />
-                        </div>
-                      </div>
+                  <div className="tp-rows">
+                    {methodObj.details.map(([k, v]) => (
+                      <div key={k} className="tp-r"><span className="k">{k}</span><span className="val">{v}</span><CopyButton text={k === 'IBAN' ? v.replace(/\s/g, '') : v} label={k} /></div>
                     ))}
-                    {/* Referință — brandul pune numele lui */}
-                    <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                      <span className="text-xs text-muted-foreground font-medium">Referință plată</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-black text-primary">AddFame - {billingName}</span>
-                        <CopyButton text={`AddFame - ${billingName}`} />
-                      </div>
-                    </div>
+                    <div className="tp-r"><span className="k">Suma</span><span className="val">{requestTx.amount.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON</span><CopyButton text={requestTx.amount.toFixed(2)} label="suma" /></div>
+                    <div className="tp-r ref"><span className="k">Referință / detalii plată</span><span className="val">{requestTx.invoice_number}</span><CopyButton text={requestTx.invoice_number || ''} label="referința" /></div>
                   </div>
-                  <div className="px-4 pb-4">
-                    <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
-                      <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-700 font-medium">{methodObj.note}</p>
-                    </div>
+
+                  <div className="tp-alert" style={{ background: '#f7f4ff', border: '1px solid #e0d6ff', color: '#14123a' }}>
+                    <Info className="w-4 h-4" style={{ flex: 'none', marginTop: 2, color: '#5a35e6' }} />
+                    <ol className="tp-ol">
+                      <li>Scrie referința <b>{requestTx.invoice_number}</b> la detaliile plății — așa o găsim imediat.</li>
+                      <li>Adăugăm creditele după ce banii ajung în cont (de obicei în 1 zi lucrătoare) și primești notificare.</li>
+                      <li>Factura fiscală <b>seria ADDF</b> apare apoi în Wallet → Tranzacții.</li>
+                    </ol>
                   </div>
-                </div>
 
-                {submitError && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 flex items-center gap-2 text-sm text-destructive">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {submitError}
-                  </div>
-                )}
-
-                {/* Buton confirmare */}
-                <Button className="w-full h-12 bg-gradient-to-r from-primary to-accent font-black text-base"
-                  onClick={handleSubmitPayment} disabled={submitLoading}>
-                  {submitLoading
-                    ? <span className="flex items-center gap-2"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />Se procesează…</span>
-                    : '✅ Am trimis plata — înregistrează cererea'}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  Apasă doar după ce ai efectuat transferul. Creditele apar în cont după verificare (1-3 zile lucrătoare).
-                </p>
-              </div>
-            )}
-
-            {/* ── Step 4: Success ───────────────────────────────────────────── */}
-            {modal === 'success' && successTx && methodObj && (
-              <div className="p-6 space-y-5">
-
-                {/* Success banner */}
-                <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 rounded-xl p-4">
-                  <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold text-sm text-green-700">Payment request created</p>
-                    <p className="text-xs text-green-600 mt-0.5">Invoice {successTx.invoice_number} · Credits added once payment confirmed</p>
+                  <div className="tp-alert" style={{ background: '#f6f6fc', color: '#4a4770' }}>
+                    <Shield className="w-4 h-4" style={{ flex: 'none', marginTop: 2 }} />
+                    <p className="bu-xs">AddFame nu îți cere niciodată date bancare prin telefon, email sau chat. Întrebări: <b style={{ userSelect: 'all' }}>ciprian@addfame.ro</b> · <b style={{ userSelect: 'all' }}>+40 724 796 883</b></p>
                   </div>
                 </div>
 
-                {/* Invoice number highlight */}
-                <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-xl p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Numărul Facturii Tale</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-2xl font-bold text-primary">{successTx.invoice_number}</p>
-                    <CopyButton text={successTx.invoice_number!} />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">Include-l în referința plății tale</p>
+                <div className="tp-foot">
+                  <button className="bu-btn p big" onClick={closeModal}><CheckCircle className="w-4 h-4" /> Am înțeles</button>
+                  <p className="bu-xs bu-muted" style={{ margin: 0, textAlign: 'center' }}>Cererea e salvată — găsești oricând aceste detalii în Wallet.</p>
                 </div>
-
-                {/* Payment instructions */}
-                <div className="border border-border rounded-xl overflow-hidden">
-                  <div className={`flex items-center gap-3 px-4 py-3 ${methodObj.bg} border-b ${methodObj.border}`}>
-                    <methodObj.icon className={`w-4 h-4 ${methodObj.color}`} />
-                    <p className="font-semibold text-sm">{methodObj.label} — Payment Details</p>
-                  </div>
-                  <div className="p-4 space-y-2.5">
-                    {Object.entries(methodObj.details).map(([key, val]) => {
-                      const isRef = String(val).startsWith('←')
-                      const displayVal = isRef ? successTx.invoice_number! : String(val)
-                      return (
-                        <div key={key} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                          <span className="text-xs text-muted-foreground">{key}</span>
-                          <div className="flex items-center gap-1 max-w-[60%]">
-                            <span className={`text-sm font-semibold text-right ${isRef ? 'text-primary' : ''}`}>{displayVal}</span>
-                            <CopyButton text={displayVal} />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <div className="px-4 pb-4">
-                    <div className="flex items-start gap-2 bg-amber-500/10 rounded-lg p-3">
-                      <Info className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-700">{methodObj.note}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Invoice actions */}
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="w-full" onClick={() => openInvoice(successTx)}>
-                    <FileText className="w-4 h-4 mr-2" /> Vezi factura
-                  </Button>
-                  <Button variant="outline" className="w-full" onClick={() => printInvoiceAsPDF(successTx)}>
-                    <Download className="w-4 h-4 mr-2" /> Descarcă PDF
-                  </Button>
-                </div>
-
-                <Button className="w-full bg-gradient-to-r from-primary to-accent" onClick={closeModal}>
-                  Gata
-                </Button>
-              </div>
+              </>
             )}
           </div>
         </div>
       )}
-
     </div>
   )
 }

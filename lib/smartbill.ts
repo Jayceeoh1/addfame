@@ -7,6 +7,7 @@
  *   SMARTBILL_API_KEY   = 003|4f63...
  *   SMARTBILL_CIF       = 54992560
  *   SMARTBILL_SERIES    = ADDF
+ *   SMARTBILL_VAT_PERCENT = (doar dacă AddFame e plătitor de TVA, ex. 21)
  */
 
 const BASE_URL = 'https://ws.smartbill.ro/SBORO/api'
@@ -23,6 +24,8 @@ export interface SmartBillInvoiceParams {
   clientCif?: string          // CUI firmă sau CNP persoană fizică (opțional)
   clientAddress?: string
   clientEmail: string
+  clientRegCom?: string       // Nr. Registrul Comerțului (J40/…)
+  clientCity?: string
 
   // Tranzacție
   amountRon: number           // suma în RON, fără TVA (neplatitor TVA)
@@ -37,6 +40,63 @@ export interface SmartBillInvoiceResult {
   smartbillNumber: string     // ex: "ADDF-1"
 }
 
+/** Seria facturilor AddFame în SmartBill. */
+export function smartBillSeries() {
+  return (process.env.SMARTBILL_SERIES || 'ADDF').trim() || 'ADDF'
+}
+
+function smartBillCif() {
+  return (process.env.SMARTBILL_CIF || '54992560').trim()
+}
+
+/**
+ * TVA pe factură. Implicit: fără TVA (neplătitor).
+ * Dacă AddFame devine plătitor de TVA: în Vercel se pune SMARTBILL_VAT_PERCENT (ex. 21);
+ * suma plătită de brand se consideră cu TVA inclus.
+ */
+function productTax() {
+  const pct = Number(process.env.SMARTBILL_VAT_PERCENT)
+  if (!Number.isFinite(pct) || pct <= 0) return {}
+  return { isTaxIncluded: true, taxName: process.env.SMARTBILL_VAT_NAME || 'Normala', taxPercentage: pct }
+}
+
+/** Ce variabile lipsesc pentru emiterea facturilor. */
+export function smartBillMissingEnv(): string[] {
+  return ['SMARTBILL_USERNAME', 'SMARTBILL_API_KEY'].filter(k => !process.env[k])
+}
+
+/**
+ * Verifică legătura cu SmartBill: credențialele și seria de facturare.
+ * Întoarce următorul număr din serie (ex. 4 → următoarea factură ADDF0004).
+ */
+export async function checkSmartBill(): Promise<{
+  ok: boolean; series: string; nextNumber?: string; error?: string; vat?: number | null
+}> {
+  const series = smartBillSeries()
+  const vatPct = Number(process.env.SMARTBILL_VAT_PERCENT)
+  const vat = Number.isFinite(vatPct) && vatPct > 0 ? vatPct : null
+  const missing = smartBillMissingEnv()
+  if (missing.length) return { ok: false, series, vat, error: `Lipsesc din Vercel: ${missing.join(', ')}` }
+  try {
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), 8000)
+    const res = await fetch(`${BASE_URL}/series?cif=${encodeURIComponent(smartBillCif())}&type=f`, {
+      headers: { Accept: 'application/json', Authorization: authHeader() },
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t))
+    const data: any = await res.json().catch(() => ({}))
+    if (!res.ok || data.errorText) return { ok: false, series, vat, error: data.errorText || `SmartBill a răspuns ${res.status}` }
+    const list: any[] = data.list || []
+    const found = list.find(s => String(s.name).toUpperCase() === series.toUpperCase())
+    if (!found) {
+      return { ok: false, series, vat, error: `Seria ${series} nu există în SmartBill (găsite: ${list.map(s => s.name).join(', ') || 'niciuna'})` }
+    }
+    return { ok: true, series, vat, nextNumber: String(found.nextNumber ?? '') }
+  } catch (e: any) {
+    return { ok: false, series, vat, error: e?.name === 'AbortError' ? 'SmartBill nu a răspuns în 8 secunde' : (e?.message || 'Eroare SmartBill') }
+  }
+}
+
 /**
  * Creează o factură fiscală în SmartBill.
  * Returnează seria și numărul facturii generate.
@@ -44,8 +104,8 @@ export interface SmartBillInvoiceResult {
 export async function createSmartBillInvoice(
   params: SmartBillInvoiceParams
 ): Promise<SmartBillInvoiceResult> {
-  const cif = process.env.SMARTBILL_CIF!
-  const series = process.env.SMARTBILL_SERIES || 'ADDF'
+  const cif = smartBillCif()
+  const series = smartBillSeries()
   const today = new Date().toISOString().split('T')[0]
   const invoiceDate = params.invoiceDate || today
 
@@ -55,11 +115,13 @@ export async function createSmartBillInvoice(
     companyVatCode: cif,
     client: {
       name: params.clientName,
-      vatCode: params.clientCif || '',
+      vatCode: (params.clientCif || '').trim(),
+      regCom: (params.clientRegCom || '').trim(),
       address: params.clientAddress || '',
-      city: '',
+      city: params.clientCity || '',
       country: 'Romania',
-      isTaxPayer: false,
+      // clientul e plătitor de TVA dacă CUI-ul are prefixul RO
+      isTaxPayer: /^RO\s*\d/i.test((params.clientCif || '').trim()),
       email: params.clientEmail,
       saveToDb: false,
     },
@@ -78,6 +140,7 @@ export async function createSmartBillInvoice(
         price: params.amountRon,
         isService: true,
         saveToDb: false,
+        ...productTax(),
       },
     ],
     sendEmail: false,
@@ -121,16 +184,15 @@ export async function createSmartBillInvoice(
 }
 
 /**
- * Obține URL-ul PDF al unei facturi existente din SmartBill.
+ * Descarcă PDF-ul unei facturi din SmartBill (conținutul fișierului).
  */
 export async function getSmartBillInvoicePdf(
   series: string,
   number: string
-): Promise<string | null> {
-  const cif = process.env.SMARTBILL_CIF!
-
+): Promise<ArrayBuffer | null> {
+  const cif = smartBillCif()
   const res = await fetch(
-    `${BASE_URL}/invoice/pdf?cif=${cif}&seriesname=${series}&number=${number}`,
+    `${BASE_URL}/invoice/pdf?cif=${encodeURIComponent(cif)}&seriesname=${encodeURIComponent(series)}&number=${encodeURIComponent(number)}`,
     {
       headers: {
         'Accept': 'application/octet-stream',
@@ -138,12 +200,15 @@ export async function getSmartBillInvoicePdf(
       },
     }
   )
-
   if (!res.ok) {
     console.error('[SmartBill] PDF fetch failed', res.status)
     return null
   }
+  return res.arrayBuffer()
+}
 
-  // Returnăm URL-ul direct (pentru redirect la download)
-  return res.url
+/** „ADDF-0012” → { series: 'ADDF', number: '0012' } (numărul rămâne exact cum l-a dat SmartBill) */
+export function parseSmartBillNumber(v: string | null | undefined): { series: string; number: string } | null {
+  const m = String(v || '').trim().match(/^([A-Za-z]+)[-\s]?(\d+)$/)
+  return m ? { series: m[1].toUpperCase(), number: m[2] } : null
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { finalizeTopup } from '@/lib/topup'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
 
@@ -64,98 +65,50 @@ export async function POST(req: NextRequest) {
     // ── Top-up credite brand ──────────────────────────────────────────────
     const brandId = pi.metadata.brand_id
     const amount = parseFloat(pi.metadata.amount_ron)
-    const invoiceNumber = pi.metadata.invoice_number
+    const reference = pi.metadata.invoice_number
 
     if (!brandId || !amount) {
       console.error('[webhook] Missing metadata', pi.metadata)
       return NextResponse.json({ ok: true })
     }
 
-    const { data: brand } = await supabase
-      .from('brands')
-      .select('credits_balance, credits_expires_at, user_id, name')
-      .eq('id', brandId)
-      .single()
-
-    if (!brand) {
-      console.error('[webhook] Brand not found:', brandId)
-      return NextResponse.json({ ok: true })
-    }
-
-    // Verifică dacă tranzacția există deja (webhook poate fi trimis de 2x)
+    // Tranzacția plății (Stripe poate trimite același eveniment de mai multe ori)
+    let txId: string | null = null
     const { data: existing } = await supabase
-      .from('brand_transactions')
-      .select('id')
-      .eq('stripe_payment_intent_id', pi.id)
-      .maybeSingle()
-
-    if (!existing) {
-      // FIX: Creăm tranzacția DOAR acum, când plata e confirmată
+      .from('brand_transactions').select('id').eq('stripe_payment_intent_id', pi.id).maybeSingle()
+    if (existing) {
+      txId = existing.id
+    } else {
       const { data: newTx, error: insertErr } = await supabase.from('brand_transactions').insert({
         brand_id: brandId,
         type: 'TOPUP',
         amount,
-        description: `Încărcare credite via card Stripe — ${amount.toLocaleString('ro-RO')} RON`,
-        status: 'completed',
+        description: `Încărcare credite cu cardul — ${amount.toLocaleString('ro-RO')} RON`,
+        status: 'pending',
         payment_method: 'stripe_card',
-        invoice_number: invoiceNumber,
+        invoice_number: reference,
         stripe_payment_intent_id: pi.id,
       }).select('id').single()
-
-      // Dacă altă livrare a aceluiași webhook a inserat-o între timp (cheie unică) → deja procesat
       if (insertErr?.code === '23505') {
-        console.log(`[webhook] Duplicate delivery pentru ${pi.id} — ignorat`)
-        return NextResponse.json({ ok: true, duplicate: true })
-      }
-
-      // Emite factură SmartBill (non-blocking)
-      if (newTx?.id) {
-        fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'}/api/smartbill/create-invoice`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-key': process.env.ADMIN_SECRET_KEY!,
-          },
-          body: JSON.stringify({ transaction_id: newTx.id }),
-        }).catch(err => console.error('[webhook] SmartBill invoice failed:', err))
-      }
-    } else {
-      // Există deja: o marcăm completed DOAR dacă nu era deja completed.
-      // Dacă era completed, creditele au fost deja adăugate → nu mai adăugăm o dată
-      // (Stripe poate retrimite același eveniment).
-      const { data: marked } = await supabase
-        .from('brand_transactions')
-        .update({ status: 'completed' })
-        .eq('stripe_payment_intent_id', pi.id)
-        .or('status.is.null,status.neq.completed')
-        .select('id')
-
-      if (!marked || marked.length === 0) {
-        console.log(`[webhook] ${pi.id} deja procesat — credite neadăugate din nou`)
-        return NextResponse.json({ ok: true, duplicate: true })
+        const { data: again } = await supabase
+          .from('brand_transactions').select('id').eq('stripe_payment_intent_id', pi.id).maybeSingle()
+        txId = again?.id ?? null
+      } else if (insertErr) {
+        console.error('[webhook] Insert tx failed:', insertErr.message)
+        return NextResponse.json({ error: 'db' }, { status: 500 }) // Stripe reîncearcă
+      } else {
+        txId = newTx.id
       }
     }
+    if (!txId) return NextResponse.json({ ok: true })
 
-    // Adaugă creditele brandului
-    const newBalance = (brand.credits_balance || 0) + amount
-    const newExpiresAt = new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString()
-
-    await supabase.from('brands').update({
-      credits_balance: newBalance,
-      credits_expires_at: newExpiresAt,
-      credits_loaded_at: new Date().toISOString(),
-    }).eq('id', brandId)
-
-    // Notificare în platformă
-    await supabase.from('notifications').insert({
-      user_id: brand.user_id,
-      title: '✅ Plată confirmată! Credite adăugate.',
-      body: `${amount.toLocaleString('ro-RO')} RON credite au fost adăugate în contul tău AddFame. Valabile 6 luni. Factură: ${invoiceNumber}`,
-      link: '/brand/wallet',
-      read: false,
-    })
-
-    console.log(`[webhook] ✅ ${amount} RON credite adăugate pentru brand ${brandId}`)
+    // Credite (atomic, o singură dată) + notificare + email + factură SmartBill ADDF
+    const r = await finalizeTopup(supabase, txId)
+    if (!r.ok) {
+      console.log(`[webhook] ${pi.id}: ${r.error}`)
+      return NextResponse.json({ ok: true, duplicate: r.error === 'already_completed' })
+    }
+    console.log(`[webhook] ${amount} RON credite adăugate pentru brand ${brandId}; factură ${r.invoice ?? '— (' + r.invoiceError + ')'}`)
   }
 
   // ── Plată eșuată (card invalid, fonduri insuficiente etc.) ────────────────

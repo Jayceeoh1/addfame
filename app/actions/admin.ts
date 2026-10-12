@@ -5,7 +5,8 @@ import { requireAdmin, requireSuperAdmin } from '@/lib/supabase/verify-admin'
 import { refundRejectedCampaign, refundUnusedSlots } from '@/lib/campaign-fee'
 import { revalidatePath } from 'next/cache'
 import { emailInfluencerApproved, emailInfluencerRejected, emailBrandVerified, emailBrandVerificationRejected, emailTopupConfirmed, emailWithdrawalApproved, emailWithdrawalRejected } from '@/lib/email'
-import { createSmartBillInvoice } from '@/lib/smartbill'
+import { checkSmartBill } from '@/lib/smartbill'
+import { finalizeTopup, issueTopupInvoice } from '@/lib/topup'
 import { after } from 'next/server'
 
 // Helper: Generate URL-friendly slug
@@ -698,6 +699,7 @@ export async function getAllPayments() {
     const { data: txs, error } = await sb
       .from('brand_transactions')
       .select('*')
+      .eq('type', 'TOPUP')
       .order('created_at', { ascending: false })
     if (error) return { error: error.message }
     if (!txs?.length) return { success: true, data: [], total: 0 }
@@ -719,73 +721,38 @@ export async function confirmPayment(transactionId: string) {
     const auth = await requireSuperAdmin()
     if ('error' in auth) return auth
     const sb = createAdminClient()
-    const { data: tx, error: txErr } = await sb
-      .from('brand_transactions')
-      .select('amount, brand_id, status, billing_details')
-      .eq('id', transactionId)
-      .single()
-    if (txErr || !tx) return { error: 'Transaction not found' }
-    if (tx.status === 'completed') return { error: 'Plata a fost deja confirmată.' }
-    if (tx.status === 'failed') return { error: 'Plata a fost deja respinsă.' }
-
-    // Atomic: doar un singur apel poate confirma (evită creditarea dublă)
-    const { data: claimed, error: updateErr } = await sb
-      .from('brand_transactions')
-      .update({ status: 'completed' })
-      .eq('id', transactionId)
-      .or('status.is.null,status.not.in.(completed,failed)')
-      .select('id')
-    if (updateErr) return { error: updateErr.message }
-    if (!claimed || claimed.length === 0) return { error: 'Plata a fost deja procesată.' }
-
-    const { data: brand } = await sb.from('brands').select('credits_balance, credits_reserved, user_id, name, email').eq('id', tx.brand_id).single()
-    if (brand) {
-      const newBalance = (brand.credits_balance || 0) + tx.amount
-      const newExpiresAt = new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString()
-      await sb.from('brands').update({
-        credits_balance: newBalance,
-        credits_expires_at: newExpiresAt,
-        credits_loaded_at: new Date().toISOString(),
-      }).eq('id', tx.brand_id)
-      if (brand.user_id) {
-        try {
-          await sb.from('notifications').insert({
-            user_id: brand.user_id,
-            title: '✅ Credite adăugate în cont!',
-            body: `${tx.amount.toFixed(2)} RON au fost adăugați în walletul tău. Poți lansa campanii acum.`,
-            link: '/brand/wallet',
-            read: false,
-          })
-        } catch (_) { }
-        // Email confirmare top-up
-        if (brand.email) {
-          emailTopupConfirmed(brand.email, brand.name || 'Brand', tx.amount, newBalance).catch(() => {})
-        }
+    // Confirmare + credite (atomic, o singură dată) + notificare + email + factură SmartBill seria ADDF
+    const r = await finalizeTopup(sb, transactionId)
+    if (!r.ok) {
+      const msg: Record<string, string> = {
+        already_completed: 'Plata a fost deja confirmată.',
+        rejected: 'Plata a fost deja respinsă.',
+        not_found: 'Plata nu a fost găsită.',
       }
+      return { error: msg[r.error || ''] || r.error || 'Eroare' }
     }
-
-    // Emite factură SmartBill direct (fără fetch intern)
-    try {
-      const billing = tx.billing_details as any
-      const sbResult = await createSmartBillInvoice({
-        clientName: billing?.name || brand?.name || 'Client AddFame',
-        clientCif: billing?.vat || undefined,
-        clientAddress: billing?.address || undefined,
-        clientEmail: brand?.email || '',
-        amountRon: tx.amount,
-        description: `Credite publicitare prepaid — platforma AddFame (${tx.amount.toFixed(2)} RON)`,
-      })
-      await sb.from('brand_transactions')
-        .update({ smartbill_invoice_number: sbResult.smartbillNumber })
-        .eq('id', transactionId)
-      console.log(`[SmartBill] ✅ Factura emisa: ${sbResult.smartbillNumber}`)
-    } catch (sbErr: any) {
-      console.error('[SmartBill] ❌ Eroare factura:', sbErr.message)
-    }
-
     revalidatePath('/admin/payments')
-    return { success: true }
+    return { success: true, invoice: r.invoice, invoiceError: r.invoiceError, newBalance: r.newBalance }
   } catch (e: any) { return { error: e.message } }
+}
+
+/** Emite (din nou) factura SmartBill pentru o plată confirmată care nu are factură. */
+export async function retryTopupInvoice(transactionId: string) {
+  try {
+    const auth = await requireSuperAdmin()
+    if ('error' in auth) return auth
+    const r = await issueTopupInvoice(createAdminClient(), transactionId, { force: true })
+    if (!r.ok) return { error: r.error }
+    revalidatePath('/admin/payments')
+    return { success: true, invoice: r.number }
+  } catch (e: any) { return { error: e.message } }
+}
+
+/** Starea legăturii cu SmartBill (credențiale, seria ADDF, următorul număr). */
+export async function getSmartBillStatus() {
+  const auth = await requireSuperAdmin()
+  if ('error' in auth) return { ok: false, series: 'ADDF', error: auth.error }
+  return checkSmartBill()
 }
 
 export async function rejectPayment(transactionId: string) {

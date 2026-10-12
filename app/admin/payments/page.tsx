@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { getAllPayments, confirmPayment, rejectPayment } from '@/app/actions/admin'
-import { DollarSign, Search, Check, X, RefreshCw, Clock, CheckCircle, XCircle, Building2, CreditCard, Smartphone, Globe, Shield, TrendingUp, ChevronDown, ChevronUp, Copy, AlertCircle } from 'lucide-react'
+import { getAllPayments, confirmPayment, rejectPayment, retryTopupInvoice, getSmartBillStatus } from '@/app/actions/admin'
+import { DollarSign, Search, Check, X, RefreshCw, Clock, CheckCircle, XCircle, Building2, CreditCard, Smartphone, Globe, Shield, TrendingUp, ChevronDown, ChevronUp, Copy, AlertCircle, Receipt } from 'lucide-react'
 
 const STATUS: Record<string, { label: string; bg: string; text: string; dot: string }> = {
   pending: { label: 'În așteptare', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
@@ -10,7 +10,7 @@ const STATUS: Record<string, { label: string; bg: string; text: string; dot: str
   failed: { label: 'Respins', bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400' },
 }
 const METHOD_ICONS: Record<string, any> = { bank_transfer: Building2, paypal: CreditCard, revolut: Smartphone, wise: TrendingUp, crypto: Shield }
-const METHOD_LABELS: Record<string, string> = { bank_transfer: 'Bank Transfer', paypal: 'PayPal', revolut: 'Revolut', wise: 'Wise', crypto: 'Crypto' }
+const METHOD_LABELS: Record<string, string> = { bank_transfer: 'Transfer bancar', stripe_card: 'Card', paypal: 'PayPal', revolut: 'Revolut', wise: 'Wise', crypto: 'Crypto' }
 
 const fmt = (n: number) => `${Math.abs(n).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON`
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -35,7 +35,21 @@ export default function AdminPayments() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
 
-  const notify = (msg: string, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
+  const notify = (msg: string, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 5000) }
+  const [sbStatus, setSbStatus] = useState<{ ok: boolean; series: string; nextNumber?: string; error?: string; vat?: number | null } | null>(null)
+  const checkSB = useCallback(async () => { setSbStatus(null); setSbStatus(await getSmartBillStatus() as any) }, [])
+  useEffect(() => { checkSB() }, [checkSB])
+
+  async function doInvoice(id: string) {
+    setActionId(id)
+    const res = await retryTopupInvoice(id) as any
+    if (res.success) {
+      setPayments(p => p.map(t => t.id === id ? { ...t, smartbill_invoice_number: res.invoice } : t))
+      notify(`🧾 Factura ${res.invoice} a fost emisă.`)
+      checkSB()
+    } else notify(res.error || 'Eroare SmartBill.', false)
+    setActionId(null)
+  }
 
   const load = useCallback(async () => {
     setLoading(true); setError(null)
@@ -51,8 +65,10 @@ export default function AdminPayments() {
     setActionId(id)
     const res = await confirmPayment(id) as any
     if (res.success) {
-      setPayments(p => p.map(t => t.id === id ? { ...t, status: 'completed' } : t))
-      notify('✅ Plată confirmată! Credite adăugate în walletul brandului.')
+      setPayments(p => p.map(t => t.id === id ? { ...t, status: 'completed', smartbill_invoice_number: res.invoice ?? t.smartbill_invoice_number } : t))
+      if (res.invoice) notify(`✅ Credite adăugate. Factura ${res.invoice} emisă în SmartBill.`)
+      else notify(`Credite adăugate, dar factura NU s-a emis: ${res.invoiceError || 'eroare SmartBill'}. Apasă „Emite factura”.`, false)
+      checkSB()
     } else notify(res.error || 'Eroare.', false)
     setActionId(null)
   }
@@ -107,8 +123,19 @@ export default function AdminPayments() {
         <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
         <div className="text-sm text-blue-700">
           <p className="font-black mb-1">Flux de confirmare manuală</p>
-          <p>Brandul trimite banii și generează o factură. Tu verifici contul și dacă plata a ajuns, apasă <strong>Confirmă</strong>. Creditele sunt adăugate automat în walletul brandului și primesc notificare.</p>
+          <p>Brandul cere încărcarea și primește o referință unică (ex. ADF-2610-K7M4Q). Când vezi transferul cu acea referință în extras, apasă <strong>Confirmă</strong>: creditele intră în wallet, brandul primește notificare și email, iar factura se emite automat în SmartBill, seria ADDF.</p>
         </div>
+      </div>
+
+      {/* SmartBill */}
+      <div className={`rounded-2xl p-4 mb-6 flex items-center gap-3 flex-wrap border ${sbStatus === null ? 'bg-gray-50 border-gray-200' : sbStatus.ok ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+        <Receipt className={`w-5 h-5 flex-shrink-0 ${sbStatus?.ok ? 'text-green-600' : sbStatus ? 'text-red-500' : 'text-gray-400'}`} />
+        <div className="flex-1 min-w-0 text-sm">
+          {sbStatus === null ? <p className="text-gray-500 font-bold">Verific legătura cu SmartBill…</p>
+            : sbStatus.ok ? <p className="text-green-800"><b>SmartBill conectat · seria {sbStatus.series}</b>{sbStatus.nextNumber ? ` · următoarea factură: ${sbStatus.series} ${sbStatus.nextNumber}` : ''} · {sbStatus.vat ? `TVA ${sbStatus.vat}% inclus` : 'fără TVA'}</p>
+            : <p className="text-red-700"><b>SmartBill: </b>{sbStatus.error}</p>}
+        </div>
+        <button onClick={checkSB} className="text-xs font-bold text-gray-500 hover:text-indigo-600 px-3 py-1.5 rounded-xl border border-gray-200 bg-white">Verifică</button>
       </div>
 
       {/* Stats */}
@@ -185,9 +212,12 @@ export default function AdminPayments() {
                     <p className="text-xs text-gray-400">{p.brand?.email ?? ''}</p>
                     {p.invoice_number && (
                       <div className="flex items-center text-xs text-gray-400 font-mono">
-                        {p.invoice_number} <CopyBtn text={p.invoice_number} />
+                        Ref. {p.invoice_number} <CopyBtn text={p.invoice_number} />
                       </div>
                     )}
+                    {p.status === 'completed' && (p.smartbill_invoice_number && p.smartbill_invoice_number !== 'EMITERE'
+                      ? <a href={`/api/smartbill/invoice-pdf?transaction_id=${p.id}`} target="_blank" rel="noopener" className="text-xs font-black text-indigo-600 hover:underline">🧾 {p.smartbill_invoice_number}</a>
+                      : <span className="text-xs font-black text-red-500">fără factură</span>)}
                     <p className="text-xs text-gray-400">{fmtDate(p.created_at)}</p>
                   </div>
                 </div>
@@ -210,6 +240,12 @@ export default function AdminPayments() {
                     {isExp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                     {isExp ? 'Ascunde' : 'Detalii'}
                   </button>
+                  {p.status === 'completed' && !(p.smartbill_invoice_number && p.smartbill_invoice_number !== 'EMITERE') && (
+                    <button onClick={() => doInvoice(p.id)} disabled={busy}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition disabled:opacity-50">
+                      <Receipt className="w-3 h-3" /> Emite factura
+                    </button>
+                  )}
                   {p.status === 'pending' && <>
                     <button onClick={() => doConfirm(p.id)} disabled={busy}
                       className="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-black rounded-xl transition disabled:opacity-50">
