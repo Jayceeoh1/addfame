@@ -29,3 +29,5 @@ yarn.lock
 # fișiere temporare de livrare
 DEPLOY_*
 INSTRUCTIUNI*.txt
+
+.vercel
