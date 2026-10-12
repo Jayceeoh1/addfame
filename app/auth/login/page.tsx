@@ -25,14 +25,27 @@ function LoginContent() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+    // Fiecare pas are o limită de timp: butonul nu mai rămâne blocat pe „Se autentifică…”
+    const withTimeout = <T,>(p: Promise<T>, ms: number) =>
+      Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))])
+    let navigating = false
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
+      const ctrl = new AbortController()
+      const abort = setTimeout(() => ctrl.abort(), 25000)
+      let response: Response
+      try {
+        response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+          signal: ctrl.signal,
+        })
+      } catch {
+        setError('Serverul nu a răspuns. Verifică conexiunea și încearcă din nou.')
+        return
+      } finally { clearTimeout(abort) }
 
-      const result = await response.json()
+      const result = await response.json().catch(() => ({} as any))
 
       if (!response.ok || result.error) {
         setError(result.error || 'Autentificare eșuată')
@@ -43,20 +56,25 @@ function LoginContent() {
         setError('Autentificare eșuată. Încearcă din nou.')
         return
       }
-      const supabase = createClient()
-      await supabase.auth.setSession({
-        access_token: result.session.access_token,
-        refresh_token: result.session.refresh_token,
-      })
-      // Folosim rolul din metadata JWT ca fallback sigur
-      const { data: { user: authedUser } } = await supabase.auth.getUser()
-      const role = result.userRole || authedUser?.user_metadata?.role
+      // Serverul a setat deja cookie-urile de sesiune; sincronizăm și clientul, dar fără să așteptăm la nesfârșit
+      try {
+        const supabase = createClient()
+        await withTimeout(supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        }), 5000)
+      } catch (e) { console.warn('[login] setSession', e) }
+
+      const role = result.userRole || result.data?.user?.user_metadata?.role
       const destination = role === 'influencer' ? '/influencer/dashboard' : role === 'admin' ? '/admin' : '/brand/dashboard'
-      router.replace(destination)
+      // Navigare completă: pagina următoare pornește curat, cu sesiunea din cookie
+      navigating = true
+      window.location.assign(destination)
+      return
     } catch (err) {
       setError('A apărut o eroare neașteptată')
     } finally {
-      setLoading(false)
+      if (!navigating) setLoading(false)
     }
   }
 
