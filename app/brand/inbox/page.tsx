@@ -4,6 +4,8 @@ import DraftMessage, { DRAFT_MSG } from '@/components/shared/DraftMessage'
 import { useEffect, useState, useCallback, useRef, Suspense, Fragment } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { ChatRulesBanner, ContactWarning } from '@/components/shared/ChatRules'
+import { contactReasons } from '@/lib/contact-guard'
 import { useSearchParams } from 'next/navigation'
 import { MessageSquare, Send, Search, AlertCircle, ArrowLeft } from 'lucide-react'
 
@@ -95,8 +97,10 @@ function InboxContent() {
     return () => { sb.removeChannel(channel) }
   }, [selected?.id, loadMessages])
 
-  async function sendMessage() {
+  async function sendMessage(force = false) {
     if (!text.trim() || !selected || !userId || sending) return
+    // Date de contact în mesaj → avertismentul de deasupra cere confirmare („Trimite oricum”)
+    if (!force && contactReasons(text).length > 0) return
     setSending(true)
     setSendError(null)
 
@@ -351,6 +355,7 @@ function InboxContent() {
             </div>
 
             <div className="ib-msgs">
+              <ChatRulesBanner />
               {messages.length === 0 && (
                 <div className="ib-empty">
                   <p className="bu-sm bu-muted" style={{ margin: 0, fontWeight: 700 }}>Niciun mesaj încă. Spune salut! 👋</p>
@@ -386,6 +391,8 @@ function InboxContent() {
               </div>
             )}
 
+            <ContactWarning reasons={contactReasons(text)} onSendAnyway={() => sendMessage(true)} sending={sending} />
+
             <div className="ib-comp">
               <textarea className="ib-ta" rows={1}
                 placeholder="Scrie un mesaj…"
@@ -393,7 +400,7 @@ function InboxContent() {
                 onChange={e => { setText(e.target.value); setSendError(null) }}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
               />
-              <button onClick={sendMessage} disabled={!text.trim() || sending} className="bu-btn p" style={{ height: 44 }} aria-label="Trimite">
+              <button onClick={() => sendMessage()} disabled={!text.trim() || sending || contactReasons(text).length > 0} className="bu-btn p" style={{ height: 44 }} aria-label="Trimite">
                 {sending
                   ? <div className="ib-spin" style={{ width: 16, height: 16, borderWidth: 2, borderColor: 'rgba(255,255,255,.4)', borderTopColor: '#fff' }} />
                   : <Send size={16} />}
