@@ -173,6 +173,8 @@ export async function middleware(request: NextRequest) {
             .from('influencers')
             .update({ last_active_at: new Date().toISOString() })
             .eq('user_id', user.id)
+            // scrie doar dacă ultima activitate e mai veche de 15 minute: fără scrieri (și fără trafic Realtime) la fiecare cerere
+            .or(`last_active_at.is.null,last_active_at.lt.${new Date(Date.now() - 15 * 60_000).toISOString()}`)
         ).then(() => {}).catch(() => {})
       } catch {}
     }
