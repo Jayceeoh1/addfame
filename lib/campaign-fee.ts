@@ -4,6 +4,8 @@
 
 import { logDbError } from '@/lib/log-error'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { campaignPayPerSlot } from '@/lib/fee-summary'
+export { campaignPayPerSlot }
 
 export const DEFAULT_INFLUENCER_FEE = 350
 export const MAX_FEE_SLOTS = 500
@@ -35,6 +37,9 @@ export type ChargeResult = {
   balance?: number
   price?: number
   slots?: number
+  /** suma per influencer blocată la publicare (0 = fără buget prin platformă) */
+  pay?: number
+  payTotal?: number
   error?: string
   insufficientFunds?: boolean
   available?: number
@@ -52,11 +57,16 @@ export async function chargeCampaignFee(campaignId: string, brandId: string, slo
   }
   const price = await getInfluencerFeePrice()
   const admin = createAdminClient()
+  // Suma per influencer se citește din campanie (pe server), nu din ce trimite browserul
+  const { data: campRow } = await admin.from('campaigns')
+    .select('campaign_type, payment_mode, budget_per_influencer').eq('id', campaignId).maybeSingle()
+  const pay = campaignPayPerSlot(campRow)
   const { data, error } = await admin.rpc('charge_campaign_fee', {
     p_campaign_id: campaignId,
     p_brand_id: brandId,
     p_slots: n,
     p_fee: price,
+    p_pay: pay,
   })
   if (error) await logDbError('charge_campaign_fee', error, { campaignId, slots: n })
   if (error) return { ok: false, error: 'Eroare la procesarea plății: ' + error.message, price, slots: n }
@@ -68,9 +78,9 @@ export async function chargeCampaignFee(campaignId: string, brandId: string, slo
         ok: false,
         insufficientFunds: true,
         available: Number(r.available) || 0,
-        required: Number(r.required) || n * price,
-        price, slots: n,
-        error: `Sold insuficient. Ai ${(Number(r.available) || 0).toFixed(2)} RON disponibili, iar campania necesită ${(Number(r.required) || n * price).toFixed(2)} RON (${n} × ${price} RON). Campania a rămas salvată ca draft.`,
+        required: Number(r.required) || n * (price + pay),
+        price, slots: n, pay,
+        error: `Sold insuficient. Ai ${(Number(r.available) || 0).toFixed(2)} RON disponibili, iar campania necesită ${(Number(r.required) || n * (price + pay)).toFixed(2)} RON (${pay > 0 ? `${n} × ${price} RON taxă de management + ${n} × ${pay} RON buget influenceri` : `${n} × ${price} RON taxă de management`}). Campania a rămas salvată ca draft.`,
       }
     }
     if (r?.error === 'invalid_status') return { ok: false, error: 'Campania a fost deja trimisă spre aprobare.', price, slots: n }
@@ -87,7 +97,7 @@ export async function chargeCampaignFee(campaignId: string, brandId: string, slo
     })
   } catch (_) { }
 
-  return { ok: true, total: Number(r.total) || 0, balance: Number(r.balance) || 0, price, slots: n }
+  return { ok: true, total: Number(r.total) || 0, balance: Number(r.balance) || 0, price, slots: n, pay, payTotal: Number(r.pay_total) || 0 }
 }
 
 /**

@@ -331,7 +331,7 @@ export default function WizardPage() {
         status: 'DRAFT', // se trimite la aprobare după plata taxei (mai jos)
         platforms: data.platforms,
         offer_name: data.product_name || null,
-        offer_value: parseFloat(data.offer_value) || 0,
+        offer_value: data.campaign_type === 'PAID' ? 0 : (parseFloat(data.offer_value) || 0),
         description: data.product_description || null,
         story_instructions: data.story_instructions || null,
         required_hashtags: data.required_hashtags
@@ -383,9 +383,11 @@ export default function WizardPage() {
     </div>
   )
   const slots = parseInt(data.max_influencers) || 1
-  const feeTotal = feeInfo ? slots * feeInfo.price : null
-  const feeEnough = !feeInfo || feeTotal === null || feeInfo.available >= feeTotal
   const payPer = data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' ? (parseFloat(data.pay_amount) || null) : undefined
+  const feeTotal = feeInfo ? slots * feeInfo.price : null
+  // La publicare: taxa de management + bugetul influencerilor (sumă fixă)
+  const payNow = feeTotal === null ? null : Math.round((feeTotal + slots * (payPer || 0)) * 100) / 100
+  const feeEnough = !feeInfo || payNow === null || feeInfo.available >= payNow
   const typeLabel = data.campaign_type === 'BARTER' ? 'Barter' : 'Plătită'
 
   const renderStep = () => {
@@ -429,7 +431,7 @@ export default function WizardPage() {
               <div className="nw-f">
                 <label>Sumă per influencer (RON) *</label>
                 <input type="number" min={1} value={data.pay_amount} onChange={e => set('pay_amount', e.target.value)} placeholder="ex. 200" className="nw-in" />
-                <p className="nw-hint">Suma pe care o primește fiecare influencer. Taxa de management AddFame se adaugă separat{feeInfo ? `: ${feeInfo.price.toLocaleString('ro-RO')} RON / influencer` : ', per influencer'}.</p>
+                <p className="nw-hint">Suma întreagă pe care o primește fiecare influencer, virată de AddFame doar după ce postarea e aprobată. Taxa de management se adaugă separat{feeInfo ? `: ${feeInfo.price.toLocaleString('ro-RO')} RON / influencer` : ', per influencer'}{feeInfo && parseFloat(data.pay_amount) > 0 ? ` → ${(parseFloat(data.pay_amount) + feeInfo.price).toLocaleString('ro-RO')} RON costul unui influencer` : ''}.</p>
               </div>
             )}
           </div>
@@ -444,7 +446,9 @@ export default function WizardPage() {
           <div className="nw-f"><label>Titlu campanie *</label><input value={data.title} onChange={e => set('title', e.target.value)} placeholder="ex. Colaborare skincare hidratare" className="nw-in" /></div>
           <div className="nw-f"><label>Produs / ofertă *</label><input value={data.product_name} onChange={e => set('product_name', e.target.value)} placeholder="ex. Set skincare hidratare intensă" className="nw-in" /></div>
           <div className="nw-f"><label>Descriere</label><textarea value={data.product_description} onChange={e => set('product_description', e.target.value)} placeholder="Ce este produsul, beneficii, de ce e special..." rows={3} className="nw-in" /></div>
-          <div className="nw-f"><label>Valoare produs (RON)</label><input type="number" value={data.offer_value} onChange={e => set('offer_value', e.target.value)} placeholder="150" className="nw-in" /></div>
+          {data.campaign_type !== 'PAID' && (
+            <div className="nw-f"><label>Valoare produs (RON)</label><input type="number" value={data.offer_value} onChange={e => set('offer_value', e.target.value)} placeholder="150" className="nw-in" /></div>
+          )}
         </div>
         <div className="bu-card nw-card">
           <div className="nw-f"><span className="nw-lab">Imagini produs</span></div>
@@ -526,7 +530,15 @@ export default function WizardPage() {
           </div>
         </div>
         <div className="bu-card nw-card">
-          <div className="nw-f"><label>Instrucțiuni postare</label><textarea value={data.story_instructions} onChange={e => set('story_instructions', e.target.value)} placeholder="ex. Filmează-te folosind produsul dimineața, menționează că hidratează 24h..." rows={3} className="nw-in" /></div>
+          <div className="nw-f">
+            <label>Instrucțiuni postare (brief)</label>
+            <textarea value={data.story_instructions} onChange={e => set('story_instructions', e.target.value)}
+              placeholder={data.campaign_type === 'PAID'
+                ? 'ex. Locația: Str. Exemplu 10, București. Perioada: 18–20 octombrie, 12:00–18:00. Ce transmiți comunității: ...'
+                : 'ex. Filmează-te folosind produsul dimineața, menționează că hidratează 24h...'}
+              rows={data.campaign_type === 'PAID' ? 5 : 3} className="nw-in" />
+            {data.campaign_type === 'PAID' && <p className="nw-hint">Scrie clar locația, perioada în care vine influencerul și ce mesaj transmite. Cu cât e mai detaliat, cu atât rezultatul e mai aproape de ce vrei.</p>}
+          </div>
           <div className="nw-g2">
             <div className="nw-f"><label>Hashtag-uri obligatorii</label><input value={data.required_hashtags} onChange={e => set('required_hashtags', e.target.value)} placeholder="#brand #colaborare #ad" className="nw-in" /></div>
             <div className="nw-f"><label>Link de promovat</label><input value={data.promotion_link} onChange={e => set('promotion_link', e.target.value)} placeholder="https://brand.ro/produs" className="nw-in" /></div>
@@ -543,6 +555,7 @@ export default function WizardPage() {
             value={parseInt(data.max_influencers) || 1}
             onChange={v => set('max_influencers', String(v))}
             onInfo={setFeeInfo}
+            payPerSlot={payPer || 0}
           />
         </div>
         <div className="bu-card nw-card">
@@ -596,7 +609,7 @@ export default function WizardPage() {
         {feeInfo && !feeEnough && (
           <div className="nw-note violet">
             <span>
-              Sold insuficient pentru taxa de management de {(slots * feeInfo.price).toLocaleString('ro-RO')} RON.
+              Sold insuficient: campania necesită {(payNow || 0).toLocaleString('ro-RO')} RON{payPer ? ' (taxă de management + buget influenceri)' : ''}.
               Campania se va salva ca <strong>draft</strong> — o publici după ce <a href="/brand/wallet" style={{ color: '#4423c4', fontWeight: 800 }}>adaugi credite</a>.
             </span>
           </div>
@@ -696,7 +709,7 @@ export default function WizardPage() {
             <button type="button" onClick={() => setStep(s => s + 1)} className="bu-btn p big">Continuă <ArrowRight size={16} /></button>
           ) : (
             <button type="button" onClick={publish} disabled={saving} className="bu-btn p big">
-              <Rocket size={16} /> {saving ? 'Se trimite...' : feeInfo && !feeEnough ? 'Salvează ca draft' : feeInfo ? `Plătește ${(slots * feeInfo.price).toLocaleString('ro-RO')} RON și trimite` : 'Trimite la aprobare'}
+              <Rocket size={16} /> {saving ? 'Se trimite...' : feeInfo && !feeEnough ? 'Salvează ca draft' : feeInfo ? `Plătește ${(payNow || 0).toLocaleString('ro-RO')} RON și trimite` : 'Trimite la aprobare'}
             </button>
           )}
         </div>

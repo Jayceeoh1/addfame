@@ -24,6 +24,7 @@ export function InfluencerSlotsSelector({
   max = 500,
   label = 'Câți influenceri vrei în campanie?',
   onInfo,
+  payPerSlot = 0,
 }: {
   value: number
   onChange: (v: number) => void
@@ -32,6 +33,8 @@ export function InfluencerSlotsSelector({
   label?: string
   /** Primește prețul, soldul și totalul — util pentru textul butonului de publicare. */
   onInfo?: (info: FeeInfo) => void
+  /** suma per influencer plătită la publicare împreună cu taxa (campanii plătite cu sumă fixă) */
+  payPerSlot?: number
 }) {
   const [price, setPrice] = useState<number | null>(null)
   const [available, setAvailable] = useState(0)
@@ -52,7 +55,9 @@ export function InfluencerSlotsSelector({
   useEffect(() => { setDraft(String(value)) }, [value])
 
   const n = Math.max(min, Math.min(max, value || min))
-  const total = (price ?? 0) * n
+  const pay = Number(payPerSlot) > 0 ? Number(payPerSlot) : 0
+  const feeTotal = (price ?? 0) * n
+  const total = feeTotal + pay * n
   const enough = available >= total
   const missing = Math.max(0, total - available)
 
@@ -146,8 +151,13 @@ export function InfluencerSlotsSelector({
               <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                 <span style={{ fontSize: 13, fontWeight: 800, color: '#4423c4' }}>Taxă de management AddFame</span>
                 <span style={{ fontSize: 13, color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>
-                  {n} {n === 1 ? 'influencer' : 'influenceri'} × {ron(price)}
+                  {n} {n === 1 ? 'influencer' : 'influenceri'} × {ron(price)}{pay > 0 ? ` = ${ron(feeTotal)}` : ''}
                 </span>
+                {pay > 0 && (
+                  <span style={{ fontSize: 13, color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>
+                    + buget influenceri: {n} × {ron(pay)} = {ron(pay * n)}
+                  </span>
+                )}
               </span>
               <span style={{ fontSize: 22, fontWeight: 900, color: '#111827', fontVariantNumeric: 'tabular-nums' }}>
                 {ron(total)}
@@ -172,7 +182,7 @@ export function InfluencerSlotsSelector({
               </p>
             )}
             <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af', lineHeight: 1.5 }}>
-              Taxa de management se plătește la publicare și se adaugă peste plata influencerilor. Dacă nu se ocupă toate locurile, diferența se returnează în wallet la închiderea campaniei.
+              {pay > 0 ? 'Totalul se plătește la publicare. Bugetul influencerilor se virează doar după aprobarea postărilor; ce nu se folosește (locuri neocupate, influenceri care nu postează) se returnează în wallet la închiderea campaniei.' : 'Taxa de management se plătește la publicare. Dacă nu se ocupă toate locurile, diferența se returnează în wallet la închiderea campaniei.'}
             </p>
           </>
         )}

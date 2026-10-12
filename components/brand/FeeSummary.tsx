@@ -30,7 +30,7 @@ export function FeeSummary({
 }) {
   const b = feeBreakdown({ slots, price, payPerInfluencer, payNegotiable })
   const showPay = payPerInfluencer !== undefined || payNegotiable
-  const enough = available === null || available === undefined || b.feeTotal === null ? null : available >= b.feeTotal
+  const enough = available === null || available === undefined || b.payNow === null ? null : available >= b.payNow
 
   const row: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }
   const sub: React.CSSProperties = { display: 'block', fontSize: 11, color: '#8783a8', fontWeight: 500 }
@@ -56,16 +56,18 @@ export function FeeSummary({
       )}
       <div style={{ ...row, background: '#f7f4ff', border: '1px solid #e0d6ff', borderRadius: 12, padding: '10px 12px' }}>
         <span style={{ fontWeight: 700, color: '#4423c4' }}>Plătești acum, la publicare</span>
-        <b style={{ ...num, fontSize: 17, color: '#4423c4' }}>{b.feeTotal !== null ? ron(b.feeTotal) : '…'}</b>
+        <b style={{ ...num, fontSize: 17, color: '#4423c4' }}>{b.payNow !== null ? ron(b.payNow) : '…'}</b>
       </div>
       {showPay && (
         <p style={{ margin: 0, fontSize: 11, color: '#8783a8', lineHeight: 1.5 }}>
-          La publicare se încasează doar taxa de management. Suma pentru influenceri nu se încasează acum.
+          {b.payTotal !== null
+            ? 'Bugetul influencerilor stă în siguranță la AddFame și se virează fiecărui influencer doar după ce postarea lui e aprobată. Locurile neocupate și influencerii care nu postează → banii se întorc în wallet.'
+            : 'Plata se stabilește cu fiecare influencer; la publicare se încasează doar taxa de management.'}
         </p>
       )}
       {enough === false && (
         <p style={{ margin: 0, fontSize: 12, color: '#92400e', lineHeight: 1.5 }}>
-          Sold insuficient ({ron(available || 0)}). Campania se salvează ca draft până adaugi credite.
+          Sold insuficient ({ron(available || 0)} disponibili). Campania se salvează ca draft până adaugi credite.
         </p>
       )}
     </div>

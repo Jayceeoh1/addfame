@@ -13,6 +13,7 @@ import {
   Wallet, Gift, Megaphone, Sparkles, Hourglass
 } from 'lucide-react'
 import Link from 'next/link'
+import { campaignPayPerSlot } from '@/lib/fee-summary'
 
 type Campaign = {
   id: string
@@ -159,12 +160,16 @@ export default function BrandCampaignsPage() {
       const info: any = await getCampaignFeeInfo().catch(() => null)
       if (info) {
         const slots = camp.max_influencers || 1
-        const total = slots * (info.price || 0)
+        const pay = campaignPayPerSlot(camp as any)
+        const total = slots * ((info.price || 0) + pay)
+        const detail = pay > 0
+          ? `${slots} × ${info.price} RON taxă de management + ${slots} × ${pay} RON buget influenceri`
+          : `${slots} × ${info.price} RON taxă de management`
         if ((info.available || 0) < total) {
-          showToast(`Sold insuficient: publicarea costă ${total.toLocaleString('ro-RO')} RON (${slots} × ${info.price} RON). Adaugă credite din Wallet.`, 'error')
+          showToast(`Sold insuficient: publicarea costă ${total.toLocaleString('ro-RO')} RON (${detail}). Adaugă credite din Wallet.`, 'error')
           return
         }
-        if (!confirm(`Publicarea costă ${total.toLocaleString('ro-RO')} RON (${slots} influenceri × ${info.price} RON) și se plătește din wallet.\n\nLocurile neocupate se returnează la închiderea campaniei. Continui?`)) return
+        if (!confirm(`Publicarea costă ${total.toLocaleString('ro-RO')} RON (${detail}) și se plătește din wallet.\n\n${pay > 0 ? 'Bugetul influencerilor se virează doar după aprobarea postărilor. ' : ''}Ce nu se folosește se returnează la închiderea campaniei. Continui?`)) return
       }
     }
     setActionLoading(campaignId)
@@ -387,6 +392,7 @@ export default function BrandCampaignsPage() {
               : { t: `${days} ${days === 1 ? 'zi rămasă' : 'zile rămase'}`, bg: '#f0eff7', fg: '#4a4770' }
             const platforms = (c.platforms || []).slice(0, 3).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(', ')
             const fee = feeInfo?.price ? feeInfo.price * (c.max_influencers || 1) : null
+            const draftPay = campaignPayPerSlot(c as any) * (c.max_influencers || 1)
 
             return (
               <article key={c.id} className="cp-card">
@@ -446,10 +452,14 @@ export default function BrandCampaignsPage() {
                           {fee ? fmt(fee) : '—'}
                         </b>
                       </div>
+                      {draftPay > 0 && (
+                        <div className="bu-row" style={{ justifyContent: 'space-between', gap: 10 }}>
+                          <span className="bu-sm" style={{ color: '#4a4770' }}>+ Buget influenceri <span className="bu-xs bu-muted">({c.max_influencers || 1} × {fmt(campaignPayPerSlot(c as any))})</span></span>
+                          <b className="bu-sm">{fmt(draftPay)}</b>
+                        </div>
+                      )}
                       <span className="bu-xs bu-muted">
-                        {fee && (c as any).campaign_type !== 'BARTER'
-                          ? `${c.max_influencers || 1} × ${feeInfo?.price} RON. `
-                          : ''}
+                        {draftPay > 0 && fee ? `Total la publicare: ${fmt(fee + draftPay)}. ` : ''}
                         Se plătește la publicare. Creatorii nu văd campania până atunci.
                       </span>
                     </div>

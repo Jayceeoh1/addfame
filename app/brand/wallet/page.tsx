@@ -17,7 +17,7 @@ import { COMPANY, BANK, REVOLUT, WISE, PAYPAL, CRYPTO, TOPUP_MIN, TOPUP_MAX } fr
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Transaction = {
   id: string
-  type: 'TOPUP' | 'SPEND' | 'REFUND' | 'RESERVE' | 'CAMPAIGN_FEE'
+  type: 'TOPUP' | 'SPEND' | 'REFUND' | 'RESERVE' | 'CAMPAIGN_FEE' | 'ESCROW_LOCK' | 'ESCROW_RETURN'
   amount: number
   description: string
   status: 'completed' | 'pending' | 'failed'
@@ -316,7 +316,7 @@ function BrandWalletPageInner() {
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const thisMonthSpend = transactions
-    .filter(tx => (tx.type === 'SPEND' || tx.type === 'CAMPAIGN_FEE') && new Date(tx.created_at) >= monthStart)
+    .filter(tx => (tx.type === 'SPEND' || tx.type === 'CAMPAIGN_FEE' || tx.type === 'ESCROW_LOCK') && new Date(tx.created_at) >= monthStart)
     .reduce((s, tx) => s + Math.abs(tx.amount), 0)
 
   const pendingTx = transactions.filter(tx => tx.status === 'pending')
@@ -333,6 +333,8 @@ function BrandWalletPageInner() {
     REFUND: { bg: '#e6f0ff', fg: '#1d4fb8' },
     SPEND: { bg: '#efeaff', fg: '#4423c4' },
     RESERVE: { bg: '#fff1c2', fg: '#854d0e' },
+    ESCROW_LOCK: { bg: '#fff1c2', fg: '#854d0e' },
+    ESCROW_RETURN: { bg: '#e6f0ff', fg: '#1d4fb8' },
   }
   const CAMP_CHIP: Record<string, { bg: string; fg: string }> = {
     ACTIVE: { bg: '#e6f0ff', fg: '#1d4fb8' }, LIVE: { bg: '#e6f0ff', fg: '#1d4fb8' },
@@ -519,7 +521,7 @@ function BrandWalletPageInner() {
             <div>
               {filteredTx.map(tx => {
                 const ico = TX_ICO[tx.type] ?? TX_ICO.SPEND
-                const isCredit = tx.type === 'TOPUP' || tx.type === 'REFUND'
+                const isCredit = tx.type === 'TOPUP' || tx.type === 'REFUND' || tx.type === 'ESCROW_RETURN'
                 const method = PAYMENT_METHODS.find(m => m.id === tx.payment_method)
                 const chip = TX_CHIP[tx.status] ?? TX_CHIP.pending
                 return (

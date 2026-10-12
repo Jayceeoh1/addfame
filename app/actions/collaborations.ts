@@ -207,7 +207,7 @@ export async function approveDeliverable(collabId: string) {
     // Prioritate: reserved_amount (suma rezervata la aprobare) > budget_per_influencer > budget/max_influencers
     // NICIODATA nu folosim budget total al campaniei direct
     const maxInf = collab.campaigns?.max_influencers || 1
-    // Modelul nou: nimic de eliberat din escrow (influencerul e plătit separat de AddFame)
+    // Modelul nou: influencerul e plătit din bugetul blocat la publicare (release_campaign_pay)
     const feeModel = isFeeModelCampaign(collab.campaigns as any)
     const budgetPerInf = feeModel ? 0 : (collab.campaigns?.budget_per_influencer
       || (collab.campaigns?.budget ? Math.round((collab.campaigns.budget / maxInf) * 100) / 100 : 0))
@@ -215,7 +215,8 @@ export async function approveDeliverable(collabId: string) {
       ? collab.reserved_amount
       : budgetPerInf)
     const platformFee = Math.round(totalBudget * PLATFORM_COMMISSION * 100) / 100
-    const influencerAmount = Math.round((totalBudget - platformFee) * 100) / 100
+    // Modelul cu taxă: suma se află din bugetul blocat la publicare (release_campaign_pay), fără comision
+    let influencerAmount = Math.round((totalBudget - platformFee) * 100) / 100
 
     const now = new Date().toISOString()
 
@@ -225,15 +226,39 @@ export async function approveDeliverable(collabId: string) {
       status: 'COMPLETED',
       deliverable_approved_at: now,
       completed_at: now,
-      payment_amount: influencerAmount,
-      platform_fee: platformFee,
+      payment_amount: feeModel ? null : influencerAmount,
+      platform_fee: feeModel ? 0 : platformFee,
     }).eq('id', collabId).neq('status', 'COMPLETED').select('id')
 
     if (claimErr) return { error: claimErr.message }
     if (!claimed || claimed.length === 0) return { error: 'Already completed' }
 
-    // 2+4. Deduct from brand + credit influencer atomic via RPC
-    const { error: releaseErr } = await admin.rpc('release_collab_escrow', {
+    const revertClaim = () => admin.from('collaborations').update({
+      status: collab.status,
+      deliverable_approved_at: collab.deliverable_approved_at ?? null,
+      completed_at: collab.completed_at ?? null,
+      payment_amount: collab.payment_amount ?? null,
+      platform_fee: collab.platform_fee ?? null,
+    }).eq('id', collabId)
+
+    if (feeModel) {
+      // Bugetul blocat la publicare → wallet-ul influencerului (suma întreagă, o singură dată)
+      const { data: pay, error: payErr } = await admin.rpc('release_campaign_pay', { p_collab_id: collabId })
+      const r = pay as any
+      if (payErr || !r?.ok) {
+        await revertClaim()
+        console.error('[approveDeliverable] release_campaign_pay', payErr?.message || r?.error)
+        return {
+          error: r?.error === 'insufficient_escrow'
+            ? 'Bugetul pentru influenceri al acestei campanii a fost deja folosit sau returnat. Contactează echipa AddFame.'
+            : 'Plata nu a putut fi procesată. Încearcă din nou sau contactează suportul.',
+        }
+      }
+      influencerAmount = Number(r.amount) || 0
+    }
+
+    // 2+4. Deduct from brand + credit influencer atomic via RPC (doar modelul vechi, cu escrow per colaborare)
+    const { error: releaseErr } = feeModel ? { error: null } : await admin.rpc('release_collab_escrow', {
       p_brand_id: brand.id,
       p_influencer_id: collab.influencers.id,
       p_total: totalBudget,
@@ -254,8 +279,8 @@ export async function approveDeliverable(collabId: string) {
       return { error: 'Plata nu a putut fi procesată. Încearcă din nou sau contactează suportul.' }
     }
 
-    // 3. Log brand SPEND (înlocuiește RESERVE)
-    await admin.from('brand_transactions').insert({
+    // 3. Log brand SPEND (înlocuiește RESERVE) — la modelul cu taxă bugetul a fost deja retras la publicare
+    if (!feeModel) await admin.from('brand_transactions').insert({
       brand_id: brand.id,
       type: 'SPEND',
       amount: totalBudget,
@@ -266,7 +291,7 @@ export async function approveDeliverable(collabId: string) {
     })
 
     // 4. Log influencer transaction (wallet actualizat deja de RPC)
-    if (collab.influencers?.id) {
+    if (collab.influencers?.id && influencerAmount > 0) {
 
       await admin.from('transactions').insert({
         user_id: collab.influencers.user_id,
@@ -278,8 +303,8 @@ export async function approveDeliverable(collabId: string) {
       })
     }
 
-    // 5. Log platform revenue
-    try {
+    // 5. Log platform revenue (modelul vechi: comision 15%; la modelul cu taxă venitul e taxa de la publicare)
+    if (!feeModel) try {
       await admin.from('platform_revenue').insert({
         collab_id: collabId,
         amount: platformFee,

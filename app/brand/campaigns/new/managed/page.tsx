@@ -126,6 +126,8 @@ export default function NewManagedCampaign() {
   const finalBudget = form.budget > 0 ? form.budget : +form.custom_budget || 0
   const perInfluencer = finalBudget  // finalBudget = suma per influencer
   const totalBudget = perInfluencer * form.influencer_count
+  // La publicare: taxa de management + bugetul influencerilor (dacă suma e fixă)
+  const managedPayNow = fee ? Math.round((fee.price * form.influencer_count + (form.negotiable ? 0 : totalBudget)) * 100) / 100 : 0
 
   async function handleSubmit() {
     setError(null)
@@ -505,6 +507,7 @@ export default function NewManagedCampaign() {
                   <InfluencerSlotsSelector
                     value={form.influencer_count}
                     onChange={v => set({ influencer_count: v })}
+                    payPerSlot={form.negotiable ? 0 : perInfluencer}
                   />
                 </div>
 
@@ -588,7 +591,7 @@ export default function NewManagedCampaign() {
               <button type="button" className="bu-btn p big"
                 onClick={handleSubmit}
                 disabled={loading}>
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Se trimite...</> : <><Sparkles className="w-4 h-4" /> {fee ? (fee.available >= fee.price * form.influencer_count ? `Plătește ${(fee.price * form.influencer_count).toLocaleString('ro-RO')} RON și trimite` : 'Salvează ca draft') : 'Trimite campania'}</>}
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Se trimite...</> : <><Sparkles className="w-4 h-4" /> {fee ? (fee.available >= managedPayNow ? `Plătește ${managedPayNow.toLocaleString('ro-RO')} RON și trimite` : 'Salvează ca draft') : 'Trimite campania'}</>}
               </button>
             )}
           </div>
