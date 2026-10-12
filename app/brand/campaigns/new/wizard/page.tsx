@@ -264,6 +264,10 @@ export default function WizardPage() {
   const [showPreview, setShowPreview] = useState(false)
   const [feeInfo, setFeeInfo] = useState<FeeInfo | null>(null)
   const [draftNotice, setDraftNotice] = useState<{ message: string; campaignId: string } | null>(null)
+  // Ciorna deschisă din „Continuă editarea” (?draftId=) sau salvată cu „Salvează ciorna”
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draftLoading, setDraftLoading] = useState(false)
+  const [savedAt, setSavedAt] = useState<string | null>(null)
   // Calculatorul de buget (modul „Influencerii propun prețul”): doar pentru brand, nu se salvează
   const [planTotal, setPlanTotal] = useState('')
   const [planEstimate, setPlanEstimate] = useState('')
@@ -293,8 +297,11 @@ export default function WizardPage() {
   const set = (key: string, val: any) => setData(d => ({ ...d, [key]: val }))
 
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get('type')
+    const qs = new URLSearchParams(window.location.search)
+    const t = qs.get('type')
     if (t === 'PAID' || t === 'BARTER') setData(d => ({ ...d, campaign_type: t }))
+    const did = qs.get('draftId')
+    if (did) loadDraft(did)
     // Taxa de management se vede din primul pas (prețul vine din Admin → Setări)
     getCampaignFeeInfo().then((r: any) => {
       if (r && Number.isFinite(Number(r.price))) setFeeInfo(f => f || { price: Number(r.price), available: Number(r.available) || 0, total: 0, enough: true })
@@ -307,6 +314,101 @@ export default function WizardPage() {
 
   const pct = Math.round((step / 5) * 100)
   const hasContent = data.tasks_ig_reel || data.tasks_ig_post || data.tasks_tt_video || data.tasks_stories_count > 0
+
+  // Încarcă o ciornă existentă și deschide formularul la primul pas necompletat
+  async function loadDraft(id: string) {
+    setDraftLoading(true)
+    try {
+      const sb = createClient()
+      const { data: c } = await sb.from('campaigns').select('*').eq('id', id).maybeSingle()
+      if (!c || !['DRAFT', 'REJECTED'].includes(c.status)) return
+      const tags = Array.isArray(c.required_hashtags) ? c.required_hashtags.map((h: string) => `#${String(h).replace(/^#/, '')}`).join(' ') : (c.required_hashtags || '')
+      const next = {
+        campaign_type: c.campaign_type === 'BARTER' ? 'BARTER' : 'PAID',
+        payment_mode: c.payment_mode === 'OFFER' ? 'OFFER' : 'FIXED',
+        pay_amount: Number(c.budget_per_influencer) > 0 ? String(c.budget_per_influencer) : '',
+        title: c.title || '',
+        product_name: c.offer_name || '',
+        product_description: c.description || '',
+        offer_value: Number(c.offer_value) > 0 ? String(c.offer_value) : '',
+        platforms: Array.isArray(c.platforms) && c.platforms.length ? c.platforms : ['Instagram'],
+        tasks_ig_reel: !!c.tasks_ig_reel,
+        tasks_stories_count: Number(c.tasks_stories_count) || 0,
+        tasks_ig_post: !!c.tasks_ig_post,
+        tasks_tt_video: !!c.tasks_tt_video,
+        story_instructions: c.story_instructions || '',
+        required_hashtags: tags,
+        promotion_link: c.promotion_link || '',
+        max_influencers: String(c.max_influencers || 5),
+        min_followers: Number(c.min_followers) > 0 ? String(c.min_followers) : '',
+        deadline: c.deadline ? String(c.deadline).slice(0, 10) : '',
+        offer_images: Array.isArray(c.offer_images) ? c.offer_images : [],
+      }
+      setData(d => ({ ...d, ...next }))
+      setEditingId(c.id)
+      const content = next.tasks_ig_reel || next.tasks_ig_post || next.tasks_tt_video || next.tasks_stories_count > 0
+      setStep(!(next.title || next.product_name) ? 2 : !content ? 3 : !next.deadline ? 4 : 5)
+    } finally { setDraftLoading(false) }
+  }
+
+  // Câmpurile campaniei, la fel pentru „Salvează ciorna” și pentru publicare
+  function buildPayload(brandId: string) {
+    const deadline = data.deadline
+      ? new Date(data.deadline).toISOString()
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    return {
+      brand_id: brandId,
+      title: data.title || data.product_name || 'Campanie nouă',
+      campaign_type: data.campaign_type,
+      payment_mode: data.campaign_type === 'PAID' ? data.payment_mode : null,
+      budget_per_influencer: data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' ? (parseFloat(data.pay_amount) || 0) : 0,
+      budget: 0,
+      status: 'DRAFT',
+      platforms: data.platforms,
+      offer_name: data.product_name || null,
+      offer_value: data.campaign_type === 'PAID' ? 0 : (parseFloat(data.offer_value) || 0),
+      description: data.product_description || null,
+      story_instructions: data.story_instructions || null,
+      required_hashtags: data.required_hashtags
+        ? data.required_hashtags.split(/\s+/).map((h: string) => h.replace(/^#/, '').trim()).filter(Boolean)
+        : [],
+      promotion_link: data.promotion_link || null,
+      tasks_ig_reel: data.tasks_ig_reel,
+      tasks_stories_count: data.tasks_stories_count,
+      tasks_ig_post: data.tasks_ig_post,
+      tasks_tt_video: data.tasks_tt_video,
+      max_influencers: parseInt(data.max_influencers) || 5,
+      min_followers: parseInt(data.min_followers) || 0,
+      deadline,
+      offer_images: data.offer_images?.length ? data.offer_images : null,
+      countries: ['Romania'],
+    }
+  }
+
+  // Salvează progresul fără să publice; brandul poate reveni din „Continuă editarea”
+  async function saveDraft() {
+    setSaving(true)
+    try {
+      const sb = createClient()
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) { router.push('/auth/login'); return }
+      const { data: brand } = await sb.from('brands').select('id').eq('user_id', user.id).single()
+      if (!brand) return
+      const payload = buildPayload(brand.id)
+      const id = editingId || draftNotice?.campaignId || null
+      if (id) {
+        const { status: _s, ...fields } = payload as any
+        const { error } = await sb.from('campaigns').update(fields).eq('id', id).in('status', ['DRAFT', 'REJECTED'])
+        if (error) { alert(error.message); return }
+      } else {
+        const { data: camp, error } = await sb.from('campaigns').insert(payload).select('id').single()
+        if (error) { alert(error.message); return }
+        setEditingId(camp.id)
+        try { window.history.replaceState(null, '', `${window.location.pathname}?draftId=${camp.id}`) } catch { /* fără URL */ }
+      }
+      setSavedAt(new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }))
+    } finally { setSaving(false) }
+  }
 
   async function publish() {
     // Validări înainte de submit
@@ -322,47 +424,23 @@ export default function WizardPage() {
       if (!user) { router.push('/auth/login'); return }
       const { data: brand } = await sb.from('brands').select('id').eq('user_id', user.id).single()
       if (!brand) return
-      const deadline = data.deadline
-        ? new Date(data.deadline).toISOString()
-        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      const payload = {
-        brand_id: brand.id,
-        title: data.title || data.product_name || 'Campanie nouă',
-        campaign_type: data.campaign_type,
-        payment_mode: data.campaign_type === 'PAID' ? data.payment_mode : null,
-        budget_per_influencer: data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' ? (parseFloat(data.pay_amount) || 0) : 0,
-        budget: 0, // modelul cu taxă per influencer: fără escrow, plata influencerilor se face separat
-        status: 'DRAFT', // se trimite la aprobare după plata taxei (mai jos)
-        platforms: data.platforms,
-        offer_name: data.product_name || null,
-        offer_value: data.campaign_type === 'PAID' ? 0 : (parseFloat(data.offer_value) || 0),
-        description: data.product_description || null,
-        story_instructions: data.story_instructions || null,
-        required_hashtags: data.required_hashtags
-          ? data.required_hashtags.split(/\s+/).map((h: string) => h.replace(/^#/, '').trim()).filter(Boolean)
-          : [],
-        promotion_link: data.promotion_link || null,
-        tasks_ig_reel: data.tasks_ig_reel,
-        tasks_stories_count: data.tasks_stories_count,
-        tasks_ig_post: data.tasks_ig_post,
-        tasks_tt_video: data.tasks_tt_video,
-        max_influencers: parseInt(data.max_influencers) || 5,
-        min_followers: parseInt(data.min_followers) || 0,
-        deadline,
-        offer_images: data.offer_images?.length ? data.offer_images : null,
-        countries: ['Romania'],
-      }
+      const payload = buildPayload(brand.id)
 
       // Draft deja salvat (sold insuficient anterior) → actualizăm draft-ul cu ultimele
       // modificări și reîncercăm publicarea, fără să creăm un duplicat
-      if (draftNotice) {
+      const existingId = draftNotice?.campaignId || editingId
+      if (existingId) {
         const { status: _ignored, ...draftFields } = payload as any  // statusul nu se schimbă de aici
         const { error: upErr } = await sb.from('campaigns').update(draftFields)
-          .eq('id', draftNotice.campaignId).in('status', ['DRAFT', 'REJECTED'])
+          .eq('id', existingId).in('status', ['DRAFT', 'REJECTED'])
         if (upErr) { alert(upErr.message); return }
-        const retry = await publishCampaignWithFee(draftNotice.campaignId, numInfluencers) as any
-        if (!retry?.success) { setDraftNotice({ ...draftNotice, message: retry?.error || draftNotice.message }); return }
-        router.push(`/brand/campaigns/${draftNotice.campaignId}`)
+        const retry = await publishCampaignWithFee(existingId, numInfluencers) as any
+        if (!retry?.success) {
+          setDraftNotice({ message: retry?.error || draftNotice?.message || 'Campania a rămas salvată ca ciornă.', campaignId: existingId })
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+          return
+        }
+        router.push(`/brand/campaigns/${existingId}`)
         return
       }
 
@@ -739,8 +817,11 @@ export default function WizardPage() {
 
       {/* Bară de acțiuni */}
       <div className="nw-bar">
-        <span className="st">Pasul {step} din 5 — {STEPS[step - 1]}</span>
+        <span className="st">{draftLoading ? 'Se încarcă ciorna…' : <>Pasul {step} din 5 — {STEPS[step - 1]}{editingId ? ' · ciornă' : ''}</>}</span>
         <div className="acts">
+          <button type="button" onClick={saveDraft} disabled={saving || draftLoading} className="bu-btn big" title="Salvează progresul și revino oricând din Campanii → Continuă editarea">
+            {saving ? 'Se salvează…' : savedAt ? `Salvat ${savedAt}` : 'Salvează ciorna'}
+          </button>
           {step > 1 && (
             <button type="button" onClick={() => setStep(s => s - 1)} className="bu-btn big"><ArrowLeft size={16} /> Înapoi</button>
           )}

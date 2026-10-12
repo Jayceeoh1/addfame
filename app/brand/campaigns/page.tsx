@@ -33,6 +33,14 @@ type Campaign = {
   created_at: string
 }
 
+// „Continuă editarea”: formularul pas cu pas al tipului de campanie, cu ciorna încărcată
+function draftEditHref(c: any): string {
+  const t = String(c?.campaign_type || '').toUpperCase()
+  if (t === 'BARTER') return `/brand/campaigns/new/barter?draftId=${c.id}`
+  if (t === 'PAID') return `/brand/campaigns/new/wizard?draftId=${c.id}`
+  return `/brand/campaigns/${c.id}`
+}
+
 const fmt = (n: number) => `${(n || 0).toLocaleString('ro-RO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RON`
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 const daysLeft = (d: string) => Math.ceil((new Date(d).getTime() - Date.now()) / 864e5)
@@ -435,7 +443,7 @@ export default function BrandCampaignsPage() {
 
                 <div className="cp-body">
                   <div className="bu-col" style={{ gap: 2 }}>
-                    <Link href={`/brand/campaigns/${c.id}`} className="cp-title">{c.title}</Link>
+                    <Link href={['DRAFT', 'REJECTED'].includes(c.status) ? draftEditHref(c) : `/brand/campaigns/${c.id}`} className="cp-title">{c.title}</Link>
                     <span className="bu-sm bu-muted">
                       {[platforms, c.budget ? fmt(c.budget) : null].filter(Boolean).join(' · ') || ' '}
                     </span>
@@ -499,7 +507,7 @@ export default function BrandCampaignsPage() {
                   <div className="cp-foot">
                     {isDraft ? (
                       <>
-                        <Link href={`/brand/campaigns/${c.id}`} className="bu-btn" style={{ flex: 1 }}>Continuă editarea</Link>
+                        <Link href={draftEditHref(c)} className="bu-btn" style={{ flex: 1 }}>Continuă editarea</Link>
                         <button className="bu-btn p" style={{ flex: 1 }} onClick={() => handleStatusChange(c.id, 'ACTIVE')} disabled={isLoading}>
                           {isLoading ? '...' : 'Publică'}
                         </button>
