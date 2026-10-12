@@ -846,7 +846,7 @@ export default function BrandInfluencersPage() {
                   <span className="bu-muted bu-xs">Produs gratuit</span>
                 </span>
               </button>
-              <button onClick={() => { setShowCampaignSheet(false); router.push('/brand/campaigns/new') }} className="if-opt" style={{ flex: 1, minWidth: 0 }}>
+              <button onClick={() => { setShowCampaignSheet(false); router.push('/brand/campaigns/new/wizard?type=PAID') }} className="if-opt" style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ minWidth: 0 }}>
                   <b className="bu-d" style={{ display: 'block' }}>Plătită</b>
                   <span className="bu-muted bu-xs">Cash per post</span>

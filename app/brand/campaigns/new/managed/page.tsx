@@ -11,7 +11,8 @@ import {
 } from 'lucide-react'
 
 import { createManagedCampaign } from '@/app/actions/managed-campaigns'
-import { publishCampaignWithFee } from '@/app/actions/campaigns'
+import { publishCampaignWithFee, getCampaignFeeInfo } from '@/app/actions/campaigns'
+import { FeeSummary, FeeNotice } from '@/components/brand/FeeSummary'
 import { InfluencerSlotsSelector } from '@/components/brand/InfluencerSlotsSelector'
 
 const PLATFORMS = [
@@ -97,6 +98,13 @@ export default function NewManagedCampaign() {
   const [error, setError] = useState<string | null>(null)
   // Sold insuficient → campania e salvată ca draft; reîncercarea o publică pe aceeași, fără duplicat
   const [savedDraftId, setSavedDraftId] = useState<string | null>(null)
+  // Taxa de management (Admin → Setări → „Taxă per influencer”), vizibilă de la primul pas
+  const [fee, setFee] = useState<{ price: number; available: number } | null>(null)
+  useEffect(() => {
+    getCampaignFeeInfo().then((r: any) => {
+      if (r && Number.isFinite(Number(r.price))) setFee({ price: Number(r.price), available: Number(r.available) || 0 })
+    }).catch(() => {})
+  }, [])
   const [done, setDone] = useState(false)
 
   const set = (patch: Partial<FormData>) => setForm(f => ({ ...f, ...patch }))
@@ -118,8 +126,6 @@ export default function NewManagedCampaign() {
   const finalBudget = form.budget > 0 ? form.budget : +form.custom_budget || 0
   const perInfluencer = finalBudget  // finalBudget = suma per influencer
   const totalBudget = perInfluencer * form.influencer_count
-  const addfameCommission = 0 // fără comision procentual: taxa AddFame e fixă per influencer
-  const influencerPool = totalBudget - addfameCommission
 
   async function handleSubmit() {
     setError(null)
@@ -169,7 +175,7 @@ export default function NewManagedCampaign() {
   const STEP_HELP: Record<number, string> = {
     1: 'Selectează ce vrei să obții și unde vrei să apară campania.',
     2: 'Ajută-ne să găsim influencerii cei mai potriviți.',
-    3: 'Noi distribuim bugetul optim între influenceri.',
+    3: 'Cât primește fiecare influencer și cât costă campania.',
     4: 'Ce vrei să transmită conținutul creat.',
   }
 
@@ -262,7 +268,7 @@ export default function NewManagedCampaign() {
 
       {/* Header */}
       <div className="bu-head" style={{ alignItems: 'center', justifyContent: 'flex-start', flexWrap: 'nowrap' }}>
-        <Link href="/brand/campaigns/new" className="mg-back" aria-label="Înapoi">
+        <Link href="/brand/campaigns?new=1" className="mg-back" aria-label="Înapoi">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div style={{ minWidth: 0 }}>
@@ -303,6 +309,7 @@ export default function NewManagedCampaign() {
             {/* ── STEP 1: Obiectiv ── */}
             {step === 1 && (
               <div className="mg-stack">
+                <FeeNotice price={fee ? fee.price : null} />
                 <div className="mg-tiles">
                   {OBJECTIVES.map(obj => (
                     <button key={obj.value} type="button"
@@ -483,14 +490,12 @@ export default function NewManagedCampaign() {
                   )}
                 </div>
 
-                {/* Breakdown */}
+                {/* Cost campanie: buget influenceri + taxa de management */}
                 {finalBudget > 0 && (
                   <div className="mg-calc">
-                    <div className="bu-label">Cum se distribuie bugetul</div>
-                    <div className="mg-r"><span>Fiecare influencer primește</span><b style={{ color: '#14532d' }}>{perInfluencer.toLocaleString('ro-RO')} RON</b></div>
-                    <div className="mg-r"><span className="bu-muted">Nr. influenceri</span><b>× {form.influencer_count}</b></div>
-                    <div className="mg-r bu-div" style={{ paddingTop: 8 }}><span className="bu-muted">Total plătit influenceri</span><b>{influencerPool.toLocaleString('ro-RO')} RON</b></div>
-                    <div className="mg-r bu-div" style={{ paddingTop: 8 }}><b>Total de plătit</b><b style={{ color: '#5a35e6', fontSize: 15 }}>{totalBudget.toLocaleString('ro-RO')} RON</b></div>
+                    <div className="bu-label">Cost campanie</div>
+                    <FeeSummary slots={form.influencer_count} price={fee ? fee.price : null} available={fee ? fee.available : null}
+                      payPerInfluencer={perInfluencer} payLabel="Buget influenceri" />
                   </div>
                 )}
                 </>)}
@@ -583,7 +588,7 @@ export default function NewManagedCampaign() {
               <button type="button" className="bu-btn p big"
                 onClick={handleSubmit}
                 disabled={loading}>
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Se trimite...</> : <><Sparkles className="w-4 h-4" /> Trimite campania</>}
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Se trimite...</> : <><Sparkles className="w-4 h-4" /> {fee ? (fee.available >= fee.price * form.influencer_count ? `Plătește ${(fee.price * form.influencer_count).toLocaleString('ro-RO')} RON și trimite` : 'Salvează ca draft') : 'Trimite campania'}</>}
               </button>
             )}
           </div>
@@ -605,8 +610,10 @@ export default function NewManagedCampaign() {
                 <div className="mg-r"><span className="bu-muted">Buget</span><span className="bu-chip" style={{ background: '#e6f0ff', color: '#1d4fb8' }}>De discutat</span></div>
               ) : (<>
                 <div className="mg-r"><span className="bu-muted">Per influencer</span><b style={{ color: '#14532d' }}>{perInfluencer.toLocaleString('ro-RO')} RON</b></div>
-                <div className="mg-r"><span className="bu-muted">Total campanie</span><b style={{ color: '#5a35e6', fontSize: 15 }}>{totalBudget.toLocaleString('ro-RO')} RON</b></div>
               </>)}
+              <div className="bu-div" />
+              <FeeSummary compact slots={form.influencer_count} price={fee ? fee.price : null} available={fee ? fee.available : null}
+                payPerInfluencer={form.negotiable ? undefined : (perInfluencer || null)} payNegotiable={form.negotiable} payLabel="Buget influenceri" />
             </div>
           </div>
         </div>

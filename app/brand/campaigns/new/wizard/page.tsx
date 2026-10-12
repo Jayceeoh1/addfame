@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Check, Rocket, Eye, EyeOff, Target, ImagePlus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { publishCampaignWithFee } from '@/app/actions/campaigns'
+import { publishCampaignWithFee, getCampaignFeeInfo } from '@/app/actions/campaigns'
+import { FeeSummary, FeeNotice } from '@/components/brand/FeeSummary'
 import { InfluencerSlotsSelector, type FeeInfo } from '@/components/brand/InfluencerSlotsSelector'
 
 const STEPS = ['Tip', 'Produs', 'Brief', 'Audiență', 'Confirmare']
@@ -290,6 +291,10 @@ export default function WizardPage() {
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get('type')
     if (t === 'PAID' || t === 'BARTER') setData(d => ({ ...d, campaign_type: t }))
+    // Taxa de management se vede din primul pas (prețul vine din Admin → Setări)
+    getCampaignFeeInfo().then((r: any) => {
+      if (r && Number.isFinite(Number(r.price))) setFeeInfo(f => f || { price: Number(r.price), available: Number(r.available) || 0, total: 0, enough: true })
+    }).catch(() => {})
   }, [])
 
   const togglePlatform = (p: string) => setData(d => ({
@@ -377,12 +382,16 @@ export default function WizardPage() {
       <div><h2>{title}</h2><p>{desc}</p></div>
     </div>
   )
-  const feeTotal = feeInfo ? (parseInt(data.max_influencers) || 1) * feeInfo.price : null
+  const slots = parseInt(data.max_influencers) || 1
+  const feeTotal = feeInfo ? slots * feeInfo.price : null
+  const feeEnough = !feeInfo || feeTotal === null || feeInfo.available >= feeTotal
+  const payPer = data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' ? (parseFloat(data.pay_amount) || null) : undefined
   const typeLabel = data.campaign_type === 'BARTER' ? 'Barter' : 'Plătită'
 
   const renderStep = () => {
     if (step === 1) return (
       <>
+        <FeeNotice price={feeInfo ? feeInfo.price : null} />
         <div className="bu-card nw-card">
           {secHead(1, 'Ce tip de campanie?', 'Alege modelul potrivit pentru afacerea ta.')}
           <div className="nw-tiles" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))' }}>
@@ -420,7 +429,7 @@ export default function WizardPage() {
               <div className="nw-f">
                 <label>Sumă per influencer (RON) *</label>
                 <input type="number" min={1} value={data.pay_amount} onChange={e => set('pay_amount', e.target.value)} placeholder="ex. 200" className="nw-in" />
-                <p className="nw-hint">Suma pe care o primește fiecare influencer. Taxa AddFame se calculează separat, per influencer, la pasul „Audiență”.</p>
+                <p className="nw-hint">Suma pe care o primește fiecare influencer. Taxa de management AddFame se adaugă separat{feeInfo ? `: ${feeInfo.price.toLocaleString('ro-RO')} RON / influencer` : ', per influencer'}.</p>
               </div>
             )}
           </div>
@@ -569,7 +578,7 @@ export default function WizardPage() {
               { label: 'Conținut', value: [data.tasks_ig_reel && 'Reel', data.tasks_ig_post && 'Post', data.tasks_tt_video && 'TikTok', data.tasks_stories_count > 0 && `${data.tasks_stories_count} Stories`].filter(Boolean).join(', ') || null, ok: hasContent },
               { label: 'Instrucțiuni', value: data.story_instructions ? data.story_instructions.substring(0, 50) + '...' : null, ok: !!data.story_instructions, optional: true },
               { label: 'Influenceri', value: `${data.max_influencers} persoane`, ok: true },
-              { label: 'Taxă AddFame', value: feeInfo ? `${((parseInt(data.max_influencers) || 1) * feeInfo.price).toLocaleString('ro-RO')} RON (${data.max_influencers} × ${feeInfo.price.toLocaleString('ro-RO')} RON)` : null, ok: !feeInfo || feeInfo.enough, optional: true },
+              { label: 'Taxă management', value: feeInfo ? `${(slots * feeInfo.price).toLocaleString('ro-RO')} RON (${slots} × ${feeInfo.price.toLocaleString('ro-RO')} RON)` : null, ok: feeEnough, optional: true },
               { label: 'Deadline', value: data.deadline ? new Date(data.deadline).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' }) : 'Automat 30 zile', ok: true },
             ].map((row, i, arr) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', minHeight: 44, borderBottom: i < arr.length - 1 ? '1px solid #eeecf7' : 'none' }}>
@@ -584,10 +593,10 @@ export default function WizardPage() {
             ))}
           </div>
         </div>
-        {feeInfo && !feeInfo.enough && (
+        {feeInfo && !feeEnough && (
           <div className="nw-note violet">
             <span>
-              Sold insuficient pentru taxa de {((parseInt(data.max_influencers) || 1) * feeInfo.price).toLocaleString('ro-RO')} RON.
+              Sold insuficient pentru taxa de management de {(slots * feeInfo.price).toLocaleString('ro-RO')} RON.
               Campania se va salva ca <strong>draft</strong> — o publici după ce <a href="/brand/wallet" style={{ color: '#4423c4', fontWeight: 800 }}>adaugi credite</a>.
             </span>
           </div>
@@ -663,8 +672,13 @@ export default function WizardPage() {
             <div className="row"><span>Platforme</span><b>{data.platforms.length ? data.platforms.join(', ') : '—'}</b></div>
             <div className="row"><span>Locuri</span><b>{data.max_influencers || '—'}</b></div>
             <div className="bu-div" />
-            <div className="row"><span>{data.campaign_type === 'BARTER' ? 'Taxă publicare' : 'Taxă AddFame'}</span><b className="big">{feeTotal !== null ? `${feeTotal.toLocaleString('ro-RO')} RON` : '—'}</b></div>
-            {feeInfo && !feeInfo.enough && <div className="nw-note amber">Sold insuficient — se salvează ca draft.</div>}
+            <FeeSummary
+              slots={slots}
+              price={feeInfo ? feeInfo.price : null}
+              available={feeInfo ? feeInfo.available : null}
+              payPerInfluencer={payPer}
+              payNegotiable={data.campaign_type === 'PAID' && data.payment_mode === 'NEGOTIABLE'}
+            />
           </div>
           <p className="bu-label" style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '18px 0 8px' }}><Eye size={12} /> Cum vede influencerul</p>
           <LivePreview data={data} />
@@ -682,7 +696,7 @@ export default function WizardPage() {
             <button type="button" onClick={() => setStep(s => s + 1)} className="bu-btn p big">Continuă <ArrowRight size={16} /></button>
           ) : (
             <button type="button" onClick={publish} disabled={saving} className="bu-btn p big">
-              <Rocket size={16} /> {saving ? 'Se trimite...' : feeInfo && !feeInfo.enough ? 'Salvează ca draft' : feeInfo ? `Plătește ${((parseInt(data.max_influencers) || 1) * feeInfo.price).toLocaleString('ro-RO')} RON și trimite` : 'Trimite la aprobare'}
+              <Rocket size={16} /> {saving ? 'Se trimite...' : feeInfo && !feeEnough ? 'Salvează ca draft' : feeInfo ? `Plătește ${(slots * feeInfo.price).toLocaleString('ro-RO')} RON și trimite` : 'Trimite la aprobare'}
             </button>
           )}
         </div>

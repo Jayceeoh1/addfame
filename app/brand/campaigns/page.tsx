@@ -99,6 +99,16 @@ export default function BrandCampaignsPage() {
         setBrandVerification({ status: brand.verification_status || 'unverified', reason: brand.verification_rejection_reason })
         const hasAccess = (brand.credits_balance ?? 0) >= 250 || brand.influencers_access === true
         setCanCreateCampaign(hasAccess)
+        // /brand/campaigns?new=1 (ex. din „Campanie nouă” de pe alte pagini) → deschide direct alegerea tipului
+        try {
+          const qs = new URLSearchParams(window.location.search)
+          if (qs.get('new') === '1') {
+            if (hasAccess) setShowSheet(true)
+            qs.delete('new')
+            const rest = qs.toString()
+            window.history.replaceState(null, '', window.location.pathname + (rest ? `?${rest}` : ''))
+          }
+        } catch { /* fără URL — nimic */ }
       }
       if (!brand) return
 
@@ -224,7 +234,7 @@ export default function BrandCampaignsPage() {
 
   const TILES = [
     { name: 'Plătită', desc: 'Plătești creatorul direct pentru postare.', Icon: Wallet, bg: '#e6f0ff', fg: '#1d4fb8', href: '/brand/campaigns/new/wizard?type=PAID' },
-    { name: 'Barter', desc: 'Trimiți produsul, primești conținut.', Icon: Gift, bg: '#efeaff', fg: '#4423c4', href: '/brand/campaigns/new/barter', note: 'Taxă publicare: 149 RON' },
+    { name: 'Barter', desc: 'Trimiți produsul, primești conținut.', Icon: Gift, bg: '#efeaff', fg: '#4423c4', href: '/brand/campaigns/new/barter' },
     { name: 'Open Call', desc: 'Oricine se potrivește poate aplica.', Icon: Megaphone, bg: '#dff4fd', fg: '#0c4a6e', href: '/brand/campaigns/new/opencall' },
     { name: 'Managed', desc: 'Echipa AddFame o rulează pentru tine.', Icon: Sparkles, bg: '#14123a', fg: '#ffffff', href: '/brand/campaigns/new/managed' },
   ]
@@ -428,9 +438,12 @@ export default function BrandCampaignsPage() {
                   {isDraft && (
                     <div className="cp-notice" style={{ background: '#f7f4ff', border: '1px dashed #b9a5f5' }}>
                       <div className="bu-row" style={{ justifyContent: 'space-between', gap: 10 }}>
-                        <b className="bu-sm" style={{ color: '#4423c4' }}>Taxă de publicare</b>
+                        <span className="bu-col" style={{ gap: 0 }}>
+                          <b className="bu-sm" style={{ color: '#4423c4' }}>Taxă de management AddFame</b>
+                          {feeInfo?.price ? <span className="bu-xs bu-muted">{c.max_influencers || 1} × {fmt(feeInfo.price)}</span> : null}
+                        </span>
                         <b className="bu-d" style={{ fontSize: 20, color: '#4423c4' }}>
-                          {(c as any).campaign_type === 'BARTER' ? '149 RON' : fee ? fmt(fee) : '—'}
+                          {fee ? fmt(fee) : '—'}
                         </b>
                       </div>
                       <span className="bu-xs bu-muted">
@@ -526,7 +539,11 @@ export default function BrandCampaignsPage() {
             <div className="bu-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
               <div className="bu-col" style={{ gap: 2 }}>
                 <h2 style={{ fontSize: 20 }}>Ce fel de campanie vrei să pornești?</h2>
-                <span className="bu-sm bu-muted">Taxa de publicare e 149 RON pentru Barter.</span>
+                <span className="bu-sm bu-muted">
+                  {feeInfo?.price
+                    ? <>Taxa de management AddFame: <b style={{ color: '#4423c4' }}>{fmt(feeInfo.price)} / influencer</b>, la orice tip de campanie. Se plătește la publicare.</>
+                    : 'Taxa de management AddFame se plătește la publicare, per influencer.'}
+                </span>
               </div>
               <button className="cp-x" aria-label="Închide" onClick={() => setShowSheet(false)}><X size={18} /></button>
             </div>
@@ -536,7 +553,7 @@ export default function BrandCampaignsPage() {
                   <span className="ti" style={{ background: t.bg, color: t.fg }}><t.Icon size={20} /></span>
                   <b>{t.name}</b>
                   <span className="bu-sm bu-muted">{t.desc}</span>
-                  {t.note && <span className="bu-chip" style={{ background: '#fff1e6', color: '#9a4206', alignSelf: 'flex-start', height: 22, fontSize: 11 }}>{t.note}</span>}
+                  {feeInfo?.price ? <span className="bu-chip" style={{ background: '#efeaff', color: '#4423c4', alignSelf: 'flex-start', height: 22, fontSize: 11 }}>Taxă: {fmt(feeInfo.price)} / influencer</span> : null}
                 </button>
               ))}
             </div>

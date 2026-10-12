@@ -143,8 +143,11 @@ export function InfluencerSlotsSelector({
         ) : (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 13, color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>
-                {n} × {ron(price)}
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#4423c4' }}>Taxă de management AddFame</span>
+                <span style={{ fontSize: 13, color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>
+                  {n} {n === 1 ? 'influencer' : 'influenceri'} × {ron(price)}
+                </span>
               </span>
               <span style={{ fontSize: 22, fontWeight: 900, color: '#111827', fontVariantNumeric: 'tabular-nums' }}>
                 {ron(total)}
@@ -169,7 +172,7 @@ export function InfluencerSlotsSelector({
               </p>
             )}
             <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af', lineHeight: 1.5 }}>
-              Taxa se plătește la publicare. Dacă nu se ocupă toate locurile, diferența se returnează în wallet la închiderea campaniei.
+              Taxa de management se plătește la publicare și se adaugă peste plata influencerilor. Dacă nu se ocupă toate locurile, diferența se returnează în wallet la închiderea campaniei.
             </p>
           </>
         )}

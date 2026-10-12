@@ -748,7 +748,7 @@ export default function BrandDashboard() {
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#efeaff', color: '#4423c4' }}><Gift className="w-5 h-5" /></div>
                 <div className="min-w-0"><p className="font-black text-sm" style={{ color: '#14123a' }}>Barter</p><p className="text-xs" style={{ color: '#6a6690' }}>Produs gratuit</p></div>
               </button>
-              <button onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new') }}
+              <button onClick={() => { setShowSheet(false); router.push('/brand/campaigns/new/wizard?type=PAID') }}
                 className="flex-1 flex items-center gap-3 p-3.5 rounded-2xl transition text-left hover:bg-violet-50" style={{ border: '2px solid #eeecf7' }}>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#e6f0ff', color: '#1d4fb8' }}><Banknote className="w-5 h-5" /></div>
                 <div className="min-w-0"><p className="font-black text-sm" style={{ color: '#14123a' }}>Plătită</p><p className="text-xs" style={{ color: '#6a6690' }}>Plată per postare</p></div>
