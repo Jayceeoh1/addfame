@@ -25,6 +25,12 @@ function maybeCleanup() {
   }
 }
 
+// Dacă Supabase răspunde greu, middleware-ul nu trebuie să blocheze tot site-ul (Vercel îl oprește cu 504).
+const TIMEOUT = Symbol('timeout')
+function withTimeout<T>(p: PromiseLike<T>, ms: number): Promise<T | typeof TIMEOUT> {
+  return Promise.race([Promise.resolve(p), new Promise<typeof TIMEOUT>(r => setTimeout(() => r(TIMEOUT), ms))])
+}
+
 const adminCache = new Map<string, { isAdmin: boolean; cachedAt: number }>()
 const ADMIN_CACHE_TTL = 5 * 60 * 1000
 
@@ -41,11 +47,13 @@ async function checkIsAdmin(userId: string): Promise<boolean> {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
-    const { data } = await serviceClient
+    const res = await withTimeout(serviceClient
       .from('admins')
       .select('is_active')
       .eq('user_id', userId)
-      .single()
+      .single(), 5000)
+    if (res === TIMEOUT) return false  // fără răspuns → fără acces admin (nu se cache-uiește)
+    const { data } = res
 
     const isAdmin = !!(data && data.is_active !== false)
     adminCache.set(userId, { isAdmin, cachedAt: now })
@@ -119,7 +127,15 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const authRes = await withTimeout(supabase.auth.getUser(), 6000)
+  if (authRes === TIMEOUT) {
+    console.error('[middleware] Supabase Auth nu a răspuns în 6s:', pathname)
+    // Admin: fără verificare nu dăm acces. Brand/influencer: paginile își verifică singure sesiunea,
+    // iar datele sunt protejate în baza de date (RLS) — lăsăm pagina să se încarce în loc de eroarea 504.
+    if (isAdminRoute) return NextResponse.redirect(new URL('/auth/login?redirect=/admin', request.url))
+    return response
+  }
+  const { data: { user } } = authRes
 
   if (isAdminRoute) {
     if (!user) {
