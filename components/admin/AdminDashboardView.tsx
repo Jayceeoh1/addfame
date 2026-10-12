@@ -49,13 +49,13 @@ function MonthBars({ months, series, grow = false }: { months: { label: string }
   const max = Math.max(1, ...series.flatMap(s => s.values))
   return (
     <>
-      <div className={`ad-chart${grow ? ' grow' : ''}`} style={{ ['--cols' as any]: months.length }} role="img"
+      <div className={`acp-chart${grow ? ' grow' : ''}`} style={{ ['--cols' as any]: months.length }} role="img"
         aria-label={series.map(s => `${s.name}: ${s.values.map((v, i) => `${months[i].label} ${v}`).join(', ')}`).join('; ')}>
         {months.map((m, i) => (
-          <div key={i} className="ad-col">
-            <div className="ad-bars">
+          <div key={i} className="acp-col">
+            <div className="acp-bars">
               {series.map(s => (
-                <div key={s.name} className="ad-bar" style={{ height: `${(s.values[i] / max) * 100}%`, background: s.color }}>
+                <div key={s.name} className="acp-bar" style={{ height: `${(s.values[i] / max) * 100}%`, background: s.color }}>
                   {s.values[i] > 0 && <em>{short(s.values[i])}</em>}
                 </div>
               ))}
@@ -64,7 +64,7 @@ function MonthBars({ months, series, grow = false }: { months: { label: string }
           </div>
         ))}
       </div>
-      <div className="ad-legend" style={{ marginTop: 10 }}>
+      <div className="acp-legend" style={{ marginTop: 10 }}>
         {series.map(s => <span key={s.name}><i style={{ background: s.color }} />{s.name}</span>)}
       </div>
     </>
@@ -85,30 +85,30 @@ export function AdminDashboardView({ data, loading = false, onRefresh }: { data:
   const lastFee = data.series.fees[data.series.fees.length - 1] || 0
 
   return (
-    <div className="ad-page">
-      <div className="ad-hello">
+    <div className="acp-page">
+      <div className="acp-hello">
         <div>
           <h1>{hello.title}</h1>
           <p style={{ textTransform: 'none' }}>
             <span style={{ textTransform: 'capitalize' }}>{today}</span> · {totalOpen === 0 ? 'nimic nu te așteaptă' : `${totalOpen} ${totalOpen === 1 ? 'lucru te așteaptă' : 'lucruri te așteaptă'}`}
           </p>
         </div>
-        <button className="ad-btn" onClick={onRefresh} disabled={loading}>
+        <button className="acp-btn" onClick={onRefresh} disabled={loading}>
           <RefreshCw className={`w-4 h-4${loading ? ' animate-spin' : ''}`} /> Actualizează
         </button>
       </div>
 
       {/* De rezolvat */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div className="ad-row" style={{ justifyContent: 'space-between' }}>
+        <div className="acp-row" style={{ justifyContent: 'space-between' }}>
           <h2>De rezolvat</h2>
         </div>
         {totalOpen === 0 ? (
-          <div className="ad-allclear"><CheckCircle2 className="w-5 h-5" /> Totul e la zi: nicio plată, verificare sau postare nu așteaptă.</div>
+          <div className="acp-allclear"><CheckCircle2 className="w-5 h-5" /> Totul e la zi: nicio plată, verificare sau postare nu așteaptă.</div>
         ) : (
-          <div className="ad-queue">
+          <div className="acp-queue">
             {[...open, ...QUEUE.filter(x => q[x.key] === 0)].map(x => (
-              <Link key={x.key} href={x.href} className={`ad-q${q[x.key] > 0 ? ' hot' : ' done'}`}>
+              <Link key={x.key} href={x.href} className={`acp-q${q[x.key] > 0 ? ' hot' : ' done'}`}>
                 <div className="ic" style={{ background: x.bg, color: x.fg }}><x.icon className="w-5 h-5" /></div>
                 <div style={{ minWidth: 0 }}>
                   <div className="n">{q[x.key]}</div>
@@ -121,8 +121,8 @@ export function AdminDashboardView({ data, loading = false, onRefresh }: { data:
       </section>
 
       {/* Bani */}
-      <section className="ad-money">
-        <div className="ad-hero">
+      <section className="acp-money">
+        <div className="acp-hero">
           <span className="lbl">Venit AddFame · taxe de management</span>
           <span className="big">{ron(m.feesNet)}</span>
           <span className="sub">Taxe încasate la publicarea campaniilor, minus locurile neocupate returnate. Luna aceasta: <b>{ron(lastFee)}</b> brut.</span>
@@ -131,24 +131,24 @@ export function AdminDashboardView({ data, loading = false, onRefresh }: { data:
             <div><span className="lbl">Campanii active</span><b>{data.campaigns.active}</b></div>
           </div>
         </div>
-        <div className="ad-tiles">
-          <Link href="/admin/payments" className="ad-card ad-tile" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <span className="ad-label">De confirmat</span>
+        <div className="acp-tiles">
+          <Link href="/admin/payments" className="acp-card acp-tile" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <span className="acp-label">De confirmat</span>
             <span className="v" style={{ color: m.topupsPending > 0 ? '#854d0e' : undefined }}>{ron(m.topupsPending)}</span>
             <span className="h">transferuri anunțate, neverificate</span>
           </Link>
-          <div className="ad-card ad-tile">
-            <span className="ad-label">Credite în conturi</span>
+          <div className="acp-card acp-tile">
+            <span className="acp-label">Credite în conturi</span>
             <span className="v">{ron(m.walletBalances)}</span>
             <span className="h">soldul tuturor brandurilor</span>
           </div>
-          <div className="ad-card ad-tile">
-            <span className="ad-label">Blocați pentru influenceri</span>
+          <div className="acp-card acp-tile">
+            <span className="acp-label">Blocați pentru influenceri</span>
             <span className="v">{ron(m.heldForInfluencers)}</span>
             <span className="h">se plătesc la aprobarea postărilor</span>
           </div>
-          <Link href="/admin/withdrawals" className="ad-card ad-tile" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <span className="ad-label">Retrageri de plătit</span>
+          <Link href="/admin/withdrawals" className="acp-card acp-tile" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <span className="acp-label">Retrageri de plătit</span>
             <span className="v" style={{ color: m.payoutsPending > 0 ? '#14804a' : undefined }}>{ron(m.payoutsPending)}</span>
             <span className="h">cerute de influenceri</span>
           </Link>
@@ -156,22 +156,22 @@ export function AdminDashboardView({ data, loading = false, onRefresh }: { data:
       </section>
 
       {/* Evoluție */}
-      <section className="ad-two">
-        <div className="ad-card ad-pad">
-          <div className="ad-row" style={{ justifyContent: 'space-between', marginBottom: 4 }}>
+      <section className="acp-two">
+        <div className="acp-card acp-pad">
+          <div className="acp-row" style={{ justifyContent: 'space-between', marginBottom: 4 }}>
             <h2>Bani pe ultimele 6 luni</h2>
-            <span className="ad-label">RON</span>
+            <span className="acp-label">RON</span>
           </div>
           <MonthBars grow months={data.months} series={[
             { name: 'Încărcări confirmate', color: '#c9b9fb', values: data.series.topups },
             { name: 'Taxe AddFame', color: '#5a35e6', values: data.series.fees },
           ]} />
         </div>
-        <div className="ad-card ad-pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="acp-card acp-pad" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <h2>Comunitate</h2>
-          <div className="ad-tiles" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <div><span className="ad-label">Influenceri</span><div className="ad-num" style={{ fontWeight: 800, fontSize: 22 }}>{data.people.influencers.toLocaleString('ro-RO')}</div><span className="ad-muted" style={{ fontSize: 12 }}>{data.people.approved.toLocaleString('ro-RO')} aprobați</span></div>
-            <div><span className="ad-label">Branduri</span><div className="ad-num" style={{ fontWeight: 800, fontSize: 22 }}>{data.people.brands.toLocaleString('ro-RO')}</div><span className="ad-muted" style={{ fontSize: 12 }}>{data.people.verifiedBrands} verificate</span></div>
+          <div className="acp-tiles" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div><span className="acp-label">Influenceri</span><div className="acp-num" style={{ fontWeight: 800, fontSize: 22 }}>{data.people.influencers.toLocaleString('ro-RO')}</div><span className="acp-muted" style={{ fontSize: 12 }}>{data.people.approved.toLocaleString('ro-RO')} aprobați</span></div>
+            <div><span className="acp-label">Branduri</span><div className="acp-num" style={{ fontWeight: 800, fontSize: 22 }}>{data.people.brands.toLocaleString('ro-RO')}</div><span className="acp-muted" style={{ fontSize: 12 }}>{data.people.verifiedBrands} verificate</span></div>
           </div>
           <MonthBars months={data.months} series={[
             { name: 'Influenceri noi', color: '#2f6fe0', values: data.series.influencers },
@@ -181,30 +181,30 @@ export function AdminDashboardView({ data, loading = false, onRefresh }: { data:
       </section>
 
       {/* Campanii + încărcări */}
-      <section className="ad-two">
-        <div className="ad-card ad-pad">
-          <div className="ad-row" style={{ justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap' }}>
+      <section className="acp-two">
+        <div className="acp-card acp-pad">
+          <div className="acp-row" style={{ justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap' }}>
             <h2>Campanii</h2>
-            <span className="ad-muted" style={{ fontSize: 13 }}>
+            <span className="acp-muted" style={{ fontSize: 13 }}>
               <b style={{ color: '#1d4fb8' }}>{data.campaigns.active}</b> active · {data.campaigns.draft} ciorne · {data.campaigns.completed} încheiate
             </span>
           </div>
           {data.topCampaigns.length === 0 ? (
-            <p className="ad-muted" style={{ margin: '12px 0 0', fontSize: 14 }}>Nicio campanie publicată încă.</p>
+            <p className="acp-muted" style={{ margin: '12px 0 0', fontSize: 14 }}>Nicio campanie publicată încă.</p>
           ) : (
-            <div className="ad-list">
+            <div className="acp-list">
               {data.topCampaigns.map(c => {
                 const st = CAMP_STATUS[c.status] ?? { label: c.status, bg: '#f0eff7', fg: '#4a4770' }
                 const pct = c.collabs ? Math.round((c.completed / c.collabs) * 100) : 0
                 return (
-                  <Link key={c.id} href={`/admin/campaigns/${c.id}/performance`} className="ad-li" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <Link key={c.id} href={`/admin/campaigns/${c.id}/performance`} className="acp-li" style={{ textDecoration: 'none', color: 'inherit' }}>
                     <div className="ic" style={{ width: 36, height: 36, borderRadius: 10, background: '#efeaff', color: '#4423c4', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}><Briefcase className="w-4 h-4" /></div>
                     <div className="main">
                       <b>{c.title}</b>
                       <small>{c.collabs} colaborări · {c.completed} cu postarea aprobată</small>
-                      <div className="ad-prog"><i style={{ width: `${pct}%` }} /></div>
+                      <div className="acp-prog"><i style={{ width: `${pct}%` }} /></div>
                     </div>
-                    <span className="ad-chip" style={{ background: st.bg, color: st.fg }}>{st.label}</span>
+                    <span className="acp-chip" style={{ background: st.bg, color: st.fg }}>{st.label}</span>
                   </Link>
                 )
               })}
@@ -212,19 +212,19 @@ export function AdminDashboardView({ data, loading = false, onRefresh }: { data:
           )}
         </div>
 
-        <div className="ad-card ad-pad">
-          <div className="ad-row" style={{ justifyContent: 'space-between', marginBottom: 6 }}>
+        <div className="acp-card acp-pad">
+          <div className="acp-row" style={{ justifyContent: 'space-between', marginBottom: 6 }}>
             <h2>Ultimele încărcări</h2>
-            <Link href="/admin/payments" className="ad-btn" style={{ height: 32 }}>Toate</Link>
+            <Link href="/admin/payments" className="acp-btn" style={{ height: 32 }}>Toate</Link>
           </div>
           {data.recentTopups.length === 0 ? (
-            <p className="ad-muted" style={{ margin: '12px 0 0', fontSize: 14 }}>Nicio încărcare încă.</p>
+            <p className="acp-muted" style={{ margin: '12px 0 0', fontSize: 14 }}>Nicio încărcare încă.</p>
           ) : (
-            <div className="ad-list">
+            <div className="acp-list">
               {data.recentTopups.map(t => {
                 const st = TX_STATUS[t.status] ?? TX_STATUS.pending
                 return (
-                  <div key={t.id} className="ad-li">
+                  <div key={t.id} className="acp-li">
                     <div className="main">
                       <b>{t.brand}</b>
                       <small>
@@ -233,8 +233,8 @@ export function AdminDashboardView({ data, loading = false, onRefresh }: { data:
                       </small>
                     </div>
                     <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                      <b className="ad-num" style={{ fontSize: 14 }}>{ron(t.amount)}</b>
-                      <span className="ad-chip" style={{ background: st.bg, color: st.fg }}>{st.label}</span>
+                      <b className="acp-num" style={{ fontSize: 14 }}>{ron(t.amount)}</b>
+                      <span className="acp-chip" style={{ background: st.bg, color: st.fg }}>{st.label}</span>
                     </div>
                   </div>
                 )
