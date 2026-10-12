@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
           brand_id: collabWithBrand.brands?.id,
           influencer_id: collab.influencers?.id,
           campaign_title: collab.campaigns?.title,
-          amount: collab.campaigns?.budget_per_influencer || collab.campaigns?.budget || 0,
+          amount: Number(collab.pay_reserved) || Number(collab.offer_price) || collab.campaigns?.budget_per_influencer || collab.campaigns?.budget || 0,
           deadline: collab.campaigns?.deadline,
           deliverables: collab.campaigns?.deliverables,
           platforms: collab.campaigns?.platforms,
@@ -160,14 +160,22 @@ export async function POST(req: NextRequest) {
 async function activateCollaboration(admin: any, collab: any, contractId: string) {
   // Campaniile cu taxă per influencer nu au escrow per influencer
   const feeModel = collab.campaigns?.fee_per_influencer !== null && collab.campaigns?.fee_per_influencer !== undefined
-  const budget = feeModel ? 0 : (collab.reserved_amount || collab.campaigns?.budget_per_influencer || collab.campaigns?.budget || 0)
+  // Modelul cu taxă: păstrăm suma blocată pe colaborare (prețul propus, SQL 31), altfel 0 — nu o ștergem la semnare
+  const budget = feeModel ? (Number(collab.pay_reserved) > 0 ? Number(collab.reserved_amount) || Number(collab.pay_reserved) : 0)
+    : (collab.reserved_amount || collab.campaigns?.budget_per_influencer || collab.campaigns?.budget || 0)
 
-  await admin.from('collaborations').update({
+  const { error: actErr } = await admin.from('collaborations').update({
     status: 'ACTIVE',
     reserved_amount: budget,
     contract_id: contractId,
     activated_at: new Date().toISOString(),
   }).eq('id', collab.id)
+  // ex. campanie „Influencerii propun prețul” fără selecție plătită: baza de date refuză activarea (SQL 31)
+  if (actErr) {
+    console.error('[contracts] activare refuzată:', actErr.message)
+    await admin.from('collaborations').update({ contract_id: contractId }).eq('id', collab.id)
+    return
+  }
 
   await admin.from('notifications').insert([
     {
@@ -252,7 +260,8 @@ Semnătura electronică are valoare juridică conform Legii nr. 455/2001 privind
   }
 
   // Contract standard (paid campaigns)
-  const amount = collab.campaigns?.budget_per_influencer || collab.campaigns?.budget || 0
+  // Prețul propus de influencer (blocat la selecție) are prioritate față de suma fixă a campaniei
+  const amount = Number(collab.pay_reserved) || Number(collab.offer_price) || collab.campaigns?.budget_per_influencer || collab.campaigns?.budget || 0
   const netAmount = Math.round(amount * 0.85 * 100) / 100
 
   return `CONTRACT DE COLABORARE PENTRU INFLUENCER MARKETING

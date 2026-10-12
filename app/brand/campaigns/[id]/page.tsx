@@ -4,7 +4,8 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { updateCampaignStatus, getCampaignFeeInfo } from '@/app/actions/campaigns'
-import { approveApplication, approveDeliverable } from '@/app/actions/collaborations'
+import { approveApplication, approveDeliverable, cancelCollaboration } from '@/app/actions/collaborations'
+import { CampaignMoney } from '@/components/brand/CampaignMoney'
 import { duplicateBarterCampaign } from '@/app/actions/barter-campaigns'
 import { getPlatformSettings } from '@/app/actions/admin'
 import { ArrowLeft, CheckCircle, AlertCircle, X, Check, Star, MessageSquare, ArrowUpRight, Send, Users, Download, BarChart3 } from 'lucide-react'
@@ -194,6 +195,13 @@ export default function CampaignDetailPage() {
       const update: any = { status: newStatus }
       if (newStatus === 'COMPLETED') update.completed_at = new Date().toISOString()
       if (newStatus === 'ACTIVE') {
+        // Preț propus de influencer: confirmare cu suma care se ia din wallet
+        const target = collabs.find(c => c.id === collabId)
+        if (campaign?.payment_mode === 'OFFER') {
+          const price = Number(target?.offer_price) || 0
+          if (!(price > 0)) throw new Error('Influencerul nu a propus încă un preț.')
+          if (!confirm(`Îl selectezi la prețul cerut de ${price.toLocaleString('ro-RO')} RON?\n\nSuma se ia acum din wallet și stă blocată la AddFame. Influencerul o primește doar după ce îi aprobi postarea; dacă nu postează, banii se întorc la tine.`)) return
+        }
         // Selecția trece prin server: verifică locurile plătite / escrow și actualizează contorul
         const res: any = await approveApplication(collabId)
         if (res?.error) throw new Error(res.error)
@@ -209,6 +217,11 @@ export default function CampaignDetailPage() {
       } else {
         const { error } = await sb.from('collaborations').update(update).eq('id', collabId)
         if (error) throw error
+      }
+      if (newStatus === 'ACTIVE' && campaign?.payment_mode === 'OFFER') {
+        const t = collabs.find(c => c.id === collabId)
+        update.pay_reserved = Number(t?.offer_price) || 0
+        update.reserved_amount = update.pay_reserved
       }
       setCollabs((prev: any[]) => prev.map(c => c.id === collabId ? { ...c, ...update } : c))
       if (newStatus === 'ACTIVE') {
@@ -230,6 +243,19 @@ export default function CampaignDetailPage() {
 
   async function rejectWithMessage() {
     if (!rejectModal) return
+    const activeHeld = collabs.find(c => c.id === rejectModal.collabId)
+    if (activeHeld?.status === 'ACTIVE' && Number(activeHeld.pay_reserved) > 0 && !activeHeld.payment_amount) {
+      setRejecting(true)
+      try {
+        const res: any = await cancelCollaboration(rejectModal.collabId)
+        if (res?.error) throw new Error(res.error)
+        setCollabs(prev => prev.map(c => c.id === rejectModal.collabId ? { ...c, status: 'CANCELLED', pay_refunded: c.pay_reserved } : c))
+        notify(`Colaborare anulată. ${Number(activeHeld.pay_reserved).toLocaleString('ro-RO')} RON s-au întors în wallet.`)
+        setRejectModal(null); setRejectReason('')
+      } catch (e: any) { notify(e.message || 'Eroare.', false) }
+      finally { setRejecting(false) }
+      return
+    }
     setRejecting(true)
     try {
       const sb = createClient()
@@ -474,6 +500,8 @@ export default function CampaignDetailPage() {
         }}
       />
 
+      <CampaignMoney campaign={campaign} collabs={collabs} />
+
       {/* ── De revizuit ── */}
       {reviewItems.length > 0 && (
         <div className="card p-5 mb-5 card-anim" style={{ borderColor: '#fcd34d', background: '#fffbeb' }}>
@@ -650,7 +678,7 @@ export default function CampaignDetailPage() {
                   ) : isPending ? (
                     <>
                       <button className="cx-btn" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>{isBusy ? spin : 'Refuză'}</button>
-                      <button className="cx-btn p" onClick={() => collabAction(collab.id, 'ACTIVE')} disabled={isBusy} style={{ flexGrow: 1.4 }}>{isBusy ? spin : 'Aprobă'}</button>
+                      <button className="cx-btn p" onClick={() => collabAction(collab.id, 'ACTIVE')} disabled={isBusy} style={{ flexGrow: 1.4 }}>{isBusy ? spin : campaign?.payment_mode === 'OFFER' && collab.offer_price ? `Selectează · ${Number(collab.offer_price).toLocaleString('ro-RO')} RON` : 'Aprobă'}</button>
                     </>
                   ) : isActive ? (
                     <button className="cx-btn d s" onClick={() => collabAction(collab.id, 'REJECTED')} disabled={isBusy}>{isBusy ? spin : 'Refuză colaborarea'}</button>

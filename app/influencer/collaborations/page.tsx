@@ -13,7 +13,7 @@ import {
   Loader2, Package, Truck, Lock, Copy, FileText, Star
 } from 'lucide-react'
 import Link from 'next/link'
-import { checkInWithCode } from '@/app/actions/collaborations'
+import { checkInWithCode, acceptInviteWithOffer, updateMyOffer } from '@/app/actions/collaborations'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 import { PostStatsForm } from '@/components/shared/PostStatsForm'
 import { LeaveReview } from '@/components/shared/leave-review'
@@ -48,8 +48,11 @@ type Collaboration = {
   content_license_granted?: boolean
   content_license_at?: string
   thumbnail_url?: string
+  offer_price?: number | null
+  pay_reserved?: number | null
   campaigns: {
     id: string
+    payment_mode?: string | null
     title: string
     brand_name: string
     budget: number
@@ -297,8 +300,7 @@ function collabStatus(c: any, expired: boolean): Pastel {
     if (waitingDraft(c)) return c.draft_status === 'pending' ? { label: 'Draft la brand', ...AMB } : { label: 'Modificări cerute la draft', ...ORG }
     if (isLatePost(c)) return { label: 'Întârziat', ...ORG }
     if (needsAddress(c)) return { label: 'Adresă necesară', ...AMB }
-    if (isDeliveryBarter(c) && !c.package_sent_at) return { label: 'Brandul pregătește pachetul', ...BLU }
-    if (isDeliveryBarter(c) && !c.package_received_at) return { label: 'Colet în drum', ...BLU }
+    if (isDeliveryBarter(c) && !c.package_received_at) return { label: c.package_sent_at ? 'Colet în drum' : 'Colet în pregătire', ...BLU }
     return { label: 'De postat', ...GRN }
   }
   return { label: c.status || '—', ...GRY }
@@ -322,6 +324,9 @@ function deadlineChip(c: any): Pastel | null {
 // Câștig / plată pentru rând
 function moneyInfo(c: any): { amt: string; tag: string; tagStyle: Pastel } | null {
   if (c.status === 'ACTIVE' && c.reserved_amount) return { amt: fmtRon(c.reserved_amount), tag: 'Plată garantată', tagStyle: { label: '', ...BLU } }
+  // „Influencerii propun prețul”: cererea în așteptare arată prețul propus
+  if (c.campaigns?.payment_mode === 'OFFER' && c.offer_price && ['PENDING', 'INVITED', 'PENDING_INFLUENCER'].includes(c.status))
+    return { amt: fmtRon(c.offer_price), tag: 'Prețul tău', tagStyle: { label: '', ...VIO } }
   if (c.status === 'COMPLETED' && c.payment_amount) return { amt: fmtRon(c.payment_amount), tag: 'Plătit', tagStyle: { label: '', ...GRN } }
   const camp = c.campaigns
   if (!camp) return null
@@ -743,6 +748,8 @@ export default function CollaborationsPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [addressModal, setAddressModal] = useState<{ collabId: string } | null>(null)
+  // Prețul propus (campanii „Influencerii propun prețul”): la acceptarea invitației sau modificare cât așteaptă selecția
+  const [offerModal, setOfferModal] = useState<{ collabId: string; mode: 'accept' | 'update'; value: string; error?: string } | null>(null)
   const [address, setAddress] = useState({ name: '', phone: '', address: '', city: '', county: '', postal_code: '' })
   const [campaignModalId, setCampaignModalId] = useState<string | null>(null)
   const [deliverableModalId, setDeliverableModalId] = useState<string | null>(null)
@@ -766,7 +773,7 @@ export default function CollaborationsPage() {
       if (!inf) return
       const { data, error } = await sb
         .from('collaborations')
-        .select('*, reserved_amount, payment_amount, campaigns(id, title, brand_name, budget, budget_per_influencer, max_influencers, deadline, platforms, description, product_name, content_type, content_tone, min_duration, required_caption, required_hashtags, min_days_online, forbidden_mentions, forbidden_content, proof_requirements, key_messages, campaign_type, delivery_method, offer_name, offer_value, offer_description, story_instructions, offer_image_url, offer_image_urls, registrations_open, registration_opened_at, registration_deadline_days, deliverables, promotion_link, promotion_link_placement, tasks_stories_count, tasks_include_post, tasks_ig_reel, tasks_ig_reel_duration, tasks_ig_post, tasks_ig_live, tasks_ig_days_online, tasks_tt_video, tasks_tt_video_duration, tasks_tt_live, tasks_tt_duet, tasks_tt_days_online, tasks_yt_short, tasks_yt_short_duration, tasks_yt_video, tasks_yt_video_duration, tasks_yt_mention, tasks_fb_post, tasks_fb_story, tasks_fb_reel, tasks_fb_share, brief_pdf_url), package_sent_at, package_tracking, package_courier, package_received_at, post_deadline_days, checked_in_at')
+        .select('*, reserved_amount, payment_amount, campaigns(id, payment_mode, title, brand_name, budget, budget_per_influencer, max_influencers, deadline, platforms, description, product_name, content_type, content_tone, min_duration, required_caption, required_hashtags, min_days_online, forbidden_mentions, forbidden_content, proof_requirements, key_messages, campaign_type, delivery_method, offer_name, offer_value, offer_description, story_instructions, offer_image_url, offer_image_urls, registrations_open, registration_opened_at, registration_deadline_days, deliverables, promotion_link, promotion_link_placement, tasks_stories_count, tasks_include_post, tasks_ig_reel, tasks_ig_reel_duration, tasks_ig_post, tasks_ig_live, tasks_ig_days_online, tasks_tt_video, tasks_tt_video_duration, tasks_tt_live, tasks_tt_duet, tasks_tt_days_online, tasks_yt_short, tasks_yt_short_duration, tasks_yt_video, tasks_yt_video_duration, tasks_yt_mention, tasks_fb_post, tasks_fb_story, tasks_fb_reel, tasks_fb_share, brief_pdf_url), package_sent_at, package_tracking, package_courier, package_received_at, post_deadline_days, checked_in_at')
         .eq('influencer_id', inf.id)
         .order('created_at', { ascending: false })
       if (!error && data) {
@@ -802,6 +809,11 @@ export default function CollaborationsPage() {
       notify('Înscrierile pentru această campanie sunt închise momentan.', false)
       return
     }
+    // Campanie cu preț propus → influencerul scrie prețul; devine cerere în așteptarea selecției brandului
+    if (action === 'accept' && inv?.campaigns?.payment_mode === 'OFFER') {
+      setOfferModal({ collabId, mode: 'accept', value: '' })
+      return
+    }
     // Daca e barter cu livrare si accepta → cere adresa mai intai
     if (action === 'accept' && inv?.campaigns?.campaign_type === 'BARTER' && inv?.campaigns?.delivery_method === 'delivery') {
       setAddressModal({ collabId })
@@ -827,6 +839,22 @@ export default function CollaborationsPage() {
       )
     } catch (e: any) { notify(e.message || 'Ceva a mers greșit.', false) }
     finally { setActionLoading(null) }
+  }
+
+  async function submitOffer() {
+    if (!offerModal) return
+    if (!(parseFloat(offerModal.value) > 0)) { setOfferModal({ ...offerModal, error: 'Scrie un preț în RON.' }); return }
+    setActionLoading(offerModal.collabId)
+    try {
+      const res: any = offerModal.mode === 'accept'
+        ? await acceptInviteWithOffer(offerModal.collabId, offerModal.value)
+        : await updateMyOffer(offerModal.collabId, offerModal.value)
+      if (res?.error) { setOfferModal({ ...offerModal, error: res.error }); return }
+      setCollabs(prev => prev.map(c => c.id === offerModal.collabId
+        ? { ...c, offer_price: res.price, ...(offerModal.mode === 'accept' ? { status: 'PENDING' } : {}) } as any : c))
+      notify(offerModal.mode === 'accept' ? '✅ Invitație acceptată! Brandul vede prețul tău și te poate selecta.' : '✅ Prețul a fost actualizat.')
+      setOfferModal(null)
+    } finally { setActionLoading(null) }
   }
 
   async function handleAcceptWithAddress() {
@@ -919,8 +947,10 @@ export default function CollaborationsPage() {
 
   async function confirmPackageReceived(c: Collaboration) {
     const sb = createClient()
-    await sb.from('collaborations').update({ package_received_at: new Date().toISOString() }).eq('id', c.id)
-    setCollabs(prev => prev.map(col => col.id === c.id ? { ...col, package_received_at: new Date().toISOString() } : col))
+    const now = new Date().toISOString()
+    const { error } = await sb.from('collaborations').update({ package_received_at: now }).eq('id', c.id)
+    if (error) { alert('Nu am putut salva confirmarea. Încearcă din nou.'); return }
+    setCollabs(prev => prev.map(col => col.id === c.id ? { ...col, package_received_at: now } : col))
   }
 
   async function submitCheckin(c: Collaboration) {
@@ -1099,10 +1129,10 @@ export default function CollaborationsPage() {
         {/* Status livrare - barter */}
         {c.status === 'ACTIVE' && deliveryBarter && c.delivery_name && (
           <>
-            {c.package_sent_at && !c.package_received_at && (
-              <Note tone="blue" title="Pachetul tău e în drum">
+            {!c.package_received_at && (
+              <Note tone="blue" title={c.package_sent_at ? 'Pachetul tău e în drum' : 'Ai primit produsul?'}>
                 {c.package_courier && <span className="iu-sm">Curier: <b>{c.package_courier}</b>{c.package_tracking ? ` · AWB: ${c.package_tracking}` : ''}</span>}
-                <span className="iu-xs">Trimis pe {fmtLong(c.package_sent_at)}. Confirmă când ajunge.</span>
+                <span className="iu-xs">{c.package_sent_at ? `Trimis pe ${fmtLong(c.package_sent_at)}. Confirmă când ajunge.` : 'Brandul nu a marcat încă expedierea. Dacă ai primit deja produsul, confirmă aici ca să înceapă termenul de postare.'}</span>
                 <button className="iu-btn p" style={{ alignSelf: 'flex-start' }} onClick={() => confirmPackageReceived(c)}>
                   <Check size={15} /> Am primit coletul
                 </button>
@@ -1296,11 +1326,20 @@ export default function CollaborationsPage() {
           </>
         )
     } else if (c.status === 'PENDING') {
-      main = <Link href={`/influencer/inbox?collab=${c.id}`} className="iu-btn"><MessageSquare size={15} /> Deschide chat</Link>
+      main = c.campaigns?.payment_mode === 'OFFER'
+        ? (
+          <>
+            <button className="iu-btn" onClick={() => setOfferModal({ collabId: c.id, mode: 'update', value: c.offer_price ? String(c.offer_price) : '' })}>
+              Schimbă prețul
+            </button>
+            <Link href={`/influencer/inbox?collab=${c.id}`} className="iu-btn"><MessageSquare size={15} /> Deschide chat</Link>
+          </>
+        )
+        : <Link href={`/influencer/inbox?collab=${c.id}`} className="iu-btn"><MessageSquare size={15} /> Deschide chat</Link>
     } else if (c.status === 'ACTIVE') {
       if (isRejectedPost(c)) main = <button className="iu-btn p" onClick={() => setDeliverableModalId(c.id)}><Upload size={15} /> Retrimite dovada</button>
       else if (needsAddress(c)) main = <button className="iu-btn p" onClick={() => setAddressModal({ collabId: c.id })}><Truck size={15} /> Adaugă adresa</button>
-      else if (isDeliveryBarter(c) && c.package_sent_at && !c.package_received_at) main = <button className="iu-btn p" onClick={() => confirmPackageReceived(c)}><Package size={15} /> Am primit coletul</button>
+      else if (isDeliveryBarter(c) && !c.package_received_at) main = <button className="iu-btn p" onClick={() => confirmPackageReceived(c)}><Package size={15} /> Am primit coletul</button>
       else if (isPickupBarter(c) && !c.checked_in_at) main = <button className="iu-btn p" onClick={toggle}><Check size={15} /> Check-in</button>
       else if (isPendingReview(c)) main = <Link href={`/influencer/inbox?collab=${c.id}`} className="iu-btn"><MessageSquare size={15} /> Deschide chat</Link>
       else if (waitingDraft(c)) main = <button className="iu-btn" onClick={toggle}><Eye size={15} /> Vezi draftul</button>
@@ -1553,6 +1592,36 @@ export default function CollaborationsPage() {
                 reviewerRole="influencer"
                 targetName={reviewCollab.campaigns?.brand_name ?? 'acest brand'}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal preț propus ── */}
+      {offerModal && (
+        <div className="ic-ov">
+          <div className="ic-mod" role="dialog" aria-modal="true">
+            <div className="ic-mh">
+              <div className="ic-col">
+                <h2>{offerModal.mode === 'accept' ? 'Cât ceri pentru colaborare?' : 'Schimbă prețul'}</h2>
+                <span className="iu-xs iu-muted">Prețul îl vede doar brandul. Dacă te selectează, suma se blochează la AddFame și o primești întreagă după ce postarea e aprobată.</span>
+              </div>
+              <button onClick={() => setOfferModal(null)} className="ic-x" aria-label="Închide"><X size={18} /></button>
+            </div>
+            <div className="ic-mb">
+              <div className="ic-col" style={{ gap: 8 }}>
+                <label className="iu-label">Prețul tău (RON)</label>
+                <input value={offerModal.value} onChange={e => setOfferModal({ ...offerModal, value: e.target.value, error: undefined })}
+                  type="number" inputMode="decimal" min={1} step="1" placeholder="ex. 350" className="iu-input" autoFocus />
+                {offerModal.error && <span className="iu-sm" style={{ color: '#b42318', fontWeight: 700 }}>{offerModal.error}</span>}
+              </div>
+              <div className="ic-btns">
+                <button onClick={() => setOfferModal(null)} className="iu-btn big" style={{ flex: 1 }}>Anulează</button>
+                <button onClick={submitOffer} disabled={!!actionLoading} className="iu-btn p big" style={{ flex: 1 }}>
+                  {actionLoading ? <Loader2 size={16} className="ic-spin" /> : <Check size={16} />}
+                  {offerModal.mode === 'accept' ? 'Acceptă cu acest preț' : 'Salvează prețul'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

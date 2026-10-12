@@ -217,12 +217,12 @@ export default function InfluencerDashboard() {
 
       const [collabRes, campRes, txRes] = await Promise.all([
         sb.from('collaborations')
-          .select('*, campaigns(title, brand_name, budget_per_influencer, deadline, platforms, niches, registrations_open, registration_opened_at, registration_deadline_days, campaign_type, delivery_method)')
+          .select('*, campaigns(payment_mode, title, brand_name, budget_per_influencer, deadline, platforms, niches, registrations_open, registration_opened_at, registration_deadline_days, campaign_type, delivery_method)')
           .eq('influencer_id', inf.id)
           .order('created_at', { ascending: false })
           .limit(10),
         sb.from('campaigns')
-          .select('id, title, brand_name, brand_id, budget_per_influencer, deadline, platforms, niches, campaign_type')
+          .select('id, title, brand_name, brand_id, budget_per_influencer, deadline, platforms, niches, campaign_type, payment_mode')
           .eq('status', 'ACTIVE')
           .order('created_at', { ascending: false })
           .limit(6),
@@ -233,11 +233,12 @@ export default function InfluencerDashboard() {
 
       const camps = campRes.data ?? []
 
-      // Fetch brand logos separately
+      // Logo-urile brandurilor (vederea publică; tabelul direct doar ca rezervă până rulează SQL 09)
       const brandIds = camps.map((c: any) => c.brand_id).filter(Boolean)
       let brandLogos: Record<string, string> = {}
       if (brandIds.length > 0) {
-        const { data: brands } = await sb.from('brands').select('id, logo').in('id', brandIds)
+        let { data: brands, error: bErr } = await sb.from('brands_public').select('id, logo').in('id', brandIds)
+        if (bErr) ({ data: brands } = await sb.from('brands').select('id, logo').in('id', brandIds))
         if (brands) brands.forEach((b: any) => { if (b.logo) brandLogos[b.id] = b.logo })
       }
       const campsWithLogos = camps.map((c: any) => ({ ...c, brand_logo: brandLogos[c.brand_id] || null }))
@@ -256,71 +257,67 @@ export default function InfluencerDashboard() {
 
       if (inf.referral_code) {
         try {
-          const { data: refs } = await sb
-            .from('influencers')
-            .select('id, name, avatar, approval_status, referral_bonus_paid, created_at')
-            .eq('referred_by', inf.referral_code)
-            .order('created_at', { ascending: false })
+          let { data: refs, error: rErr } = await sb.rpc('my_referrals')
+          if (rErr) {
+            ({ data: refs } = await sb
+              .from('influencers')
+              .select('id, name, avatar, approval_status, referral_bonus_paid, created_at')
+              .eq('referred_by', inf.referral_code)
+              .order('created_at', { ascending: false }))
+          }
           setReferrals(refs ?? [])
         } catch (_) { setReferrals([]) }
       }
 
-      // Brand referrals
+      // Brand referrals (doar numărul lor e afișat)
       if (inf.id) {
         try {
           const { data: brefs } = await sb
             .from('brand_referrals')
-            .select('id, status, created_at, bonus1_paid_at, bonus2_paid_at, brands(id, name, email)')
+            .select('id, status, created_at, bonus1_paid_at, bonus2_paid_at')
             .eq('influencer_id', inf.id)
             .order('created_at', { ascending: false })
           setBrandReferrals(brefs ?? [])
         } catch (_) { setBrandReferrals([]) }
       }
-      // Top influenceri — sortati dupa colaborari finalizate
+
+      // Top creatori — după colaborări finalizate (funcție din baza de date, întoarce doar date publice)
       try {
-        // Fetch colaborarile COMPLETED grupate per influencer
-        const { data: collabCounts } = await sb
-          .from('collaborations')
-          .select('influencer_id')
-          .eq('status', 'COMPLETED')
-
-        // Numara per influencer
-        const countMap: Record<string, number> = {}
-        for (const c of collabCounts ?? []) {
-          countMap[c.influencer_id] = (countMap[c.influencer_id] || 0) + 1
-        }
-
-        // Fetch toti influencerii aprobati
-        const { data: topInf } = await sb
-          .from('influencers')
-          .select('id, name, avatar, niches, platforms, wallet_balance, total_earned, ig_followers, tt_followers, creator_score')
-          .eq('approval_status', 'approved')
-
-        if (topInf) {
-          const withCollabs = topInf.map((inf: any) => ({
-            ...inf,
-            completed_collabs: countMap[inf.id] || 0,
-          }))
-          // Sortare: 1) deals DESC, 2) followers DESC
-          const sorted = withCollabs.sort((a, b) =>
-            b.completed_collabs !== a.completed_collabs
-              ? b.completed_collabs - a.completed_collabs
-              : (b.ig_followers + b.tt_followers) - (a.ig_followers + a.tt_followers)
-          ).slice(0, 12) // max 12 in slider
-          setTopInfluencers(sorted)
+        const { data: top, error: tErr } = await sb.rpc('top_creators', { p_limit: 12 })
+        if (!tErr && Array.isArray(top)) {
+          setTopInfluencers(top)
+        } else {
+          const { data: collabCounts } = await sb.from('collaborations').select('influencer_id').eq('status', 'COMPLETED')
+          const countMap: Record<string, number> = {}
+          for (const c of collabCounts ?? []) countMap[c.influencer_id] = (countMap[c.influencer_id] || 0) + 1
+          const { data: topInf } = await sb
+            .from('influencers')
+            .select('id, name, avatar, niches, ig_followers, tt_followers, creator_score')
+            .eq('approval_status', 'approved')
+          if (topInf) {
+            setTopInfluencers(topInf
+              .map((i: any) => ({ ...i, completed_collabs: countMap[i.id] || 0 }))
+              .sort((a: any, b: any) => b.completed_collabs !== a.completed_collabs
+                ? b.completed_collabs - a.completed_collabs
+                : ((b.ig_followers || 0) + (b.tt_followers || 0)) - ((a.ig_followers || 0) + (a.tt_followers || 0)))
+              .slice(0, 12))
+          }
         }
       } catch (_) { }
 
-      // Clipuri recente — colaborari cu deliverable_url (link postare)
+      // Postări recente pe platformă — din API-ul public (nu citim colaborările altora din browser)
       try {
-        const { data: clips } = await sb
-          .from('collaborations')
-          .select('id, deliverable_url, thumbnail_url, influencers(name, avatar), campaigns(title, brand_name)')
-          .eq('status', 'COMPLETED')
-          .not('deliverable_url', 'is', null)
-          .order('completed_at', { ascending: false })
-          .limit(5)
-        setRecentClips(clips ?? [])
+        const res = await fetch('/api/public/clips')
+        const json = res.ok ? await res.json() : null
+        if (json && Array.isArray(json.clips)) {
+          setRecentClips(json.clips.slice(0, 5).map((c: any) => ({
+            id: c.id,
+            deliverable_url: c.url,
+            thumbnail_url: c.thumbnail_url || null,
+            influencers: { name: c.influencer?.name, avatar: c.influencer?.avatar },
+            campaigns: { title: c.campaign?.title, brand_name: c.campaign?.brand_name },
+          })))
+        }
       } catch (_) { }
 
     } catch (err) { console.error(err) }
@@ -436,7 +433,7 @@ export default function InfluencerDashboard() {
     .filter(c => !c.package_received_at && !needsDelivery(c) && !c.package_sent_at && !c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at)
     .forEach(c => todos.push({ key: 'make-' + c.id, title: `Postează pentru ${c.campaigns?.brand_name || 'brand'}`, sub: `${c.campaigns?.title || 'Colaborare'}${c.campaigns?.deadline ? ` · termen ${new Date(c.campaigns.deadline).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}` : ''}`, href: '/influencer/collaborations?tab=active', cta: 'Trimite dovada', hot: true, ini: c.campaigns?.brand_name }))
   activeCollabs
-    .filter(c => c.package_sent_at && !c.package_received_at)
+    .filter(c => (c.package_sent_at || (needsDelivery(c) && c.delivery_name)) && !c.package_received_at)
     .forEach(c => todos.push({ key: 'pkg-' + c.id, title: `Coletul de la ${c.campaigns?.brand_name || 'brand'} e pe drum`, sub: 'Confirmă primirea când ajunge, ca să înceapă termenul de postare', href: '/influencer/collaborations?tab=active', cta: 'Vezi coletul', ini: c.campaigns?.brand_name }))
   pendingInvites.slice(0, 3).forEach(c => todos.push({ key: 'inv-' + c.id, title: `${c.campaigns?.brand_name || 'Un brand'} te-a invitat`, sub: `${c.campaigns?.title || 'Campanie'}${c.campaigns?.budget_per_influencer ? ` · ${Number(c.campaigns.budget_per_influencer).toLocaleString('ro-RO')} RON` : ''}`, href: '/influencer/collaborations?tab=invited', cta: 'Răspunde', ini: c.campaigns?.brand_name }))
   if (pendingInvites.length > 3) todos.push({ key: 'inv-more', title: `Încă ${pendingInvites.length - 3} invitații de la branduri`, sub: 'Acceptă sau refuză din Colaborări', href: '/influencer/collaborations?tab=invited', cta: 'Vezi toate', icon: Mail })
@@ -709,7 +706,7 @@ export default function InfluencerDashboard() {
               {trackCollabs.map(c => {
                 const st = collabStage(c)
                 const tone = TONE[st.tone]
-                const reward = c.campaigns?.budget_per_influencer ? `${money(c.campaigns.budget_per_influencer)} RON` : (c.campaigns?.campaign_type === 'BARTER' ? 'Barter' : '')
+                const reward = Number(c.pay_reserved) > 0 ? `${money(c.pay_reserved)} RON` : c.offer_price ? `${money(c.offer_price)} RON (propus)` : c.campaigns?.budget_per_influencer ? `${money(c.campaigns.budget_per_influencer)} RON` : (c.campaigns?.campaign_type === 'BARTER' ? 'Barter' : '')
                 return (
                   <Link key={c.id} href="/influencer/collaborations" className="cd-track">
                     <div style={{ flex: '1 1 220px', display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -765,7 +762,7 @@ export default function InfluencerDashboard() {
                         <span className="cd-muted" style={{ fontSize: 13 }}>{camp.brand_name}{camp.niches?.[0] ? ` · ${camp.niches[0]}` : ''}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginTop: 'auto' }}>
-                        <span className="cd-num" style={{ fontWeight: 800, fontSize: 19 }}>{isBarter ? 'Produs gratuit' : `${money(camp.budget_per_influencer)} RON`}</span>
+                        <span className="cd-num" style={{ fontWeight: 800, fontSize: 19 }}>{isBarter ? 'Produs gratuit' : camp.payment_mode === 'OFFER' ? 'Tu propui prețul' : `${money(camp.budget_per_influencer)} RON`}</span>
                         {daysLeft !== null && daysLeft > 0 && <span style={{ fontSize: 12, fontWeight: 700, color: daysLeft <= 3 ? '#9a4206' : '#6a6690' }}>{daysLeft === 1 ? 'mâine se închide' : `${daysLeft} zile`}</span>}
                       </div>
                       <span className={`cd-btn ${alreadyApplied ? '' : 'cd-btn-ink'}`} style={{ width: '100%' }}>{alreadyApplied ? 'Ai aplicat' : 'Vezi și aplică'}</span>

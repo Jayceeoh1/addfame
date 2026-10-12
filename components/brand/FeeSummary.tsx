@@ -16,6 +16,7 @@ export function FeeSummary({
   payPerInfluencer,
   payLabel = 'Plată influenceri',
   payNegotiable = false,
+  payOffer = false,
   compact = false,
 }: {
   slots: number
@@ -26,10 +27,12 @@ export function FeeSummary({
   payPerInfluencer?: number | null
   payLabel?: string
   payNegotiable?: boolean
+  /** „Influencerii propun prețul”: plata fiecăruia se face la selecție, din wallet */
+  payOffer?: boolean
   compact?: boolean
 }) {
-  const b = feeBreakdown({ slots, price, payPerInfluencer, payNegotiable })
-  const showPay = payPerInfluencer !== undefined || payNegotiable
+  const b = feeBreakdown({ slots, price, payPerInfluencer, payNegotiable: payNegotiable || payOffer })
+  const showPay = payPerInfluencer !== undefined || payNegotiable || payOffer
   const enough = available === null || available === undefined || b.payNow === null ? null : available >= b.payNow
 
   const row: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }
@@ -40,8 +43,8 @@ export function FeeSummary({
     <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 8 : 10, fontSize: 13, color: '#14123a' }}>
       {showPay && (
         <div style={row}>
-          <span>{payLabel}<span style={sub}>{payNegotiable ? 'se stabilește cu fiecare influencer' : b.payTotal !== null ? `${b.slots} × ${ron(payPerInfluencer || 0)}` : 'completează suma'}</span></span>
-          <b style={num}>{payNegotiable ? 'De discutat' : b.payTotal !== null ? ron(b.payTotal) : '—'}</b>
+          <span>{payLabel}<span style={sub}>{payOffer ? 'prețul propus de fiecare, plătit când îl selectezi' : payNegotiable ? 'se stabilește cu fiecare influencer' : b.payTotal !== null ? `${b.slots} × ${ron(payPerInfluencer || 0)}` : 'completează suma'}</span></span>
+          <b style={num}>{payOffer ? 'La selecție' : payNegotiable ? 'De discutat' : b.payTotal !== null ? ron(b.payTotal) : '—'}</b>
         </div>
       )}
       <div style={row}>
@@ -62,7 +65,9 @@ export function FeeSummary({
         <p style={{ margin: 0, fontSize: 11, color: '#8783a8', lineHeight: 1.5 }}>
           {b.payTotal !== null
             ? 'Bugetul influencerilor stă în siguranță la AddFame și se virează fiecărui influencer doar după ce postarea lui e aprobată. Locurile neocupate și influencerii care nu postează → banii se întorc în wallet.'
-            : 'Plata se stabilește cu fiecare influencer; la publicare se încasează doar taxa de management.'}
+            : payOffer
+              ? 'La publicare plătești doar taxa de management. Prețul fiecărui influencer se ia din wallet când îl selectezi și se virează doar după ce postarea e aprobată; dacă nu postează, banii se întorc la tine.'
+              : 'Plata se stabilește cu fiecare influencer; la publicare se încasează doar taxa de management.'}
         </p>
       )}
       {enough === false && (

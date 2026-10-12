@@ -14,6 +14,7 @@ export const COLLAB_CFG: Record<string, { label: string; bg: string; text: strin
   ACTIVE:    { label: 'Activ',     bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-500' },
   COMPLETED: { label: 'Finalizat', bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500' },
   REJECTED:  { label: 'Refuzat',   bg: 'bg-gray-100',  text: 'text-gray-400',   dot: 'bg-gray-300' },
+  CANCELLED: { label: 'Anulat',    bg: 'bg-gray-100',  text: 'text-gray-500',   dot: 'bg-gray-300' },
 }
 
 export const fmt = (n: number) => `${(n || 0).toLocaleString('ro-RO', { minimumFractionDigits: 0 })} RON`

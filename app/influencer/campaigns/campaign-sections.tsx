@@ -136,13 +136,14 @@ export function CampaignStats({ c, collabAmount }: { c: any; collabAmount?: numb
   const expired = has && days < 0
   const urgent = !expired && days <= 3
   const amt = collabAmount || c.budget_per_influencer || c.budget
-  const negotiable = c.payment_mode === 'NEGOTIABLE' || !amt
+  const offer = c.payment_mode === 'OFFER' && !collabAmount
+  const negotiable = !offer && (c.payment_mode === 'NEGOTIABLE' || !amt)
   return (
     <div className="iu-card cp-stats">
       <div className="cp-stat">
         <span className="iu-label">{barter ? 'Primești' : 'Câștig'}</span>
-        <b style={{ color: '#5b2fd0' }}>{barter ? (c.offer_name || 'Produs gratuit') : negotiable ? 'De discutat' : `${amt} RON`}</b>
-        <span className="iu-xs iu-muted">{barter ? 'gratuit' : negotiable ? 'preț negociat' : 'recompensă'}</span>
+        <b style={{ color: '#5b2fd0' }}>{barter ? (c.offer_name || 'Produs gratuit') : offer ? 'Tu propui prețul' : negotiable ? 'De discutat' : `${amt} RON`}</b>
+        <span className="iu-xs iu-muted">{barter ? 'gratuit' : offer ? 'îl scrii când aplici' : negotiable ? 'preț negociat' : 'recompensă'}</span>
       </div>
       <div className="cp-stat">
         <span className="iu-label">Deadline</span>

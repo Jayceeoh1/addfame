@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isFeeModelCampaign, countSelectedInfluencers } from '@/lib/campaign-fee'
 import { eligibility, hasTargeting, ELIG_MESSAGE } from '@/lib/eligibility'
+import { isOfferCampaign, parseOfferPrice } from '@/lib/offer'
 import { limitAction, LIMITS } from '@/lib/rate-limit'
 import {
   emailCollaborationApproved,
@@ -51,12 +52,47 @@ export async function approveApplication(collabId: string) {
 
     const { data: collab } = await admin
       .from('collaborations')
-      .select('*, campaigns(id, title, budget, budget_per_influencer, max_influencers, current_influencers, brand_id, campaign_type, fee_per_influencer), influencers(id, user_id, name, email, telegram_chat_id)')
+      .select('*, campaigns(id, title, budget, budget_per_influencer, max_influencers, current_influencers, brand_id, campaign_type, fee_per_influencer, payment_mode), influencers(id, user_id, name, email, telegram_chat_id)')
       .eq('id', collabId).single()
 
     if (!collab) return { error: 'Collaboration not found' }
     if (collab.campaigns?.brand_id !== brand.id) return { error: 'Not authorized' }
     if (collab.status !== 'PENDING') return { error: 'Status invalid' }
+
+    // „Influencerii propun prețul”: selecția blochează prețul cerut din wallet și activează colaborarea (SQL 31, atomic)
+    if (isOfferCampaign(collab.campaigns as any)) {
+      const { data: sel, error: selErr } = await admin.rpc('select_offer_influencer', { p_collab_id: collabId, p_brand_id: brand.id })
+      const r = sel as any
+      if (selErr || !r?.ok) {
+        if (selErr) console.error('[approveApplication] select_offer_influencer', selErr.message)
+        const price = Number(collab.offer_price) || 0
+        if (r?.error === 'insufficient_funds') {
+          const available = Number(r.available) || 0
+          return {
+            error: `Sold insuficient pentru a-l selecta pe ${collab.influencers?.name || 'influencer'}: prețul cerut e ${price.toFixed(2)} RON, ai disponibili ${available.toFixed(2)} RON. Adaugă ${Math.max(0, price - available).toFixed(2)} RON în wallet.`,
+            insufficientFunds: true, available, required: price,
+          }
+        }
+        const msg: Record<string, string> = {
+          blocked: r?.message || 'Nu se poate selecta acum.',
+          no_offer: 'Influencerul nu a propus încă un preț.',
+          invalid_status: 'Cererea a fost deja procesată. Reîncarcă pagina.',
+          already_reserved: 'Prețul acestui influencer este deja blocat.',
+        }
+        return { error: msg[r?.error] || 'Selecția nu a putut fi procesată. Încearcă din nou.', slotsFull: r?.error === 'blocked' }
+      }
+      const price = Number(r.price) || 0
+      if (collab.influencers?.user_id) {
+        await notify(admin, collab.influencers.user_id,
+          '🔒 Ai fost selectat! Plata e garantată.',
+          `${brand.name} te-a selectat pentru "${collab.campaigns?.title}" la prețul tău de ${price.toFixed(2)} RON. Suma e blocată la AddFame și o primești după ce postarea e aprobată.`,
+          '/influencer/collaborations')
+        if (collab.influencers?.email) {
+          emailCollaborationApproved(collab.influencers.email, collab.influencers.name || 'Influencer', brand.name, collab.campaigns?.title || 'Campaign').catch(() => { })
+        }
+      }
+      return { success: true, reservedAmount: price }
+    }
 
     // Budget per influencer: folosim budget_per_influencer dacă există
     // Dacă nu, împărțim budget total la max_influencers
@@ -552,6 +588,15 @@ export async function cancelCollaboration(collabId: string) {
     if (claimErr) return { error: claimErr.message }
     if (!claimed || claimed.length === 0) return { error: 'Colaborarea a fost deja modificată. Reîncarcă pagina.' }
 
+    // Prețul propus de influencer, blocat la selecție (SQL 31) → înapoi în wallet-ul brandului
+    if (Number(collab.pay_reserved) > 0) {
+      const { error: rfErr } = await admin.rpc('refund_collab_pay', {
+        p_collab_id: collabId,
+        p_reason: `Preț influencer returnat (anulare): "${collab.campaigns?.title}" → ${collab.influencers?.name || 'influencer'}`,
+      })
+      if (rfErr) console.error('[cancelCollaboration] refund_collab_pay', rfErr.message)
+    }
+
     // 2. Eliberează escrow-ul înapoi la brand atomic via RPC (fix race condition)
     if (reservedAmount > 0) {
       await admin.rpc('cancel_collab_escrow', {
@@ -708,7 +753,7 @@ export async function requestWithdrawal(amount: number, methodId: string) {
 }
 
 
-export async function applyToCampaign(campaignId: string, message?: string, deliveryAddress?: { name: string; phone: string; address: string; city: string; county: string; postal: string }) {
+export async function applyToCampaign(campaignId: string, message?: string, deliveryAddress?: { name: string; phone: string; address: string; city: string; county: string; postal: string }, offerPrice?: number | string) {
   try {
     const sb = await createClient()
     const admin = createAdminClient()
@@ -733,7 +778,7 @@ export async function applyToCampaign(campaignId: string, message?: string, deli
     // }
 
     const { data: campaign, error: campErr } = await admin
-      .from('campaigns').select('id, status, brand_id, registrations_open, registration_opened_at, registration_deadline_days, auto_accept_influencers, budget_per_influencer, budget, max_influencers, current_influencers, campaign_type, fee_per_influencer').eq('id', campaignId).single()
+      .from('campaigns').select('id, status, brand_id, registrations_open, registration_opened_at, registration_deadline_days, auto_accept_influencers, budget_per_influencer, budget, max_influencers, current_influencers, campaign_type, fee_per_influencer, payment_mode').eq('id', campaignId).single()
 
     if (campErr) {
       console.error('[applyToCampaign] campaign fetch error:', campErr)
@@ -741,6 +786,11 @@ export async function applyToCampaign(campaignId: string, message?: string, deli
     }
     if (!campaign) return { error: 'Campania nu a fost găsită' }
     if (campaign.status !== 'ACTIVE') return { error: 'Campania nu mai este activă (status: ' + campaign.status + ')' }
+
+    // „Influencerii propun prețul”: prețul e obligatoriu, iar aplicarea așteaptă mereu selecția brandului
+    const isOffer = isOfferCampaign(campaign as any)
+    const offer = isOffer ? parseOfferPrice(offerPrice) : null
+    if (isOffer && offer === null) return { error: 'Scrie cât ceri pentru această colaborare (în RON, între 1 și 100.000).' }
 
     if (campaign.registrations_open === false) {
       return { error: 'Înscrierile pentru această campanie sunt închise momentan.' }
@@ -783,7 +833,7 @@ export async function applyToCampaign(campaignId: string, message?: string, deli
     // Dacă auto_accept e activ → intră direct ACTIVE, altfel PENDING (aprobare manuală)
     // Campaniile MANAGED intră mereu PENDING — aprobarea e manuală + necesită call cu echipa
     const isManaged = campaign.campaign_type === 'MANAGED'
-    const initialStatus = (!isManaged && campaign.auto_accept_influencers) ? 'ACTIVE' : 'PENDING'
+    const initialStatus = (!isManaged && !isOffer && campaign.auto_accept_influencers) ? 'ACTIVE' : 'PENDING'
 
     // ── Fix #4: auto_accept → rezervă escrow înainte de insert ──────────────
     // Campania barter (budget 0) nu necesită rezervare financiară
@@ -815,6 +865,7 @@ export async function applyToCampaign(campaignId: string, message?: string, deli
       // Salvează suma rezervată dacă auto_accept a rezervat escrow
       reserved_amount: (initialStatus === 'ACTIVE' && !isBarter && budgetPerInf > 0) ? budgetPerInf : null,
       message: message || null,
+      ...(isOffer ? { offer_price: offer } : {}),
       delivery_name: deliveryAddress?.name || null,
       delivery_phone: deliveryAddress?.phone || null,
       delivery_address: deliveryAddress?.address || null,
@@ -840,6 +891,72 @@ export async function applyToCampaign(campaignId: string, message?: string, deli
     return { error: e.message || 'Eroare necunoscută la aplicare. Te rog încearcă din nou.' }
   }
 }
+// ─── Prețul propus de influencer (campanii „Influencerii propun prețul”) ──────
+// Influencerul își poate schimba prețul cât timp cererea așteaptă selecția brandului.
+export async function updateMyOffer(collabId: string, price: number | string) {
+  try {
+    const sb = await createClient()
+    const admin = createAdminClient()
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user) return { error: 'Nu ești autentificat.' }
+    const offer = parseOfferPrice(price)
+    if (offer === null) return { error: 'Scrie un preț valid (în RON, între 1 și 100.000).' }
+
+    const { data: inf } = await admin.from('influencers').select('id').eq('user_id', user.id).maybeSingle()
+    if (!inf) return { error: 'Profilul tău nu a fost găsit.' }
+    const { data: c } = await admin.from('collaborations')
+      .select('id, influencer_id, status, campaigns(payment_mode)').eq('id', collabId).maybeSingle()
+    if (!c || c.influencer_id !== inf.id) return { error: 'Cererea nu a fost găsită.' }
+    if (!isOfferCampaign((c as any).campaigns)) return { error: 'Această campanie are un preț fix.' }
+    if (c.status !== 'PENDING') return { error: 'Prețul nu mai poate fi schimbat după selecție.' }
+
+    const { data: upd, error } = await admin.from('collaborations')
+      .update({ offer_price: offer }).eq('id', collabId).eq('status', 'PENDING').select('id')
+    if (error) return { error: error.message }
+    if (!upd || upd.length === 0) return { error: 'Prețul nu mai poate fi schimbat după selecție.' }
+    return { success: true, price: offer }
+  } catch (e: any) { return { error: e.message } }
+}
+
+// Invitație într-o campanie „Influencerii propun prețul”: influencerul acceptă cu prețul lui → cerere în așteptare
+// (brandul îl selectează apoi din Cereri, cu plata prețului).
+export async function acceptInviteWithOffer(collabId: string, price: number | string) {
+  try {
+    const sb = await createClient()
+    const admin = createAdminClient()
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user) return { error: 'Nu ești autentificat.' }
+    const offer = parseOfferPrice(price)
+    if (offer === null) return { error: 'Scrie cât ceri (în RON, între 1 și 100.000).' }
+
+    const { data: inf } = await admin.from('influencers').select('id').eq('user_id', user.id).maybeSingle()
+    if (!inf) return { error: 'Profilul tău nu a fost găsit.' }
+    const { data: c } = await admin.from('collaborations')
+      .select('id, influencer_id, status, campaigns(id, title, status, payment_mode, registrations_open, brand_id)')
+      .eq('id', collabId).maybeSingle()
+    const camp = (c as any)?.campaigns
+    if (!c || c.influencer_id !== inf.id) return { error: 'Invitația nu a fost găsită.' }
+    if (!isOfferCampaign(camp)) return { error: 'Această campanie are un preț fix.' }
+    if (!['INVITED', 'PENDING_INFLUENCER'].includes(c.status)) return { error: 'Invitația a fost deja procesată.' }
+    if (camp?.status !== 'ACTIVE') return { error: 'Campania nu mai este activă.' }
+    if (camp?.registrations_open === false) return { error: 'Înscrierile pentru această campanie sunt închise momentan.' }
+
+    const { data: upd, error } = await admin.from('collaborations')
+      .update({ offer_price: offer, status: 'PENDING' })
+      .eq('id', collabId).in('status', ['INVITED', 'PENDING_INFLUENCER']).select('id')
+    if (error) return { error: error.message }
+    if (!upd || upd.length === 0) return { error: 'Invitația a fost deja procesată.' }
+
+    if (camp?.brand_id) {
+      const { data: b } = await admin.from('brands').select('user_id').eq('id', camp.brand_id).maybeSingle()
+      if (b?.user_id) await notify(admin, b.user_id, '💬 Invitație acceptată, cu preț propus',
+        `Un influencer a acceptat invitația pentru "${camp.title}" și cere ${offer.toFixed(2)} RON. Îl poți selecta din Cereri.`,
+        '/brand/collaborations')
+    }
+    return { success: true, price: offer }
+  } catch (e: any) { return { error: e.message } }
+}
+
 // ─── CHECK-IN CU COD ─────────────────────────────────────────────────────────
 
 export async function checkInWithCode(collaborationId: string, code: string) {

@@ -414,7 +414,7 @@ export default function BrandCollaborations() {
         })
       }
       if (!brand) return
-      const { data: camps } = await sb.from('campaigns').select('id, title, budget, offer_name, campaign_type').eq('brand_id', brand.id)
+      const { data: camps } = await sb.from('campaigns').select('id, title, budget, offer_name, campaign_type, payment_mode').eq('brand_id', brand.id)
       const campIds = (camps || []).map((c: any) => c.id)
       const campMap = Object.fromEntries((camps || []).map((c: any) => [c.id, c]))
       if (campIds.length === 0) { setCollabs([]); setLoading(false); return }
@@ -450,12 +450,21 @@ export default function BrandCollaborations() {
   }, [])
 
   async function doAction(collabId: string, status: 'ACTIVE' | 'REJECTED') {
+    // Preț propus de influencer: confirmare cu suma exactă care se ia din wallet
+    const target = collabs.find((c: any) => c.id === collabId) as any
+    if (status === 'ACTIVE' && target?.campaign?.payment_mode === 'OFFER') {
+      const price = Number(target.offer_price) || 0
+      if (!(price > 0)) { notify('Influencerul nu a propus încă un preț.', false); return }
+      if (!confirm(`Îl selectezi pe ${target.influencer?.name || 'influencer'} la prețul cerut de ${price.toLocaleString('ro-RO')} RON?\n\nSuma se ia acum din wallet și stă blocată la AddFame. Influencerul o primește doar după ce îi aprobi postarea; dacă nu postează, banii se întorc la tine.`)) return
+    }
     setActionId(collabId)
     try {
       if (status === 'ACTIVE') {
         const result = await approveApplication(collabId) as any
         if (result.error) {
-          if (result.insufficientFunds) {
+          if (result.insufficientFunds && target?.campaign?.payment_mode === 'OFFER') {
+            notify(`❌ ${result.error}`, false)
+          } else if (result.insufficientFunds) {
             notify(`❌ Sold insuficient! Disponibil: ${result.available?.toLocaleString('ro-RO')} RON, necesar: ${result.required?.toLocaleString('ro-RO')} RON. Adaugă credite în wallet.`, false)
           } else {
             notify(result.error, false)
@@ -464,7 +473,7 @@ export default function BrandCollaborations() {
         }
         setCollabs(p => p.map(c => c.id === collabId ? { ...c, status, reserved_amount: result.reservedAmount } : c))
         notify(result.reservedAmount > 0
-          ? `🔒 Aprobat! ${result.reservedAmount.toLocaleString('ro-RO')} RON rezervați escrow — influencerul știe că plata e garantată.`
+          ? `🔒 Selectat! ${result.reservedAmount.toLocaleString('ro-RO')} RON blocați la AddFame — îi plătim influencerului după ce aprobi postarea.`
           : '✅ Influencer selectat!')
       } else {
         const sb = createClient()
@@ -752,6 +761,16 @@ export default function BrandCollaborations() {
           )}
         </div>
 
+        {c.campaign?.payment_mode === 'OFFER' && c.status === 'PENDING' && (
+          <div className="cl-note blue" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span className="bu-col" style={{ gap: 2 }}>
+              <b className="bu-label" style={{ color: '#1d4fb8' }}>Prețul cerut</b>
+              <span className="bu-xs bu-muted">Se ia din wallet când îl selectezi; îl primește după ce aprobi postarea.</span>
+            </span>
+            <b style={{ fontSize: 20, color: '#14123a' }}>{c.offer_price ? `${Number(c.offer_price).toLocaleString('ro-RO')} RON` : 'Nepropus'}</b>
+          </div>
+        )}
+
         {c.message && c.status === 'PENDING' && (
           <div className="cl-note blue">
             <b className="bu-label" style={{ color: '#1d4fb8' }}>Mesaj de la influencer</b>
@@ -834,7 +853,9 @@ export default function BrandCollaborations() {
           <div className="cl-btns">
             <button className="bu-btn p" onClick={() => doAction(c.id, 'ACTIVE')} disabled={busy}>
               {busy ? <Loader2 size={15} className="cl-spin" /> : <Check size={15} strokeWidth={2.6} />}
-              Aprobă aplicația
+              {c.campaign?.payment_mode === 'OFFER' && c.offer_price
+                ? `Selectează · plătești ${Number(c.offer_price).toLocaleString('ro-RO')} RON`
+                : 'Aprobă aplicația'}
             </button>
             <button className="bu-btn danger" onClick={() => doAction(c.id, 'REJECTED')} disabled={busy}>
               <X size={15} /> Refuză
@@ -938,7 +959,8 @@ export default function BrandCollaborations() {
             {c.status === 'PENDING' && (
               <>
                 <button className="bu-btn p" onClick={() => doAction(c.id, 'ACTIVE')} disabled={busy}>
-                  {busy ? <Loader2 size={15} className="cl-spin" /> : null}Alege
+                  {busy ? <Loader2 size={15} className="cl-spin" /> : null}
+                  {c.campaign?.payment_mode === 'OFFER' && c.offer_price ? `Alege · ${Number(c.offer_price).toLocaleString('ro-RO')} RON` : 'Alege'}
                 </button>
                 <button className="bu-btn danger" onClick={() => doAction(c.id, 'REJECTED')} disabled={busy}>Refuză</button>
               </>

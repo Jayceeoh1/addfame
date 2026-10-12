@@ -23,6 +23,7 @@ type Campaign = {
   brand_name: string
   budget: number
   budget_per_influencer?: number
+  payment_mode?: string | null
   platforms: string[]
   deliverables: string
   deadline: string
@@ -336,6 +337,7 @@ export default function CampaignsPage() {
   // Modal
   const [selected, setSelected] = useState<Campaign | null>(null)
   const [applyMsg, setApplyMsg] = useState('')
+  const [applyOffer, setApplyOffer] = useState('')
   const [applyAddress, setApplyAddress] = useState({ name: '', phone: '', address: '', city: '', county: '', postal: '' })
   const [applyError, setApplyError] = useState<string | null>(null)
   const [justApplied, setJustApplied] = useState<string | null>(null)
@@ -432,7 +434,13 @@ export default function CampaignsPage() {
           return
         }
       }
-      const result = await applyToCampaign(selected.id, applyMsg || undefined, needsDelivery ? applyAddress : undefined)
+      const isOffer = selected.payment_mode === 'OFFER'
+      if (isOffer && !(parseFloat(applyOffer) > 0)) {
+        setApplyError('Scrie cât ceri pentru această colaborare.')
+        setActionLoading(null)
+        return
+      }
+      const result = await applyToCampaign(selected.id, applyMsg || undefined, needsDelivery ? applyAddress : undefined, isOffer ? applyOffer : undefined)
       if (result.error) {
         setApplyError(result.error)
         setActionLoading(null)
@@ -441,7 +449,7 @@ export default function CampaignsPage() {
       setAppliedIds(prev => new Set([...prev, selected.id]))
       setJustApplied(selected.id)
       notify('🎉 Aplicație trimisă! Brandul îți va revizui profilul.')
-      setTimeout(() => { setSelected(null); setApplyMsg(''); setJustApplied(null) }, 2000)
+      setTimeout(() => { setSelected(null); setApplyMsg(''); setApplyOffer(''); setJustApplied(null) }, 2000)
     } catch (e: any) {
       setApplyError(e.message || 'Eroare la aplicare. Te rog încearcă din nou.')
     } finally { setActionLoading(null) }
@@ -802,7 +810,7 @@ export default function CampaignsPage() {
                   key={c.id}
                   className={`cm-card ${applied ? 'applied' : ''} ${urgent && !applied ? 'urgent' : ''}`}
                   style={{ animationDelay: `${Math.min(i, 9) * 0.04}s` }}
-                  onClick={() => { setSelected(c); setApplyMsg(''); setApplyError(null) }}
+                  onClick={() => { setSelected(c); setApplyMsg(''); setApplyOffer(''); setApplyError(null) }}
                 >
                   <div className={`cm-cover ${img ? 'img' : ''}`}>
                     {img && <img src={img} alt={c.title} />}
@@ -824,7 +832,11 @@ export default function CampaignsPage() {
                     {c.description && <p className="cm-desc">{c.description}</p>}
 
                     <div className="cm-stat">
-                      <div><b style={{ color: '#14532d' }}>{fmt(c.budget ?? 0)} RON</b><span>buget total</span></div>
+                      {c.payment_mode === 'OFFER'
+                        ? <div><b style={{ color: '#5b2fd0' }}>Tu propui</b><span>prețul</span></div>
+                        : (c.budget_per_influencer ?? 0) > 0
+                          ? <div><b style={{ color: '#14532d' }}>{fmt(c.budget_per_influencer ?? 0)} RON</b><span>per influencer</span></div>
+                          : <div><b style={{ color: '#14532d' }}>{fmt(c.budget ?? 0)} RON</b><span>buget total</span></div>}
                       {c.max_influencers ? (
                         <div><b>{slotsLeft}</b><span>{slotsLeft === 1 ? 'loc liber' : 'locuri libere'}</span></div>
                       ) : null}
@@ -1097,6 +1109,14 @@ export default function CampaignsPage() {
                         </div>
                       </div>
                     </div>
+                  )}
+                  {selected.payment_mode === 'OFFER' && (
+                  <div className="iu-card cp-sec">
+                    <label className="iu-label" style={{ display: 'block' }}>Cât ceri pentru această colaborare (RON) *</label>
+                    <input className="iu-input" type="number" inputMode="decimal" min={1} step="1" value={applyOffer}
+                      onChange={e => setApplyOffer(e.target.value)} placeholder="ex. 350" />
+                    <p className="iu-xs iu-muted" style={{ margin: 0 }}>Prețul îl vede doar brandul. Dacă te selectează, suma se blochează la AddFame și o primești întreagă după ce postarea e aprobată. Îl poți schimba până ești selectat.</p>
+                  </div>
                   )}
                   <div className="iu-card cp-sec">
                     <label className="iu-label" style={{ display: 'block' }}>

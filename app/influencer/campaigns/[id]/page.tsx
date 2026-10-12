@@ -26,6 +26,7 @@ export default function CampaignBriefPage() {
   const [applied, setApplied] = useState(false)
   const [alreadyApplied, setAlreadyApplied] = useState(false)
   const [applyMsg, setApplyMsg] = useState('')
+  const [applyOffer, setApplyOffer] = useState('')
   const [showApplyForm, setShowApplyForm] = useState(false)
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
   const [influencerId, setInfluencerId] = useState<string | null>(null)
@@ -80,7 +81,9 @@ export default function CampaignBriefPage() {
     }
     setApplying(true)
     try {
-      const result = await applyToCampaign(campaignId, applyMsg || undefined)
+      const isOffer = campaign?.payment_mode === 'OFFER'
+      if (isOffer && !(parseFloat(applyOffer) > 0)) { notify('Scrie cât ceri pentru această colaborare.', false); setApplying(false); return }
+      const result = await applyToCampaign(campaignId, applyMsg || undefined, undefined, isOffer ? applyOffer : undefined)
       if (result.success) {
         if (needsAddress) {
           const sb = createClient()
@@ -115,7 +118,11 @@ export default function CampaignBriefPage() {
   const days = daysLeft(campaign.deadline)
   const expired = days < 0
   const urgent = !expired && days <= 3
-  const earnings = campaign.budget_per_influencer ? Math.round(campaign.budget_per_influencer * 0.85) : null
+  // Campaniile cu taxă de management (fee_per_influencer setat): influencerul primește suma întreagă; cele vechi: −15% comision
+  const feeModel = campaign.fee_per_influencer !== null && campaign.fee_per_influencer !== undefined
+  const isOffer = campaign.payment_mode === 'OFFER'
+  const earnings = !isOffer && campaign.budget_per_influencer
+    ? (feeModel ? Number(campaign.budget_per_influencer) : Math.round(campaign.budget_per_influencer * 0.85)) : null
 
   // Parse câmpuri array
   const hashtags: string[] = typeof campaign.required_hashtags === 'string'
@@ -234,6 +241,14 @@ export default function CampaignBriefPage() {
                     <input className="iu-input" value={address.county} onChange={e => setAddress(p => ({ ...p, county: e.target.value }))} placeholder="Județ *" />
                   </div>
                 )}
+                {isOffer && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <label className="iu-label">Cât ceri pentru această colaborare (RON) *</label>
+                    <input className="iu-input" type="number" inputMode="decimal" min={1} step="1" value={applyOffer}
+                      onChange={e => setApplyOffer(e.target.value)} placeholder="ex. 350" />
+                    <span className="iu-xs iu-muted">Prețul îl vede doar brandul. Dacă te selectează, suma se blochează la AddFame și o primești întreagă după aprobarea postării.</span>
+                  </div>
+                )}
                 <textarea className="iu-input cp-ta" value={applyMsg} onChange={e => setApplyMsg(e.target.value)}
                   placeholder="Mesaj opțional pentru brand — de ce ești potrivit pentru această campanie..."
                   rows={3} />
@@ -246,6 +261,12 @@ export default function CampaignBriefPage() {
               </>
             ) : (
               <>
+                {isOffer && (
+                  <div className="iu-row" style={{ justifyContent: 'space-between', gap: 12 }}>
+                    <span className="iu-sm iu-muted" style={{ fontWeight: 600 }}>Câștig</span>
+                    <b className="iu-d" style={{ fontSize: 18, color: '#5b2fd0' }}>Tu propui prețul</b>
+                  </div>
+                )}
                 {earnings && (
                   <div className="iu-row" style={{ justifyContent: 'space-between', gap: 12 }}>
                     <span className="iu-sm iu-muted" style={{ fontWeight: 600 }}>Câștig net</span>
