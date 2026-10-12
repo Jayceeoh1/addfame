@@ -17,6 +17,10 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
 
     const isPublic = () => PUBLIC_PATHS.some(p => pathname === p || (p !== '/' && pathname.startsWith(p)))
 
+    // Pe paginile publice (login, înregistrare, prima pagină) nu atingem sesiunea: altfel verificarea de aici
+    // concurează cu logarea pentru același „lacăt” de autentificare („Lock was stolen by another request”).
+    if (isPublic()) return
+
     // Auto-refresh token înainte să expire (la fiecare 45 minute)
     async function scheduleRefresh() {
       if (refreshTimer.current) clearTimeout(refreshTimer.current)
