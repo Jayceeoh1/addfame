@@ -311,7 +311,8 @@ export default function BrandDashboard() {
   const creditsReserved = Math.max(0, profile?.credits_reserved || 0)
   const available = Math.max(0, creditsBalance - creditsReserved)
   const totalSpent = profile?.total_spent || 0
-  const canCreateCampaign = creditsBalance >= 250 || profile?.influencers_access === true
+  // Campaniile se pot crea oricând; la publicare se plătește taxa de management (fără prag minim de credite)
+  const canCreateCampaign = true
   const verification: string = profile?.verification_status || 'unverified'
 
   const reviewQueue = collabs.filter(awaitsReview)

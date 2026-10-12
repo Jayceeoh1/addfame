@@ -4,6 +4,7 @@ import { Instagram, X, MapPin, ExternalLink } from 'lucide-react'
 import { fmtNum } from './types'
 import { creatorTier, parseCount } from '@/lib/tiers'
 import TierChip from '@/components/shared/TierChip'
+import { sanitizeBioForBrand } from '@/lib/brand-safe'
 
 const TikTokIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -22,8 +23,9 @@ export function ProfileModal({ profileModal, onClose }: { profileModal: any; onC
   const igPlatform = p.platforms?.find((x: any) => x.platform?.toLowerCase() === 'instagram')
   const ttPlatform = p.platforms?.find((x: any) => x.platform?.toLowerCase() === 'tiktok')
 
-  const igUrl = igPlatform?.url || (igHandle ? `https://instagram.com/${igHandle}` : null)
-  const ttUrl = ttPlatform?.url || (ttHandle ? `https://tiktok.com/@${ttHandle}` : null)
+  // Brandul vede platforma și urmăritorii, fără link sau handle (colaborarea se stabilește doar prin AddFame)
+  const igUrl = igPlatform || igHandle || p.instagram_connected ? 'shown' : null
+  const ttUrl = ttPlatform || ttHandle || p.tiktok_connected ? 'shown' : null
   const igFollowers = igPlatform?.followers ? parseCount(igPlatform.followers) : (p.ig_followers || p.instagram_followers || 0)
   const ttFollowers = ttPlatform?.followers ? parseCount(ttPlatform.followers) : (p.tt_followers || 0)
 
@@ -64,7 +66,7 @@ export function ProfileModal({ profileModal, onClose }: { profileModal: any; onC
             </div>
           )}
 
-          {p.bio && <p className="text-sm text-gray-500 mt-3 leading-relaxed">{p.bio}</p>}
+          {p.bio && <p className="text-sm text-gray-500 mt-3 leading-relaxed">{sanitizeBioForBrand(p.bio)}</p>}
 
           {p.niches?.length > 0 && (
             <div className="flex flex-wrap justify-center gap-1.5 mt-3">
@@ -77,16 +79,13 @@ export function ProfileModal({ profileModal, onClose }: { profileModal: any; onC
           {/* Social cards */}
           <div className="grid grid-cols-2 gap-3 mt-5">
             {igUrl ? (
-              <a href={igUrl} target="_blank" rel="noopener noreferrer"
-                className="rounded-2xl border-2 border-pink-100 bg-pink-50 p-4 flex flex-col items-center gap-1 hover:border-pink-300 hover:bg-pink-100 transition group">
+              <div className="rounded-2xl border-2 border-pink-100 bg-pink-50 p-4 flex flex-col items-center gap-1">
                 <Instagram className="w-6 h-6 text-pink-500" />
                 <p className="font-black text-lg text-gray-900">{fmtNum(igFollowers)}</p>
                 <div className="flex items-center gap-1">
                   <p className="text-[10px] text-pink-400 font-bold uppercase">Instagram</p>
-                  <ExternalLink className="w-3 h-3 text-pink-400 opacity-0 group-hover:opacity-100 transition" />
                 </div>
-                {igHandle && <p className="text-[10px] text-gray-400">@{igHandle}</p>}
-              </a>
+              </div>
             ) : (
               <div className="rounded-2xl border-2 border-gray-100 bg-gray-50 p-4 flex flex-col items-center gap-1">
                 <Instagram className="w-6 h-6 text-gray-300" />
@@ -96,16 +95,13 @@ export function ProfileModal({ profileModal, onClose }: { profileModal: any; onC
             )}
 
             {ttUrl ? (
-              <a href={ttUrl} target="_blank" rel="noopener noreferrer"
-                className="rounded-2xl border-2 border-gray-200 bg-gray-50 p-4 flex flex-col items-center gap-1 hover:border-gray-400 hover:bg-gray-100 transition group">
+              <div className="rounded-2xl border-2 border-gray-200 bg-gray-50 p-4 flex flex-col items-center gap-1">
                 <TikTokIcon className="w-6 h-6 text-gray-800" />
                 <p className="font-black text-lg text-gray-900">{fmtNum(ttFollowers)}</p>
                 <div className="flex items-center gap-1">
                   <p className="text-[10px] text-gray-500 font-bold uppercase">TikTok</p>
-                  <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition" />
                 </div>
-                {ttHandle && <p className="text-[10px] text-gray-400">@{ttHandle}</p>}
-              </a>
+              </div>
             ) : (
               <div className="rounded-2xl border-2 border-gray-100 bg-gray-50 p-4 flex flex-col items-center gap-1">
                 <TikTokIcon className="w-6 h-6 text-gray-300" />
@@ -143,14 +139,11 @@ export function ProfileModal({ profileModal, onClose }: { profileModal: any; onC
           {((p.portfolio_urls?.length > 0) || (p.recent_posts_urls?.length > 0)) && (
             <div className="mt-4">
               <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2">Portofoliu</p>
-              <div className="flex flex-wrap gap-1.5 justify-center">
-                {[...(p.recent_posts_urls || []), ...(p.portfolio_urls || [])].slice(0, 6).map((url: string, i: number) => (
-                  <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                    className="text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-2.5 py-1.5 rounded-xl transition flex items-center gap-1">
-                    <ExternalLink className="w-3 h-3" /> Link {i + 1}
-                  </a>
-                ))}
-              </div>
+              {/* fără link-uri spre conturi: postările se văd ca imagini pe profilul AddFame */}
+              <a href={`/influencer/${p._slug || p.slug || p.id}`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-2.5 py-1.5 rounded-xl transition items-center gap-1">
+                <ExternalLink className="w-3 h-3" /> {[...(p.recent_posts_urls || []), ...(p.portfolio_urls || [])].filter(Boolean).length} postări — vezi pe profilul AddFame
+              </a>
             </div>
           )}
         </div>

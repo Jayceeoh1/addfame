@@ -69,7 +69,7 @@ type Campaign = {
 
 type AccessState =
   | { granted: true }
-  | { granted: false; reason: 'no_credits' | 'no_admin_access' }
+  | { granted: false; reason: 'no_active_campaign' }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -175,7 +175,7 @@ function FakeCard() {
   )
 }
 
-function LockedScreen({ reason }: { reason: 'no_credits' }) {
+function LockedScreen({ reason }: { reason: 'no_active_campaign' }) {
   return (
     <div style={{ position: 'relative' }}>
       <div className="if-grid" style={{ filter: 'blur(3px)', pointerEvents: 'none', userSelect: 'none', opacity: .6 }}>
@@ -184,30 +184,13 @@ function LockedScreen({ reason }: { reason: 'no_credits' }) {
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 0' }}>
         <div className="bu-card" style={{ padding: 24, maxWidth: 460, width: '100%', textAlign: 'center', boxShadow: '0 30px 60px -30px rgba(20,18,58,.4)' }}>
           <div className="bu-ico" style={{ width: 56, height: 56, margin: '0 auto 14px', background: '#efeaff', color: '#5a35e6' }}>
-            <Lock className="w-6 h-6" />
+            <Zap className="w-6 h-6" />
           </div>
-          <h2 style={{ fontSize: 22, marginBottom: 8 }}>Lista de influenceri este blocată</h2>
+          <h2 style={{ fontSize: 22, marginBottom: 8 }}>Lista de influenceri se deschide cu o campanie activă</h2>
           <p className="bu-muted bu-sm" style={{ margin: '0 0 18px' }}>
-            Pentru a accesa rețeaua completă de creatori ai nevoie de <strong style={{ color: '#14123a' }}>minimum 250 RON credite</strong> în wallet sau aprobare din partea echipei AddFame.
+            Pornește o campanie, iar după ce e aprobată poți răsfoi creatorii AddFame și îi poți invita direct în campania ta.
           </p>
-          <div className="bu-col" style={{ gap: 10, textAlign: 'left', marginBottom: 16 }}>
-            <div className="bu-row" style={{ gap: 12, padding: 12, borderRadius: 14, background: '#fff1e6', flexWrap: 'wrap' }}>
-              <div className="bu-ico" style={{ width: 36, height: 36, background: '#fff', color: '#9a4206' }}><Wallet className="w-4 h-4" /></div>
-              <div style={{ flex: 1, minWidth: 140 }}>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#9a4206' }}>Adaugă credite în wallet</p>
-                <p className="bu-xs" style={{ margin: 0, color: '#9a4206' }}>Minim 250 RON necesari pentru acces</p>
-              </div>
-              <Link href="/brand/wallet" className="bu-btn" style={{ height: 44 }}>Adaugă fonduri <ArrowRight className="w-3.5 h-3.5" /></Link>
-            </div>
-            <div className="bu-row" style={{ gap: 12, padding: 12, borderRadius: 14, background: '#efeaff' }}>
-              <div className="bu-ico" style={{ width: 36, height: 36, background: '#fff', color: '#4423c4' }}><Zap className="w-4 h-4" /></div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#4423c4' }}>Aprobare echipă AddFame</p>
-                <p className="bu-xs" style={{ margin: 0, color: '#4423c4' }}>Contactează-ne pentru acces rapid</p>
-              </div>
-            </div>
-          </div>
-          <p className="bu-muted bu-xs" style={{ margin: 0 }}>Una dintre cele două condiții este suficientă pentru a debloca accesul la rețeaua completă de creatori.</p>
+          <Link href="/brand/campaigns?new=1" className="bu-btn p big" style={{ display: 'inline-flex' }}>Creează o campanie <ArrowRight className="w-4 h-4" /></Link>
         </div>
       </div>
     </div>
@@ -317,9 +300,6 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
                     <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
                       <Instagram className="w-3.5 h-3.5 text-pink-500" />
                       <span style={{ fontWeight: 700, fontSize: 14 }}>Instagram</span>
-                      {influencer.instagram_handle && (
-                        <a href={`https://instagram.com/${influencer.instagram_handle}`} target="_blank" rel="noreferrer" style={{ color: '#6a6690' }}><ExternalLink className="w-3 h-3" /></a>
-                      )}
                       <span className="bu-chip" style={{ background: '#dcf5ec', color: '#14532d', height: 20, fontSize: 11 }}>Verificat API</span>
                     </div>
                     <div className="bu-row" style={{ gap: 8 }}>
@@ -333,7 +313,6 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
                     <div className="bu-row" style={{ gap: 8 }}>
                       <PlatformIcon platform={p.platform} />
                       <span style={{ fontWeight: 700, fontSize: 14, textTransform: 'capitalize' }}>{p.platform}</span>
-                      {p.url && <a href={p.url} target="_blank" rel="noreferrer" style={{ color: '#6a6690' }}><ExternalLink className="w-3 h-3" /></a>}
                     </div>
                     {p.followers && <b className="bu-d">{formatFollowers(p.followers)}</b>}
                   </div>
@@ -606,30 +585,21 @@ export default function BrandInfluencersPage() {
 
       const { data: brand } = await supabase
         .from('brands')
-        .select('id, credits_balance, influencers_access')
+        .select('id')
         .eq('user_id', user.id)
         .single()
       if (!brand) return
       setBrandId(brand.id)
 
-      const hasCredits = (brand.credits_balance ?? 0) >= 250
-      const adminAccess = brand.influencers_access === true
-
-      const accessState: AccessState = (hasCredits || adminAccess)
-        ? { granted: true }
-        : { granted: false, reason: 'no_credits' }
+      // Accesul și datele vin de pe server: doar cu o campanie activă, fără social media / contact
+      const listRes = await fetch('/api/brand/influencers', { cache: 'no-store' })
+      const listJson: any = await listRes.json().catch(() => ({}))
+      const accessState: AccessState = listJson?.access ? { granted: true } : { granted: false, reason: 'no_active_campaign' }
       setAccess(accessState)
 
       if (accessState.granted) {
-        const INF_COLS = 'id, user_id, name, slug, bio, avatar, niches, platforms, approval_status, is_verified, verified_at, total_earned, created_at, price_story, price_reel, price_post, price_youtube, price_min, city, instagram_connected, instagram_handle, ig_followers, ig_engagement_rate, tiktok_connected, tt_followers, avg_rating, review_count'
-        // Profilurile publice (vederea fără date private); tabelul direct doar ca rezervă până rulează SQL 09
-        let [infRes, campRes] = await Promise.all([
-          supabase.from('influencers_public').select(INF_COLS).order('created_at', { ascending: false }),
-          supabase.from('campaigns').select('id, title, status, campaign_type, platforms, min_followers_target, offer_description, description, niches').eq('brand_id', brand.id),
-        ])
-        if (infRes.error) {
-          infRes = await supabase.from('influencers').select(INF_COLS).eq('approval_status', 'approved').order('created_at', { ascending: false })
-        }
+        const infRes = { data: (listJson.influencers ?? []) as Influencer[] }
+        const campRes = await supabase.from('campaigns').select('id, title, status, campaign_type, platforms, min_followers_target, offer_description, description, niches').eq('brand_id', brand.id)
 
         setInfluencers((infRes.data as Influencer[]) ?? [])
         setCampaigns((campRes.data as Campaign[]) ?? [])
@@ -858,7 +828,7 @@ export default function BrandInfluencersPage() {
       )}
 
       {access && !access.granted ? (
-        <LockedScreen reason='no_credits' />
+        <LockedScreen reason='no_active_campaign' />
       ) : (
         <>
           {/* AI Recomandări */}

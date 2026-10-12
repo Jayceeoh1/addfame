@@ -395,22 +395,6 @@ function BrandWalletPageInner() {
         </div>
       </div>
 
-      {/* Banner acces blocat */}
-      {isLocked && (
-        <div className="bw-banner" style={{ background: '#fff1c2', border: '1px solid #f3dc8a' }}>
-          <div className="bu-ico" style={{ background: '#fff', color: '#854d0e' }}><Lock className="w-5 h-5" /></div>
-          <div style={{ flex: 1, minWidth: 0, color: '#854d0e' }}>
-            <p style={{ margin: 0, fontWeight: 800 }}>Acces restricționat</p>
-            <p className="bu-sm" style={{ margin: '4px 0 12px' }}>
-              Pentru a accesa lista de influenceri și a crea campanii ai nevoie de <strong>minimum 500 RON credite</strong> în cont.
-              Adaugă credite mai jos sau contactează echipa AddFame la{' '}
-              <a href="mailto:ciprian@addfame.ro" style={{ fontWeight: 700, textDecoration: 'underline' }}>ciprian@addfame.ro</a> pentru acces anticipat.
-            </p>
-            <button onClick={() => setModal('select_method')} className="bu-btn p">Adaugă acum</button>
-          </div>
-        </div>
-      )}
-
       {/* Pending alert */}
       {pendingTx.length > 0 && (
         <div className="bw-banner" style={{ background: '#fff8dc', border: '1px solid #f3dc8a', alignItems: 'center' }}>

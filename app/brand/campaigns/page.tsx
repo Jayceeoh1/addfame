@@ -98,7 +98,8 @@ export default function BrandCampaignsPage() {
       const { data: brand } = await supabase.from('brands').select('id, verification_status, verification_rejection_reason, credits_balance, influencers_access').eq('user_id', user.id).single()
       if (brand) {
         setBrandVerification({ status: brand.verification_status || 'unverified', reason: brand.verification_rejection_reason })
-        const hasAccess = (brand.credits_balance ?? 0) >= 250 || brand.influencers_access === true
+        // Fără prag minim de credite: campania se creează oricând, taxa se plătește la publicare
+        const hasAccess = true
         setCanCreateCampaign(hasAccess)
         // /brand/campaigns?new=1 (ex. din „Campanie nouă” de pe alte pagini) → deschide direct alegerea tipului
         try {

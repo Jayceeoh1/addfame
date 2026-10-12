@@ -458,9 +458,9 @@ ciprian@addfame.ro | +40 724 796 883 | addfame.ro`)
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-4 mb-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-black text-purple-800">Acces influenceri &amp; campanii</p>
+                      <p className="text-sm font-black text-purple-800">Acces la lista de influenceri</p>
                       <p className="text-xs text-purple-600 mt-0.5">
-                        {selected.influencers_access ? '✅ Acces acordat de admin' : selected.credits_balance >= 250 ? '✅ Deblocat automat (≥250 RON)' : '🔒 Blocat — sub 250 RON și fără aprobare'}
+                        {selected.influencers_access ? '✅ Lista de influenceri deschisă de admin (și fără campanie activă)' : 'Lista de influenceri se deschide automat când brandul are o campanie activă'}
                       </p>
                     </div>
                     <button

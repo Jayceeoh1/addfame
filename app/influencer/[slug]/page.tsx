@@ -3,7 +3,7 @@ import { AvatarWithBadge } from '@/components/shared/CreatorBadge'
 // @ts-nocheck
 import { parseCount } from '@/lib/tiers'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -39,6 +39,14 @@ function fmtNum(v) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
   return String(n)
+}
+
+// Brandurile nu primesc link-uri spre conturile de social media ale creatorilor (regula AddFame:
+// colaborările se stabilesc doar prin platformă). Pentru ele, postările sunt doar imagini, fără link.
+function MaybeLink({ hide, href, children, ...rest }: { hide: boolean; href: string; children: React.ReactNode; [k: string]: any }) {
+  return hide
+    ? <div {...rest}>{children}</div>
+    : <a href={href} target="_blank" rel="noopener noreferrer" {...rest}>{children}</a>
 }
 
 function getPostPreviewInfo(url: string): { type: 'instagram' | 'tiktok' | 'unknown', embedUrl: string, directUrl: string } | null {
@@ -99,6 +107,8 @@ export default function PublicInfluencerProfile() {
   const [inviting, setInviting] = useState(false)
   const [invited, setInvited] = useState(false)
   const [brandId, setBrandId] = useState(null)
+  // vizitator = brand → fără link-uri spre social media
+  const hideSocial = !!brandId
   const [reviews, setReviews] = useState([])
   const [showAllReviews, setShowAllReviews] = useState(false)
   const [thumbnails, setThumbnails] = useState<Record<string, string | null>>({})
@@ -387,7 +397,7 @@ export default function PublicInfluencerProfile() {
                         </div>
                         <div className="flex items-center gap-3">
                           {p.followers && <span className="text-xs font-black text-gray-700">{fmtNum(p.followers)}</span>}
-                          {p.url && <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600"><ExternalLink className="w-3.5 h-3.5" /></a>}
+                          {p.url && !hideSocial && <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600"><ExternalLink className="w-3.5 h-3.5" /></a>}
                         </div>
                       </div>
                       {(er || views) && (
@@ -502,15 +512,15 @@ export default function PublicInfluencerProfile() {
               {inf.recent_posts_urls.filter((u: string) => u).map((url: string, i: number) => {
                 const info = getPostPreviewInfo(url)
                 if (!info) return (
-                  <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                  <MaybeLink key={i} hide={hideSocial} href={url}
                     className="flex items-center justify-center rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50 transition aspect-square text-xs text-orange-500 font-bold">
                     🔗 Postare {i + 1}
-                  </a>
+                  </MaybeLink>
                 )
                 const isIG = info.type === 'instagram'
                 const thumb = thumbnails[url]
                 return (
-                  <a key={i} href={info.directUrl} target="_blank" rel="noopener noreferrer"
+                  <MaybeLink key={i} hide={hideSocial} href={info.directUrl}
                     className="block rounded-xl overflow-hidden border border-gray-100 hover:border-orange-200 transition group relative"
                     style={{ aspectRatio: '1' }}>
                     {thumb
@@ -527,10 +537,10 @@ export default function PublicInfluencerProfile() {
                           <span className="text-xs font-bold" style={{ color: isIG ? '#be185d' : 'white' }}>{isIG ? 'Instagram' : 'TikTok'}</span>
                         </div>
                     }
-                    <div className="absolute inset-0 flex items-end p-2 opacity-0 group-hover:opacity-100 transition" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}>
+                    {!hideSocial && <div className="absolute inset-0 flex items-end p-2 opacity-0 group-hover:opacity-100 transition" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}>
                       <span className="text-white text-xs font-bold">Vezi postarea →</span>
-                    </div>
-                  </a>
+                    </div>}
+                  </MaybeLink>
                 )
               })}
             </div>
@@ -548,15 +558,15 @@ export default function PublicInfluencerProfile() {
               {inf.portfolio_urls.filter((u: string) => u).map((url: string, i: number) => {
                 const embed = getEmbedInfo(url)
                 if (!embed) return (
-                  <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                  <MaybeLink key={i} hide={hideSocial} href={url}
                     className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50 transition text-sm text-orange-500 font-bold">
                     🔗 Clip {i + 1} — vezi pe platformă
-                  </a>
+                  </MaybeLink>
                 )
                 const isIGEmbed = embed.type === 'instagram'
                 const thumbP = thumbnails[url]
                 return (
-                  <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                  <MaybeLink key={i} hide={hideSocial} href={url}
                     className="block rounded-xl overflow-hidden border border-gray-100 hover:border-orange-200 hover:scale-[1.02] transition group relative"
                     style={{ aspectRatio: '9/16', maxHeight: 280 }}>
                     {thumbP
@@ -573,10 +583,10 @@ export default function PublicInfluencerProfile() {
                           <span className="text-sm font-bold" style={{ color: isIGEmbed ? '#be185d' : 'white' }}>{isIGEmbed ? 'Instagram Reel' : 'TikTok Video'}</span>
                         </div>
                     }
-                    <div className="absolute inset-0 flex items-end p-2 opacity-0 group-hover:opacity-100 transition" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}>
+                    {!hideSocial && <div className="absolute inset-0 flex items-end p-2 opacity-0 group-hover:opacity-100 transition" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}>
                       <span className="text-white text-xs font-bold">Apasă pentru a vedea →</span>
-                    </div>
-                  </a>
+                    </div>}
+                  </MaybeLink>
                 )
               })}
             </div>
