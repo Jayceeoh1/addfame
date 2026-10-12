@@ -18,12 +18,16 @@ export default function AdminDashboard() {
   }, [])
   useEffect(() => { load() }, [load])
 
-  const today = new Date().toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' })
+  // Salutul și data se calculează doar în browser (ora serverului e UTC → altfel textul diferă și React dă eroare)
+  const [hello, setHello] = useState({ title: '', today: '' })
+  useEffect(() => {
+    setHello({ title: greeting(), today: new Date().toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' }) })
+  }, [])
 
   if (!data) {
     return (
       <div className="ad-page">
-        <div className="ad-hello"><div><h1>{greeting()}</h1><p>{today}</p></div></div>
+        <div className="ad-hello"><div><h1>{hello.title || 'Panou'}</h1><p>{hello.today || '\u00a0'}</p></div></div>
         {error ? (
           <div className="ad-card ad-pad" style={{ color: '#b42318' }}>
             Nu am putut încărca panoul: {error} <button className="ad-btn" onClick={load} style={{ marginLeft: 8 }}>Reîncearcă</button>

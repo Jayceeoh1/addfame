@@ -110,15 +110,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className={`ad-shell ${fontVars}`}>
       {drawer && <div className="ad-ov" onClick={() => setDrawer(false)} />}
 
-      <aside className={`ad-side${rail ? ' rail' : ''}${drawer ? ' open' : ''}`} aria-label="Meniu admin">
+      <aside className={`ad-side${rail && !drawer ? ' rail' : ''}${drawer ? ' open' : ''}`} aria-label="Meniu admin">
         <div className="ad-brand">
           <div className="ad-logo"><img src="/logo.png" alt="" /></div>
-          {(!rail || drawer) && <div><b>AddFame</b><small>Admin</small></div>}
-          <button className="ad-tog hide-rail" onClick={() => (drawer ? setDrawer(false) : toggleRail())}
-            aria-label={drawer ? 'Închide meniul' : rail ? 'Lărgește meniul' : 'Îngustează meniul'}
-            style={rail && !drawer ? { marginLeft: 0, display: 'none' } : undefined}>
-            {drawer ? <X className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-          </button>
+          {(!rail || drawer) && <>
+            <div><b>AddFame</b><small>Admin</small></div>
+            <button className="ad-tog" onClick={() => (drawer ? setDrawer(false) : toggleRail())}
+              aria-label={drawer ? 'Închide meniul' : 'Îngustează meniul'}>
+              {drawer ? <X className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            </button>
+          </>}
         </div>
 
         <nav className="ad-nav">
@@ -154,7 +155,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       <div className="ad-main">
         <header className="ad-top">
-          <button className="ad-ib md:hidden" onClick={() => setDrawer(true)} aria-label="Deschide meniul"><Menu className="w-4 h-4" /></button>
+          <button className="ad-ib ad-menu-btn" onClick={() => setDrawer(true)} aria-label="Deschide meniul"><Menu className="w-4 h-4" /></button>
           <div style={{ minWidth: 0, flex: 1 }}>
             {current && current.href !== '/admin' && <div className="crumb">{current.group}</div>}
             <h1>{current?.label ?? 'Admin'}</h1>

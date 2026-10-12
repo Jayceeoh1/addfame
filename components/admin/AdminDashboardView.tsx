@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 // Pagina principală de admin (doar afișare). Datele vin din getAdminOverview.
 
 import Link from 'next/link'
@@ -71,7 +72,12 @@ function MonthBars({ months, series, grow = false }: { months: { label: string }
 }
 
 export function AdminDashboardView({ data, loading = false, onRefresh }: { data: AdminOverview; loading?: boolean; onRefresh?: () => void }) {
-  const today = new Date().toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' })
+  // calculate doar în browser, după încărcare (vezi app/admin/page.tsx)
+  const [hello, setHello] = useState({ title: 'Panou', today: '' })
+  useEffect(() => {
+    setHello({ title: greeting(), today: new Date().toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' }) })
+  }, [])
+  const today = hello.today
   const q = data.queue
   const open = QUEUE.filter(x => q[x.key] > 0)
   const totalOpen = open.reduce((s, x) => s + q[x.key], 0)
@@ -82,7 +88,7 @@ export function AdminDashboardView({ data, loading = false, onRefresh }: { data:
     <div className="ad-page">
       <div className="ad-hello">
         <div>
-          <h1>{greeting()}</h1>
+          <h1>{hello.title}</h1>
           <p style={{ textTransform: 'none' }}>
             <span style={{ textTransform: 'capitalize' }}>{today}</span> · {totalOpen === 0 ? 'nimic nu te așteaptă' : `${totalOpen} ${totalOpen === 1 ? 'lucru te așteaptă' : 'lucruri te așteaptă'}`}
           </p>
