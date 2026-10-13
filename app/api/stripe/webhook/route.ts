@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
-import { finalizeTopup } from '@/lib/topup'
+import { finalizeTopup, billingFromMetadata } from '@/lib/topup'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
 
@@ -87,6 +87,8 @@ export async function POST(req: NextRequest) {
         status: 'pending',
         payment_method: 'stripe_card',
         invoice_number: reference,
+        payment_reference: reference,
+        billing_details: billingFromMetadata(pi.metadata.billing),
         stripe_payment_intent_id: pi.id,
       }).select('id').single()
       if (insertErr?.code === '23505') {

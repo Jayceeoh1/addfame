@@ -10,6 +10,7 @@ import {
   Building2, Copy, Check, FileText, Shield, Info, Loader2,
 } from 'lucide-react'
 import { BANK, REVOLUT, WISE, PAYPAL, CRYPTO, TOPUP_MIN, TOPUP_MAX } from '@/lib/payment-config'
+import CardCheckout, { CARD_PAYMENTS_ENABLED } from '@/components/stripe/CardCheckout'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Transaction = {
@@ -84,7 +85,9 @@ function BrandWalletPageInner() {
   const [filterType, setFilterType] = useState('ALL')
 
   // Fereastra de încărcare: 'amount' (sumă + facturare) → 'transfer' (detalii plată, referință unică)
-  const [modal, setModal] = useState<null | 'amount' | 'transfer'>(null)
+  const [modal, setModal] = useState<null | 'amount' | 'transfer' | 'card' | 'paid'>(null)
+  const [cardBilling, setCardBilling] = useState<Record<string, string> | null>(null)
+  const [paidRef, setPaidRef] = useState<string | null>(null)
   const [selectedMethod, setSelectedMethod] = useState<string>(PAYMENT_METHODS[0]?.id ?? 'bank_transfer')
   const [amount, setAmount] = useState<number | null>(500)
   const [customAmount, setCustomAmount] = useState('')
@@ -102,6 +105,14 @@ function BrandWalletPageInner() {
   useEffect(() => { fetchAll() }, [])
   // ?topup=1 deschide direct încărcarea (din alte pagini)
   useEffect(() => { if (searchParams.get('topup') === '1') setModal('amount') }, [searchParams])
+  // întoarcere după confirmarea cardului în aplicația băncii (3D Secure cu redirect)
+  useEffect(() => {
+    if (searchParams.get('payment') !== 'card') return
+    if (searchParams.get('redirect_status') === 'failed') { setInvoiceMsg('Plata cu cardul nu a reușit. Poți încerca din nou.'); return }
+    setPaidRef(searchParams.get('ref')); setModal('paid')
+    const t1 = setTimeout(fetchAll, 3000), t2 = setTimeout(fetchAll, 9000)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [searchParams])
   // pe telefon: pagina din spate nu se mai derulează cât e deschisă fereastra
   useEffect(() => {
     if (!modal) return
@@ -173,6 +184,12 @@ function BrandWalletPageInner() {
     if (billingType === 'pj' && !billingVat.trim()) { setSubmitError('CUI-ul este obligatoriu pentru firme.'); return }
     if (billingType === 'pj' && !billingAddress.trim()) { setSubmitError('Adresa sediului este obligatorie pentru firme.'); return }
 
+    if (selectedMethod === 'card') {
+      setCardBilling({ type: billingType, name: billingName, address: billingAddress, vat: billingVat, reg_com: billingRegCom })
+      setModal('card')
+      return
+    }
+
     setSubmitLoading(true)
     try {
       const res = await fetch('/api/wallet/submit-payment', {
@@ -219,7 +236,7 @@ function BrandWalletPageInner() {
   }
 
   function closeModal() {
-    setModal(null); setSubmitError(null); setRequestTx(null)
+    setModal(null); setSubmitError(null); setRequestTx(null); setCardBilling(null)
   }
 
   function exportCSV() {
@@ -604,8 +621,8 @@ function BrandWalletPageInner() {
           <div className="tp-sheet" role="dialog" aria-modal="true" aria-labelledby="tp-title">
             <div className="tp-head">
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h2 id="tp-title">{modal === 'amount' ? 'Adaugă credite' : 'Fă transferul'}</h2>
-                <div className="tp-steps" aria-hidden><i className="on" /><i className={modal === 'transfer' ? 'on' : ''} /></div>
+                <h2 id="tp-title">{modal === 'amount' ? 'Adaugă credite' : modal === 'card' ? 'Plată cu cardul' : modal === 'paid' ? 'Plată reușită' : 'Fă transferul'}</h2>
+                <div className="tp-steps" aria-hidden><i className="on" /><i className={modal !== 'amount' ? 'on' : ''} /></div>
               </div>
               <button className="tp-x" onClick={closeModal} aria-label="Închide"><X className="w-4 h-4" /></button>
             </div>
@@ -642,17 +659,25 @@ function BrandWalletPageInner() {
                   <div className="tp-sec">
                     <span className="bu-label">Metoda de plată</span>
                     {PAYMENT_METHODS.map(m => (
-                      <button key={m.id} type="button" onClick={() => setSelectedMethod(m.id)} className={`tp-method${methodObj.id === m.id ? ' on' : ''}`}>
+                      <button key={m.id} type="button" onClick={() => setSelectedMethod(m.id)} className={`tp-method${selectedMethod === m.id ? ' on' : ''}`}>
                         <div className="bu-ico" style={{ background: '#e6f0ff', color: '#1d4fb8' }}><Building2 className="w-5 h-5" /></div>
                         <div style={{ flex: 1, minWidth: 0 }}><p style={{ fontWeight: 700, fontSize: 14 }}>{m.label}</p><p className="bu-xs bu-muted">{m.sub}</p></div>
-                        {methodObj.id === m.id && <CheckCircle className="w-5 h-5" style={{ color: '#5a35e6' }} />}
+                        {selectedMethod === m.id && <CheckCircle className="w-5 h-5" style={{ color: '#5a35e6' }} />}
                       </button>
                     ))}
-                    <div className="tp-method off" aria-disabled>
-                      <div className="bu-ico" style={{ background: '#f0eff7', color: '#8783a8' }}><CreditCard className="w-5 h-5" /></div>
-                      <div style={{ flex: 1, minWidth: 0 }}><p style={{ fontWeight: 700, fontSize: 14 }}>Card bancar</p><p className="bu-xs bu-muted">Visa, Mastercard</p></div>
-                      <span className="bu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}>În curând</span>
-                    </div>
+                    {CARD_PAYMENTS_ENABLED ? (
+                      <button type="button" onClick={() => setSelectedMethod('card')} className={`tp-method${selectedMethod === 'card' ? ' on' : ''}`}>
+                        <div className="bu-ico" style={{ background: '#efeaff', color: '#4423c4' }}><CreditCard className="w-5 h-5" /></div>
+                        <div style={{ flex: 1, minWidth: 0 }}><p style={{ fontWeight: 700, fontSize: 14 }}>Card bancar</p><p className="bu-xs bu-muted">Visa, Mastercard · creditele intră imediat</p></div>
+                        {selectedMethod === 'card' && <CheckCircle className="w-5 h-5" style={{ color: '#5a35e6' }} />}
+                      </button>
+                    ) : (
+                      <div className="tp-method off" aria-disabled>
+                        <div className="bu-ico" style={{ background: '#f0eff7', color: '#8783a8' }}><CreditCard className="w-5 h-5" /></div>
+                        <div style={{ flex: 1, minWidth: 0 }}><p style={{ fontWeight: 700, fontSize: 14 }}>Card bancar</p><p className="bu-xs bu-muted">Visa, Mastercard</p></div>
+                        <span className="bu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}>În curând</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="tp-sec">
@@ -721,6 +746,29 @@ function BrandWalletPageInner() {
                     {submitLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Se pregătește…</>
                       : amountValid ? `Continuă — plătești ${fmt(resolvedAmount)}` : 'Alege o sumă'}
                   </button>
+                </div>
+              </>
+            )}
+
+            {/* ── Pasul 2 (card): plata prin Stripe ── */}
+            {modal === 'card' && cardBilling && (
+              <CardCheckout amount={resolvedAmount} billing={cardBilling}
+                onBack={() => setModal('amount')}
+                onPaid={ref => { setPaidRef(ref); setModal('paid'); setTimeout(fetchAll, 2500); setTimeout(fetchAll, 8000) }} />
+            )}
+
+            {/* ── Plată cu cardul reușită ── */}
+            {modal === 'paid' && (
+              <>
+                <div className="tp-body" style={{ alignItems: 'center', textAlign: 'center', padding: '32px 20px' }}>
+                  <div className="bu-ico" style={{ width: 64, height: 64, borderRadius: 20, background: '#dcf5ec', color: '#14804a' }}><CheckCircle className="w-8 h-8" /></div>
+                  <h3 style={{ margin: '6px 0 0' }}>Plata a fost primită</h3>
+                  <p className="bu-sm bu-muted" style={{ margin: 0, maxWidth: 380 }}>
+                    Creditele apar în wallet în câteva secunde, iar factura fiscală <b>seria ADDF</b> o găsești la Tranzacții.{paidRef ? <> Referință: <b>{paidRef}</b>.</> : null}
+                  </p>
+                </div>
+                <div className="tp-foot">
+                  <button className="bu-btn p big" onClick={() => { closeModal(); fetchAll() }}>Gata</button>
                 </div>
               </>
             )}

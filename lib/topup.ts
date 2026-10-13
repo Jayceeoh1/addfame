@@ -23,6 +23,37 @@ export function makeTopupReference(date = new Date(), random: () => number = Mat
   return `ADF-${yy}${mm}-${code}`
 }
 
+export type TopupBilling = { type: 'pf' | 'pj'; name: string; vat: string; reg_com: string; address: string; city: string }
+
+/** Datele de facturare (pe factura SmartBill), curățate. Întoarce eroarea dacă lipsește ceva obligatoriu. */
+export function cleanBilling(b: any): { billing: TopupBilling; error?: string } {
+  const clean = (v: unknown, max = 200) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max)
+  const billing: TopupBilling = {
+    type: b?.type === 'pf' ? 'pf' : 'pj',
+    name: clean(b?.name, 120),
+    vat: clean(b?.vat, 20).toUpperCase(),
+    reg_com: clean(b?.reg_com, 40).toUpperCase(),
+    address: clean(b?.address, 200),
+    city: clean(b?.city, 60),
+  }
+  if (!billing.name) return { billing, error: 'Completează numele pentru factură.' }
+  if (billing.type === 'pj' && (!billing.vat || !billing.address)) return { billing, error: 'Pentru firmă sunt obligatorii CUI-ul și adresa sediului.' }
+  return { billing }
+}
+
+/** Stripe acceptă în metadata valori de max. 500 de caractere — împachetăm datele de facturare compact. */
+export function billingToMetadata(b: TopupBilling): string {
+  const s = JSON.stringify([b.type, b.name, b.vat, b.reg_com, b.address, b.city])
+  return s.length <= 500 ? s : JSON.stringify([b.type, b.name.slice(0, 100), b.vat, b.reg_com, b.address.slice(0, 160), b.city.slice(0, 40)]).slice(0, 500)
+}
+export function billingFromMetadata(v: unknown): TopupBilling | null {
+  try {
+    const a = JSON.parse(String(v ?? ''))
+    if (!Array.isArray(a)) return null
+    return { type: a[0] === 'pf' ? 'pf' : 'pj', name: String(a[1] ?? ''), vat: String(a[2] ?? ''), reg_com: String(a[3] ?? ''), address: String(a[4] ?? ''), city: String(a[5] ?? '') }
+  } catch { return null }
+}
+
 /** Suma validă pentru o încărcare: număr, între minim și maxim, rotunjit la bani. */
 export function parseTopupAmount(v: unknown): number | null {
   const n = Math.round(Number(v) * 100) / 100

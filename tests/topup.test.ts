@@ -63,3 +63,20 @@ describe('factura trimisă la SmartBill', () => {
     expect(body.client.isTaxPayer).toBe(false)
   })
 })
+
+import { cleanBilling, billingToMetadata, billingFromMetadata } from '@/lib/topup'
+
+describe('datele de facturare la plata cu cardul', () => {
+  it('se validează ca la transfer', () => {
+    expect(cleanBilling({ type: 'pj', name: 'Firma SRL', vat: '' }).error).toMatch(/CUI/)
+    expect(cleanBilling({ type: 'pf', name: '' }).error).toMatch(/numele/)
+    expect(cleanBilling({ type: 'pj', name: ' Yasenka  SRL ', vat: 'ro123', address: 'Str. X 1' }).billing).toMatchObject({ name: 'Yasenka SRL', vat: 'RO123' })
+  })
+  it('încap în metadata Stripe (max. 500 caractere) și se recitesc identic', () => {
+    const b = cleanBilling({ type: 'pj', name: 'Ăîșț SRL', vat: 'RO1', reg_com: 'J1', address: 'Str. Lungă '.repeat(30), city: 'Pitești' }).billing
+    const m = billingToMetadata(b)
+    expect(m.length).toBeLessThanOrEqual(500)
+    expect(billingFromMetadata(m)).toMatchObject({ type: 'pj', name: 'Ăîșț SRL', vat: 'RO1', city: 'Pitești' })
+    expect(billingFromMetadata('nu e json')).toBeNull()
+  })
+})

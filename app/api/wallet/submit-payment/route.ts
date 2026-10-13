@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { randomInt } from 'crypto'
-import { makeTopupReference, parseTopupAmount, TOPUP_MIN, TOPUP_MAX } from '@/lib/topup'
+import { makeTopupReference, parseTopupAmount, cleanBilling, TOPUP_MIN, TOPUP_MAX } from '@/lib/topup'
 import { REVOLUT, WISE, PAYPAL, CRYPTO } from '@/lib/payment-config'
 
 // Metodele de plată acceptate acum (transferul bancar e mereu activ)
@@ -54,19 +54,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Metoda de plată nu este disponibilă.' }, { status: 400 })
 
     // Datele de facturare (pe factura SmartBill)
-    const b = body.billing || {}
-    const clean = (v: unknown, max = 200) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max)
-    const billing = {
-      type: b.type === 'pf' ? 'pf' : 'pj',
-      name: clean(b.name),
-      vat: clean(b.vat, 20).toUpperCase(),
-      reg_com: clean(b.reg_com, 40).toUpperCase(),
-      address: clean(b.address, 300),
-      city: clean(b.city, 80),
-    }
-    if (!billing.name) return NextResponse.json({ error: 'Completează numele pentru factură.' }, { status: 400 })
-    if (billing.type === 'pj' && (!billing.vat || !billing.address))
-      return NextResponse.json({ error: 'Pentru firmă sunt obligatorii CUI-ul și adresa sediului.' }, { status: 400 })
+    const { billing, error: billingError } = cleanBilling(body.billing)
+    if (billingError) return NextResponse.json({ error: billingError }, { status: 400 })
 
     const { data: brand } = await supabase
       .from('brands').select('id, name, email, verification_status').eq('user_id', user.id).single()
