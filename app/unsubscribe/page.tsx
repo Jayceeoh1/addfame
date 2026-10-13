@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { MailX, CheckCircle } from 'lucide-react'
 import SitePage from '@/components/site/SiteShell'
@@ -7,11 +7,22 @@ import SitePage from '@/components/site/SiteShell'
 export default function UnsubscribePage() {
   const [status, setStatus] = useState<'idle' | 'done'>('idle')
   const [email, setEmail] = useState('')
+  useEffect(() => { // adresa din link (?email=…), completată după încărcare
+    const e = new URLSearchParams(window.location.search).get('email')
+    if (e) setEmail(e)
+  }, [])
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
 
-  function handleUnsubscribe() {
-    if (!email) return
-    // Simply confirm - in production you'd call an API
-    setStatus('done')
+  async function handleUnsubscribe() {
+    if (!email || busy) return
+    setBusy(true); setErr('')
+    try {
+      const r = await fetch('/api/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) })
+      if (r.ok) setStatus('done')
+      else setErr('Adresa nu pare validă. Verifică și încearcă din nou.')
+    } catch { setErr('Nu am putut trimite. Încearcă din nou.') }
+    setBusy(false)
   }
 
   return (
@@ -43,11 +54,12 @@ export default function UnsubscribePage() {
                 </div>
                 <button
                   onClick={handleUnsubscribe}
-                  disabled={!email}
+                  disabled={!email || busy}
                   className="af-btn af-btn-violet us-btn"
                 >
-                  Mă dezabonez
+                  {busy ? 'Se trimite…' : 'Mă dezabonez'}
                 </button>
+                {err && <p role="alert" style={{ color: '#b42318', fontSize: 13, margin: 0 }}>{err}</p>}
                 <Link href="/" className="us-back">
                   ← Înapoi la AddFame
                 </Link>

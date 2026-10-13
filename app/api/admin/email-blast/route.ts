@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { normalizeEmail, isEmail, isSuppressed, isRegisteredEmail, coldOutreachEnabled, bulkSentToday, bulkDailyLimit, unsubscribeHeaders, unsubscribeUrl } from '@/lib/email-suppression'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = process.env.FROM_EMAIL || 'AddFame <noreply@addfame.ro>'
@@ -31,14 +32,25 @@ export async function POST(req: NextRequest) {
     const isAdmin = await requireAdmin()
     if (!isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { to, name, subject, body } = await req.json()
+    const { to: rawTo, name, subject, body } = await req.json()
+    const to = normalizeEmail(rawTo)
     if (!to || !subject || !body) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+    if (!isEmail(to)) return NextResponse.json({ error: 'Email invalid', reason: 'invalid' }, { status: 400 })
 
     const adminClient = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
+
+    // ── Reguli anti-spam (addfame.ro a ajuns pe Spamhaus DBL din cauza invitațiilor nesolicitate) ──
+    if (await isSuppressed(adminClient, to))
+      return NextResponse.json({ error: 'Persoana s-a dezabonat.', reason: 'unsubscribed' }, { status: 409 })
+    const registered = await isRegisteredEmail(adminClient, to)
+    if (!registered && !coldOutreachEnabled())
+      return NextResponse.json({ error: 'Invitațiile către persoane fără cont sunt oprite (protejăm domeniul addfame.ro de spam).', reason: 'not_registered' }, { status: 403 })
+    if (await bulkSentToday(adminClient) >= bulkDailyLimit())
+      return NextResponse.json({ error: `Limita zilnică de ${bulkDailyLimit()} emailuri a fost atinsă. Continuă mâine.`, reason: 'daily_limit' }, { status: 429 })
 
     const trackId = crypto.randomUUID()
     await adminClient.from('email_tracking').insert({
@@ -51,7 +63,9 @@ export async function POST(req: NextRequest) {
       opened_at: null,
     }).then(() => {})
 
-    const trackingPixel = `${APP_URL}/api/admin/email-track/${trackId}`
+    // Fără pixel de urmărire: filtrele anti-spam penalizează urmărirea în emailurile în masă.
+    const ctaHref = registered ? `${APP_URL}/auth/login` : `${APP_URL}/api/admin/email-click/${trackId}`
+    const ctaText = registered ? '👉 &nbsp; Intră în contul tău' : '🚀 &nbsp; Înscrie-te gratuit acum'
 
     if (!RESEND_API_KEY) {
       console.log('[email-blast] No RESEND_API_KEY — skipped for:', to)
@@ -109,12 +123,12 @@ export async function POST(req: NextRequest) {
               <!-- CTA -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr><td align="center" style="padding:8px 0 4px">
-                  <a href="${APP_URL}/api/admin/email-click/${trackId}" style="display:inline-block;background:linear-gradient(135deg,#f97316,#ec4899);color:white;font-size:18px;font-weight:900;text-decoration:none;padding:18px 52px;border-radius:50px;box-shadow:0 8px 24px rgba(249,115,22,0.4)">
-                    🚀 &nbsp; Înscrie-te gratuit acum
+                  <a href="${ctaHref}" style="display:inline-block;background:linear-gradient(135deg,#f97316,#ec4899);color:white;font-size:18px;font-weight:900;text-decoration:none;padding:18px 52px;border-radius:50px;box-shadow:0 8px 24px rgba(249,115,22,0.4)">
+                    ${ctaText}
                   </a>
                 </td></tr>
               </table>
-              <p style="color:#9ca3af;font-size:12px;text-align:center;margin:14px 0 0">Durează 3 minute · Fără card · 100% gratuit</p>
+              ${registered ? '' : '<p style="color:#9ca3af;font-size:12px;text-align:center;margin:14px 0 0">Durează 3 minute · Fără card · 100% gratuit</p>'}
 
             </td></tr>
           </table>
@@ -126,21 +140,20 @@ export async function POST(req: NextRequest) {
           <p style="color:#9ca3af;font-size:12px;margin:0">© AddFame · <a href="${APP_URL}" style="color:#f97316;text-decoration:none;font-weight:600">addfame.ro</a></p>
           <p style="color:#9ca3af;font-size:12px;margin:6px 0 0">📞 <a href="tel:+40724796883" style="color:#9ca3af;text-decoration:none">+40 724 796 883</a></p>
           <p style="color:#d1d5db;font-size:11px;margin:8px 0 0">
-            <a href="${APP_URL}/unsubscribe?email=${encodeURIComponent(to)}" style="color:#d1d5db;text-decoration:none">Dezabonează-te</a>
+            ${registered ? 'Primești acest email pentru că ai cont pe AddFame.' : 'Nu vrei să mai primești emailuri de la noi?'} <a href="${unsubscribeUrl(to)}" style="color:#9ca3af;text-decoration:underline">Dezabonează-te</a>
           </p>
         </td></tr>
 
       </table>
     </td></tr>
   </table>
-  <img src="${trackingPixel}" width="1" height="1" style="display:none;border:0" alt="" />
 </body>
 </html>`
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html, reply_to: 'ciprian@addfame.ro', headers: unsubscribeHeaders(to) }),
     })
 
     if (!res.ok) {

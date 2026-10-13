@@ -96,10 +96,11 @@ export default function EmailTrackingPage() {
     setResending(item.id)
     try {
       const body = resendBody.replace(/\{\{name\}\}/g, item.name || 'Influencer').replace(/\n/g, '<br/>')
-      await fetch('/api/admin/email-blast', {
+      const r = await fetch('/api/admin/email-blast', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: item.email, name: item.name, subject: resendSubject, body }),
       })
+      if (!r.ok) { const d = await r.json().catch(() => ({})); alert(d.error || 'Emailul nu a fost trimis.'); return }
       await fetch('/api/admin/email-tracking', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -114,16 +115,23 @@ export default function EmailTrackingPage() {
     const targets = emails.filter(e => !e.registered && !e.clicked)
     if (!confirm(`Trimiți follow-up la ${targets.length} persoane fără acțiune?`)) return
     setSendingFollowUp(true)
+    let sentCount = 0, stop = ''
     for (const item of targets) {
       const body = resendBody.replace(/\{\{name\}\}/g, item.name || 'Influencer').replace(/\n/g, '<br/>')
-      await fetch('/api/admin/email-blast', {
+      const r = await fetch('/api/admin/email-blast', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: item.email, name: item.name, subject: resendSubject, body }),
       })
+      if (r.ok) sentCount++
+      else {
+        const d = await r.json().catch(() => ({}))
+        // limită zilnică → ne oprim; persoane fără cont / dezabonate → sărim peste
+        if (d.reason === 'daily_limit') { stop = d.error; break }
+      }
       await new Promise(r => setTimeout(r, 200))
     }
     setSendingFollowUp(false)
-    alert(`✅ Follow-up trimis!`)
+    alert(stop ? `Trimise: ${sentCount}. ${stop}` : `Trimise: ${sentCount} din ${targets.length}. Persoanele fără cont sau dezabonate au fost sărite.`)
     load()
   }
 

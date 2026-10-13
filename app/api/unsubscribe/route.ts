@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { normalizeEmail, isEmail, suppressEmail } from '@/lib/email-suppression'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,41 +8,38 @@ const admin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
+// Dezabonare: funcționează pentru oricine (și pentru cei fără cont), din link sau „one-click” (Gmail/Yahoo).
+async function unsubscribe(raw: string | null) {
+  const email = normalizeEmail(raw)
+  if (!isEmail(email)) return false
+  return suppressEmail(admin, email, 'unsubscribe')
+}
+
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get('email')
-
-  if (!email) {
-    return new NextResponse(unsubPage('Lipsă email', 'Link-ul de dezabonare este invalid.', false), {
-      headers: { 'Content-Type': 'text/html' }
-    })
-  }
-
+  const html = (t: string, m: string, ok: boolean) => new NextResponse(unsubPage(t, m, ok), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+  if (!email) return html('Lipsă email', 'Link-ul de dezabonare este invalid.', false)
   try {
-    // Găsim userul după email
-    const { data: users } = await admin.auth.admin.listUsers()
-    const user = users?.users?.find((u: any) => u.email === email)
+    if (!(await unsubscribe(email))) return html('Email invalid', 'Adresa de email din link nu este validă.', false)
+    return html('Dezabonat cu succes ✓', `Adresa ${normalizeEmail(email)} nu va mai primi emailuri de marketing de la AddFame.\n\nEmailurile legate de contul tău (confirmări, plăți, resetare parolă) continuă.`, true)
+  } catch {
+    return html('Eroare', 'A apărut o eroare. Scrie-ne la ciprian@addfame.ro și te scoatem manual.', false)
+  }
+}
 
-    if (!user) {
-      return new NextResponse(unsubPage('Email negăsit', 'Nu am găsit un cont asociat acestui email.', false), {
-        headers: { 'Content-Type': 'text/html' }
-      })
-    }
-
-    // Marcăm influencerul ca unsubscribed din remindere
-    await admin.from('influencers')
-      .update({ 
-        email_reminders_enabled: false,
-        last_reminder_sent_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 an în viitor
-      })
-      .eq('user_id', user.id)
-
-    return new NextResponse(unsubPage('Dezabonat cu succes ✓', `Emailul ${email} a fost scos din lista de remindere AddFame. Nu vei mai primi emailuri automate de la noi.\n\nDacă te-ai dezabonat din greșeală, poți reactiva notificările din Settings → Notificări.`, true), {
-      headers: { 'Content-Type': 'text/html' }
-    })
-  } catch (e: any) {
-    return new NextResponse(unsubPage('Eroare', 'A apărut o eroare. Te rugăm să ne contactezi la contact@addfame.ro.', false), {
-      headers: { 'Content-Type': 'text/html' }
-    })
+/** One-click (List-Unsubscribe-Post) și formularul din /unsubscribe. */
+export async function POST(req: NextRequest) {
+  let email = req.nextUrl.searchParams.get('email')
+  if (!email) {
+    const ct = req.headers.get('content-type') || ''
+    if (ct.includes('application/json')) email = (await req.json().catch(() => ({})))?.email ?? null
+    else email = String((await req.formData().catch(() => null))?.get('email') ?? '') || null
+  }
+  try {
+    const ok = await unsubscribe(email)
+    return NextResponse.json(ok ? { ok: true } : { error: 'Email invalid' }, { status: ok ? 200 : 400 })
+  } catch {
+    return NextResponse.json({ error: 'Eroare' }, { status: 500 })
   }
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { coldOutreachEnabled, isSuppressed, normalizeEmail, unsubscribeHeaders, unsubscribeUrl, bulkDailyLimit } from '@/lib/email-suppression'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'
 const FROM_EMAIL = process.env.FROM_EMAIL || 'AddFame <noreply@addfame.ro>'
@@ -480,6 +481,12 @@ export async function POST(req: NextRequest) {
   const templates = type === 'influencer' ? INF_TEMPLATES : BRAND_TEMPLATES
 
   if (body.action === 'send') {
+    // Outreach = emailuri către persoane fără cont. A pus addfame.ro pe Spamhaus DBL → oprit implicit.
+    if (!coldOutreachEnabled()) return NextResponse.json({
+      error: 'Trimiterea de outreach e oprită: domeniul addfame.ro a fost listat ca spam. Contactează lead-urile personal (telefon, Instagram, email scris de mână din Gmail, câte unul) până la scoaterea de pe listă.',
+    }, { status: 403 })
+    if ((body.lead_ids?.length ?? 0) > Math.min(50, bulkDailyLimit()))
+      return NextResponse.json({ error: 'Maxim 50 de lead-uri pe trimitere.' }, { status: 400 })
     const { lead_ids, template, language, custom_subject, custom_html } = body
     if (!lead_ids?.length) return NextResponse.json({ error: 'No leads selected' }, { status: 400 })
     const { data: leads } = await ctx.admin.from(table).select('*').in('id', lead_ids)
@@ -558,17 +565,19 @@ Raspunde DOAR JSON:
       }
       // ────────────────────────────────────────────────────────────────────
       if (!html) { results.push({ id: lead.id, ok: false, error: 'Invalid template' }); continue }
+      if (await isSuppressed(ctx.admin, lead.email)) { results.push({ id: lead.id, ok: false, error: 'Dezabonat' }); continue }
 
       try {
         // Add tracking pixel to email
         const pixelType = type === 'influencer' ? 'inf' : 'brand'
         const trackingPixel = `<img src="${APP_URL}/api/email/track?id=${lead.id}&t=${pixelType}" width="1" height="1" style="display:block;width:1px;height:1px;border:0" alt="" />`
-        const htmlWithTracking = html.replace('</table>', `${trackingPixel}</table>`) || html + trackingPixel
+        const htmlWithTracking = (html.replace('</table>', `${trackingPixel}</table>`) || html + trackingPixel)
+          .split(`${APP_URL}/unsubscribe"`).join(`${unsubscribeUrl(lead.email)}"`)
 
         const res = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ from: FROM_EMAIL, to: lead.email, reply_to: 'ciprian@addfame.ro', subject, html: htmlWithTracking }),
+          body: JSON.stringify({ from: FROM_EMAIL, to: normalizeEmail(lead.email), reply_to: 'ciprian@addfame.ro', subject, html: htmlWithTracking, headers: unsubscribeHeaders(lead.email) }),
         })
         const ok = res.ok
         results.push({ id: lead.id, ok })
