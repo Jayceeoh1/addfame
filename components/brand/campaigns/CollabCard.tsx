@@ -45,6 +45,8 @@ export const collabCss = `
 .cx-pill.blue{background:#e8f0ff;color:#1d4ed8}
 .cx-pill.green{background:#dcf5ec;color:#14532d}
 .cx-pill.indigo{background:#eef0ff;color:#3730a3}
+.cx-pill.purple{background:#efeaff;color:#4423c4}
+.cx-pill.red{background:#fde8e6;color:#b42318}
 .cx-link{font-size:12px;font-weight:800;color:#5a35e6;text-decoration:none;margin-left:auto}
 .cx-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .cx-actions>.cx-btn{flex:1 1 120px}

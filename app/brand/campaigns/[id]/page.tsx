@@ -23,6 +23,35 @@ import { COLLAB_CFG, fmt, fmtNum, daysLeft, type Tab } from '@/components/brand/
 import { TIERS, creatorTier } from '@/lib/tiers'
 import TierChip from '@/components/shared/TierChip'
 import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
+import { getBrandCollabHistory } from '@/app/actions/brand-history'
+import { hasWorkedWith, type InfluencerHistory } from '@/lib/brand-history'
+
+/** „A mai lucrat cu tine” — etichetele de pe cardul aplicantului. */
+function HistoryPills({ h }: { h?: InfluencerHistory }) {
+  if (!h) return null
+  const month = (d: string) => new Date(d).toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' })
+  const worked = h.completed + h.ongoing
+  const tip = h.last ? `Ultima: ${h.last.name} (${month(h.last.date)})` : undefined
+  return (
+    <>
+      {worked > 0 && (
+        <span className="cx-pill purple" title={tip}>
+          🔁 {h.completed > 0 ? `${h.completed} ${h.completed === 1 ? 'colaborare finalizată' : 'colaborări finalizate'} cu tine` : 'Lucrează deja cu tine'}
+          {h.avgRating ? ` · ★ ${h.avgRating.toLocaleString('ro-RO')}` : ''}
+          {h.last ? ` · ultima: ${h.last.name.length > 28 ? h.last.name.slice(0, 27) + '…' : h.last.name}` : ''}
+        </span>
+      )}
+      {h.unfinished > 0 && (
+        <span className="cx-pill red" title="Colaborări anulate sau cu termenul depășit fără postare, în campaniile tale">
+          ⚠ {h.unfinished} {h.unfinished === 1 ? 'colaborare nefinalizată' : 'colaborări nefinalizate'}
+        </span>
+      )}
+      {worked === 0 && h.unfinished === 0 && h.appliedOnly > 0 && (
+        <span className="cx-pill">A mai aplicat la {h.appliedOnly} {h.appliedOnly === 1 ? 'campanie' : 'campanii'} ale tale</span>
+      )}
+    </>
+  )
+}
 
 const TikTokIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -56,6 +85,8 @@ export default function CampaignDetailPage() {
   const [tab, setTab] = useState<Tab>('all')
   const [sortBy, setSortBy] = useState<'date' | 'followers' | 'rating'>('date')
   const [tierFilter, setTierFilter] = useState<string[]>([])
+  const [history, setHistory] = useState<Record<string, InfluencerHistory>>({})
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'returning' | 'new'>('all')
   const [menuOpen, setMenuOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState<any>({})
@@ -101,6 +132,8 @@ export default function CampaignDetailPage() {
         .eq('campaign_id', campaignId).order('created_at', { ascending: false })
       const rows = collabData || []
       setCollabs(rows)
+      // istoricul aplicanților cu acest brand (nu blochează pagina)
+      getBrandCollabHistory(campaignId).then(r => { if ('success' in r) setHistory(r.history) }).catch(() => {})
       const infIds = [...new Set(rows.map((c: any) => c.influencer_id).filter(Boolean))]
       if (infIds.length > 0) {
         const res = await fetch('/api/admin/influencer-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: infIds }) })
@@ -382,7 +415,13 @@ export default function CampaignDetailPage() {
   }
   const toggleTier = (k: string) => setTierFilter(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k])
 
-  const visible = collabs.filter(c => tabFilter[tab].includes(c.status)).filter(c => {
+  const inTab = collabs.filter(c => tabFilter[tab].includes(c.status))
+  const returningInTab = inTab.filter(c => hasWorkedWith(history[c.influencer_id])).length
+  const visible = inTab.filter(c => {
+    if (historyFilter === 'all') return true
+    const r = hasWorkedWith(history[c.influencer_id])
+    return historyFilter === 'returning' ? r : !r
+  }).filter(c => {
     if (!tierFilter.length) return true
     const t = tierOfCollab(c)
     return !!t && tierFilter.includes(t.key)
@@ -609,6 +648,22 @@ export default function CampaignDetailPage() {
           tab={tab} onTab={setTab} sortBy={sortBy} onSort={setSortBy}
         />
 
+        {/* Colaboratori vechi / noi */}
+        {Object.values(history).some(hasWorkedWith) && (
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', marginBottom: 10 }}>
+            {([['all', 'Toți', inTab.length], ['returning', '🔁 Au mai lucrat cu tine', returningInTab], ['new', '✨ Noi pentru tine', inTab.length - returningInTab]] as const).map(([k, l, n]) => {
+              const on = historyFilter === k
+              return (
+                <button key={k} type="button" onClick={() => setHistoryFilter(k)} aria-pressed={on}
+                  style={{ flex: '0 0 auto', height: 34, padding: '0 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: on ? '#14123a' : '#fff', color: on ? '#fff' : '#4a4770', border: on ? '1.5px solid #14123a' : '1px solid #e5e3f3' }}>
+                  {l}<span style={{ fontSize: 11, opacity: .75 }}>{n}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {/* Filtru pe nivel */}
         {collabs.length > 0 && Object.keys(tierTotals).length > 0 && (
           <div style={{ marginBottom: 12 }}>
@@ -671,6 +726,7 @@ export default function CampaignDetailPage() {
                   status={cst.label} tone={tone}
                   badges={(
                     <>
+                      <HistoryPills h={history[collab.influencer_id]} />
                       {inf && <TierChip of={inf} />}
                       {isActive && <>
                       {packageSent && <span className="cx-pill blue">Produs trimis</span>}
