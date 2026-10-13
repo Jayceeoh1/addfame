@@ -126,7 +126,7 @@ export default function EmailTrackingPage() {
       else {
         const d = await r.json().catch(() => ({}))
         // limită zilnică → ne oprim; persoane fără cont / dezabonate → sărim peste
-        if (d.reason === 'daily_limit') { stop = d.error; break }
+        if (d.reason === 'daily_limit' || d.reason === 'paused') { stop = d.error; break }
       }
       await new Promise(r => setTimeout(r, 200))
     }

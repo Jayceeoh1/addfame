@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
-import { normalizeEmail, isEmail, isSuppressed, isRegisteredEmail, coldOutreachEnabled, bulkSentToday, bulkDailyLimit, unsubscribeHeaders, unsubscribeUrl } from '@/lib/email-suppression'
+import { bulkEmailPaused, BULK_PAUSED_MSG, normalizeEmail, isEmail, isSuppressed, isRegisteredEmail, coldOutreachEnabled, bulkSentToday, bulkDailyLimit, unsubscribeHeaders, unsubscribeUrl } from '@/lib/email-suppression'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = process.env.FROM_EMAIL || 'AddFame <noreply@addfame.ro>'
@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     const isAdmin = await requireAdmin()
     if (!isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    if (bulkEmailPaused()) return NextResponse.json({ error: BULK_PAUSED_MSG, reason: 'paused' }, { status: 423 })
     const { to: rawTo, name, subject, body } = await req.json()
     const to = normalizeEmail(rawTo)
     if (!to || !subject || !body) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })

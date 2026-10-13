@@ -102,6 +102,7 @@ export default function EmailBlastPage() {
 
     let ok = 0
     let fail = 0
+    let pausedMsg = ''
 
     // Trimitem în batch-uri de 10 ca să nu supraîncărcăm Resend
     const batchSize = 10
@@ -121,12 +122,16 @@ export default function EmailBlastPage() {
             }),
           })
           if (res.ok) ok++
-          else fail++
+          else {
+            fail++
+            if (res.status === 423 && !pausedMsg) pausedMsg = (await res.json().catch(() => ({}))).error || 'Emailurile în masă sunt pe pauză.'
+          }
         } catch {
           fail++
         }
       }))
 
+      if (pausedMsg) break
       // Pauză între batch-uri
       if (i + batchSize < filtered.length) {
         await new Promise(r => setTimeout(r, 500))
@@ -135,6 +140,7 @@ export default function EmailBlastPage() {
 
     setSent({ ok, fail })
     setSending(false)
+    if (pausedMsg) { notify(pausedMsg, false); return }
     notify(`✅ Trimis: ${ok} emailuri${fail > 0 ? ` · ❌ Eșuat: ${fail}` : ''}`, fail === 0)
   }
 

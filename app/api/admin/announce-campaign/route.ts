@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { bulkEmailPaused, BULK_PAUSED_MSG } from '@/lib/email-suppression'
 import { verifyAdminSession } from '@/lib/supabase/verify-admin'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
     const { campaign_id, extra_message, filter_cities, filter_niches, influencer_ids } = await req.json()
     if (!campaign_id) return NextResponse.json({ error: 'campaign_id required' }, { status: 400 })
 
+    if (bulkEmailPaused()) return NextResponse.json({ error: BULK_PAUSED_MSG }, { status: 423 })
     const admin = createAdminClient()
 
     const { data: camp } = await admin

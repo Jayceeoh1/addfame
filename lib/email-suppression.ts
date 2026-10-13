@@ -21,6 +21,15 @@ export function bulkDailyLimit() {
  */
 export const coldOutreachEnabled = () => process.env.OUTREACH_EMAIL_ENABLED === 'true'
 
+/**
+ * Pauză pentru emailurile în masă / automate de marketing (alerte campanii noi, memento-uri,
+ * anunțuri, reminder profil, email blast). PORNITĂ implicit cât addfame.ro e pe Spamhaus.
+ * Se reiau din Vercel: BULK_EMAIL_PAUSED=false (+ redeploy).
+ * Notificările din platformă (clopoțel, push) și emailurile de cont (parolă, plăți, colaborări) merg în continuare.
+ */
+export const bulkEmailPaused = () => process.env.BULK_EMAIL_PAUSED !== 'false'
+export const BULK_PAUSED_MSG = 'Emailurile în masă sunt puse pe pauză (protejăm domeniul addfame.ro). Notificările din platformă merg în continuare.'
+
 export const unsubscribeUrl = (email: string) => `${APP_URL}/api/unsubscribe?email=${encodeURIComponent(normalizeEmail(email))}`
 
 /** Antete standard de dezabonare (Gmail / Yahoo le cer la trimiterile în masă). */

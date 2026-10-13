@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { bulkEmailPaused } from '@/lib/email-suppression'
 import { createClient } from '@supabase/supabase-js'
 import { emailProfileReminder } from '@/lib/email'
 
@@ -11,6 +12,7 @@ export async function GET(req: NextRequest) {
   if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  if (bulkEmailPaused()) return NextResponse.json({ ok: true, skipped: 'bulk_email_paused' })
 
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,7 +54,6 @@ export async function GET(req: NextRequest) {
       if (!inf.avatar) missing.push('Poză de profil')
       if (!inf.slug) missing.push('Link profil public (slug)')
       if (!inf.city) missing.push('Orașul/Comuna — necesar pentru oferte barter locale')
-      if (!inf.identity_verified) missing.push('Verificare identitate — necesară pentru a aplica la campanii')
 
       // Dacă profilul e complet, skip
       if (missing.length === 0) {

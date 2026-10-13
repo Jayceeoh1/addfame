@@ -5,6 +5,7 @@
 // plus platforma campaniei și minimul de urmăritori. O campanie se anunță O SINGURĂ DATĂ
 // (coloana campaigns.alerts_sent_at, revendicată atomic) — fără dubluri la aprobare + publicare.
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { bulkEmailPaused } from '@/lib/email-suppression'
 import { normalizePlatforms } from '@/lib/tiers'
 import { eligibility, type EligCreator } from '@/lib/eligibility'
 import { creatorTierInfo } from '@/lib/tiers'
@@ -156,6 +157,7 @@ export async function loadCreators(admin: SupabaseClient): Promise<AlertCreator[
 export async function sendEmailBatch(items: { to: string; subject: string; html: string }[]) {
   const key = process.env.RESEND_API_KEY
   if (!key || !items.length) return 0
+  if (bulkEmailPaused()) { console.log(`[campaign-alerts] pauză emailuri în masă — ${items.length} emailuri nesimise`); return 0 }
   let sent = 0
   for (let i = 0; i < items.length; i += 100) {
     const chunk = items.slice(i, i + 100)
