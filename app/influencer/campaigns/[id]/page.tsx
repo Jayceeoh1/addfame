@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 // @ts-nocheck
 import React from 'react'
 import { useEffect, useState, useCallback } from 'react'
@@ -146,7 +147,7 @@ export default function CampaignBriefPage() {
   const hasYouTube = campaign.tasks_yt_short || campaign.tasks_yt_video || campaign.tasks_yt_mention
   const hasFacebook = campaign.tasks_fb_post || campaign.tasks_fb_story || campaign.tasks_fb_reel || campaign.tasks_fb_share
 
-  const cleanTitle = campaign.title?.replace(/^\[Barter\]\s*\[Barter\]\s*/i, '[Barter] ')
+  const cleanTitle = campaignName(campaign)
   const spotsLeft = (campaign.max_influencers || 0) - (campaign.current_influencers || 0)
   const closed = campaign?.registrations_open === false
   const applyDone = alreadyApplied || applied

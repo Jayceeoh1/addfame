@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 
 import DraftMessage, { DRAFT_MSG } from '@/components/shared/DraftMessage'
 import { useEffect, useState, useCallback, useRef, Suspense, Fragment } from 'react'
@@ -86,7 +87,7 @@ function InboxContent() {
 
       const { data: colls } = await sb
         .from('collaborations')
-        .select('*, campaigns(id, title, brand_name, brand_id, story_instructions, required_hashtags, required_caption, key_messages, forbidden_content, content_tone, deadline)')
+        .select('*, campaigns(id, title, offer_name, product_name, brand_name, brand_id, story_instructions, required_hashtags, required_caption, key_messages, forbidden_content, content_tone, deadline)')
         .eq('influencer_id', inf.id)
         .in('status', ['ACTIVE', 'COMPLETED', 'INVITED'])
         .order('created_at', { ascending: false })
@@ -268,7 +269,7 @@ function InboxContent() {
 
   const tints = [['#e6f0ff', '#1d4fb8'], ['#efeaff', '#4423c4'], ['#dcf5ec', '#14532d'], ['#fff1c2', '#854d0e']]
   const brandName = (c: any) => c.brand?.name || c.campaigns?.brand_name || 'Brand'
-  const campTitle = (c: any) => c.campaigns?.title?.replace('[Managed] ', '').replace('[Barter] ', '') || ''
+  const campTitle = (c: any) => c.campaigns ? campaignName(c.campaigns, '') : ''
   const Face = ({ c, size }: { c: any; size: number }) => {
     const nm = brandName(c)
     const t = tints[(nm.charCodeAt(0) || 0) % tints.length]

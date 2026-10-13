@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 // @ts-nocheck
 import { applyToCampaign } from '@/app/actions/collaborations'
 import { PushToggle } from '@/components/shared/PushToggle'
@@ -378,7 +379,7 @@ export default function CampaignsPage() {
       if (camp) setCampaigns(camp)
       if (barter) setBarterCampaigns(barter)
       if (inf) {
-        const { data: colls } = await sb.from('collaborations').select('campaign_id, status, reserved_amount, payment_amount, admin_invited, created_at, campaigns(id, title, brand_name, campaign_type, offer_value, registration_opened_at, registration_deadline_days)').eq('influencer_id', inf.id)
+        const { data: colls } = await sb.from('collaborations').select('campaign_id, status, reserved_amount, payment_amount, admin_invited, created_at, campaigns(id, title, offer_name, product_name, brand_name, campaign_type, offer_value, registration_opened_at, registration_deadline_days)').eq('influencer_id', inf.id)
         if (colls) {
           setAppliedIds(new Set(colls.filter((c: any) => c.status !== 'INVITED').map((c: any) => c.campaign_id)))
           setInvitedIds(new Set(colls.filter((c: any) => c.status === 'INVITED').map((c: any) => c.campaign_id)))
@@ -676,7 +677,7 @@ export default function CampaignsPage() {
             <div key={collab.campaign_id} className="iu-card iu-card-pad iu-row" style={{ gap: 12, opacity: .85 }}>
               <div className="iu-ico" style={{ background: '#fff1c2', color: '#854d0e' }}><Clock size={18} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{collab.campaigns?.title}</p>
+                <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{campaignName(collab.campaigns)}</p>
                 <p className="iu-muted iu-xs" style={{ margin: '2px 0 0' }}>{collab.campaigns?.brand_name} · {collab.campaigns?.campaign_type === 'BARTER' ? 'Campanie barter (produs gratuit)' : 'Campanie plătită'}</p>
               </div>
               <span className="iu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}>Fără răspuns</span>
@@ -708,7 +709,7 @@ export default function CampaignsPage() {
                   {img && <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title || 'Campanie'}</p>
+                  <p style={{ margin: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{campaignName(c)}</p>
                   <p className="iu-muted iu-xs" style={{ margin: '2px 0 0' }}>
                     {c.brand_name} · {c.campaign_type === 'BARTER' ? 'Barter' : 'Plătită'} · {new Date(c.created_at).toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' })}
                     {c.current_influencers > 0 && <> · {c.current_influencers} {c.current_influencers === 1 ? 'creator' : 'creatori'}</>}
@@ -828,7 +829,7 @@ export default function CampaignsPage() {
                       <span className="iu-face" style={{ width: 28, height: 28, fontSize: 11, background: '#efeaff', color: '#5b2fd0' }}>{initials(c.brand_name)}</span>
                       <span className="nm">{c.brand_name}</span>
                     </div>
-                    <h3 className="cm-title">{c.title}</h3>
+                    <h3 className="cm-title">{campaignName(c)}</h3>
                     {c.description && <p className="cm-desc">{c.description}</p>}
 
                     <div className="cm-stat">

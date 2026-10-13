@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 // @ts-nocheck
 import React from 'react'
 
@@ -915,7 +916,7 @@ export default function CollaborationsPage() {
 
   const filtered = collabs.filter(c => {
     const q = search.toLowerCase()
-    const matchSearch = !q || c.campaigns?.title?.toLowerCase().includes(q) || c.campaigns?.brand_name?.toLowerCase().includes(q)
+    const matchSearch = !q || c.campaigns?.title?.toLowerCase().includes(q) || c.campaigns?.offer_name?.toLowerCase().includes(q) || c.campaigns?.brand_name?.toLowerCase().includes(q)
     if (!matchSearch) return false
     if (activeTab === 'Fara raspuns') return isExpiredInvite(c)
     if (activeTab === 'Invited') return c.status === 'INVITED' && !isExpiredInvite(c)
@@ -1372,7 +1373,7 @@ export default function CollaborationsPage() {
         <div className="ic-row">
           <BrandFace name={c.campaigns?.brand_name || c.campaigns?.title} size={40} />
           <div className="ic-who">
-            <b>{c.campaigns?.title || 'Campanie'}</b>
+            <b>{campaignName(c.campaigns)}</b>
             <span className="iu-xs iu-muted ic-meta">
               {c.campaigns?.brand_name}
               {c.campaigns?.campaign_type ? ` · ${c.campaigns.campaign_type === 'BARTER' ? 'Barter' : 'Plătit'}` : ''}
@@ -1560,7 +1561,7 @@ export default function CollaborationsPage() {
             <div className="ic-mh">
               <div className="ic-col" style={{ minWidth: 0 }}>
                 <h2>{isRejectedPost(deliverableCollab) ? 'Retrimite dovada' : isPendingReview(deliverableCollab) ? 'Dovada trimisă' : 'Trimite dovada postului'}</h2>
-                <span className="iu-xs iu-muted ic-meta">{deliverableCollab.campaigns?.title} · {deliverableCollab.campaigns?.brand_name}</span>
+                <span className="iu-xs iu-muted ic-meta">{campaignName(deliverableCollab.campaigns)} · {deliverableCollab.campaigns?.brand_name}</span>
               </div>
               <button onClick={() => setDeliverableModalId(null)} className="ic-x" aria-label="Închide"><X size={18} /></button>
             </div>
@@ -1582,7 +1583,7 @@ export default function CollaborationsPage() {
             <div className="ic-mh">
               <div className="ic-col" style={{ minWidth: 0 }}>
                 <h2>Evaluează brandul</h2>
-                <span className="iu-xs iu-muted ic-meta">{reviewCollab.campaigns?.title} · {reviewCollab.campaigns?.brand_name}</span>
+                <span className="iu-xs iu-muted ic-meta">{campaignName(reviewCollab.campaigns)} · {reviewCollab.campaigns?.brand_name}</span>
               </div>
               <button onClick={() => setReviewModalId(null)} className="ic-x" aria-label="Închide"><X size={18} /></button>
             </div>

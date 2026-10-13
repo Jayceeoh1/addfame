@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 // @ts-nocheck
 import React, { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -217,7 +218,7 @@ export default function InfluencerDashboard() {
 
       const [collabRes, campRes, txRes] = await Promise.all([
         sb.from('collaborations')
-          .select('*, campaigns(payment_mode, title, brand_name, budget_per_influencer, deadline, platforms, niches, registrations_open, registration_opened_at, registration_deadline_days, campaign_type, delivery_method)')
+          .select('*, campaigns(payment_mode, title, offer_name, product_name, brand_name, budget_per_influencer, deadline, platforms, niches, registrations_open, registration_opened_at, registration_deadline_days, campaign_type, delivery_method)')
           .eq('influencer_id', inf.id)
           .order('created_at', { ascending: false })
           .limit(10),
@@ -419,7 +420,7 @@ export default function InfluencerDashboard() {
   type Todo = { key: string; title: string; sub: string; href: string; cta: string; hot?: boolean; danger?: boolean; ini?: string; logo?: string | null; icon?: any }
   const todos: Todo[] = []
   activeCollabs.filter(c => !!c.deliverable_rejected_at && !c.deliverable_submitted_at).forEach(c => todos.push({
-    key: 'rej-' + c.id, title: `Retrimite postarea pentru ${c.campaigns?.brand_name || 'brand'}`, sub: `${c.campaigns?.title || 'Colaborare'} · brandul a cerut modificări`,
+    key: 'rej-' + c.id, title: `Retrimite postarea pentru ${c.campaigns?.brand_name || 'brand'}`, sub: `${campaignName(c.campaigns, 'Colaborare')} · brandul a cerut modificări`,
     href: '/influencer/collaborations?tab=active', cta: 'Retrimite', hot: true, danger: true, ini: c.campaigns?.brand_name,
   }))
   awaitingPost
@@ -427,11 +428,11 @@ export default function InfluencerDashboard() {
     .sort((a, b) => (a.d ?? 999) - (b.d ?? 999))
     .forEach(({ c, d }) => {
       const when = d === null ? 'Ai primit coletul' : d < 0 ? `Termen depășit de ${Math.abs(d)} ${Math.abs(d) === 1 ? 'zi' : 'zile'}` : d === 0 ? 'Ultima zi pentru postare' : `Mai ai ${d} ${d === 1 ? 'zi' : 'zile'} să postezi`
-      todos.push({ key: 'post-' + c.id, title: `Postează pentru ${c.campaigns?.brand_name || 'brand'}`, sub: `${c.campaigns?.title || 'Colaborare'} · ${when}`, href: '/influencer/collaborations?tab=active', cta: 'Trimite linkul', hot: true, danger: d !== null && d <= 0, ini: c.campaigns?.brand_name })
+      todos.push({ key: 'post-' + c.id, title: `Postează pentru ${c.campaigns?.brand_name || 'brand'}`, sub: `${campaignName(c.campaigns, 'Colaborare')} · ${when}`, href: '/influencer/collaborations?tab=active', cta: 'Trimite linkul', hot: true, danger: d !== null && d <= 0, ini: c.campaigns?.brand_name })
     })
   activeCollabs
     .filter(c => !c.package_received_at && !needsDelivery(c) && !c.package_sent_at && !c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at)
-    .forEach(c => todos.push({ key: 'make-' + c.id, title: `Postează pentru ${c.campaigns?.brand_name || 'brand'}`, sub: `${c.campaigns?.title || 'Colaborare'}${c.campaigns?.deadline ? ` · termen ${new Date(c.campaigns.deadline).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}` : ''}`, href: '/influencer/collaborations?tab=active', cta: 'Trimite dovada', hot: true, ini: c.campaigns?.brand_name }))
+    .forEach(c => todos.push({ key: 'make-' + c.id, title: `Postează pentru ${c.campaigns?.brand_name || 'brand'}`, sub: `${campaignName(c.campaigns, 'Colaborare')}${c.campaigns?.deadline ? ` · termen ${new Date(c.campaigns.deadline).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}` : ''}`, href: '/influencer/collaborations?tab=active', cta: 'Trimite dovada', hot: true, ini: c.campaigns?.brand_name }))
   activeCollabs
     .filter(c => (c.package_sent_at || (needsDelivery(c) && c.delivery_name)) && !c.package_received_at)
     .forEach(c => todos.push({ key: 'pkg-' + c.id, title: `Coletul de la ${c.campaigns?.brand_name || 'brand'} e pe drum`, sub: 'Confirmă primirea când ajunge, ca să înceapă termenul de postare', href: '/influencer/collaborations?tab=active', cta: 'Vezi coletul', ini: c.campaigns?.brand_name }))
@@ -713,7 +714,7 @@ export default function InfluencerDashboard() {
                       <BrandMark name={c.campaigns?.brand_name} size={40} />
                       <span style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, minWidth: 0 }}>
                         <b>{c.campaigns?.brand_name || 'Brand'}</b>
-                        <span className="cd-muted" style={{ fontSize: 13 }}>{c.campaigns?.title || 'Colaborare'}{reward ? ` · ${reward}` : ''}</span>
+                        <span className="cd-muted" style={{ fontSize: 13 }}>{campaignName(c.campaigns, 'Colaborare')}{reward ? ` · ${reward}` : ''}</span>
                         <span className="cd-pill" style={{ background: tone.bg, color: tone.fg, whiteSpace: 'normal', marginTop: 2 }}>{st.tag}</span>
                       </span>
                     </div>
