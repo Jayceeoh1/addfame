@@ -83,7 +83,16 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // WhatsApp (Twilio) — doar cu șablon aprobat pentru contracte
-    const phone = inf?.phone || c.influencer_phone
+    // Telefonul: din profilul creatorului → din aplicarea la campanie (telefonul de livrare) → din contract
+    let phone: string | null = inf?.phone || null
+    if (!phone && inf?.id) {
+      const q = db.from('collaborations').select('delivery_phone, campaign_id, created_at')
+        .eq('influencer_id', inf.id).not('delivery_phone', 'is', null).order('created_at', { ascending: false }).limit(10)
+      const { data: cols } = await q
+      const same = (cols ?? []).find((x: any) => c.campaign_id && x.campaign_id === c.campaign_id)
+      phone = (same || cols?.[0])?.delivery_phone || null
+    }
+    if (!phone) phone = c.influencer_phone || null
     if (!whatsappConfigured(WA_CONTRACT_TEMPLATE)) whatsappNote = 'neconfigurat'
     else if (!phone) whatsappNote = 'fără telefon'
     else {
