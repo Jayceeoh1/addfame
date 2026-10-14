@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { campaignName } from '@/lib/campaign-name'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
@@ -30,7 +31,7 @@ export async function GET() {
 
     const { data, error } = await adminClient()
       .from('campaigns')
-      .select('id, title, status, product_name, product_description, deliverables, platforms, brand_id, brand_name, brands(name, company_legal_name, cui, company_address, website)')
+      .select('id, title, offer_name, status, product_name, product_description, deliverables, platforms, brand_id, brand_name, brands(name, company_legal_name, cui, company_address, website)')
       .in('status', ['ACTIVE', 'PAUSED'])
       .order('created_at', { ascending: false })
 
@@ -38,9 +39,11 @@ export async function GET() {
 
     const campaigns = (data || []).map((c: any) => ({
       id: c.id,
-      title: c.title,
+      title: campaignName(c, c.title || 'Campanie'),
+      raw_title: c.title,
+      offer_name: c.offer_name || null,
       status: c.status,
-      product_name: c.product_name || c.product_description || null,
+      product_name: c.offer_name || c.product_name || c.product_description || null,
       deliverables: c.deliverables || null,
       platforms: c.platforms || [],
       brand_name: c.brand_name || c.brands?.name || null,

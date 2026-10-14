@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { campaignName } from '@/lib/campaign-name'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
@@ -36,7 +37,24 @@ export async function GET() {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { data, error } = await adminClient().from('cesiune_contracts').select('*').neq('status', 'archived').order('created_at', { ascending: false })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ contracts: data })
+    // Numele real al campaniei (oferta), și pentru campaniile deja încheiate
+    const ids = [...new Set((data || []).map((c: any) => c.campaign_id).filter(Boolean))]
+    const camps = new Map<string, any>()
+    for (let i = 0; i < ids.length; i += 150) {
+      const { data: cs } = await adminClient().from('campaigns')
+        .select('id, title, offer_name, product_name, status, brand_name, brands(name, company_legal_name)').in('id', ids.slice(i, i + 150))
+      for (const c of cs || []) camps.set(c.id, c)
+    }
+    const contracts = (data || []).map((c: any) => {
+      const camp = c.campaign_id ? camps.get(c.campaign_id) : null
+      return camp ? { ...c, campaign: {
+        name: campaignName(camp, c.campaign_title || 'Campanie'),
+        offer_name: camp.offer_name || camp.product_name || null,
+        status: camp.status,
+        brand: (camp.brands as any)?.company_legal_name || camp.brand_name || (camp.brands as any)?.name || null,
+      } } : c
+    })
+    return NextResponse.json({ contracts })
   } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }) }
 }
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, Copy, Check, ExternalLink, Trash2, FileText, Download, X, Send, ChevronDown } from 'lucide-react'
 import { cesiuneLabel, CESIUNE_CLAUSES_VERSION } from '@/lib/cesiune-clauses'
+import { campaignName } from '@/lib/campaign-name'
 
 type UGCContract = {
   id: string; token: string; influencer_name: string; influencer_email: string
@@ -26,6 +27,7 @@ type CesiuneContract = {
   campaign_id?: string | null; campaign_title?: string; product_name?: string; product_value_lei?: number
   brand_name?: string; brand_cui?: string; brand_reg_com?: string; brand_address?: string; brand_website?: string
   notes?: string; clauses_version?: number | null
+  campaign?: { name: string; offer_name: string | null; status: string | null; brand: string | null } | null
   status: 'draft' | 'sent' | 'signed' | 'archived'; signed_at?: string; created_at: string
 }
 
@@ -259,9 +261,9 @@ export default function ContractsPage() {
       const camp = c.campaign_id ? campById.get(c.campaign_id) : undefined
       g = {
         key, campaignId: c.campaign_id || null,
-        title: camp?.title || c.campaign_title || 'Fără campanie',
-        brand: camp?.brand_legal_name || camp?.brand_name || c.brand_name || null,
-        status: camp?.status || null, items: [], latest: c.created_at,
+        title: c.campaign?.name || camp?.title || (c.campaign_title ? campaignName({ title: c.campaign_title }) : 'Fără campanie'),
+        brand: c.campaign?.brand || camp?.brand_legal_name || camp?.brand_name || c.brand_name || null,
+        status: c.campaign?.status || camp?.status || null, items: [], latest: c.created_at,
       }
       groupMap.set(key, g)
     }
@@ -455,7 +457,7 @@ export default function ContractsPage() {
                             {isCes ? (
                               <>
                                 <span className="block font-bold text-gray-700 truncate">
-                                  {ces.product_name || 'Barter (produs)'}{ces.product_value_lei ? ` · ${Number(ces.product_value_lei).toLocaleString('ro-RO')} RON` : ''}
+                                  {ces.product_name || ces.campaign?.offer_name || 'Barter (produs)'}{ces.product_value_lei ? ` · ${Number(ces.product_value_lei).toLocaleString('ro-RO')} RON` : ''}
                                 </span>
                                 <span className="block text-gray-400 truncate">{cesiuneLabel(ces.status === 'signed' ? ces.clauses_version : CESIUNE_CLAUSES_VERSION)}{ces.contract_number ? ` · Nr. ${ces.contract_number}` : ''}</span>
                               </>
