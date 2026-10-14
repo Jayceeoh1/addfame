@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Copy, Check, ExternalLink, Trash2, FileText, Download, X, Send } from 'lucide-react'
+import { Plus, Copy, Check, ExternalLink, Trash2, FileText, Download, X, Send, ChevronDown } from 'lucide-react'
 import { cesiuneLabel, CESIUNE_CLAUSES_VERSION } from '@/lib/cesiune-clauses'
 
 type UGCContract = {
@@ -23,7 +23,7 @@ type CesiuneContract = {
   id: string; token: string; contract_number?: string
   influencer_name: string; influencer_email: string; influencer_phone?: string
   influencer_cnp?: string; influencer_ci_serie?: string; influencer_ci_numar?: string; influencer_address?: string
-  campaign_title?: string; product_name?: string; product_value_lei?: number
+  campaign_id?: string | null; campaign_title?: string; product_name?: string; product_value_lei?: number
   brand_name?: string; brand_cui?: string; brand_reg_com?: string; brand_address?: string; brand_website?: string
   notes?: string; clauses_version?: number | null
   status: 'draft' | 'sent' | 'signed' | 'archived'; signed_at?: string; created_at: string
@@ -38,6 +38,9 @@ type Campaign = {
 type CampaignInfluencer = { influencer_id: string; name: string; email: string; has_contract: boolean }
 
 type TabKey = 'ugc' | 'campanii' | 'cesiune'
+
+const NO_CAMPAIGN = 'none'
+const CAMP_STATUS: Record<string, string> = { active: 'Activă', ACTIVE: 'Activă', draft: 'Draft', DRAFT: 'Draft', completed: 'Încheiată', COMPLETED: 'Încheiată', paused: 'Pe pauză', PAUSED: 'Pe pauză', archived: 'Arhivată', ARCHIVED: 'Arhivată' }
 
 const STATUS_CFG = {
   draft:    { label: 'Draft',   bg: 'bg-gray-100',   text: 'text-gray-600',  dot: 'bg-gray-400' },
@@ -68,6 +71,12 @@ export default function ContractsPage() {
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [sendNow, setSendNow] = useState(true) // „Creează și trimite creatorului” (cesiune)
   const [notice, setNotice] = useState<{ msg: string; ok: boolean } | null>(null)
+  const [campFilter, setCampFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'unsigned' | 'signed'>('all')
+  const [search, setSearch] = useState('')
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [bulkArmed, setBulkArmed] = useState<string | null>(null)
+  const [bulkBusy, setBulkBusy] = useState<string | null>(null)
   const flash = (msg: string, ok = true) => { setNotice({ msg, ok }); setTimeout(() => setNotice(null), 6000) }
 
   /** Un click: notificare în platformă + email + Telegram (dacă e legat). */
@@ -238,6 +247,52 @@ export default function ContractsPage() {
   const accentColor = CFG[tab].accent
   const accentGrad = CFG[tab].grad
 
+  // ── Gruparea pe campanii ───────────────────────────────────────────────
+  const campById = new Map(campaigns.map(c => [c.id, c]))
+  const groupKeyOf = (c: any) => c.campaign_id ? `id:${c.campaign_id}` : (c.campaign_title ? `t:${String(c.campaign_title).trim().toLowerCase()}` : NO_CAMPAIGN)
+  type Group = { key: string; title: string; brand: string | null; status: string | null; campaignId: string | null; items: typeof contracts; latest: string }
+  const groupMap = new Map<string, Group>()
+  for (const c of contracts as any[]) {
+    const key = groupKeyOf(c)
+    let g = groupMap.get(key)
+    if (!g) {
+      const camp = c.campaign_id ? campById.get(c.campaign_id) : undefined
+      g = {
+        key, campaignId: c.campaign_id || null,
+        title: camp?.title || c.campaign_title || 'Fără campanie',
+        brand: camp?.brand_legal_name || camp?.brand_name || c.brand_name || null,
+        status: camp?.status || null, items: [], latest: c.created_at,
+      }
+      groupMap.set(key, g)
+    }
+    g.items.push(c)
+    if (!g.brand && c.brand_name) g.brand = c.brand_name
+    if (String(c.created_at) > String(g.latest)) g.latest = c.created_at
+  }
+  const groups = [...groupMap.values()].sort((a, b) =>
+    a.key === NO_CAMPAIGN ? 1 : b.key === NO_CAMPAIGN ? -1 : String(b.latest).localeCompare(String(a.latest)))
+  const q = search.trim().toLowerCase()
+  const rowMatches = (c: any) =>
+    (statusFilter === 'all' || (statusFilter === 'signed' ? c.status === 'signed' : c.status !== 'signed')) &&
+    (!q || String(c.influencer_name || '').toLowerCase().includes(q) || String(c.influencer_email || '').toLowerCase().includes(q))
+  const visibleGroups = groups.filter(g => (campFilter === 'all' || g.key === campFilter) && g.items.some(rowMatches))
+
+  function toggleGroup(key: string) {
+    setCollapsed(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n })
+  }
+  function newForCampaign(campaignId: string) {
+    setShowNew(true)
+    selectCesCampaign(campaignId)
+  }
+  /** Trimite la semnat toate contractele nesemnate dintr-o campanie (unul câte unul). */
+  async function sendGroup(key: string, ids: string[]) {
+    setBulkBusy(key)
+    let ok = 0
+    for (const id of ids) { if (await sendContract(id)) ok++ }
+    setBulkBusy(null); setBulkArmed(null)
+    flash(`✉️ Trimise la semnat: ${ok} din ${ids.length}.`, ok === ids.length)
+  }
+
   return (
     <div>
       <div className="max-w-6xl mx-auto px-6 py-8">
@@ -261,7 +316,7 @@ export default function ContractsPage() {
         {/* Tabs */}
         <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 w-fit mb-6">
           {([['ugc', 'Contracte UGC'], ['campanii', 'Contracte Colaborare'], ['cesiune', 'Cesiune Drepturi Autor']] as const).map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key)}
+            <button key={key} onClick={() => { setTab(key); setCampFilter('all'); setBulkArmed(null) }}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition ${tab === key ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               style={tab === key ? { background: CFG[key].grad } : {}}>
               {label}
@@ -270,7 +325,7 @@ export default function ContractsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           {[
             { label: 'Total', value: contracts.length, color: 'text-gray-900' },
             { label: 'Trimise', value: contracts.filter(c => c.status === 'sent').length, color: 'text-blue-600' },
@@ -284,91 +339,173 @@ export default function ContractsPage() {
           ))}
         </div>
 
-        {/* List */}
-        <div className="space-y-3">
+        {/* Filtre: campanie, status, căutare */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-3 mb-5 flex flex-wrap items-center gap-2">
+          <select value={campFilter} onChange={e => setCampFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 bg-white outline-none focus:ring-2 focus:ring-sky-100 max-w-full">
+            <option value="all">Toate campaniile ({groups.length})</option>
+            {groups.map(g => <option key={g.key} value={g.key}>{g.title} · {g.items.length}</option>)}
+          </select>
+          <div className="flex gap-1 bg-gray-50 rounded-xl p-1">
+            {([['all', 'Toate'], ['unsigned', 'Nesemnate'], ['signed', 'Semnate']] as const).map(([v, l]) => (
+              <button key={v} onClick={() => setStatusFilter(v)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${statusFilter === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>{l}</button>
+            ))}
+          </div>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Caută creator sau email…"
+            className="flex-1 min-w-[180px] px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-sky-100" />
+        </div>
+
+        {/* Contracte pe campanii */}
+        <div className="space-y-4">
           {loading ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center text-gray-400 text-sm">Se încarcă...</div>
-          ) : contracts.length === 0 ? (
+          ) : visibleGroups.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
               <FileText className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="font-black text-gray-400">Niciun contract</p>
-              <p className="text-gray-300 text-sm mt-1">Creează primul contract folosind butonul de mai sus.</p>
+              <p className="font-black text-gray-400">{contracts.length ? 'Niciun contract pentru filtrele alese' : 'Niciun contract'}</p>
+              <p className="text-gray-300 text-sm mt-1">{contracts.length ? 'Schimbă campania sau statusul de mai sus.' : 'Creează primul contract folosind butonul de mai sus.'}</p>
             </div>
-          ) : contracts.map(c => {
-            const cfg = STATUS_CFG[c.status] ?? STATUS_CFG.draft
+          ) : visibleGroups.map(g => {
+            const all = g.items
+            const signed = all.filter(c => c.status === 'signed').length
+            const unsigned = all.filter(c => c.status !== 'signed')
+            const pct = all.length ? Math.round((signed / all.length) * 100) : 0
+            const open = !collapsed.has(g.key)
+            const rows = all.filter(rowMatches)
             const isCes = tab === 'cesiune'
-            const ces = c as CesiuneContract
             return (
-              <div key={c.id} className="bg-white rounded-2xl border border-gray-100 p-4 transition hover:border-orange-100">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="min-w-0">
-                    <p className="font-black text-gray-900 truncate">{c.influencer_name}</p>
-                    <p className="text-xs text-gray-400 truncate">{c.influencer_email}</p>
-                    {'campaign_title' in c && c.campaign_title && (
-                      <p className="text-xs text-orange-500 font-semibold mt-0.5">📢 {c.campaign_title}</p>
-                    )}
-                    {isCes && ces.brand_name && (
-                      <p className="text-xs text-sky-600 font-semibold mt-0.5">🏷️ {ces.brand_name}</p>
-                    )}
-                  </div>
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black flex-shrink-0 ${cfg.bg} ${cfg.text}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} /> {cfg.label}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4 mb-4 text-sm">
-                  {isCes ? (
-                    <div>
-                      <p className="font-black text-gray-900">
-                        {ces.product_name ? ces.product_name : 'Barter (produs)'}
-                        {ces.product_value_lei ? ` · ${Number(ces.product_value_lei).toLocaleString('ro-RO')} RON` : ''}
-                      </p>
-                      <p className="text-xs text-gray-400">{cesiuneLabel(ces.status === 'signed' ? ces.clauses_version : CESIUNE_CLAUSES_VERSION)}{ces.contract_number ? ` · Nr. ${ces.contract_number}` : ''}</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="font-black text-gray-900">{(c as UGCContract).amount_lei?.toLocaleString('ro-RO')} RON</p>
-                      <p className="text-xs text-gray-400">{(c as UGCContract).payment_days} zile termen</p>
-                    </div>
-                  )}
-                  <div className="border-l border-gray-100 pl-4">
-                    <p className="text-xs text-gray-400">Creat: {fmt(c.created_at)}</p>
-                    {c.signed_at && <p className="text-xs text-green-600 font-bold">Semnat: {fmt(c.signed_at)}</p>}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button onClick={() => copyLink(c, tab)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition ${copiedId === c.id ? 'bg-green-100 text-green-700' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'}`}
-                    style={copiedId !== c.id ? { color: accentColor, background: `${accentColor}15` } : {}}>
-                    {copiedId === c.id ? <><Check className="w-3.5 h-3.5" /> Copiat!</> : <><Copy className="w-3.5 h-3.5" /> Copiază link</>}
-                  </button>
-
-                  {isCes && c.status !== 'signed' && (
-                    <button onClick={() => sendContract(c.id)} disabled={sendingId === c.id}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-sky-600 text-white hover:bg-sky-700 transition disabled:opacity-60">
-                      <Send className="w-3.5 h-3.5" /> {sendingId === c.id ? 'Se trimite…' : c.status === 'sent' ? 'Retrimite' : 'Trimite la semnat'}
+              <section key={g.key} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                {/* Antet campanie */}
+                <div className="flex items-stretch">
+                  <div className="w-1.5 flex-none" style={{ background: g.key === NO_CAMPAIGN ? '#e5e7eb' : accentGrad }} />
+                  <div className="flex-1 min-w-0 p-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+                    <button onClick={() => toggleGroup(g.key)} className="flex items-center gap-3 min-w-0 flex-1 text-left">
+                      <span className={`w-7 h-7 rounded-lg grid place-items-center flex-none text-gray-500 bg-gray-50 transition ${open ? '' : '-rotate-90'}`}>
+                        <ChevronDown className="w-4 h-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <span className="font-black text-gray-900 truncate">{g.title}</span>
+                          {g.status && <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{CAMP_STATUS[g.status] || g.status}</span>}
+                        </span>
+                        <span className="block text-xs text-gray-400 truncate mt-0.5">
+                          {g.brand ? <>🏷️ {g.brand} · </> : null}{all.length} {all.length === 1 ? 'contract' : 'contracte'}
+                        </span>
+                      </span>
                     </button>
-                  )}
 
-                  <a href={`/${CFG[tab].list}/${c.token}`} target="_blank"
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-blue-50 text-blue-700 hover:bg-blue-100 transition">
-                    <ExternalLink className="w-3.5 h-3.5" /> Deschide
-                  </a>
-
-                  {c.status === 'signed' && (
-                    <a href={`/api/${CFG[tab].pdf}/${c.token}/pdf`} target="_blank"
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-green-50 text-green-700 hover:bg-green-100 transition">
-                      <Download className="w-3.5 h-3.5" /> Descarcă
-                    </a>
-                  )}
-
-                  <button onClick={() => deleteContract(c.id, tab)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-red-50 text-red-500 hover:bg-red-100 transition ml-auto">
-                    <Trash2 className="w-3.5 h-3.5" /> Arhivează
-                  </button>
+                    <div className="flex items-center gap-3 flex-none">
+                      <div className="w-36">
+                        <div className="flex justify-between text-[11px] font-bold mb-1">
+                          <span className="text-green-700">{signed}/{all.length} semnate</span>
+                          <span className="text-gray-400">{pct}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                          <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                      {isCes && g.campaignId && (
+                        <button onClick={() => newForCampaign(g.campaignId!)} title="Contract nou pentru această campanie"
+                          className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-black bg-gray-50 text-gray-700 hover:bg-gray-100 transition">
+                          <Plus className="w-3.5 h-3.5" /> Contract
+                        </button>
+                      )}
+                      {isCes && unsigned.length > 0 && (
+                        bulkArmed === g.key ? (
+                          <span className="flex items-center gap-1">
+                            <button onClick={() => sendGroup(g.key, unsigned.map(c => c.id))} disabled={!!bulkBusy}
+                              className="px-3 py-2 rounded-xl text-xs font-black bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-60">
+                              {bulkBusy === g.key ? 'Se trimite…' : `Da, trimite ${unsigned.length}`}
+                            </button>
+                            <button onClick={() => setBulkArmed(null)} className="px-2 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50">Renunță</button>
+                          </span>
+                        ) : (
+                          <button onClick={() => setBulkArmed(g.key)}
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-black bg-sky-50 text-sky-700 hover:bg-sky-100 transition">
+                            <Send className="w-3.5 h-3.5" /> Trimite nesemnatelor ({unsigned.length})
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                {/* Rânduri */}
+                {open && (
+                  <div className="border-t border-gray-100 divide-y divide-gray-50">
+                    {rows.length === 0 ? (
+                      <p className="px-5 py-4 text-sm text-gray-400">Niciun contract pentru filtrul ales.</p>
+                    ) : rows.map(c => {
+                      const cfg = STATUS_CFG[c.status] ?? STATUS_CFG.draft
+                      const ces = c as CesiuneContract
+                      return (
+                        <div key={c.id} className="px-4 sm:px-5 py-3 flex flex-wrap items-center gap-x-4 gap-y-2 hover:bg-gray-50/60 transition">
+                          <div className="flex items-center gap-3 min-w-0 flex-1 basis-56">
+                            <span className="w-9 h-9 rounded-full grid place-items-center flex-none text-white text-sm font-black" style={{ background: accentGrad }}>
+                              {(c.influencer_name || '?').trim().charAt(0).toUpperCase()}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block font-black text-gray-900 text-sm truncate">{c.influencer_name}</span>
+                              <span className="block text-xs text-gray-400 truncate">{c.influencer_email}</span>
+                            </span>
+                          </div>
+
+                          <div className="text-xs min-w-0 w-full sm:w-64 sm:flex-none">
+                            {isCes ? (
+                              <>
+                                <span className="block font-bold text-gray-700 truncate">
+                                  {ces.product_name || 'Barter (produs)'}{ces.product_value_lei ? ` · ${Number(ces.product_value_lei).toLocaleString('ro-RO')} RON` : ''}
+                                </span>
+                                <span className="block text-gray-400 truncate">{cesiuneLabel(ces.status === 'signed' ? ces.clauses_version : CESIUNE_CLAUSES_VERSION)}{ces.contract_number ? ` · Nr. ${ces.contract_number}` : ''}</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="block font-bold text-gray-700">{(c as UGCContract).amount_lei?.toLocaleString('ro-RO')} RON</span>
+                                <span className="block text-gray-400">{(c as UGCContract).payment_days} zile termen</span>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col items-start gap-0.5 w-32 flex-none">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black ${cfg.bg} ${cfg.text}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} /> {cfg.label}
+                            </span>
+                            <span className="text-[11px] text-gray-400">{c.signed_at ? `semnat ${fmt(c.signed_at)}` : `creat ${fmt(c.created_at)}`}</span>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-1.5 flex-none ml-auto sm:w-[230px]">
+                            {isCes && c.status !== 'signed' && (
+                              <button onClick={() => sendContract(c.id)} disabled={sendingId === c.id}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black bg-sky-600 text-white hover:bg-sky-700 transition disabled:opacity-60">
+                                <Send className="w-3.5 h-3.5" /> {sendingId === c.id ? '…' : c.status === 'sent' ? 'Retrimite' : 'Trimite'}
+                              </button>
+                            )}
+                            {c.status === 'signed' && (
+                              <a href={`/api/${CFG[tab].pdf}/${c.token}/pdf`} target="_blank" rel="noopener"
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black bg-green-50 text-green-700 hover:bg-green-100 transition">
+                                <Download className="w-3.5 h-3.5" /> PDF
+                              </a>
+                            )}
+                            <button onClick={() => copyLink(c, tab)} title="Copiază linkul"
+                              className={`w-8 h-8 grid place-items-center rounded-lg transition ${copiedId === c.id ? 'bg-green-100 text-green-700' : 'text-gray-500 hover:bg-gray-100'}`}>
+                              {copiedId === c.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                            <a href={`/${CFG[tab].list}/${c.token}`} target="_blank" rel="noopener" title="Deschide contractul"
+                              className="w-8 h-8 grid place-items-center rounded-lg text-gray-500 hover:bg-gray-100 transition">
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                            <button onClick={() => deleteContract(c.id, tab)} title="Arhivează"
+                              className="w-8 h-8 grid place-items-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
             )
           })}
         </div>
