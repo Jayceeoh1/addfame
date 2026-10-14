@@ -21,7 +21,7 @@ describe('contract cesiune v2 — drepturi definitive, ads 6 luni', () => {
     expect(art7Clauses({})[2]).toContain('brandul partener al campaniei')
   })
   it('etichete pe versiuni', () => {
-    expect(CESIUNE_CLAUSES_VERSION).toBe(3)
+    expect(CESIUNE_CLAUSES_VERSION).toBe(4)
     expect(cesiuneLabel(3)).toBe('Cesiune definitivă · ads 6 luni')
     expect(cesiuneLabel(1)).toBe('Cesiune 6 luni')
     expect(cesiuneLabel(2)).toBe('Cesiune definitivă · ads 6 luni')
@@ -41,10 +41,18 @@ describe('telefon pentru WhatsApp', () => {
 
 describe('contract cesiune v3 — creatorul își păstrează postarea', () => {
   it('v3 are alineatul (6); v2 semnat rămâne cu 5 alineate', () => {
-    const v3 = art7Clauses({ brand_name: 'X SRL' })
+    const v3 = art7Clauses({ brand_name: 'X SRL' }, 3)
     expect(v3).toHaveLength(6)
     expect(v3[5]).toContain('își poate păstra postarea')
     expect(v3[5]).toContain('portofoliul')
     expect(art7Clauses({ brand_name: 'X SRL' }, 2)).toHaveLength(5)
+  })
+})
+
+describe('contract cesiune v4 — prevalează asupra contractelor de colaborare', () => {
+  it('v4 are 7 alineate, ultimul despre prevalență', () => {
+    const v4 = art7Clauses({ brand_name: 'X SRL' })
+    expect(v4).toHaveLength(7)
+    expect(v4[6]).toContain('prevalează')
   })
 })

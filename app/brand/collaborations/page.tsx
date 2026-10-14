@@ -101,6 +101,12 @@ function generateContractPDF(contractText: string, campaignTitle: string) {
   setTimeout(() => URL.revokeObjectURL(url), 5000)
 }
 
+/** Colaborare la o campanie barter: fără contract de colaborare, doar cesiunea din AddFame. */
+function isBarterCollab(c: any): boolean {
+  const camp = c?.campaign || c?.campaigns
+  return camp?.campaign_type === 'BARTER' || /^\s*\[Barter\]/i.test(String(camp?.title || ''))
+}
+
 function ContractButton({ collabId, campaignTitle }: { collabId: string; campaignTitle?: string }) {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [contractText, setContractText] = useState<string | null>(null)
@@ -877,7 +883,7 @@ export default function BrandCollaborations() {
               <span className="cl-pulse" />
               <span className="bu-sm" style={{ fontWeight: 600 }}>Așteptăm ca influencerul să trimită dovada postului…</span>
             </div>
-            <ContractButton collabId={c.id} campaignTitle={campaignName(c.campaign || c.campaigns)} />
+            {!isBarterCollab(c) && <ContractButton collabId={c.id} campaignTitle={campaignName(c.campaign || c.campaigns)} />}
           </div>
         )}
 
@@ -1360,15 +1366,21 @@ export default function BrandCollaborations() {
               <span className="bu-ico" style={{ width: 34, height: 34, borderRadius: 10, background: '#efeaff', color: '#4423c4' }}><FileText size={18} /></span>
               <b className="bu-d" style={{ fontSize: 17 }}>Contracte</b>
             </div>
-            {activeCollabs.length === 0 ? (
-              <span className="bu-sm bu-muted">Contractele apar după ce selectezi un creator.</span>
-            ) : activeCollabs.slice(0, 5).map(c => (
+            {activeCollabs.some(isBarterCollab) && (
+              <div className="cl-col" style={{ gap: 8 }}>
+                <span className="bu-sm bu-muted">La campaniile barter, drepturile asupra clipurilor sunt acoperite de contractul de cesiune semnat de creator cu AddFame. Îl vezi, pe campanii, cu atestarea PDF.</span>
+                <Link href="/brand/drepturi" className="bu-btn" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>Vezi drepturile de autor</Link>
+              </div>
+            )}
+            {activeCollabs.filter(c => !isBarterCollab(c)).length === 0 ? (
+              !activeCollabs.some(isBarterCollab) && <span className="bu-sm bu-muted">Contractele apar după ce selectezi un creator.</span>
+            ) : activeCollabs.filter(c => !isBarterCollab(c)).slice(0, 5).map(c => (
               <div key={c.id} className="cl-col" style={{ gap: 6 }}>
                 <span className="bu-sm" style={{ fontWeight: 600 }}>{c.influencer?.name || '—'}</span>
                 <ContractButton collabId={c.id} campaignTitle={campaignName(c.campaign || c.campaigns)} />
               </div>
             ))}
-            {activeCollabs.length > 5 && <span className="bu-xs bu-muted">+ încă {activeCollabs.length - 5} în lista de colaborări</span>}
+            {activeCollabs.filter(c => !isBarterCollab(c)).length > 5 && <span className="bu-xs bu-muted">+ încă {activeCollabs.filter(c => !isBarterCollab(c)).length - 5} în lista de colaborări</span>}
           </div>
 
           <div className="bu-card cl-sc">

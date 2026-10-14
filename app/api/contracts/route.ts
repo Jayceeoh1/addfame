@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { campaignName } from '@/lib/campaign-name'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
@@ -55,6 +56,13 @@ export async function POST(req: NextRequest) {
         }, { status: 403 })
       }
 
+      // Barter: drepturile asupra clipului sunt reglementate DOAR de contractul de cesiune semnat cu AddFame.
+      if (isBarterCampaign(collab.campaigns)) {
+        return NextResponse.json({
+          error: 'La campaniile barter nu se mai generează contract de colaborare: drepturile asupra conținutului sunt acoperite de contractul de cesiune semnat de creator cu AddFame (vezi „Drepturi de autor”).',
+        }, { status: 409 })
+      }
+
       const contractText = generateContractText(collabWithBrand)
 
       const { data: contract, error } = await admin
@@ -63,7 +71,7 @@ export async function POST(req: NextRequest) {
           collaboration_id,
           brand_id: collabWithBrand.brands?.id,
           influencer_id: collab.influencers?.id,
-          campaign_title: collab.campaigns?.title,
+          campaign_title: campaignName(collab.campaigns),
           amount: Number(collab.pay_reserved) || Number(collab.offer_price) || collab.campaigns?.budget_per_influencer || collab.campaigns?.budget || 0,
           deadline: collab.campaigns?.deadline,
           deliverables: collab.campaigns?.deliverables,
@@ -80,7 +88,7 @@ export async function POST(req: NextRequest) {
       await admin.from('notifications').insert({
         user_id: collab.influencers?.user_id,
         title: '📄 Contract nou de semnat',
-        body: `${collabWithBrand.brands?.name} ți-a trimis un contract pentru campania "${collab.campaigns?.title}". Semnează pentru a începe colaborarea.`,
+        body: `${collabWithBrand.brands?.name} ți-a trimis un contract pentru campania "${campaignName(collab.campaigns)}". Semnează pentru a începe colaborarea.`,
         link: `/influencer/collaborations`,
         read: false,
       })
@@ -195,6 +203,11 @@ async function activateCollaboration(admin: any, collab: any, contractId: string
   ])
 }
 
+/** Campanie barter (după tip sau după titlul generat „[Barter] …”). */
+function isBarterCampaign(c: any): boolean {
+  return c?.campaign_type === 'BARTER' || /^\s*\[Barter\]/i.test(String(c?.title || ''))
+}
+
 function generateContractText(collab: any): string {
   const isBarter = collab.campaigns?.campaign_type === 'BARTER'
   // Campanii cu taxă fixă per influencer: fără comision procentual în contract
@@ -214,7 +227,7 @@ function generateContractText(collab: any): string {
 
 BRAND: ${collab.brands?.name}
 INFLUENCER: ${collab.influencers?.name}
-CAMPANIE: ${collab.campaigns?.title}
+CAMPANIE: ${campaignName(collab.campaigns)}
 
 1. OBIECTUL CONTRACTULUI
 Prezentul contract reglementează o colaborare de tip BARTER între Brand și Influencer, fără implicarea unor sume de bani. Influencerul primește un produs/serviciu gratuit în schimbul creării și publicării de conținut promoțional.
@@ -239,7 +252,7 @@ Compensația Influencerului constă exclusiv în produsul/serviciul menționat l
 AddFame nu percepe comision pentru colaborările de tip barter.
 
 6. DREPTURI DE PROPRIETATE INTELECTUALĂ
-Influencerul acordă Brandului dreptul neexclusiv de a redistribui și folosi în scop promoțional conținutul creat, timp de 12 luni de la data publicării.
+Drepturile asupra conținutului creat sunt reglementate exclusiv prin contractul de cesiune a drepturilor de autor încheiat între Influencer și ADD FAME DIGITAL S.R.L. pentru această campanie.
 
 7. AUTENTICITATE
 Influencerul se obligă să creeze conținut autentic și să menționeze explicit că este vorba de o colaborare/parteneriat conform normelor legale în vigoare.
@@ -270,7 +283,7 @@ Semnătura electronică are valoare juridică conform Legii nr. 455/2001 privind
 
 BRAND: ${collab.brands?.name}
 INFLUENCER: ${collab.influencers?.name}
-CAMPANIE: ${collab.campaigns?.title}
+CAMPANIE: ${campaignName(collab.campaigns)}
 
 1. OBIECTUL CONTRACTULUI
 Influencerul se obligă să creeze și să publice conținut promoțional pentru campania specificată, conform termenilor agreați pe platforma AddFame.
@@ -294,7 +307,7 @@ Suma netă primită de influencer: ${netAmount.toFixed(2)} RON
 Plata se va efectua prin platforma AddFame, după aprobarea conținutului publicat.`}
 
 6. DREPTURI DE PROPRIETATE INTELECTUALĂ
-Influencerul acordă Brandului dreptul neexclusiv de a redistribui conținutul creat timp de 12 luni.
+Drepturile asupra conținutului creat în cadrul acestei colaborări (folosire organică, publicitate plătită, transmiterea către partenerii Brandului) sunt reglementate exclusiv prin contractul de cesiune a drepturilor de autor încheiat între Influencer și ADD FAME DIGITAL S.R.L. pentru această campanie. Prezentul contract nu acordă drepturi suplimentare asupra conținutului.
 
 7. CONFIDENȚIALITATE
 Ambele părți se obligă să păstreze confidențialitatea termenilor financiari ai acestui contract.

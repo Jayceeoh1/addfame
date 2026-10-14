@@ -4,9 +4,10 @@
 //   v2 — cesiune pe întreaga durată de protecție; publicitate plătită (ads) 6 luni; drepturi și pentru brand + parteneri;
 //        acord pentru imagine, nume și voce
 //   v3 — ca v2 + creatorul își păstrează postarea pe profil și o poate folosi în portofoliu
+//   v4 — ca v3 + cesiunea prevalează asupra clauzelor de drepturi din contractele de colaborare
 
 /** Versiunea curentă a textului (cea arătată la semnare). */
-export const CESIUNE_CLAUSES_VERSION = 3
+export const CESIUNE_CLAUSES_VERSION = 4
 
 /** Luni în care clipul poate rula ca reclamă plătită (v2). */
 export const ADS_MONTHS = 6
@@ -39,6 +40,9 @@ export function art7Clauses(c: CesiuneBrand, version: number = CESIUNE_CLAUSES_V
   ]
   if (version >= 3) out.push(
     `Prin excepție de la caracterul exclusiv al cesiunii, Autorul își poate păstra postarea cu Înregistrarea pe propriile conturi de social media, fără limită de timp, și poate folosi Înregistrarea în portofoliul său personal (prezentări către alți potențiali parteneri), fără a o ceda sau licenția altui brand și fără a o folosi în reclame plătite.`,
+  )
+  if (version >= 4) out.push(
+    `Prezentul contract reglementează în mod complet drepturile asupra Înregistrării și prevalează asupra oricăror prevederi anterioare sau concurente privind aceste drepturi, inclusiv asupra clauzelor privind drepturile de proprietate intelectuală din contractele de colaborare generate pe platforma AddFame pentru aceeași campanie.`,
   )
   return out
 }
