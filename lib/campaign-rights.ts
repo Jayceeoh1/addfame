@@ -54,3 +54,43 @@ export async function canSeeCampaignRights(db: SupabaseClient, userId: string, c
   const { data } = await db.from('campaigns').select('id').eq('id', campaignId).eq('brand_id', brand.id).maybeSingle()
   return !!data
 }
+
+export interface BrandRightsCampaign {
+  id: string; name: string; status: string | null
+  items: CampaignRightsItem[]; pending: number
+}
+
+/** Toate campaniile brandului care au contracte de cesiune (semnate sau trimise). */
+export async function loadBrandRights(db: SupabaseClient, brandId: string, now = new Date()): Promise<BrandRightsCampaign[]> {
+  const { data: camps } = await db.from('campaigns')
+    .select('id, title, offer_name, product_name, status, created_at').eq('brand_id', brandId)
+  const ids = (camps || []).map((c: any) => c.id)
+  if (!ids.length) return []
+  const rows: any[] = []
+  for (let i = 0; i < ids.length; i += 150) {
+    const { data } = await db.from('cesiune_contracts')
+      .select('id, campaign_id, contract_number, influencer_name, product_name, status, signed_at, clauses_version')
+      .in('campaign_id', ids.slice(i, i + 150)).in('status', ['signed', 'sent'])
+    rows.push(...(data || []))
+  }
+  const out: BrandRightsCampaign[] = []
+  for (const c of camps || []) {
+    const mine = rows.filter(r => r.campaign_id === c.id)
+    if (!mine.length) continue
+    const signed = mine.filter(r => r.status === 'signed' && r.signed_at)
+      .sort((a, b) => String(a.signed_at).localeCompare(String(b.signed_at)))
+    out.push({
+      id: c.id, name: campaignName(c as any), status: c.status,
+      items: signed.map(r => ({
+        ref: r.contract_number ? `Nr. ${r.contract_number}` : `#${String(r.id).slice(0, 8)}`,
+        creator: r.influencer_name,
+        product: r.product_name || (c as any).offer_name || (c as any).product_name || null,
+        rights: rightsFor(r, now),
+      })),
+      pending: mine.filter(r => r.status === 'sent').length,
+    })
+  }
+  // cele mai recente semnături primele
+  const last = (x: BrandRightsCampaign) => x.items.length ? x.items[x.items.length - 1].rights.signedAt : ''
+  return out.sort((a, b) => last(b).localeCompare(last(a)))
+}

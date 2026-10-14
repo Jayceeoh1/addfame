@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { ShieldCheck, Download, Megaphone, Clock, Info } from 'lucide-react'
 
-type State = 'ads' | 'organic' | 'expired'
-type Item = { ref: string; creator: string; product: string | null; rights: { version: number; signedAt: string; adsUntil: string; organicUntil: string | null; state: State; daysLeftAds: number } }
+export type State = 'ads' | 'organic' | 'expired'
+export type Item = { ref: string; creator: string; product: string | null; rights: { version: number; signedAt: string; adsUntil: string; organicUntil: string | null; state: State; daysLeftAds: number } }
 type Data = { campaign: { name: string; brand: string }; items: Item[]; pending: number }
 
 const ro = (iso: string) => new Date(iso).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -79,33 +79,40 @@ export default function RightsPanel({ campaignId }: { campaignId: string }) {
           Niciun contract semnat încă. {data.pending ? `${data.pending} ${data.pending === 1 ? 'contract așteaptă' : 'contracte așteaptă'} semnătura creatorilor.` : 'Contractele apar aici imediat ce creatorii le semnează.'}
         </div>
       ) : (
-        <div style={{ border: '1px solid #ebe8f7', borderRadius: 14, overflow: 'hidden' }}>
-          {data.items.map((i, n) => {
-            const st = STATE[i.rights.state]
-            return (
-              <div key={n} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px', padding: '12px 14px', borderTop: n ? '1px solid #f1eff9' : 'none' }}>
-                <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, color: '#14123a', fontSize: 14 }}>{i.creator}</div>
-                  <div style={{ fontSize: 12, color: '#6a6690' }}>{i.ref}{i.product ? ` · ${i.product}` : ''} · semnat {ro(i.rights.signedAt)}</div>
-                </div>
-                <div style={{ flex: '0 1 220px', fontSize: 12.5, color: '#4a4770' }}>
-                  {i.rights.state === 'ads'
-                    ? <>Ads până la <b>{ro(i.rights.adsUntil)}</b> · {i.rights.daysLeftAds} zile</>
-                    : i.rights.state === 'organic'
-                      ? <>Ads încheiate la {ro(i.rights.adsUntil)} · organic fără limită</>
-                      : <>Drepturile au expirat la {ro(i.rights.adsUntil)}</>}
-                </div>
-                <span style={{ padding: '4px 10px', borderRadius: 99, fontSize: 12, fontWeight: 800, background: st.bg, color: st.fg, flex: 'none' }}>{st.label}</span>
-              </div>
-            )
-          })}
-        </div>
+        <RightsRows items={data.items} />
       )}
 
       <p style={{ display: 'flex', gap: 8, margin: 0, fontSize: 12, color: '#6a6690' }}>
         <Info size={14} style={{ flex: 'none', marginTop: 1 }} />
         Contractele originale (cu datele personale ale creatorilor) sunt păstrate de AddFame. Atestarea PDF e documentul pe care îl poți arăta partenerilor sau platformelor de reclame.
       </p>
+    </div>
+  )
+}
+
+/** Lista creatorilor cu drepturile lor (folosită în campanie și în pagina „Drepturi de autor”). */
+export function RightsRows({ items }: { items: Item[] }) {
+  return (
+    <div style={{ border: '1px solid #ebe8f7', borderRadius: 14, overflow: 'hidden', background: '#fff' }}>
+      {items.map((i, n) => {
+        const st = STATE[i.rights.state]
+        return (
+          <div key={n} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px', padding: '12px 14px', borderTop: n ? '1px solid #f1eff9' : 'none' }}>
+            <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+              <div style={{ fontWeight: 800, color: '#14123a', fontSize: 14 }}>{i.creator}</div>
+              <div style={{ fontSize: 12, color: '#6a6690' }}>{i.ref}{i.product ? ` · ${i.product}` : ''} · semnat {ro(i.rights.signedAt)}</div>
+            </div>
+            <div style={{ flex: '0 1 230px', fontSize: 12.5, color: '#4a4770' }}>
+              {i.rights.state === 'ads'
+                ? <>Ads până la <b>{ro(i.rights.adsUntil)}</b> · {i.rights.daysLeftAds} zile</>
+                : i.rights.state === 'organic'
+                  ? <>Ads încheiate la {ro(i.rights.adsUntil)} · organic fără limită</>
+                  : <>Drepturile au expirat la {ro(i.rights.adsUntil)}</>}
+            </div>
+            <span style={{ padding: '4px 10px', borderRadius: 99, fontSize: 12, fontWeight: 800, background: st.bg, color: st.fg, flex: 'none' }}>{st.label}</span>
+          </div>
+        )
+      })}
     </div>
   )
 }

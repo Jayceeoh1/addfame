@@ -8,7 +8,7 @@ import { NotificationsBell } from '@/components/shared/notifications-bell'
 import { fontVars } from '@/lib/fonts'
 import './brand-ui.css'
 import AdminFloatingButton from '@/components/AdminFloatingButton'
-import {
+import { ShieldCheck,
   LayoutDashboard, Briefcase, Users, MessageSquare,
   Wallet, Settings, LogOut, Menu, X, Zap, ChevronRight, Shield, Calendar, BarChart2
 } from 'lucide-react'
@@ -17,6 +17,7 @@ const NAV = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/brand/dashboard' },
   { icon: Briefcase, label: 'Campanii', href: '/brand/campaigns' },
   { icon: Zap, label: 'Colaborări', href: '/brand/collaborations' },
+  { icon: ShieldCheck, label: 'Drepturi de autor', href: '/brand/drepturi' },
   { icon: Users, label: 'Influenceri', href: '/brand/influencers' },
   { icon: BarChart2, label: 'Analize', href: '/brand/analytics' },
   { icon: Shield, label: 'Verificare Brand', href: '/brand/verify' },
