@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Plus, Copy, Check, ExternalLink, Trash2, FileText, Download, X } from 'lucide-react'
+import { cesiuneLabel, CESIUNE_CLAUSES_VERSION } from '@/lib/cesiune-clauses'
 
 type UGCContract = {
   id: string; token: string; influencer_name: string; influencer_email: string
@@ -24,7 +25,7 @@ type CesiuneContract = {
   influencer_cnp?: string; influencer_ci_serie?: string; influencer_ci_numar?: string; influencer_address?: string
   campaign_title?: string; product_name?: string; product_value_lei?: number
   brand_name?: string; brand_cui?: string; brand_reg_com?: string; brand_address?: string; brand_website?: string
-  notes?: string
+  notes?: string; clauses_version?: number | null
   status: 'draft' | 'sent' | 'signed' | 'archived'; signed_at?: string; created_at: string
 }
 
@@ -299,7 +300,7 @@ export default function ContractsPage() {
                         {ces.product_name ? ces.product_name : 'Barter (produs)'}
                         {ces.product_value_lei ? ` · ${Number(ces.product_value_lei).toLocaleString('ro-RO')} RON` : ''}
                       </p>
-                      <p className="text-xs text-gray-400">Cesiune 6 luni{ces.contract_number ? ` · Nr. ${ces.contract_number}` : ''}</p>
+                      <p className="text-xs text-gray-400">{cesiuneLabel(ces.status === 'signed' ? ces.clauses_version : CESIUNE_CLAUSES_VERSION)}{ces.contract_number ? ` · Nr. ${ces.contract_number}` : ''}</p>
                     </div>
                   ) : (
                     <div>

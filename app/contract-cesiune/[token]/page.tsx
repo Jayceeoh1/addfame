@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { CheckCircle, PenLine, RotateCcw } from 'lucide-react'
-import { brandRightsClauses, CESIUNE_CLAUSES_VERSION } from '@/lib/cesiune-clauses'
+import { art7Clauses, CESIUNE_CLAUSES_VERSION } from '@/lib/cesiune-clauses'
 
 type Contract = {
   id: string
@@ -265,9 +265,11 @@ export default function ContractCesiunePage() {
               <div><h4 className="font-black text-gray-900 mb-2">Art. 4 — Teritorialitatea</h4><p>Beneficiarul poate reproduce Înregistrarea în orice limbă și în orice teritoriu, cu respectarea legislației relevante.</p></div>
               <div><h4 className="font-black text-gray-900 mb-2">Art. 5 — Exclusivitatea</h4><p>Cesiunea drepturilor prevăzute în prezentul contract este <strong>exclusivă</strong>.</p></div>
               <div><h4 className="font-black text-gray-900 mb-2">Art. 6 — Remunerația Autorului</h4><p>Remunerația este în natură — produsul furnizat de Beneficiar anterior semnării. Valoarea este prețul de vânzare al produsului din avizul/factura care l-a însoțit. Autorul confirmă primirea produsului și că acesta reprezintă echivalentul integral și suficient al drepturilor cedate. Eventualele obligații fiscale aferente vor fi îndeplinite conform legii aplicabile.</p></div>
-              <div><h4 className="font-black text-gray-900 mb-2">Art. 7 — Durata cesiunii</h4><p>(1) Autorul cedează drepturile pe o durată de <strong className="text-orange-600">6 luni</strong>, începând cu data semnării.</p>
-                {/* v2: și brandul partener + partenerii lui. Un contract deja semnat pe v1 rămâne cu textul semnat. */}
-                {(contract.status !== 'signed' || (contract.clauses_version ?? 1) >= 2) && brandRightsClauses(contract).map((t, i) => <p key={i} className="mt-2">({i + 2}) {t}</p>)}
+              <div><h4 className="font-black text-gray-900 mb-2">Art. 7 — Durata și întinderea cesiunii</h4>
+                {/* Un contract deja semnat pe v1 rămâne cu textul semnat atunci. */}
+                {(contract.status !== 'signed' || (contract.clauses_version ?? 1) >= 2)
+                  ? art7Clauses(contract).map((t, i) => <p key={i} className={i ? 'mt-2' : ''}>({i + 1}) {t}</p>)
+                  : <p>Autorul cedează drepturile pe o durată de <strong className="text-orange-600">6 luni</strong>, începând cu data semnării.</p>}
               </div>
               <div><h4 className="font-black text-gray-900 mb-2">Art. 8 — Modificarea contractului</h4><p>Contractul poate fi modificat cu acordul ambelor Părți, prin act adițional.</p></div>
               <div><h4 className="font-black text-gray-900 mb-2">Art. 9 — Încetarea contractului</h4><p>Contractul încetează la împlinirea duratei sau prin acordul scris al Părților. Niciuna dintre Părți nu poate denunța sau rezilia unilateral contractul.</p></div>

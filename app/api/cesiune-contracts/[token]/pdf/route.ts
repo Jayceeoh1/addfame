@@ -1,4 +1,4 @@
-import { brandRightsClauses } from '@/lib/cesiune-clauses'
+import { art7Clauses } from '@/lib/cesiune-clauses'
 const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
@@ -151,8 +151,9 @@ ${campaignBlock}
 
 <div class="article">
   <h4>Art. 7  Durata și întinderea cesiunii</h4>
-  <p><strong>(1)</strong> Autorul cedează drepturile sus menționate pe o durată de <span class="highlight">6 luni</span>, începând cu data semnării prezentului contract.</p>
-  ${(c.clauses_version ?? 1) >= 2 ? brandRightsClauses(c).map((t, i) => `<p><strong>(${i + 2})</strong> ${esc(t)}</p>`).join('\n  ') : ''}
+  ${(c.clauses_version ?? 1) >= 2
+    ? art7Clauses(c).map((t, i) => `<p><strong>(${i + 1})</strong> ${esc(t)}</p>`).join('\n  ')
+    : `<p><strong>(1)</strong> Autorul cedează drepturile sus menționate pe o durată de <span class="highlight">6 luni</span>, începând cu data semnării prezentului contract.</p>`}
 </div>
 
 <div class="article">
