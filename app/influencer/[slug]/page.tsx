@@ -14,6 +14,7 @@ import {
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 import Link from 'next/link'
 import Head from 'next/head'
+import CollabPortfolio from '@/components/influencer/CollabPortfolio'
 
 const PLATFORM_CFG = {
   instagram: { icon: <InstagramIcon className="w-5 h-5" />, bg: 'bg-pink-50', text: 'text-pink-600', label: 'Instagram', color: '#E1306C' },
@@ -111,6 +112,8 @@ export default function PublicInfluencerProfile() {
   const hideSocial = !!brandId
   const [reviews, setReviews] = useState([])
   const [showAllReviews, setShowAllReviews] = useState(false)
+  // secțiunea „Colaborări finalizate” include recenziile; lista veche rămâne doar ca rezervă
+  const [portfolioOk, setPortfolioOk] = useState(false)
   const [thumbnails, setThumbnails] = useState<Record<string, string | null>>({})
   const [stats, setStats] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -593,8 +596,11 @@ export default function PublicInfluencerProfile() {
           </div>
         )}
 
-        {/* Recenzii */}
-        {reviews.length > 0 && (() => {
+        {/* Colaborări finalizate: branduri, postări, recenzii, cifre */}
+        <CollabPortfolio influencerId={inf.id} onLoaded={setPortfolioOk} />
+
+        {/* Recenzii (rezervă, dacă portofoliul nu se încarcă) */}
+        {!portfolioOk && reviews.length > 0 && (() => {
           const avg = reviews.reduce((t, r) => t + Number(r.rating || 0), 0) / reviews.length
           const dist = [5, 4, 3, 2, 1].map(st => ({ st, n: reviews.filter(r => Math.round(Number(r.rating)) === st).length }))
           const shown = showAllReviews ? reviews : reviews.slice(0, 4)
