@@ -268,7 +268,7 @@ export default function ContractCesiunePage() {
               <div><h4 className="font-black text-gray-900 mb-2">Art. 7 — Durata și întinderea cesiunii</h4>
                 {/* Un contract deja semnat pe v1 rămâne cu textul semnat atunci. */}
                 {(contract.status !== 'signed' || (contract.clauses_version ?? 1) >= 2)
-                  ? art7Clauses(contract).map((t, i) => <p key={i} className={i ? 'mt-2' : ''}>({i + 1}) {t}</p>)
+                  ? art7Clauses(contract, contract.status === 'signed' ? (contract.clauses_version ?? 2) : CESIUNE_CLAUSES_VERSION).map((t, i) => <p key={i} className={i ? 'mt-2' : ''}>({i + 1}) {t}</p>)
                   : <p>Autorul cedează drepturile pe o durată de <strong className="text-orange-600">6 luni</strong>, începând cu data semnării.</p>}
               </div>
               <div><h4 className="font-black text-gray-900 mb-2">Art. 8 — Modificarea contractului</h4><p>Contractul poate fi modificat cu acordul ambelor Părți, prin act adițional.</p></div>

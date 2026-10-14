@@ -156,7 +156,7 @@ ${campaignBlock}
 <div class="article">
   <h4>Art. 7  Durata și întinderea cesiunii</h4>
   ${(c.clauses_version ?? 1) >= 2
-    ? art7Clauses(c).map((t, i) => `<p><strong>(${i + 1})</strong> ${esc(t)}</p>`).join('\n  ')
+    ? art7Clauses(c, c.clauses_version ?? 2).map((t, i) => `<p><strong>(${i + 1})</strong> ${esc(t)}</p>`).join('\n  ')
     : `<p><strong>(1)</strong> Autorul cedează drepturile sus menționate pe o durată de <span class="highlight">6 luni</span>, începând cu data semnării prezentului contract.</p>`}
 </div>
 
