@@ -17,3 +17,15 @@ describe('numele campaniei pentru influencer', () => {
     expect(stripCampaignTags('[Draft] X')).toBe('X')
   })
 })
+
+import { instagramUsername } from '@/lib/campaign-name'
+describe('username Instagram', () => {
+  it('din handle sau link', () => {
+    expect(instagramUsername('@ana.maria_')).toBe('ana.maria_')
+    expect(instagramUsername('https://www.instagram.com/ana.maria/?igsh=abc')).toBe('ana.maria')
+    expect(instagramUsername('instagram.com/ana')).toBe('ana')
+    expect(instagramUsername('https://instagram.com/p/XYZ')).toBeNull()
+    expect(instagramUsername('nume cu spatii')).toBeNull()
+    expect(instagramUsername('')).toBeNull()
+  })
+})

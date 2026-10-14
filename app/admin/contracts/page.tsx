@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Copy, Check, ExternalLink, Trash2, FileText, Download, X, Send, ChevronDown } from 'lucide-react'
+import { Plus, Copy, Check, ExternalLink, Trash2, FileText, Download, X, Send, ChevronDown, Instagram } from 'lucide-react'
 import { cesiuneLabel, CESIUNE_CLAUSES_VERSION } from '@/lib/cesiune-clauses'
 import { campaignName } from '@/lib/campaign-name'
 
@@ -28,6 +28,7 @@ type CesiuneContract = {
   brand_name?: string; brand_cui?: string; brand_reg_com?: string; brand_address?: string; brand_website?: string
   notes?: string; clauses_version?: number | null
   campaign?: { name: string; offer_name: string | null; status: string | null; brand: string | null } | null
+  instagram?: string | null
   status: 'draft' | 'sent' | 'signed' | 'archived'; signed_at?: string; created_at: string
 }
 
@@ -79,6 +80,19 @@ export default function ContractsPage() {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [bulkArmed, setBulkArmed] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState<string | null>(null)
+  const [igCopied, setIgCopied] = useState<string | null>(null)
+
+  /** Deschide DM-ul pe Instagram și copiază un mesaj gata scris, cu linkul contractului. */
+  async function openInstagram(c: CesiuneContract) {
+    if (!c.instagram) return
+    const first = String(c.influencer_name || '').trim().split(/\s+/)[0] || ''
+    const camp = c.campaign?.name || c.campaign_title || 'campania AddFame'
+    const msg = `Salut${first ? ` ${first}` : ''}! 😊 Îți scriem de la AddFame. Ți-am trimis contractul de cesiune pentru „${camp}”. Îl citești și îl semnezi online, în aproximativ un minut, aici: ${window.location.origin}/contract-cesiune/${c.token} — Mulțumim!`
+    // întâi copiem (cât timp click-ul e „proaspăt”), apoi deschidem conversația
+    try { await navigator.clipboard.writeText(msg); setIgCopied(c.id); setTimeout(() => setIgCopied(null), 4000) }
+    catch { flash('Nu am putut copia mesajul. Copiază linkul cu butonul de lângă.', false) }
+    window.open(`https://ig.me/m/${encodeURIComponent(c.instagram)}`, '_blank', 'noopener')
+  }
   const flash = (msg: string, ok = true) => { setNotice({ msg, ok }); setTimeout(() => setNotice(null), 6000) }
 
   /** Un click: notificare în platformă + email + Telegram (dacă e legat). */
@@ -476,7 +490,7 @@ export default function ContractsPage() {
                             <span className="text-[11px] text-gray-400">{c.signed_at ? `semnat ${fmt(c.signed_at)}` : `creat ${fmt(c.created_at)}`}</span>
                           </div>
 
-                          <div className="flex items-center justify-end gap-1.5 flex-none ml-auto sm:w-[300px]">
+                          <div className="flex items-center justify-end gap-1.5 flex-none ml-auto sm:w-[400px]">
                             {isCes && c.status !== 'signed' && (
                               <button onClick={() => sendContract(c.id)} disabled={sendingId === c.id}
                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black bg-sky-600 text-white hover:bg-sky-700 transition disabled:opacity-60">
@@ -494,6 +508,13 @@ export default function ContractsPage() {
                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black bg-gray-50 text-gray-600 hover:bg-gray-100 transition">
                                 <Download className="w-3.5 h-3.5" /> Pt. brand
                               </a>
+                            )}
+                            {isCes && c.status !== 'signed' && ces.instagram && (
+                              <button onClick={() => openInstagram(ces)} title={`Deschide conversația cu @${ces.instagram} pe Instagram — mesajul cu linkul e copiat, doar îl lipești`}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black text-white transition hover:opacity-90"
+                                style={{ background: 'linear-gradient(135deg,#f58529,#dd2a7b 50%,#8134af)' }}>
+                                <Instagram className="w-3.5 h-3.5" /> {igCopied === c.id ? 'Mesaj copiat!' : 'Instagram'}
+                              </button>
                             )}
                             <button onClick={() => copyLink(c, tab)} title="Copiază linkul"
                               className={`w-8 h-8 grid place-items-center rounded-lg transition ${copiedId === c.id ? 'bg-green-100 text-green-700' : 'text-gray-500 hover:bg-gray-100'}`}>

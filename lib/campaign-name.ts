@@ -23,3 +23,13 @@ export function campaignName(c: CampaignLike, fallback = 'Campanie'): string {
   if (title && !isGenericBarterTitle(c?.title)) return title
   return offer || product || title || fallback
 }
+
+/** Username-ul de Instagram dintr-un handle sau URL („@ana”, „instagram.com/ana/”, „https://www.instagram.com/ana?igsh=…”). */
+export function instagramUsername(v?: string | null): string | null {
+  let s = String(v ?? '').trim()
+  if (!s) return null
+  const m = s.match(/instagram\.com\/([^/?#\s]+)/i)
+  if (m) s = m[1]
+  s = s.replace(/^@+/, '').replace(/\/+$/, '')
+  return /^[A-Za-z0-9._]{1,30}$/.test(s) && !['p', 'reel', 'reels', 'stories', 'explore'].includes(s.toLowerCase()) ? s : null
+}

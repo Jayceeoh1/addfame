@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { campaignName } from '@/lib/campaign-name'
+import { campaignName, instagramUsername } from '@/lib/campaign-name'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
@@ -45,7 +45,25 @@ export async function GET() {
         .select('id, title, offer_name, product_name, status, brand_name, brands(name, company_legal_name)').in('id', ids.slice(i, i + 150))
       for (const c of cs || []) camps.set(c.id, c)
     }
+    // Instagram-ul creatorilor (doar pentru admin): din profil, după legătură sau după email
+    const infIds = [...new Set((data || []).map((c: any) => c.influencer_id).filter(Boolean))]
+    const emails = [...new Set((data || []).filter((c: any) => !c.influencer_id && c.influencer_email).map((c: any) => String(c.influencer_email).toLowerCase()))]
+    const igById = new Map<string, string>(), igByEmail = new Map<string, string>()
+    const igOf = (i: any) => {
+      const fromPlat = (Array.isArray(i.platforms) ? i.platforms : []).find((p: any) => String(p?.platform || p?.name || '').toLowerCase() === 'instagram')
+      return instagramUsername(i.instagram_handle) || instagramUsername(fromPlat?.url) || instagramUsername(fromPlat?.username) || instagramUsername(fromPlat?.handle)
+    }
+    for (let i = 0; i < infIds.length; i += 150) {
+      const { data: infs } = await adminClient().from('influencers').select('id, email, instagram_handle, platforms').in('id', infIds.slice(i, i + 150))
+      for (const x of infs || []) { const u = igOf(x); if (u) igById.set(x.id, u) }
+    }
+    for (let i = 0; i < emails.length; i += 100) {
+      const { data: infs } = await adminClient().from('influencers').select('id, email, instagram_handle, platforms').in('email', emails.slice(i, i + 100))
+      for (const x of infs || []) { const u = igOf(x); if (u && x.email) igByEmail.set(String(x.email).toLowerCase(), u) }
+    }
+
     const contracts = (data || []).map((c: any) => {
+      c = { ...c, instagram: (c.influencer_id && igById.get(c.influencer_id)) || igByEmail.get(String(c.influencer_email || '').toLowerCase()) || null }
       const camp = c.campaign_id ? camps.get(c.campaign_id) : null
       return camp ? { ...c, campaign: {
         name: campaignName(camp, c.campaign_title || 'Campanie'),
