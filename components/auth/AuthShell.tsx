@@ -32,22 +32,6 @@ function onePerCreator(list: Clip[]): Clip[] {
   return out.length > FEED_VISIBLE ? out : list
 }
 
-/** „5 ore”, dar „20 de ore” (în română, de la 20 în sus se pune „de”). */
-const num = (k: number, w: string) => `${k}${k % 100 >= 20 || k % 100 === 0 ? ' de' : ''} ${w}`
-
-function ago(iso?: string | null): string {
-  const t = iso ? Date.parse(iso) : NaN
-  if (!Number.isFinite(t)) return ''
-  const m = Math.max(0, Math.round((Date.now() - t) / 60000))
-  if (m < 60) return m <= 1 ? 'acum un minut' : `acum ${num(m, 'minute')}`
-  const h = Math.round(m / 60)
-  if (h < 24) return h === 1 ? 'acum o oră' : `acum ${num(h, 'ore')}`
-  const d = Math.round(h / 24)
-  if (d < 30) return d === 1 ? 'ieri' : `acum ${num(d, 'zile')}`
-  const mo = Math.round(d / 30)
-  return mo <= 1 ? 'acum o lună' : `acum ${num(mo, 'luni')}`
-}
-
 /** Fluxul „Postări recente”: postări reale, amestecate, care se schimbă una câte una. */
 function LiveFeed({ clips }: { clips: Clip[] }) {
   const [pos, setPos] = useState(0)
@@ -95,7 +79,6 @@ function LiveFeed({ clips }: { clips: Clip[] }) {
       <div className="au-feed-list">
         {visible.map((cl, i) => {
           const [bg, fg] = TINTS[(clips.indexOf(cl)) % TINTS.length]
-          const when = ago(cl.approved_at)
           return (
             <div
               key={cl.id}
@@ -112,7 +95,6 @@ function LiveFeed({ clips }: { clips: Clip[] }) {
               <span className="au-feed-text">
                 <b>{cl.display_name}</b> a postat pe {cl.platform}
                 {cl.campaign?.brand_name ? <> pentru <b>{cl.campaign.brand_name}</b></> : null}
-                {when ? <span className="au-feed-when">{when}</span> : null}
               </span>
             </div>
           )
@@ -269,7 +251,6 @@ export const AUTH_CSS = `
 .au-feed-row{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.82);border:1px solid rgba(255,255,255,.95);border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.35;box-shadow:0 8px 24px -18px rgba(80,50,200,.4);animation:au-in .6s cubic-bezier(.2,.9,.3,1.15) both}
 .au-feed-list{display:flex;flex-direction:column;gap:8px}
 .au-feed-text{min-width:0}
-.au-feed-when{display:block;font-size:12px;color:var(--soft);margin-top:1px}
 .au-av{position:relative;width:38px;height:38px;flex:none}
 .au-av-ring{position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,#22c8f0,#3090f0,#7040f0,#9030f0)}
 .au-av-img{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);border-radius:50%;border:2px solid #fff;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
