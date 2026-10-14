@@ -21,6 +21,44 @@ export interface CollabAccess {
   influencerName: string
   influencerUserId: string | null
   brandUserId: string | null
+  /** când s-a finalizat colaborarea (completed_at, altfel aprobarea postului) */
+  completedAt: string | null
+}
+
+/** Zile după finalizare în care creatorul poate trimite un clip suplimentar la aprobare. */
+export const EXTRA_DRAFT_DAYS = 10
+
+export interface UploadState {
+  /** creatorul poate trimite acum un draft (sau o versiune nouă) */
+  allowed: boolean
+  /** colaborarea e finalizată: draftul e material suplimentar, nu schimbă plata / statusul */
+  extra: boolean
+  /** până când (ISO) se pot trimite clipuri suplimentare */
+  until: string | null
+}
+
+/**
+ * Regula unică pentru încărcarea drafturilor.
+ *  - colaborare activă: orice, până la aprobare (o versiune nouă înlocuiește draftul aflat la brand);
+ *  - finalizată de cel mult EXTRA_DRAFT_DAYS zile: clip suplimentar, oricând nu e unul deja la brand;
+ *  - altfel: nimic.
+ */
+export function draftUploadState(
+  collab: { status: string; completedAt: string | null },
+  latest: { status: string } | null,
+  now: Date = new Date(),
+): UploadState {
+  const st = String(collab.status || '').toUpperCase()
+  if (st === 'ACTIVE' || st === 'IN_PROGRESS') {
+    return { allowed: latest?.status !== 'approved', extra: false, until: null }
+  }
+  if (st === 'COMPLETED' && collab.completedAt) {
+    const until = new Date(Date.parse(collab.completedAt) + EXTRA_DRAFT_DAYS * 864e5)
+    if (Number.isFinite(until.getTime()) && now < until) {
+      return { allowed: !latest || latest.status !== 'pending', extra: true, until: until.toISOString() }
+    }
+  }
+  return { allowed: false, extra: false, until: null }
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -33,7 +71,7 @@ export async function getCollabAccess(
   if (!isUuid(collabId)) return null
   const { data: c } = await admin
     .from('collaborations')
-    .select('id, status, influencer_id, brand_id, campaigns(title, brand_id), influencers(name, user_id)')
+    .select('id, status, influencer_id, brand_id, completed_at, deliverable_approved_at, campaigns(title, brand_id), influencers(name, user_id)')
     .eq('id', collabId)
     .maybeSingle()
   if (!c) return null
@@ -54,6 +92,7 @@ export async function getCollabAccess(
     role, collabId: c.id, status: String(c.status || ''), title: camp?.title || 'Campanie',
     influencerId: (c as any).influencer_id, influencerName: inf?.name || 'Creator',
     influencerUserId, brandUserId,
+    completedAt: (c as any).completed_at || (c as any).deliverable_approved_at || null,
   }
 }
 

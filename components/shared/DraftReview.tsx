@@ -39,6 +39,8 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
   const [askChanges, setAskChanges] = useState(false)
   const [changesNote, setChangesNote] = useState('')
   const [open, setOpen] = useState(false)
+  // regula de încărcare vine de la server (colaborare activă / clip suplimentar după finalizare)
+  const [upInfo, setUpInfo] = useState<{ allowed: boolean; extra: boolean; until: string | null } | null>(null)
   // upload
   const [file, setFile] = useState<File | null>(null)
   const [caption, setCaption] = useState('')
@@ -52,7 +54,7 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
     try {
       const r = await fetch(`/api/deliverables?collabId=${collabId}`, { cache: 'no-store' })
       const j = await r.json()
-      if (r.ok) { setDrafts(j.drafts || []); setSel(s => s && (j.drafts || []).some((d: Draft) => d.id === s) ? s : (j.drafts?.[0]?.id ?? null)) }
+      if (r.ok) { setDrafts(j.drafts || []); setUpInfo(j.upload ?? null); setSel(s => s && (j.drafts || []).some((d: Draft) => d.id === s) ? s : (j.drafts?.[0]?.id ?? null)) }
     } catch { /* ignore */ }
     setLoading(false)
   }, [collabId, role])
@@ -68,7 +70,12 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
 
   const draft = drafts.find(d => d.id === sel) || null
   const latest = drafts[0] || null
-  const canSendNew = role === 'influencer' && canUpload && (!latest || latest.status === 'changes_requested')
+  const extra = role === 'influencer' && !!upInfo?.extra
+  const canSendNew = role === 'influencer' && (upInfo ? upInfo.allowed : canUpload) && (
+    !latest || latest.status === 'changes_requested' || (extra && latest.status === 'approved'))
+  // clip suplimentar nou (colaborare finalizată, nimic la brand acum)
+  const offerExtra = extra && canSendNew && (!latest || latest.status === 'approved')
+  const extraUntil = upInfo?.until ? new Date(upInfo.until).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' }) : ''
 
   async function upload() {
     if (!file) return
@@ -190,7 +197,8 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
   const nComments = draft ? draft.comments.length : 0
   let title = '', body = '', cta = '', primary = true
   if (role === 'influencer') {
-    if (st === 'none') { title = 'Trimite draftul video'; body = 'Încarcă videoclipul pentru aprobarea brandului, înainte să postezi.'; cta = 'Încarcă draftul' }
+    if (offerExtra) { title = 'Clip suplimentar (opțional)'; body = `Colaborarea e finalizată. Dacă brandul ți-a cerut încă un clip, îl poți trimite aici la aprobare${extraUntil ? ` până pe ${extraUntil}` : ''}. Nu schimbă plata sau statusul colaborării.`; cta = 'Trimite un clip suplimentar' }
+    else if (st === 'none') { title = 'Trimite draftul video'; body = 'Încarcă videoclipul pentru aprobarea brandului, înainte să postezi.'; cta = 'Încarcă draftul' }
     else if (st === 'pending') { title = 'Draft trimis, așteaptă brandul'; body = 'Brandul răspunde de obicei în 48 de ore. Nu posta înainte de aprobare.'; cta = 'Vezi draftul'; primary = false }
     else if (st === 'changes') { title = 'Brandul cere modificări'; body = nComments ? `${nComments} ${nComments === 1 ? 'comentariu' : 'comentarii'} pe video. Refă clipul și trimite o versiune nouă.` : 'Refă clipul și trimite o versiune nouă.'; cta = 'Vezi modificările și trimite versiunea nouă' }
     else { title = 'Draft aprobat'; body = 'Poți posta exact varianta aprobată.'; cta = 'Vezi draftul'; primary = false }
@@ -199,7 +207,7 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
     else if (st === 'changes') { title = 'Ai cerut modificări'; body = 'Aștepți versiunea nouă de la creator.'; cta = 'Vezi draftul'; primary = false }
     else { title = 'Draft aprobat'; body = 'Poți descărca materialul oricând în următoarele zile.'; cta = 'Vezi draftul'; primary = false }
   }
-  const tone = T[st]
+  const tone = offerExtra ? T.none : T[st]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontFamily: 'inherit', minWidth: 0 }}>
@@ -336,7 +344,7 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
               {draft.viewUrl && (
                 <button type="button" onClick={download} style={{ ...btn(false), alignSelf: 'flex-start' }}>Descarcă materialul</button>
               )}
-              {role === 'influencer' && draft.status === 'approved' && (
+              {role === 'influencer' && draft.status === 'approved' && !offerExtra && (
                 <div style={{ background: '#dcf5ec', color: '#14532d', borderRadius: 12, padding: '10px 12px', fontSize: 13, fontWeight: 700 }}>Draft aprobat de brand. Postează exact varianta aprobată.</div>
               )}
               {role === 'influencer' && draft.status === 'pending' && (
@@ -347,7 +355,8 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
 
           {canSendNew && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: draft ? '1px solid #e5e3f3' : 0, paddingTop: draft ? 12 : 0 }}>
-              <div style={label}>{draft ? 'Trimite o versiune nouă' : 'Trimite draftul video'}</div>
+              <div style={label}>{offerExtra ? 'Trimite un clip suplimentar' : draft ? 'Trimite o versiune nouă' : 'Trimite draftul video'}</div>
+              {offerExtra && <div style={{ fontSize: 12, color: '#6a6690', lineHeight: 1.45 }}>Brandul îl vede, îl poate comenta și aproba. Postezi abia după aprobare.</div>}
               <input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" disabled={busy}
                 onChange={e => { setErr(''); setFile(e.target.files?.[0] ?? null) }} aria-label="Alege videoclipul"
                 style={{ fontSize: 13, fontFamily: 'inherit' }} />

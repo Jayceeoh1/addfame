@@ -2,7 +2,7 @@ import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser, unauthorized, forbidden } from '@/lib/api-auth'
-import { getCollabAccess, isUuid, notify, postDraftMessage, DRAFT_BUCKET, MAX_DRAFT_BYTES } from '@/lib/drafts'
+import { getCollabAccess, draftUploadState, isUuid, notify, postDraftMessage, DRAFT_BUCKET, MAX_DRAFT_BYTES } from '@/lib/drafts'
 
 // După încărcare: verifică fișierul din Storage, trece draftul în „pending" și anunță brandul.
 export async function POST(req: NextRequest) {
@@ -43,12 +43,17 @@ export async function POST(req: NextRequest) {
       .update({ status: 'pending', file_size: real, duration_sec: dur }).eq('id', draftId)
     if (error) return NextResponse.json({ error: 'Nu am putut salva.' }, { status: 500 })
 
+    const extra = draftUploadState(access, null).extra
     await notify(admin, access.brandUserId,
-      `Draft nou de revizuit (v${d.version})`,
-      `${access.influencerName} a trimis un draft video pentru „${access.title}”.`,
+      extra ? 'Clip suplimentar de revizuit' : `Draft nou de revizuit (v${d.version})`,
+      extra
+        ? `${access.influencerName} a trimis un clip suplimentar pentru „${access.title}”.`
+        : `${access.influencerName} a trimis un draft video pentru „${access.title}”.`,
       '/brand/collaborations')
     await postDraftMessage(admin, d.collaboration_id, user.id, 'uploaded',
-      `Am trimis draftul video v${d.version} pentru „${access.title}”. Îl poți revizui acum.`, 'influencer')
+      extra
+        ? `Am trimis un clip suplimentar (v${d.version}) pentru „${access.title}”. Îl poți revizui acum.`
+        : `Am trimis draftul video v${d.version} pentru „${access.title}”. Îl poți revizui acum.`, 'influencer')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Eroare server' }, { status: 500 })

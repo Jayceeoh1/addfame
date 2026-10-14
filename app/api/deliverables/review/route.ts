@@ -32,9 +32,12 @@ export async function POST(req: NextRequest) {
     let round = 0
     let dueAt: Date | null = null
     if (action === 'changes') {
-      const { count: prev } = await admin.from('deliverable_drafts')
+      // după finalizare, clipul suplimentar are propriile runde (nu se socotesc cele din colaborare)
+      let q = admin.from('deliverable_drafts')
         .select('id', { count: 'exact', head: true })
         .eq('collaboration_id', d.collaboration_id).eq('status', 'changes_requested')
+      if (access.status.toUpperCase() === 'COMPLETED' && access.completedAt) q = q.gte('created_at', access.completedAt)
+      const { count: prev } = await q
       if (!canRequestChanges(prev ?? 0)) {
         return NextResponse.json({
           error: `Ai folosit deja cele ${MAX_REVISION_ROUNDS} runde de modificări. Poți aproba draftul sau, dacă ceva nu e în regulă, poți deschide un litigiu.`,

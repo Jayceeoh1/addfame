@@ -1,6 +1,7 @@
 // Păstrarea materialelor video (drafturi) după terminarea colaborării.
 //
 //  - la 7 zile după finalizare: avertisment brandului și creatorului („se șterge pe <data>, descarcă-l acum”);
+//  - un clip suplimentar trimis după finalizare: termenele curg de la ultima activitate pe el;
 //  - la 10 zile: fișierele se șterg din Storage, drafturile trec în „deleted” (comentariile text rămân);
 //  - colaborările anulate / respinse: aceleași termene, socotite de la ultima activitate pe draft;
 //  - cât timp există un litigiu deschis pe colaborare, NU se șterge nimic (materialul e probă);
@@ -44,12 +45,14 @@ const ENDED = ['COMPLETED', 'CANCELLED', 'REJECTED']
 export function retentionStart(c: RetentionCollab, drafts: RetentionDraft[]): Date | null {
   const status = String(c.status || '').toUpperCase()
   if (!ENDED.includes(status)) return null
-  if (status === 'COMPLETED') {
-    const ref = c.completed_at || c.deliverable_approved_at
-    if (ref) return new Date(ref)
-  }
-  // anulată/respinsă (sau finalizată fără dată): ultima activitate pe drafturi
+  // ultima activitate pe drafturi
   const last = Math.max(0, ...drafts.map(d => Math.max(Date.parse(d.created_at) || 0, Date.parse(d.reviewed_at || '') || 0)))
+  if (status === 'COMPLETED') {
+    const ref = Date.parse(c.completed_at || c.deliverable_approved_at || '') || 0
+    // un clip suplimentar trimis după finalizare se păstrează 10 zile de la ultima activitate pe el
+    if (ref) return new Date(Math.max(ref, last))
+  }
+  // anulată/respinsă (sau finalizată fără dată)
   return last > 0 ? new Date(last) : null
 }
 

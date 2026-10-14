@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser, unauthorized, forbidden } from '@/lib/api-auth'
-import { getCollabAccess, isUuid, DRAFT_BUCKET, VIEW_URL_TTL } from '@/lib/drafts'
+import { getCollabAccess, draftUploadState, isUuid, DRAFT_BUCKET, VIEW_URL_TTL } from '@/lib/drafts'
 
 // GET /api/deliverables?collabId=...  -> drafturi + comentarii + URL de redare (1h)
 export async function GET(req: NextRequest) {
@@ -38,7 +38,8 @@ export async function GET(req: NextRequest) {
       const { data: s } = await admin.storage.from(DRAFT_BUCKET).createSignedUrl(file_path, VIEW_URL_TTL)
       return { ...d, viewUrl: s?.signedUrl ?? null, comments: (comments || []).filter(c => c.draft_id === d.id) }
     }))
-    return NextResponse.json({ role: access.role, drafts: out })
+    const upload = access.role === 'influencer' ? draftUploadState(access, list[0] || null) : null
+    return NextResponse.json({ role: access.role, drafts: out, upload })
   } catch {
     return NextResponse.json({ error: 'Eroare server' }, { status: 500 })
   }

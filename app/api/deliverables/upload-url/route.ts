@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser, unauthorized, forbidden } from '@/lib/api-auth'
 import {
-  getCollabAccess, safeFileName, isUuid, DRAFT_BUCKET, MAX_DRAFT_BYTES, MAX_DRAFT_VERSIONS, ALLOWED_MIME,
+  getCollabAccess, draftUploadState, safeFileName, isUuid, DRAFT_BUCKET, MAX_DRAFT_BYTES, MAX_DRAFT_VERSIONS, ALLOWED_MIME,
 } from '@/lib/drafts'
 
 // Creatorul cere un URL semnat de încărcare (fișierul merge direct din browser în Storage).
@@ -28,20 +28,25 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClient()
     const access = await getCollabAccess(admin, collabId, user.id)
     if (!access || access.role !== 'influencer') return forbidden()
-    if (!['ACTIVE', 'IN_PROGRESS'].includes(access.status.toUpperCase())) {
-      return NextResponse.json({ error: 'Colaborarea nu este activă.' }, { status: 409 })
-    }
-
     const { data: existing } = await admin
       .from('deliverable_drafts').select('version, status').eq('collaboration_id', collabId)
-      .order('version', { ascending: false })
+      .neq('status', 'uploading').order('version', { ascending: false })
     const rows = existing || []
-    const version = (rows[0]?.version ?? 0) + 1
+    const { data: allRows } = await admin.from('deliverable_drafts').select('version').eq('collaboration_id', collabId)
+      .order('version', { ascending: false }).limit(1)
+    const version = (allRows?.[0]?.version ?? 0) + 1
     if (version > MAX_DRAFT_VERSIONS) {
       return NextResponse.json({ error: 'Ai atins numărul maxim de versiuni.' }, { status: 409 })
     }
-    if (rows[0]?.status === 'approved') {
-      return NextResponse.json({ error: 'Draftul a fost deja aprobat.' }, { status: 409 })
+    const latest = rows.find(r => r.status !== 'deleted') || null
+    const up = draftUploadState(access, latest)
+    if (!up.allowed) {
+      const st = access.status.toUpperCase()
+      if (st === 'ACTIVE' || st === 'IN_PROGRESS') {
+        return NextResponse.json({ error: 'Draftul a fost deja aprobat.' }, { status: 409 })
+      }
+      if (latest?.status === 'pending') return NextResponse.json({ error: 'Clipul tău e deja la brand. Așteaptă răspunsul.' }, { status: 409 })
+      return NextResponse.json({ error: st === 'COMPLETED' ? 'Perioada pentru materiale suplimentare s-a încheiat.' : 'Colaborarea nu este activă.' }, { status: 409 })
     }
 
     const draftId = crypto.randomUUID()
