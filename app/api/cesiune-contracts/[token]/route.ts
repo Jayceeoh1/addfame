@@ -1,4 +1,7 @@
 import { CESIUNE_CLAUSES_VERSION } from '@/lib/cesiune-clauses'
+import { rightsFor } from '@/lib/rights'
+import { campaignName } from '@/lib/campaign-name'
+import { emailRightsSignedToBrand } from '@/lib/email'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -77,6 +80,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     }
 
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+
+    // Anunțăm brandul campaniei că poate folosi clipul (notificare + email). Nu blochează semnarea.
+    if (contract.campaign_id) {
+      try {
+        const db = admin()
+        const { data: camp } = await db.from('campaigns').select('id, title, offer_name, product_name, brand_id').eq('id', contract.campaign_id).maybeSingle()
+        const { data: brand } = camp?.brand_id ? await db.from('brands').select('user_id, name, email').eq('id', camp.brand_id).maybeSingle() : { data: null }
+        if (camp && brand) {
+          const r = rightsFor({ signed_at: now, clauses_version: (update as any).clauses_version ?? 1 })
+          const adsUntil = new Date(r.adsUntil).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })
+          const creator = String(influencer_name || contract.influencer_name || 'Creatorul')
+          const campaign = campaignName(camp as any)
+          if (brand.user_id) await db.from('notifications').insert({
+            user_id: brand.user_id,
+            title: '✅ Contract de cesiune semnat',
+            body: `${creator} a semnat cesiunea pentru „${campaign}”. Poți folosi clipul; reclame plătite până la ${adsUntil}.`,
+            link: `/brand/campaigns/${camp.id}`,
+            read: false,
+          })
+          if (brand.email) await emailRightsSignedToBrand(brand.email, brand.name || 'Brand', { creator, campaign, adsUntil, campaignId: camp.id })
+        }
+      } catch (e: any) { console.error('[cesiune] notificare brand', e?.message) }
+    }
+
     return NextResponse.json({ success: true, signed_at: now })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

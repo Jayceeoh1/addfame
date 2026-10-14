@@ -1,4 +1,5 @@
 import { art7Clauses } from '@/lib/cesiune-clauses'
+import { redactContract } from '@/lib/rights'
 const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
@@ -12,13 +13,16 @@ const admin = () => createClient(
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
     const { token } = await params
-    const { data: c, error } = await admin()
+    const { data: raw, error } = await admin()
       .from('cesiune_contracts')
       .select('*')
       .eq('token', token)
       .single()
 
-    if (error || !c) return NextResponse.json({ error: 'Contract negăsit' }, { status: 404 })
+    if (error || !raw) return NextResponse.json({ error: 'Contract negăsit' }, { status: 404 })
+    // ?redact=1 → fără CNP, buletin, adresă, telefon, email, IP (pentru brand / terți)
+    const redacted = req.nextUrl.searchParams.get('redact') === '1'
+    const c = redacted ? redactContract(raw) : raw
     if (c.status !== 'signed') return NextResponse.json({ error: 'Contractul nu este semnat' }, { status: 400 })
 
     const signedDate = new Date(c.signed_at).toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -108,7 +112,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
 
 <div class="article">
   <h4>Art. 1  Cedentul și Cesionarul</h4>
-  <p><strong>(1)</strong> D-na / D-nul <strong>${c.influencer_name}</strong>${autorLine ? `, ${autorLine}` : ''}${c.influencer_address ? `, domiciliat(ă) în ${c.influencer_address}` : ''}, e-mail ${c.influencer_email}, în calitate de <strong>AUTOR – CEDENT</strong>, denumit în continuare în prezentul contract <strong>Autor</strong>,</p>
+  <p><strong>(1)</strong> D-na / D-nul <strong>${c.influencer_name}</strong>${autorLine ? `, ${autorLine}` : ''}${c.influencer_address ? `, domiciliat(ă) în ${c.influencer_address}` : ''}${c.influencer_email ? `, e-mail ${c.influencer_email}` : ''}${redacted ? ' <em>(datele de identificare și de contact sunt păstrate de Beneficiar)</em>' : ''}, în calitate de <strong>AUTOR – CEDENT</strong>, denumit în continuare în prezentul contract <strong>Autor</strong>,</p>
   <p><strong>(2)</strong> <strong>ADD FAME DIGITAL S.R.L.</strong>, cu sediul social în Municipiul Pitești, Jud. Argeș, Bulevardul Nicolae Bălcescu, Bl. C5, Scara B, Etaj 2, Ap. 9, CUI 54992560, J2026040984009, email ciprian@addfame.ro, reprezentată de Stancu Marius Ciprian, cu funcția de administrator, în calitate de <strong>BENEFICIAR – CESIONAR</strong>, denumită în continuare în prezentul contract <strong>Beneficiar</strong>,</p>
   <p>dețin calitatea de Părți ale prezentului Contract.</p>
 </div>

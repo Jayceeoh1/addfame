@@ -586,3 +586,25 @@ export function emailContractToSign(to: string, name: string, c: { url: string; 
     <p style="font-size:13px;color:#9ca3af;margin-top:16px">Dacă ai întrebări despre contract, răspunde la acest email sau scrie-ne la support@addfame.ro.</p>
   `, to))
 }
+
+/** Brandului: un creator a semnat cesiunea — clipul poate fi folosit. */
+export function emailRightsSignedToBrand(to: string, brandName: string, r: { creator: string; campaign: string; adsUntil: string; campaignId: string }) {
+  return sendEmail(to, `✅ ${r.creator} a semnat cesiunea drepturilor — AddFame`, baseTemplate(`
+    <h1>Poți folosi clipul ✅</h1>
+    <p>Salut <strong>${escHtml(brandName)}</strong>, <strong>${escHtml(r.creator)}</strong> a semnat contractul de cesiune a drepturilor de autor pentru campania <strong>${escHtml(r.campaign)}</strong>.</p>
+    <p>Poți folosi clipul organic fără limită de timp și în <strong>reclame plătite până la ${escHtml(r.adsUntil)}</strong>, inclusiv prin partenerii tăi.</p>
+    <a href="${APP_URL}/brand/campaigns/${r.campaignId}" class="btn">Vezi drepturile și atestarea PDF →</a>
+  `, to))
+}
+
+/** Brandului: perioada de reclame plătite expiră curând pentru unele clipuri. */
+export function emailAdsRightsExpiring(to: string, brandName: string, r: { campaign: string; campaignId: string; items: { creator: string; adsUntil: string }[] }) {
+  const list = r.items.slice(0, 15).map(i => `<li><strong>${escHtml(i.creator)}</strong> — ads până la ${escHtml(i.adsUntil)}</li>`).join('')
+  return sendEmail(to, `⏳ Reclamele cu clipurile din „${r.campaign}” expiră curând — AddFame`, baseTemplate(`
+    <h1>Perioada de reclame se încheie curând ⏳</h1>
+    <p>Salut <strong>${escHtml(brandName)}</strong>, pentru campania <strong>${escHtml(r.campaign)}</strong> expiră în curând dreptul de a folosi în reclame plătite următoarele clipuri:</p>
+    <ul style="color:#555;font-size:15px;line-height:1.7;padding-left:20px;margin:0 0 16px">${list}${r.items.length > 15 ? `<li>și încă ${r.items.length - 15}</li>` : ''}</ul>
+    <p>După această dată, clipurile pot fi folosite în continuare <strong>doar organic</strong> (postări proprii, site), fără promovare plătită. Dacă vrei să rulezi reclamele mai departe, răspunde la acest email și îți propunem prelungirea.</p>
+    <a href="${APP_URL}/brand/campaigns/${r.campaignId}" class="btn">Vezi drepturile campaniei →</a>
+  `, to))
+}

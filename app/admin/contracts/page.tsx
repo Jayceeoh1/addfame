@@ -476,7 +476,7 @@ export default function ContractsPage() {
                             <span className="text-[11px] text-gray-400">{c.signed_at ? `semnat ${fmt(c.signed_at)}` : `creat ${fmt(c.created_at)}`}</span>
                           </div>
 
-                          <div className="flex items-center justify-end gap-1.5 flex-none ml-auto sm:w-[230px]">
+                          <div className="flex items-center justify-end gap-1.5 flex-none ml-auto sm:w-[300px]">
                             {isCes && c.status !== 'signed' && (
                               <button onClick={() => sendContract(c.id)} disabled={sendingId === c.id}
                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black bg-sky-600 text-white hover:bg-sky-700 transition disabled:opacity-60">
@@ -487,6 +487,12 @@ export default function ContractsPage() {
                               <a href={`/api/${CFG[tab].pdf}/${c.token}/pdf`} target="_blank" rel="noopener"
                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black bg-green-50 text-green-700 hover:bg-green-100 transition">
                                 <Download className="w-3.5 h-3.5" /> PDF
+                              </a>
+                            )}
+                            {isCes && c.status === 'signed' && (
+                              <a href={`/api/${CFG[tab].pdf}/${c.token}/pdf?redact=1`} target="_blank" rel="noopener" title="PDF fără CNP, buletin, adresă, telefon — pentru brand"
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black bg-gray-50 text-gray-600 hover:bg-gray-100 transition">
+                                <Download className="w-3.5 h-3.5" /> Pt. brand
                               </a>
                             )}
                             <button onClick={() => copyLink(c, tab)} title="Copiază linkul"

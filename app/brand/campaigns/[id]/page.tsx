@@ -23,6 +23,7 @@ import { COLLAB_CFG, fmt, fmtNum, daysLeft, type Tab } from '@/components/brand/
 import { TIERS, creatorTier } from '@/lib/tiers'
 import TierChip from '@/components/shared/TierChip'
 import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
+import RightsPanel from '@/components/brand/campaigns/RightsPanel'
 import { getBrandCollabHistory } from '@/app/actions/brand-history'
 import { hasWorkedWith, type InfluencerHistory } from '@/lib/brand-history'
 
@@ -105,7 +106,7 @@ export default function CampaignDetailPage() {
   const [rejectReason, setRejectReason] = useState('')
   const [rejecting, setRejecting] = useState(false)
   const [profileModal, setProfileModal] = useState<any | null>(null)
-  const [view, setView] = useState<'collabs' | 'stats' | 'participanti'>('collabs')
+  const [view, setView] = useState<'collabs' | 'stats' | 'participanti' | 'drepturi'>('collabs')
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({})
   const [draftPending, setDraftPending] = useState<string[]>([])
 
@@ -564,7 +565,7 @@ export default function CampaignDetailPage() {
       <div className="flex gap-2 mb-5" style={{ overflowX: 'auto', scrollbarWidth: 'none' }}>
         {(campaign?.campaign_type === 'OPEN_CALL'
           ? [{ k: 'participanti', l: 'Cine vrea să vină' }, { k: 'collabs', l: `Invitații (${collabs.length})` }, { k: 'stats', l: 'Statistici' }]
-          : [{ k: 'collabs', l: `Colaborări (${collabs.length})` }, { k: 'stats', l: 'Statistici și economii' }]
+          : [{ k: 'collabs', l: `Colaborări (${collabs.length})` }, { k: 'stats', l: 'Statistici și economii' }, { k: 'drepturi', l: 'Drepturi de autor' }]
         ).map(t => (
           <button key={t.k} className={`tab-btn flex-shrink-0 ${view === t.k ? 'on' : ''}`} onClick={() => setView(t.k as any)}>{t.l}</button>
         ))}
@@ -573,6 +574,8 @@ export default function CampaignDetailPage() {
       {view === 'participanti' && campaign?.campaign_type === 'OPEN_CALL' && (
         <div className="mb-5"><EventApplicationsPanel campaignId={campaignId} /></div>
       )}
+
+      {view === 'drepturi' && <div className="mb-5"><RightsPanel campaignId={campaignId} /></div>}
 
       {view === 'stats' && (
         <>
