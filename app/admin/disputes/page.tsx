@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 
 import { useCallback, useEffect, useState } from 'react'
 import { Scale, RefreshCw } from 'lucide-react'
@@ -67,7 +68,7 @@ export default function DisputesPage() {
               <div key={d.id} className="bg-white border rounded-2xl p-4" style={{ display: 'grid', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                   <span style={{ background: s.bg, color: s.fg, fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 99 }}>{s.t}</span>
-                  <b>{camp?.title || 'Campanie'}</b>
+                  <b>{camp ? campaignName(camp) : 'Campanie'}</b>
                   <span style={{ color: '#6a6690', fontSize: 13 }}>{camp?.brand_name} ↔ {d.collaborations?.influencers?.name} · {d.collaborations?.payment_amount ?? 0} RON</span>
                   <span style={{ marginLeft: 'auto', color: '#6a6690', fontSize: 12 }}>{fmt(d.created_at)}</span>
                 </div>

@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { campaignName } from '@/lib/campaign-name'
 import { useEffect, useState } from 'react'
 import { Package, Search, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -469,7 +470,7 @@ export default function AdminDeliveriesPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-xs font-semibold text-gray-600 max-w-32 truncate">{d.campaigns?.title?.replace(/^\[Barter\]\s*/i, '') || '—'}</p>
+                          <p className="text-xs font-semibold text-gray-600 max-w-32 truncate">{d.campaigns ? campaignName(d.campaigns) : '—'}</p>
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-xs text-gray-700">{d.delivery_address}</p>

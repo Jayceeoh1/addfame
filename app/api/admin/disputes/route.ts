@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const showResolved = req.nextUrl.searchParams.get('resolved') === '1'
   const admin = createAdminClient()
   const q = admin.from('disputes')
-    .select('id, collaboration_id, opened_by_role, reason, description, status, respond_by, response, responded_at, resolution, resolution_note, resolved_at, created_at, collaborations(id, status, payment_amount, campaigns(title, brand_name), influencers(name))')
+    .select('id, collaboration_id, opened_by_role, reason, description, status, respond_by, response, responded_at, resolution, resolution_note, resolved_at, created_at, collaborations(id, status, payment_amount, campaigns(title, offer_name, product_name, brand_name), influencers(name))')
     .order('created_at', { ascending: false }).limit(200)
   const { data, error } = showResolved ? await q.eq('status', 'resolved') : await q.neq('status', 'resolved')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

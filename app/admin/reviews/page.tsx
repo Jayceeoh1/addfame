@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { campaignName } from '@/lib/campaign-name'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, X, Clock, ExternalLink, Search, RefreshCw } from 'lucide-react'
@@ -40,7 +41,7 @@ export default function AdminReviewsPage() {
           deliverable_rejection_reason, post_deadline_days,
           package_received_at, reserved_amount, payment_amount,
           influencers(id, name, email, avatar, slug),
-          campaigns(id, title, brand_name, platforms, campaign_type, budget_per_influencer)
+          campaigns(id, title, offer_name, product_name, brand_name, platforms, campaign_type, budget_per_influencer)
         `)
         .not('deliverable_submitted_at', 'is', null)
         .is('deliverable_approved_at', null)
@@ -80,7 +81,7 @@ export default function AdminReviewsPage() {
         await sb.from('notifications').insert({
           user_id: collab.influencers.user_id,
           title: '✅ Postarea ta a fost aprobată!',
-          body: `Colaborarea pentru "${collab.campaigns?.title}" a fost finalizată. ${influencerAmount > 0 ? `${influencerAmount} RON au fost adăugați în wallet.` : ''}`,
+          body: `Colaborarea pentru "${collab.campaigns ? campaignName(collab.campaigns) : ''}" a fost finalizată. ${influencerAmount > 0 ? `${influencerAmount} RON au fost adăugați în wallet.` : ''}`,
           link: '/influencer/collaborations',
           read: false,
         })
@@ -393,7 +394,7 @@ export default function AdminReviewsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-black text-gray-900 text-sm">{c.influencers?.name || '—'}</p>
-                    <p className="text-xs text-gray-400 truncate">{c.campaigns?.title} · {c.campaigns?.brand_name}</p>
+                    <p className="text-xs text-gray-400 truncate">{c.campaigns ? campaignName(c.campaigns) : ''} · {c.campaigns?.brand_name}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
@@ -474,7 +475,7 @@ export default function AdminReviewsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6">
             <h2 className="font-black text-gray-900 text-lg mb-1">Respinge postarea</h2>
-            <p className="text-sm text-gray-400 mb-4">{rejectModal.influencers?.name} · {rejectModal.campaigns?.title}</p>
+            <p className="text-sm text-gray-400 mb-4">{rejectModal.influencers?.name} · {rejectModal.campaigns ? campaignName(rejectModal.campaigns) : ''}</p>
 
             <label className="block text-xs font-black text-gray-600 uppercase tracking-wider mb-2">Motiv respingere *</label>
             <div className="space-y-2 mb-4">

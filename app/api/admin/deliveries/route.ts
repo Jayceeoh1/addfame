@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
         delivery_name, delivery_phone, delivery_address, delivery_city, delivery_county, delivery_postal_code,
         package_sent_at, package_tracking, package_courier, package_received_at, post_deadline_days,
         created_at,
-        campaigns(title, brand_name, campaign_type),
+        campaigns(title, offer_name, product_name, brand_name, campaign_type),
         influencers(name, avatar)
       `)
       .not('delivery_name', 'is', null)

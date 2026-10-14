@@ -1,4 +1,6 @@
 'use server'
+import { campaignName } from '@/lib/campaign-name'
+import { isRealInvoiceNumber } from '@/lib/topup'
 
 // Date pentru panoul de admin: ce e de rezolvat (cozi) și cifrele platformei.
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -135,12 +137,12 @@ export async function getAdminOverview(): Promise<({ success: true } & AdminOver
       },
       topCampaigns: camps
         .filter(c => c.status !== 'DRAFT')
-        .map(c => ({ id: c.id, title: c.title || 'Fără titlu', status: c.status, collabs: collabCount[c.id] || 0, completed: doneCount[c.id] || 0 }))
+        .map(c => ({ id: c.id, title: campaignName(c, 'Fără titlu'), status: c.status, collabs: collabCount[c.id] || 0, completed: doneCount[c.id] || 0 }))
         .sort((a, b) => b.collabs - a.collabs)
         .slice(0, 5),
       recentTopups: recent.map(t => ({
         id: t.id, brand: brandName.get(t.brand_id) || 'Brand', amount: num(t.amount), status: t.status,
-        created_at: t.created_at, invoice: t.smartbill_invoice_number && t.smartbill_invoice_number !== 'EMITERE' ? t.smartbill_invoice_number : null,
+        created_at: t.created_at, invoice: isRealInvoiceNumber(t.smartbill_invoice_number) ? t.smartbill_invoice_number : null,
       })),
     }
   } catch (e: any) {

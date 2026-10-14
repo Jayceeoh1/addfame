@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -183,7 +184,7 @@ export default function CampaignPerformancePage() {
         </p>
         <div className="flex justify-between items-start gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-black text-gray-900 leading-tight mb-1">{campaign?.title}</h1>
+            <h1 className="text-xl font-black text-gray-900 leading-tight mb-1">{campaign ? campaignName(campaign, campaign.title) : ''}</h1>
             <div className="flex gap-3 items-center flex-wrap text-xs text-gray-500">
               <span>{campaign?.brand_name || 'Brand'}</span>
               <span>·</span>

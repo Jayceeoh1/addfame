@@ -1,4 +1,5 @@
 'use server'
+import { campaignName } from '@/lib/campaign-name'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireSuperAdmin } from '@/lib/supabase/verify-admin'
@@ -6,7 +7,8 @@ import { refundRejectedCampaign, refundUnusedSlots } from '@/lib/campaign-fee'
 import { revalidatePath } from 'next/cache'
 import { emailInfluencerApproved, emailInfluencerRejected, emailBrandVerified, emailBrandVerificationRejected, emailTopupConfirmed, emailWithdrawalApproved, emailWithdrawalRejected } from '@/lib/email'
 import { checkSmartBill } from '@/lib/smartbill'
-import { finalizeTopup, issueTopupInvoice } from '@/lib/topup'
+import { finalizeTopup, issueTopupInvoice, isRealInvoiceNumber } from '@/lib/topup'
+import { parseSmartBillNumber } from '@/lib/smartbill'
 import { after } from 'next/server'
 
 // Helper: Generate URL-friendly slug
@@ -429,6 +431,7 @@ export async function getAllCampaigns() {
     const enriched = (data || []).map((c: any) => ({
       ...c,
       brand_website: c.brands?.website || null,
+      display_name: campaignName(c, c.title),
     }))
     return { success: true, data: enriched, total: count }
   } catch (e: any) { return { error: e.message } }
@@ -736,15 +739,41 @@ export async function confirmPayment(transactionId: string) {
   } catch (e: any) { return { error: e.message } }
 }
 
-/** Emite (din nou) factura SmartBill pentru o plată confirmată care nu are factură. */
-export async function retryTopupInvoice(transactionId: string) {
+/**
+ * Emite factura SmartBill pentru o plată confirmată care nu are factură.
+ * `confirmedMissing`: adminul a verificat în SmartBill că factura nu există (plată marcată „de verificat”).
+ */
+export async function retryTopupInvoice(transactionId: string, confirmedMissing = false) {
   try {
     const auth = await requireSuperAdmin()
     if ('error' in auth) return auth
-    const r = await issueTopupInvoice(createAdminClient(), transactionId, { force: true })
+    const r = await issueTopupInvoice(createAdminClient(), transactionId, { confirmedMissing })
     if (!r.ok) return { error: r.error }
     revalidatePath('/admin/payments')
     return { success: true, invoice: r.number }
+  } catch (e: any) { return { error: e.message } }
+}
+
+/** Leagă de plată o factură care există deja în SmartBill (ex. ADDF-0012), fără să emită alta. */
+export async function linkTopupInvoice(transactionId: string, invoiceNumber: string) {
+  try {
+    const auth = await requireSuperAdmin()
+    if ('error' in auth) return auth
+    const parsed = parseSmartBillNumber(invoiceNumber)
+    if (!parsed) return { error: 'Scrie numărul ca în SmartBill, ex. ADDF-0012.' }
+    const number = `${parsed.series}-${parsed.number}`
+    const sb = createAdminClient()
+    const { data: tx } = await sb.from('brand_transactions').select('id, type, status, smartbill_invoice_number').eq('id', transactionId).maybeSingle()
+    if (!tx || tx.type !== 'TOPUP' || tx.status !== 'completed') return { error: 'Plata nu există sau nu e confirmată.' }
+    if (isRealInvoiceNumber(tx.smartbill_invoice_number)) return { error: `Plata are deja factura ${tx.smartbill_invoice_number}.` }
+    const { data: taken } = await sb.from('brand_transactions').select('id').eq('smartbill_invoice_number', number).neq('id', transactionId).limit(1)
+    if (taken?.length) return { error: `Factura ${number} este deja legată de altă plată.` }
+    const q = sb.from('brand_transactions').update({ smartbill_invoice_number: number }).eq('id', transactionId)
+    const { data: done } = await (tx.smartbill_invoice_number === null
+      ? q.is('smartbill_invoice_number', null) : q.eq('smartbill_invoice_number', tx.smartbill_invoice_number)).select('id')
+    if (!done?.length) return { error: 'Plata s-a schimbat între timp. Reîncarcă pagina.' }
+    revalidatePath('/admin/payments')
+    return { success: true, invoice: number }
   } catch (e: any) { return { error: e.message } }
 }
 
@@ -1145,7 +1174,7 @@ export async function getAllCollaborations(limit = 200) {
     const sb = createAdminClient()
     const { data, error } = await sb
       .from('collaborations')
-      .select('*, campaigns(title, budget, budget_per_influencer, max_influencers, deliverables, platforms, brand_name), influencers(name, email, avatar), delivery_name, delivery_phone, delivery_address, delivery_city, delivery_county, delivery_postal_code')
+      .select('*, campaigns(title, offer_name, product_name, budget, budget_per_influencer, max_influencers, deliverables, platforms, brand_name), influencers(name, email, avatar), delivery_name, delivery_phone, delivery_address, delivery_city, delivery_county, delivery_postal_code')
       .order('created_at', { ascending: false })
       .limit(limit)
     if (error) {
@@ -1185,7 +1214,7 @@ export async function exportCollaborationsCSV() {
     if ('error' in auth) return auth
     const sb = createAdminClient()
     const { data } = await sb.from('collaborations')
-      .select('status, payment_amount, platform_fee, created_at, completed_at, campaigns(title, budget), influencers(name, email), brands(name)')
+      .select('status, payment_amount, platform_fee, created_at, completed_at, campaigns(title, offer_name, product_name, budget), influencers(name, email), brands(name)')
       .order('created_at', { ascending: false })
     if (!data) return { error: 'No data' }
     const headers = ['Status', 'Brand', 'Influencer', 'Email', 'Campanie', 'Buget', 'Plată influencer', 'Comision platformă', 'Dată creare', 'Dată finalizare']
@@ -1232,7 +1261,7 @@ export async function adminApproveApplication(collabId: string) {
 
     const { data: collab } = await admin
       .from('collaborations')
-      .select('*, campaigns(id, title, max_influencers, current_influencers, budget_per_influencer, budget), influencers(id, user_id, name, email)')
+      .select('*, campaigns(id, title, offer_name, product_name, max_influencers, current_influencers, budget_per_influencer, budget), influencers(id, user_id, name, email)')
       .eq('id', collabId).single()
 
     if (!collab) return { error: 'Collaboration not found' }

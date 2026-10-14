@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 
 import { useState, useEffect, useCallback } from 'react'
 import { getAllCollaborations } from '@/app/actions/admin'
@@ -111,7 +112,7 @@ export default function AdminCollaborations() {
   const filtered = items.filter(i => {
     const inf = i.influencers?.name?.toLowerCase() ?? ''
     const brand = i.brands?.name?.toLowerCase() ?? ''
-    const camp = i.campaigns?.title?.toLowerCase() ?? ''
+    const camp = `${i.campaigns?.title ?? ''} ${i.campaigns?.offer_name ?? ''}`.toLowerCase()
     const q = search.toLowerCase()
     const matchSearch = !search || inf.includes(q) || brand.includes(q) || camp.includes(q)
     const matchFilter = filter === 'all' || i.status === filter
@@ -160,7 +161,7 @@ export default function AdminCollaborations() {
               {pendingReview.slice(0, 3).map(i => (
                 <button key={i.id} onClick={() => { setSelected(i); setFilter('all') }}
                   className="text-xs font-bold text-amber-700 bg-white border border-amber-200 px-2.5 py-1 rounded-full hover:bg-amber-100 transition">
-                  {i.influencers?.name} → {i.campaigns?.title?.slice(0, 20)}…
+                  {i.influencers?.name} → {campaignName(i.campaigns || {}, '—').slice(0, 28)}
                 </button>
               ))}
               {pendingReview.length > 3 && <span className="text-xs text-amber-600 font-bold">+{pendingReview.length - 3} altele</span>}
@@ -240,7 +241,7 @@ export default function AdminCollaborations() {
                       <p className="font-semibold text-sm text-gray-700">{item.campaigns?.brand_name ?? '—'}</p>
                     </td>
                     <td className="px-4 py-3.5 max-w-xs">
-                      <p className="text-sm text-gray-600 truncate">{item.campaigns?.title ?? '—'}</p>
+                      <p className="text-sm text-gray-600 truncate">{item.campaigns ? campaignName(item.campaigns) : '—'}</p>
                     </td>
                     <td className="px-4 py-3.5">
                       {pendingApproval && (
@@ -307,7 +308,7 @@ export default function AdminCollaborations() {
                 <h2 className="font-black text-gray-900">
                   {selected.influencers?.name} × {selected.campaigns?.brand_name ?? selected.campaigns?.title}
                 </h2>
-                <p className="text-xs text-gray-400 mt-0.5">{selected.campaigns?.title}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{selected.campaigns ? campaignName(selected.campaigns) : ''}</p>
               </div>
               <button onClick={() => { setSelected(null); setShowReject(false); setRejectReason('') }}
                 className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">

@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { campaignName } from '@/lib/campaign-name'
 import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
 import { useState, useEffect, useCallback } from 'react'
 import { getAllCampaigns, adminUpdateCampaignStatus, deleteCampaign, getAllInfluencers, adminUpdateDeliveryAddress, adminUpdateCampaign, adminImpersonateUser, updateCampaignImages } from '@/app/actions/admin'
@@ -1061,7 +1062,7 @@ export default function AdminCampaigns() {
 
   const visible = campaigns.filter(c => {
     const q = search.toLowerCase()
-    const matchQ = !q || c.title?.toLowerCase().includes(q) || c.brand_name?.toLowerCase().includes(q)
+    const matchQ = !q || c.title?.toLowerCase().includes(q) || (c.display_name || '').toLowerCase().includes(q) || c.brand_name?.toLowerCase().includes(q)
     const matchF = filter === 'all' || c.status === filter
     return matchQ && matchF
   })
@@ -1369,7 +1370,7 @@ export default function AdminCampaigns() {
                         <tr key={c.id} style={{ borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}
                           onClick={() => { setSelectedCampaign(c); setActiveSection('brief'); setAdminNote(''); setCollabFilter('ALL'); fetchCampaignCollabs(c.id) }}>
                           <td className="px-5 py-4">
-                            <p className="font-black text-gray-900 max-w-[180px] truncate">{c.title?.replace('[Managed] ', '').replace('[Barter] ', '')}</p>
+                            <p className="font-black text-gray-900 max-w-[260px] truncate" title={c.display_name || ''}>{c.display_name || campaignName(c, c.title)}</p>
                             <p className="text-xs text-gray-400">{c.platforms?.join(', ')}</p>
                           </td>
                           <td className="px-5 py-4 text-sm font-semibold text-gray-600">{c.brand_name || '—'}</td>
@@ -3142,7 +3143,7 @@ export default function AdminCampaigns() {
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10 rounded-t-3xl">
               <div>
                 <p className="text-xs font-black text-indigo-600 uppercase tracking-wider">Admin · Editare campanie</p>
-                <h2 className="text-lg font-black text-gray-900 mt-0.5">{selectedCampaign.title}</h2>
+                <h2 className="text-lg font-black text-gray-900 mt-0.5">{campaignName(selectedCampaign, selectedCampaign.title)}</h2>
               </div>
               <button onClick={() => setShowEditModal(false)} className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400">
                 <X className="w-5 h-5" />
@@ -3568,7 +3569,7 @@ export default function AdminCampaigns() {
             </div>
             <h2 className="text-lg font-black text-gray-900 text-center mb-2">Finalizezi campania?</h2>
             <p className="text-sm text-gray-600 text-center font-semibold mb-1 leading-snug">
-              {selectedCampaign?.title}
+              {selectedCampaign ? campaignName(selectedCampaign, selectedCampaign.title) : ''}
             </p>
             <p className="text-xs text-gray-400 text-center mb-5">
               Campania va fi marcată ca finalizată. Influencerii nu mai pot aplica sau urca dovezi noi.
