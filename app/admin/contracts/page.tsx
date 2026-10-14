@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Copy, Check, ExternalLink, Trash2, FileText, Download, X } from 'lucide-react'
+import { Plus, Copy, Check, ExternalLink, Trash2, FileText, Download, X, Send } from 'lucide-react'
 import { cesiuneLabel, CESIUNE_CLAUSES_VERSION } from '@/lib/cesiune-clauses'
 
 type UGCContract = {
@@ -65,6 +65,24 @@ export default function ContractsPage() {
   const [showNew, setShowNew] = useState(false)
   const [saving, setSaving] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [sendingId, setSendingId] = useState<string | null>(null)
+  const [sendNow, setSendNow] = useState(true) // „Creează și trimite creatorului” (cesiune)
+  const [notice, setNotice] = useState<{ msg: string; ok: boolean } | null>(null)
+  const flash = (msg: string, ok = true) => { setNotice({ msg, ok }); setTimeout(() => setNotice(null), 6000) }
+
+  /** Un click: notificare în platformă + email + Telegram (dacă e legat). */
+  async function sendContract(id: string) {
+    setSendingId(id)
+    try {
+      const r = await fetch(`/api/admin/contracts/cesiune/${id}/send`, { method: 'POST' })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { flash(d.error || 'Nu am putut trimite contractul.', false); return false }
+      const ch = [d.sent?.app && 'platformă', d.sent?.email && 'email', d.sent?.whatsapp && 'WhatsApp', d.sent?.telegram && 'Telegram'].filter(Boolean).join(' + ')
+      flash(`✉️ Contract trimis la semnat (${ch}).${d.whatsappNote && d.whatsappNote !== 'neconfigurat' ? ` WhatsApp: ${d.whatsappNote}.` : ''}`)
+      setCesContracts(prev => prev.map(c => c.id === id ? { ...c, status: 'sent' } : c))
+      return true
+    } finally { setSendingId(null) }
+  }
 
   const [ugcForm, setUgcForm] = useState({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '14', notes: '' })
   const [colabForm, setColabForm] = useState({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '14', campaign_title: '', platform: '', deliverables: '', notes: '' })
@@ -127,6 +145,7 @@ export default function ContractsPage() {
       const data = await res.json()
       if (data.error) { alert(data.error); return }
       setCesContracts(prev => [data.contract, ...prev])
+      if (sendNow && data.contract?.id) await sendContract(data.contract.id)
       // marchează influencerul ca având deja contract (bifă în selector)
       if (cesForm.influencer_id) {
         setCampInfluencers(prev => prev.map(i => i.influencer_id === cesForm.influencer_id ? { ...i, has_contract: true } : i))
@@ -235,6 +254,10 @@ export default function ContractsPage() {
           </button>
         </div>
 
+        {notice && (
+          <div className={`fixed top-5 right-5 z-50 px-5 py-3.5 rounded-2xl shadow-xl font-bold text-sm text-white max-w-sm ${notice.ok ? 'bg-green-500' : 'bg-red-500'}`}>{notice.msg}</div>
+        )}
+
         {/* Tabs */}
         <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 w-fit mb-6">
           {([['ugc', 'Contracte UGC'], ['campanii', 'Contracte Colaborare'], ['cesiune', 'Cesiune Drepturi Autor']] as const).map(([key, label]) => (
@@ -320,6 +343,13 @@ export default function ContractsPage() {
                     style={copiedId !== c.id ? { color: accentColor, background: `${accentColor}15` } : {}}>
                     {copiedId === c.id ? <><Check className="w-3.5 h-3.5" /> Copiat!</> : <><Copy className="w-3.5 h-3.5" /> Copiază link</>}
                   </button>
+
+                  {isCes && c.status !== 'signed' && (
+                    <button onClick={() => sendContract(c.id)} disabled={sendingId === c.id}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-sky-600 text-white hover:bg-sky-700 transition disabled:opacity-60">
+                      <Send className="w-3.5 h-3.5" /> {sendingId === c.id ? 'Se trimite…' : c.status === 'sent' ? 'Retrimite' : 'Trimite la semnat'}
+                    </button>
+                  )}
 
                   <a href={`/${CFG[tab].list}/${c.token}`} target="_blank"
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-blue-50 text-blue-700 hover:bg-blue-100 transition">
@@ -457,6 +487,10 @@ export default function ContractsPage() {
                   <Field label="Valoare produs (LEI)"><input type="number" min="0" value={cesForm.product_value_lei} onChange={e => setCesForm(f => ({ ...f, product_value_lei: e.target.value }))} placeholder="ex. 250" className="field" /></Field>
                   <Field label="Observații interne" colSpan={2}><textarea value={cesForm.notes} onChange={e => setCesForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Note interne..." className="field resize-none" /></Field>
                 </FieldGrid>
+                <label className="flex items-start gap-2.5 text-sm text-gray-700 cursor-pointer bg-sky-50 border border-sky-100 rounded-xl p-3">
+                  <input type="checkbox" checked={sendNow} onChange={e => setSendNow(e.target.checked)} className="mt-0.5" />
+                  <span><b>Trimite imediat creatorului la semnat</b><br /><span className="text-xs text-gray-500">Notificare în platformă, email, WhatsApp (dacă are telefon) și Telegram (dacă și-a legat contul). Nu mai trebuie să-i scrii pe Instagram.</span></span>
+                </label>
                 <ModalButtons onCancel={() => setShowNew(false)} saving={saving} grad={accentGrad} label="Cesiune" />
               </form>
             )}

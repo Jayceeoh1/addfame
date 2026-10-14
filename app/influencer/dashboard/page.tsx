@@ -12,6 +12,7 @@ import { AvatarWithBadge } from '@/components/shared/CreatorBadge'
 import { BADGE_IMAGES, LEVEL_CONFIG, getCreatorLevel } from '@/lib/creator-score'
 import { OnboardingChecklist } from '@/components/shared/onboarding-checklist'
 import AnnouncementBanner from '@/components/AnnouncementBanner'
+import PendingContracts from '@/components/influencer/PendingContracts'
 import { PointEventsSection } from '@/components/shared/PointEventCard'
 
 function TikTokIcon({ className }: { className?: string }) {
@@ -574,6 +575,9 @@ export default function InfluencerDashboard() {
           {toast.msg}
         </div>
       )}
+
+      {/* Contracte de semnat (trimise din admin) */}
+      <PendingContracts />
 
       {/* SALUT */}
       <section className="cd-hello">

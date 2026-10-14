@@ -26,3 +26,14 @@ describe('contract cesiune v2 — drepturi definitive, ads 6 luni', () => {
     expect(cesiuneLabel(2)).toBe('Cesiune definitivă · ads 6 luni')
   })
 })
+
+import { normalizePhone } from '@/lib/whatsapp'
+describe('telefon pentru WhatsApp', () => {
+  it('normalizează numerele românești', () => {
+    expect(normalizePhone('0722 123 456')).toBe('+40722123456')
+    expect(normalizePhone('722123456')).toBe('+40722123456')
+    expect(normalizePhone('0040722123456')).toBe('+40722123456')
+    expect(normalizePhone('+40 (722) 123-456')).toBe('+40722123456')
+    expect(normalizePhone('abc')).toBeNull()
+  })
+})

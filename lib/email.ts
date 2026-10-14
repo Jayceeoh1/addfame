@@ -574,3 +574,15 @@ export async function emailEventDecision(to: string, name: string, ev: {
   `
   return sendEmail(to, ev.approved ? `✅ Ești invitat la „${ev.title}”` : `Răspuns pentru „${ev.title}”`, baseTemplate(body, to))
 }
+
+/** Contract de cesiune trimis la semnat (un singur destinatar, tranzacțional). */
+export function emailContractToSign(to: string, name: string, c: { url: string; brand?: string | null; campaign?: string | null; product?: string | null }) {
+  const what = [c.campaign && `campania <strong>${escHtml(c.campaign)}</strong>`, c.brand && `brandul <strong>${escHtml(c.brand)}</strong>`].filter(Boolean).join(', ')
+  return sendEmail(to, '✍️ Contract de semnat — AddFame', baseTemplate(`
+    <h1>Ai un contract de semnat ✍️</h1>
+    <p>Salut <strong>${escHtml(name || '')}</strong>, îți trimitem contractul de cesiune a drepturilor de autor${what ? ` pentru ${what}` : ''}${c.product ? ` (produs: ${escHtml(c.product)})` : ''}.</p>
+    <p>Îl citești și îl semnezi online, direct de pe telefon, în aproximativ un minut.</p>
+    <a href="${c.url}" class="btn">Citește și semnează →</a>
+    <p style="font-size:13px;color:#9ca3af;margin-top:16px">Dacă ai întrebări despre contract, răspunde la acest email sau scrie-ne la support@addfame.ro.</p>
+  `, to))
+}

@@ -60,3 +60,13 @@ export async function notifyNewMessage(chatId: number, senderName: string) {
     `<a href="${APP_URL}/influencer/inbox">Citește mesajul →</a>`
   )
 }
+/** Contract de semnat (trimis din Admin → Contracte). */
+export async function notifyContractToSign(chatId: number, title: string, url: string) {
+  const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  await sendTelegram(chatId,
+    `✍️ <b>Ai un contract de semnat</b>\n\n` +
+    `${esc(title)}\n\n` +
+    `Durează un minut, direct de pe telefon.\n` +
+    `<a href="${url}">Deschide și semnează →</a>`
+  )
+}
