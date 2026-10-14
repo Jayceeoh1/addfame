@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
-  const r = await issueTopupInvoice(supabase, transaction_id, { force: !!force })
+  const r = await issueTopupInvoice(supabase, transaction_id, { confirmedMissing: !!force })
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: 400 })
   return NextResponse.json({ success: true, already_exists: !!r.existing, smartbill_number: r.number })
 }

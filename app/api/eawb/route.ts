@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { createClient as createAdminSupabase } from '@supabase/supabase-js'
 import { getSessionUser, getSessionBrandId, verifyAdminSession, unauthorized, forbidden } from '@/lib/api-auth'
 
 const EAWB_BASE = 'https://api.europarcel.com/api/public'
 
 function getApiKey() { return process.env.EAWB_API_KEY || '' }
+
+// Semnătură pentru linkul de etichetă: brandul poate descărca doar AWB-urile create de el
+function labelToken(orderId: string | number) {
+  return createHmac('sha256', (process.env.SUPABASE_SERVICE_ROLE_KEY || '') + ':eawb-label').update(String(orderId)).digest('hex').slice(0, 32)
+}
+function validLabelToken(orderId: string, token: string | null) {
+  if (!token) return false
+  const a = Buffer.from(labelToken(orderId)), b = Buffer.from(token)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
 
 function eawbHeaders() {
   return {
@@ -143,7 +154,8 @@ export async function GET(req: NextRequest) {
     // ── LABEL ─────────────────────────────────────────────
     if (action === 'label') {
       const orderId = searchParams.get('order_id')
-      if (!orderId) return NextResponse.json({ error: 'order_id required' }, { status: 400 })
+      if (!orderId || !/^\d+$/.test(orderId)) return NextResponse.json({ error: 'order_id required' }, { status: 400 })
+      if (!validLabelToken(orderId, searchParams.get('t')) && !(await verifyAdminSession())) return forbidden()
       const res = await fetch(`${EAWB_BASE}/orders/labels`, {
         method: 'POST', headers: eawbHeaders(),
         body: JSON.stringify({ order_ids: [parseInt(orderId)] }),
@@ -163,8 +175,10 @@ export async function GET(req: NextRequest) {
 
     // ── SEARCH POSTAL CODE ─────────────────────────────────
     if (action === 'search-postal') {
-      const postal = searchParams.get('postal') || ''
-      const res = await fetch(`${EAWB_BASE}/search/postal-code-reverse/RO/${postal}`, { headers: eawbHeaders() })
+      const postal = (searchParams.get('postal') || '').trim()
+      // doar cod poștal românesc (6 cifre) — altfel s-ar putea ajunge la alte adrese din contul Europarcel
+      if (!/^\d{6}$/.test(postal)) return NextResponse.json({ error: 'Cod poștal invalid' }, { status: 400 })
+      const res = await fetch(`${EAWB_BASE}/search/postal-code-reverse/RO/${encodeURIComponent(postal)}`, { headers: eawbHeaders() })
       const data = await res.json().catch(() => ({}))
       return NextResponse.json({ status: res.status, data })
     }
@@ -297,6 +311,13 @@ export async function POST(req: NextRequest) {
       let data: any
       try { data = JSON.parse(text) } catch { data = { raw: text } }
       if (!res.ok) return NextResponse.json({ error: data?.message || `Create error ${res.status}`, details: data }, { status: res.status })
+      // token pentru descărcarea etichetei acestei comenzi
+      const createdId = data?.data?.order_id ?? data?.order_id
+      if (createdId != null) {
+        const t = labelToken(createdId)
+        if (data?.data && typeof data.data === 'object') data.data.label_token = t
+        data.label_token = t
+      }
       return NextResponse.json(data)
     }
 

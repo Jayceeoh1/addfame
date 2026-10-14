@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { getAllPayments, confirmPayment, rejectPayment, retryTopupInvoice, getSmartBillStatus } from '@/app/actions/admin'
-import { DollarSign, Search, Check, X, RefreshCw, Clock, CheckCircle, XCircle, Building2, CreditCard, Smartphone, Globe, Shield, TrendingUp, ChevronDown, ChevronUp, Copy, AlertCircle, Receipt } from 'lucide-react'
+import { getAllPayments, confirmPayment, rejectPayment, retryTopupInvoice, linkTopupInvoice, getSmartBillStatus } from '@/app/actions/admin'
+import { DollarSign, Search, Check, X, RefreshCw, Clock, CheckCircle, XCircle, Building2, CreditCard, Smartphone, Globe, Shield, TrendingUp, ChevronDown, ChevronUp, Copy, AlertCircle, Receipt, Download } from 'lucide-react'
 
 const STATUS: Record<string, { label: string; bg: string; text: string; dot: string }> = {
   pending: { label: 'În așteptare', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
@@ -14,6 +14,33 @@ const METHOD_LABELS: Record<string, string> = { bank_transfer: 'Transfer bancar'
 
 const fmt = (n: number) => `${Math.abs(n).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON`
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+// Marcaje interne pentru factură: „EMITERE:…” = se emite acum, „VERIFICA” = rezultat nesigur
+const realInvoice = (v?: string | null) => !!v && !v.startsWith('EMITERE') && v !== 'VERIFICA'
+const invoiceToCheck = (v?: string | null) => !!v && (v.startsWith('EMITERE') || v === 'VERIFICA')
+
+/** Lista facturilor legate de plăți — tot ce e în SmartBill pe seria ADDF și NU e aici e dublură. */
+function exportInvoicesCsv(payments: any[]) {
+  const rows = payments.filter(p => p.status === 'completed')
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
+  const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const lines = [['Data plății', 'Brand', 'Nume factură', 'CUI', 'Sumă RON', 'Metodă', 'Referință', 'Factură SmartBill'].map(esc).join(';')]
+  for (const p of rows) {
+    const b = p.billing_details ?? {}
+    lines.push([
+      new Date(p.created_at).toLocaleString('ro-RO'), p.brand?.name, b.name, b.vat,
+      Number(p.amount || 0).toFixed(2).replace('.', ','), METHOD_LABELS[p.payment_method] ?? p.payment_method,
+      p.payment_reference || p.invoice_number,
+      realInvoice(p.smartbill_invoice_number) ? p.smartbill_invoice_number : invoiceToCheck(p.smartbill_invoice_number) ? 'DE VERIFICAT' : 'FĂRĂ FACTURĂ',
+    ].map(esc).join(';'))
+  }
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `facturi-addfame-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+}
 
 function CopyBtn({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
@@ -40,14 +67,27 @@ export default function AdminPayments() {
   const checkSB = useCallback(async () => { setSbStatus(null); setSbStatus(await getSmartBillStatus() as any) }, [])
   useEffect(() => { checkSB() }, [checkSB])
 
-  async function doInvoice(id: string) {
+  const [linkInput, setLinkInput] = useState<Record<string, string>>({})
+  const [armed, setArmed] = useState<string | null>(null) // al doilea click pentru „emite din nou”
+
+  async function doLink(id: string) {
     setActionId(id)
-    const res = await retryTopupInvoice(id) as any
+    const res = await linkTopupInvoice(id, linkInput[id] || '') as any
+    if (res.success) {
+      setPayments(p => p.map(t => t.id === id ? { ...t, smartbill_invoice_number: res.invoice } : t))
+      notify(`🧾 Factura ${res.invoice} a fost legată de plată.`)
+    } else notify(res.error || 'Eroare.', false)
+    setActionId(null)
+  }
+
+  async function doInvoice(id: string, confirmedMissing = false) {
+    setActionId(id); setArmed(null)
+    const res = await retryTopupInvoice(id, confirmedMissing) as any
     if (res.success) {
       setPayments(p => p.map(t => t.id === id ? { ...t, smartbill_invoice_number: res.invoice } : t))
       notify(`🧾 Factura ${res.invoice} a fost emisă.`)
       checkSB()
-    } else notify(res.error || 'Eroare SmartBill.', false)
+    } else { notify(res.error || 'Eroare SmartBill.', false); load() }
     setActionId(null)
   }
 
@@ -112,9 +152,16 @@ export default function AdminPayments() {
           <h1 className="text-2xl font-black text-gray-900">Încărcări branduri</h1>
           <p className="text-sm text-gray-400 mt-0.5">Confirmă top-up-urile primite manual și adaugă creditele</p>
         </div>
-        <button onClick={load} className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-indigo-600 px-3 py-2 rounded-xl border border-gray-200 bg-white transition">
-          <RefreshCw className="w-4 h-4" /> Actualizează
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={() => exportInvoicesCsv(payments)} disabled={!payments.length}
+            className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 px-3 py-2 rounded-xl border border-gray-200 bg-white transition disabled:opacity-50"
+            title="Toate plățile confirmate cu factura lor. Orice factură ADDF din SmartBill care nu apare aici este o dublură.">
+            <Download className="w-4 h-4" /> Export facturi
+          </button>
+          <button onClick={load} className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-indigo-600 px-3 py-2 rounded-xl border border-gray-200 bg-white transition">
+            <RefreshCw className="w-4 h-4" /> Actualizează
+          </button>
+        </div>
       </div>
 
       {/* How it works banner */}
@@ -214,9 +261,11 @@ export default function AdminPayments() {
                         Ref. {p.invoice_number} <CopyBtn text={p.invoice_number} />
                       </div>
                     )}
-                    {p.status === 'completed' && (p.smartbill_invoice_number && p.smartbill_invoice_number !== 'EMITERE'
+                    {p.status === 'completed' && (realInvoice(p.smartbill_invoice_number)
                       ? <a href={`/api/smartbill/invoice-pdf?transaction_id=${p.id}`} target="_blank" rel="noopener" className="text-xs font-black text-indigo-600 hover:underline">🧾 {p.smartbill_invoice_number}</a>
-                      : <span className="text-xs font-black text-red-500">fără factură</span>)}
+                      : invoiceToCheck(p.smartbill_invoice_number)
+                        ? <span className="text-xs font-black text-amber-600">⚠ factură de verificat în SmartBill</span>
+                        : <span className="text-xs font-black text-red-500">fără factură</span>)}
                     <p className="text-xs text-gray-400">{fmtDate(p.created_at)}</p>
                   </div>
                 </div>
@@ -239,7 +288,13 @@ export default function AdminPayments() {
                     {isExp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                     {isExp ? 'Ascunde' : 'Detalii'}
                   </button>
-                  {p.status === 'completed' && !(p.smartbill_invoice_number && p.smartbill_invoice_number !== 'EMITERE') && (
+                  {p.status === 'completed' && invoiceToCheck(p.smartbill_invoice_number) && (
+                    <button onClick={() => setExpanded(p.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-xl transition">
+                      <AlertCircle className="w-3 h-3" /> Verifică factura
+                    </button>
+                  )}
+                  {p.status === 'completed' && !p.smartbill_invoice_number && (
                     <button onClick={() => doInvoice(p.id)} disabled={busy}
                       className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition disabled:opacity-50">
                       <Receipt className="w-3 h-3" /> Emite factura
@@ -257,6 +312,27 @@ export default function AdminPayments() {
                   </>}
                 </div>
               </div>
+
+              {/* Factură de verificat: emiterea s-a întrerupt, poate există deja în SmartBill */}
+              {isExp && p.status === 'completed' && invoiceToCheck(p.smartbill_invoice_number) && (
+                <div className="border-t border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 space-y-3">
+                  <p><b>Emiterea facturii s-a întrerupt.</b> Caută în SmartBill (seria ADDF) o factură pentru <b>{billing.name || p.brand?.name}</b>, <b>{fmt(p.amount)}</b>, din {fmtDate(p.created_at)}.</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input value={linkInput[p.id] ?? ''} onChange={e => setLinkInput(v => ({ ...v, [p.id]: e.target.value }))}
+                      placeholder="ex. ADDF-0012" className="px-3 py-2 rounded-xl border border-amber-300 bg-white font-mono text-sm w-40 outline-none focus:ring-2 focus:ring-amber-200" />
+                    <button onClick={() => doLink(p.id)} disabled={busy || !(linkInput[p.id] || '').trim()}
+                      className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black disabled:opacity-50">Există — leag-o de plată</button>
+                    {armed === p.id ? <>
+                      <button onClick={() => doInvoice(p.id, true)} disabled={busy}
+                        className="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black disabled:opacity-50">Da, am verificat — emite factura</button>
+                      <button onClick={() => setArmed(null)} className="px-3 py-2 rounded-xl border border-amber-300 bg-white text-xs font-bold">Renunță</button>
+                    </> : (
+                      <button onClick={() => setArmed(p.id)} disabled={busy}
+                        className="px-3 py-2 rounded-xl border border-amber-400 bg-white hover:bg-amber-100 text-xs font-black disabled:opacity-50">Nu există în SmartBill</button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Expanded details */}
               {isExp && (

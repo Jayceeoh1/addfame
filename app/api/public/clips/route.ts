@@ -32,6 +32,7 @@ export async function GET() {
         id,
         deliverable_url,
         deliverable_approved_at,
+        thumbnail_url,
         influencers!inner(
           id, name, avatar, ig_followers, tt_followers, slug
         ),
@@ -57,6 +58,7 @@ export async function GET() {
         // Nume afișat public: prenume + inițiala numelui (ex. „Ioana M.”)
         display_name: shortName(c.influencers?.name),
         url: c.deliverable_url,
+        thumbnail_url: c.thumbnail_url || null,
         influencer: {
           name: shortName(c.influencers?.name), // fără numele complet în API-ul public
           avatar: c.influencers?.avatar || null,

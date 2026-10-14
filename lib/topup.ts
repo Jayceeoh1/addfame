@@ -7,8 +7,17 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { createSmartBillInvoice } from '@/lib/smartbill'
 import { emailTopupConfirmed } from '@/lib/email'
 
-/** Valoare temporară cât timp factura se emite (împiedică emiterea a două facturi pentru aceeași plată). */
+/** Prefix pus cât timp factura se emite (împiedică emiterea a două facturi pentru aceeași plată). */
 export const INVOICE_PENDING = 'EMITERE'
+/** Emiterea s-a întrerupt și nu știm dacă SmartBill a apucat să facă factura: trebuie verificat manual. */
+export const INVOICE_CHECK = 'VERIFICA'
+
+/** Număr real de factură (ex. ADDF-0012), nu un marcaj intern. */
+export const isRealInvoiceNumber = (v: string | null | undefined) =>
+  !!v && !v.startsWith(INVOICE_PENDING) && v !== INVOICE_CHECK
+/** Factura e în curs sau rezultatul e nesigur — nu se reemite fără verificare în SmartBill. */
+export const invoiceNeedsCheck = (v: string | null | undefined) =>
+  !!v && (v.startsWith(INVOICE_PENDING) || v === INVOICE_CHECK)
 
 export const TOPUP_MIN = 50
 export const TOPUP_MAX = 250000
@@ -97,27 +106,29 @@ export async function confirmTopup(sb: SupabaseClient, txId: string): Promise<Co
 /**
  * Emite factura SmartBill (seria ADDF) pentru o încărcare confirmată.
  * Sigur de apelat de mai multe ori: dacă factura există deja, o întoarce pe aceea.
- * `force` = reîncearcă și când o emitere anterioară a rămas neterminată.
+ *
+ * `confirmedMissing` = adminul a verificat în SmartBill că factura NU există, deși o emitere
+ * anterioară a rămas neterminată. Fără asta, o plată marcată „de verificat” nu se refacturează
+ * (altfel apar facturi duble).
  */
 export async function issueTopupInvoice(
-  sb: SupabaseClient, txId: string, { force = false } = {},
+  sb: SupabaseClient, txId: string, { confirmedMissing = false }: { confirmedMissing?: boolean } = {},
 ): Promise<InvoiceResult> {
   const { data: tx } = await sb.from('brand_transactions')
     .select('id, brand_id, amount, status, type, billing_details, smartbill_invoice_number')
     .eq('id', txId).maybeSingle()
   if (!tx || tx.type !== 'TOPUP') return { ok: false, error: 'Plata nu există.' }
   if (tx.status !== 'completed') return { ok: false, error: 'Factura se emite doar după confirmarea plății.' }
-  if (tx.smartbill_invoice_number && tx.smartbill_invoice_number !== INVOICE_PENDING) {
-    return { ok: true, number: tx.smartbill_invoice_number, existing: true }
-  }
-  if (tx.smartbill_invoice_number === INVOICE_PENDING && !force) {
-    return { ok: false, error: 'Factura se emite chiar acum. Reîncearcă peste un minut.' }
+  const current: string | null = tx.smartbill_invoice_number ?? null
+  if (isRealInvoiceNumber(current)) return { ok: true, number: current!, existing: true }
+  if (invoiceNeedsCheck(current) && !confirmedMissing) {
+    return { ok: false, error: 'O emitere anterioară nu s-a terminat. Verifică în SmartBill dacă factura există înainte să o emiți din nou.' }
   }
 
-  // Rezervăm emiterea, ca două apeluri simultane să nu facă două facturi
-  let claim = sb.from('brand_transactions').update({ smartbill_invoice_number: INVOICE_PENDING }).eq('id', txId)
-  claim = force ? claim.or(`smartbill_invoice_number.is.null,smartbill_invoice_number.eq.${INVOICE_PENDING}`)
-                : claim.is('smartbill_invoice_number', null)
+  // Rezervăm emiterea cu un marcaj unic: două apeluri simultane nu pot câștiga amândouă.
+  const token = `${INVOICE_PENDING}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
+  let claim = sb.from('brand_transactions').update({ smartbill_invoice_number: token }).eq('id', txId)
+  claim = current === null ? claim.is('smartbill_invoice_number', null) : claim.eq('smartbill_invoice_number', current)
   const { data: claimed } = await claim.select('id')
   if (!claimed?.length) return { ok: false, error: 'Factura a fost deja emisă sau se emite acum.' }
 
@@ -135,14 +146,21 @@ export async function issueTopupInvoice(
       amountRon: amount,
       description: `Credite publicitare prepaid — platforma AddFame (${amount.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON)`,
     })
-    await sb.from('brand_transactions').update({ smartbill_invoice_number: r.smartbillNumber }).eq('id', txId)
+    await sb.from('brand_transactions').update({ smartbill_invoice_number: r.smartbillNumber }).eq('id', txId).eq('smartbill_invoice_number', token)
     console.log(`[SmartBill] Factura emisă: ${r.smartbillNumber} — ${amount} RON`)
     return { ok: true, number: r.smartbillNumber }
   } catch (e: any) {
-    await sb.from('brand_transactions').update({ smartbill_invoice_number: null })
-      .eq('id', txId).eq('smartbill_invoice_number', INVOICE_PENDING)
-    console.error('[SmartBill] Eroare factură:', e?.message)
-    return { ok: false, error: e?.message || 'Eroare SmartBill' }
+    // Refuz clar de la SmartBill → nu există factură, se poate reîncerca.
+    // Fără răspuns clar (timeout, rețea) → poate exista: marcăm „de verificat”.
+    const definite = e?.definite === true
+    await sb.from('brand_transactions').update({ smartbill_invoice_number: definite ? null : INVOICE_CHECK })
+      .eq('id', txId).eq('smartbill_invoice_number', token)
+    console.error('[SmartBill] Eroare factură:', definite ? 'refuzată' : 'rezultat nesigur', e?.message)
+    return {
+      ok: false,
+      error: definite ? (e?.message || 'Eroare SmartBill')
+        : 'SmartBill nu a răspuns clar. Verifică în SmartBill dacă factura s-a emis înainte să încerci din nou.',
+    }
   }
 }
 

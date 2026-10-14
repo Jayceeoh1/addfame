@@ -80,3 +80,95 @@ describe('datele de facturare la plata cu cardul', () => {
     expect(billingFromMetadata('nu e json')).toBeNull()
   })
 })
+
+describe('erorile SmartBill: sigur refuzată vs. rezultat nesigur', () => {
+  const env = { ...process.env }
+  beforeEach(() => { process.env.SMARTBILL_USERNAME = 'u'; process.env.SMARTBILL_API_KEY = 'k' })
+  afterEach(() => { vi.unstubAllGlobals(); process.env = { ...env } })
+  const call = () => createSmartBillInvoice({ clientName: 'X', clientEmail: '', amountRon: 50 }).then(() => null, (e: any) => e)
+
+  it('refuz cu mesaj de la SmartBill → sigur (se poate reîncerca)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ errorText: 'CIF invalid' }), { status: 400 })))
+    const e = await call()
+    expect(e.message).toBe('CIF invalid'); expect(e.definite).toBe(true)
+  })
+  it('rețea căzută / răspuns ilizibil / 5xx → nesigur (poate exista factura)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('fetch failed') }))
+    expect((await call()).definite).toBe(false)
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('<html>Bad gateway</html>', { status: 502 })))
+    expect((await call()).definite).toBe(false)
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })))
+    expect((await call()).definite).toBe(false)
+  })
+})
+
+// ── issueTopupInvoice cu o bază de date simulată ──────────────────────────
+import { issueTopupInvoice, INVOICE_CHECK, isRealInvoiceNumber, invoiceNeedsCheck } from '@/lib/topup'
+
+function fakeDb(tx: Record<string, any>) {
+  const rows: Record<string, any[]> = { brand_transactions: [tx], brands: [{ id: 'b1', name: 'Brand', email: 'b@x.ro' }] }
+  return {
+    rows,
+    from(table: string) {
+      const filters: Array<(r: any) => boolean> = []
+      let patch: any = null
+      const q: any = {
+        select: () => q,
+        update: (p: any) => { patch = p; return q },
+        eq: (k: string, v: any) => { filters.push(r => r[k] === v); return q },
+        is: (k: string, v: any) => { filters.push(r => (r[k] ?? null) === v); return q },
+        run() {
+          const hit = rows[table].filter(r => filters.every(f => f(r)))
+          if (patch) hit.forEach(r => Object.assign(r, patch))
+          return hit
+        },
+        maybeSingle: async () => ({ data: q.run()[0] ?? null }),
+        then: (res: any, rej: any) => Promise.resolve({ data: q.run() }).then(res, rej),
+      }
+      return q
+    },
+  } as any
+}
+
+describe('emiterea facturii nu face dubluri', () => {
+  const env = { ...process.env }
+  let calls = 0
+  beforeEach(() => {
+    calls = 0
+    process.env.SMARTBILL_USERNAME = 'u'; process.env.SMARTBILL_API_KEY = 'k'
+    vi.stubGlobal('fetch', vi.fn(async () => { calls++; await new Promise(r => setTimeout(r, 5)); return new Response(JSON.stringify({ series: 'ADDF', number: String(calls).padStart(4, '0') }), { status: 200 }) }))
+  })
+  afterEach(() => { vi.unstubAllGlobals(); process.env = { ...env } })
+  const tx = (inv: string | null = null) => ({ id: 't1', brand_id: 'b1', amount: 100, status: 'completed', type: 'TOPUP', billing_details: {}, smartbill_invoice_number: inv })
+
+  it('două apăsări simultane → o singură factură', async () => {
+    const db = fakeDb(tx())
+    const [a, b] = await Promise.all([issueTopupInvoice(db, 't1'), issueTopupInvoice(db, 't1')])
+    expect(calls).toBe(1)
+    expect([a.ok, b.ok].filter(Boolean).length).toBe(1)
+    expect(db.rows.brand_transactions[0].smartbill_invoice_number).toBe('ADDF-0001')
+  })
+  it('dacă are deja factură, o întoarce pe aceea', async () => {
+    const r = await issueTopupInvoice(fakeDb(tx('ADDF-0007')), 't1')
+    expect(r).toMatchObject({ ok: true, number: 'ADDF-0007', existing: true }); expect(calls).toBe(0)
+  })
+  it('emitere întreruptă → nu se refacturează fără confirmarea adminului', async () => {
+    const db = fakeDb(tx(INVOICE_CHECK))
+    expect((await issueTopupInvoice(db, 't1')).ok).toBe(false)
+    expect(calls).toBe(0)
+    const r = await issueTopupInvoice(db, 't1', { confirmedMissing: true })
+    expect(r).toMatchObject({ ok: true, number: 'ADDF-0001' })
+  })
+  it('SmartBill fără răspuns clar → plata devine „de verificat”, nu „fără factură”', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('fetch failed') }))
+    const db = fakeDb(tx())
+    expect((await issueTopupInvoice(db, 't1')).ok).toBe(false)
+    expect(db.rows.brand_transactions[0].smartbill_invoice_number).toBe(INVOICE_CHECK)
+  })
+  it('marcajele interne nu sunt numere de factură', () => {
+    expect(isRealInvoiceNumber('ADDF-0001')).toBe(true)
+    expect(isRealInvoiceNumber('EMITERE:abc')).toBe(false)
+    expect(invoiceNeedsCheck('EMITERE:abc')).toBe(true)
+    expect(invoiceNeedsCheck(null)).toBe(false)
+  })
+})

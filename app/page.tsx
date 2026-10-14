@@ -125,11 +125,13 @@ export default function HomePage() {
     fetch('/api/public/stats', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => { if (d && typeof d.influencers === 'number') setStats(d) }).catch(() => {})
     fetch('/api/public/clips').then(r => r.ok ? r.json() : null).then(d => setClips((Array.isArray(d?.clips) ? d.clips : []).filter((c: any) => c && c.id && c.display_name))).catch(() => {})
     fetch('/api/public/influencer-reviews').then(r => r.ok ? r.json() : null).then(d => setReviews((Array.isArray(d?.reviews) ? d.reviews : []).filter((r: any) => r && r.comment))).catch(() => {})
-    createClient().from('brands').select('name').not('name', 'is', null)
+    const loadBrands = (table: string) => createClient().from(table).select('name').not('name', 'is', null)
       .order('created_at', { ascending: false }).limit(24)
-      .then(({ data }) => {
+    loadBrands('brands_public')
+      .then(async (res: any) => (res.error ? await loadBrands('brands') : res))
+      .then(({ data }: any) => {
         const names = Array.from(new Set((data || []).map((b: any) => (b.name || '').trim()).filter(Boolean)))
-        setBrands(names)
+        setBrands(names as string[])
       })
   }, [])
 

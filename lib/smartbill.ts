@@ -148,28 +148,48 @@ export async function createSmartBillInvoice(
     useStock: false,
   }
 
-  const res = await fetch(`${BASE_URL}/invoice`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': authHeader(),
-    },
-    body: JSON.stringify(payload),
-  })
+  // `definite` = SmartBill a refuzat clar (nu există factură). Altfel rezultatul e nesigur.
+  const fail = (msg: string, definite: boolean) => Object.assign(new Error(msg), { definite })
 
-  const data = await res.json()
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 25000)
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}/invoice`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': authHeader(),
+      },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal,
+    })
+  } catch (e: any) {
+    // rețea / timeout: cererea poate fi ajuns la SmartBill
+    throw fail(e?.name === 'AbortError' ? 'SmartBill nu a răspuns în 25 de secunde' : (e?.message || 'Eroare de rețea SmartBill'), false)
+  } finally {
+    clearTimeout(timer)
+  }
+
+  const raw = await res.text().catch(() => '')
+  let data: any
+  try { data = JSON.parse(raw) } catch {
+    // 4xx = cerere refuzată; 5xx / răspuns ilizibil = nu știm sigur
+    throw fail(`SmartBill a răspuns ${res.status}`, res.status >= 400 && res.status < 500)
+  }
 
   // Dacă factura a fost creată (are series + number) dar e eroare de email → continuăm
   const hasInvoice = data.series && data.number && data.number !== '0'
   if ((!res.ok || data.errorText) && !hasInvoice) {
     console.error('[SmartBill] EROARE FATALA:', JSON.stringify(data))
-    throw new Error(data.errorText || `SmartBill error ${res.status}`)
+    throw fail(data.errorText || `SmartBill error ${res.status}`, !!data.errorText || (res.status >= 400 && res.status < 500))
   }
   if (data.errorText) {
     // Eroare non-fatală (ex: email encoding) — factura e creată, logăm și continuăm
     console.warn('[SmartBill] Avertisment (non-fatal):', data.errorText)
   }
+  if (!hasInvoice) throw fail('SmartBill nu a întors numărul facturii', false)
 
   // SmartBill returnează: { series, number, ... }
   const invoiceSeries: string = data.series || series

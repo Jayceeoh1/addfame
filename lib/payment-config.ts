@@ -11,7 +11,7 @@
 export const COMPANY = {
   name: 'Add Fame Digital S.R.L.',
   cui: '54992560',
-  vat: 'RO54992560',
+  vat: '',                        // neplătitor de TVA (fără prefix RO); facturile SmartBill se emit fără TVA
   address: 'Bulevardul Nicolae Bălcescu, Bl. C5, Scara B, Etaj 2, Ap. 9, Municipiul Pitești, Jud. Argeș',
   country: 'România',
   email: 'payments@addfame.ro',

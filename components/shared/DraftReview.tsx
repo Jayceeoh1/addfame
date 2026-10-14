@@ -2,6 +2,7 @@
 // Draft video pentru aprobare: același component pentru creator (încarcă) și brand (revizuiește).
 // Fișierele stau într-un bucket privat; accesul trece doar prin /api/deliverables/*.
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { reportClientError } from '@/components/shared/ErrorReporter'
 
 type Role = 'brand' | 'influencer'
 interface Comment { id: string; draft_id: string; author_role: Role; at_second: number | null; body: string; created_at: string }
@@ -95,8 +96,21 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
         x.open('PUT', j.signedUrl)
         x.setRequestHeader('x-upsert', 'false')
         x.upload.onprogress = e => { if (e.lengthComputable) setProg(Math.round((e.loaded / e.total) * 100)) }
-        x.onload = () => (x.status >= 200 && x.status < 300 ? res() : rej(new Error('Încărcarea a eșuat. Încearcă din nou.')))
-        x.onerror = () => rej(new Error('Conexiune întreruptă. Încearcă din nou.'))
+        x.onload = () => {
+          if (x.status >= 200 && x.status < 300) return res()
+          // Motivul exact de la Storage → mesaj clar pentru creator + jurnal pentru admin (Admin → Erori)
+          let sm = ''
+          try { const b = JSON.parse(x.responseText || '{}'); sm = String(b.message || b.error || '') } catch { sm = String(x.responseText || '').slice(0, 200) }
+          const mb = (file.size / 1048576).toFixed(1)
+          reportClientError(`Încărcare draft eșuată: HTTP ${x.status} · ${sm || 'fără mesaj'} · ${mb} MB · ${file.type || 'tip necunoscut'}`)
+          const tooBig = x.status === 413 || /size|large|exceed/i.test(sm)
+          rej(new Error(tooBig
+            ? `Videoclipul (${mb} MB) e prea mare pentru server. Exportă-l la o calitate mai mică (ex. 1080p) sau trimite o variantă mai scurtă și încearcă din nou.`
+            : /mime|type/i.test(sm)
+              ? 'Formatul videoclipului nu e acceptat. Folosește MP4 sau MOV.'
+              : `Încărcarea a eșuat (cod ${x.status}). Încearcă din nou; dacă se repetă, scrie-ne la support@addfame.ro.`))
+        }
+        x.onerror = () => rej(new Error('Conexiunea s-a întrerupt în timpul încărcării. Verifică internetul (ideal Wi-Fi) și încearcă din nou.'))
         const fd = new FormData(); fd.append('cacheControl', '3600'); fd.append('', file)
         x.send(fd)
       })

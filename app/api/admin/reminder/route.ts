@@ -61,7 +61,6 @@ export async function POST(req: NextRequest) {
     if (!inf.avatar) missing.push('Poză de profil')
     if (!inf.slug) missing.push('Link profil public (slug)')
     if (!inf.city) missing.push('Orașul/Comuna — necesar pentru oferte barter locale din zona ta')
-    if (!inf.identity_verified) missing.push('Verificare identitate — necesară pentru a aplica')
 
     // Send email
     const result = await emailProfileReminder(email, inf.name || 'Creator', missing, custom_message)
