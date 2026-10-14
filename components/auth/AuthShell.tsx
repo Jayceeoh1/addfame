@@ -6,11 +6,121 @@
 // Culorile vin din logo: cyan #22c8f0 → albastru #3090f0 → violet #7040f0 → mov #9030f0.
 
 import Link from 'next/link'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { fontVars } from '@/lib/fonts'
 
 type Stats = { influencers: number; brands: number; campaigns: number; completedCampaigns: number }
-type Clip = { id: string; display_name: string; influencer: { avatar: string | null }; campaign: { brand_name: string; title: string }; platform: string }
+type Clip = { id: string; approved_at?: string | null; display_name: string; influencer: { avatar: string | null; slug?: string | null }; campaign: { brand_name: string; title: string }; platform: string }
+
+const FEED_VISIBLE = 3
+const FEED_EVERY_MS = 4200
+
+function shuffle<T>(a: T[]): T[] {
+  const r = a.slice()
+  for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]] }
+  return r
+}
+
+/** O postare per creator (cea mai recentă), ca în cele 3 rânduri să nu apară aceeași persoană de două ori. */
+function onePerCreator(list: Clip[]): Clip[] {
+  const seen = new Set<string>()
+  const out = list.filter(c => {
+    const k = c.influencer?.slug || `${c.display_name}|${c.influencer?.avatar || ''}`
+    if (seen.has(k)) return false
+    seen.add(k); return true
+  })
+  return out.length > FEED_VISIBLE ? out : list
+}
+
+/** „5 ore”, dar „20 de ore” (în română, de la 20 în sus se pune „de”). */
+const num = (k: number, w: string) => `${k}${k % 100 >= 20 || k % 100 === 0 ? ' de' : ''} ${w}`
+
+function ago(iso?: string | null): string {
+  const t = iso ? Date.parse(iso) : NaN
+  if (!Number.isFinite(t)) return ''
+  const m = Math.max(0, Math.round((Date.now() - t) / 60000))
+  if (m < 60) return m <= 1 ? 'acum un minut' : `acum ${num(m, 'minute')}`
+  const h = Math.round(m / 60)
+  if (h < 24) return h === 1 ? 'acum o oră' : `acum ${num(h, 'ore')}`
+  const d = Math.round(h / 24)
+  if (d < 30) return d === 1 ? 'ieri' : `acum ${num(d, 'zile')}`
+  const mo = Math.round(d / 30)
+  return mo <= 1 ? 'acum o lună' : `acum ${num(mo, 'luni')}`
+}
+
+/** Fluxul „Postări recente”: postări reale, amestecate, care se schimbă una câte una. */
+function LiveFeed({ clips }: { clips: Clip[] }) {
+  const [pos, setPos] = useState(0)
+  const paused = useRef(false)
+  const rows = useRef(new Map<string, HTMLDivElement>())
+  const prevTops = useRef(new Map<string, number>())
+  const n = clips.length
+
+  useEffect(() => {
+    if (n <= FEED_VISIBLE) return
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const id = window.setInterval(() => {
+      if (paused.current || document.hidden) return
+      // ține minte pozițiile înainte de schimbare, ca rândurile să alunece lin în jos
+      prevTops.current = new Map(Array.from(rows.current.entries()).map(([k, el]) => [k, el.getBoundingClientRect().top]))
+      setPos(p => (p + 1) % n)
+    }, FEED_EVERY_MS)
+    return () => window.clearInterval(id)
+  }, [n])
+
+  useLayoutEffect(() => {
+    const before = prevTops.current
+    if (!before.size) return
+    rows.current.forEach((el, k) => {
+      const top = before.get(k)
+      if (top === undefined) return
+      const dy = top - el.getBoundingClientRect().top
+      if (!dy) return
+      el.style.transition = 'none'
+      el.style.transform = `translateY(${dy}px)`
+      requestAnimationFrame(() => {
+        el.style.transition = 'transform .55s cubic-bezier(.2,.8,.2,1)'
+        el.style.transform = ''
+      })
+    })
+    prevTops.current = new Map()
+  }, [pos])
+
+  // cea mai nouă intrare apare sus, celelalte coboară, ultima iese
+  const visible = Array.from({ length: Math.min(FEED_VISIBLE, n) }, (_, i) => clips[((pos - i) % n + n) % n])
+
+  return (
+    <div className="au-feed" onMouseEnter={() => { paused.current = true }} onMouseLeave={() => { paused.current = false }}>
+      <span className="au-feed-label"><span className="au-dot" />Postări recente pe AddFame</span>
+      <div className="au-feed-list">
+        {visible.map((cl, i) => {
+          const [bg, fg] = TINTS[(clips.indexOf(cl)) % TINTS.length]
+          const when = ago(cl.approved_at)
+          return (
+            <div
+              key={cl.id}
+              ref={el => { if (el) rows.current.set(cl.id, el); else rows.current.delete(cl.id) }}
+              className="au-feed-row"
+              style={{ animationDelay: pos === 0 ? `${0.15 + i * 0.12}s` : '0s' }}
+            >
+              <span className="au-av">
+                <span className="au-av-ring" />
+                {cl.influencer?.avatar
+                  ? <img src={cl.influencer.avatar} alt="" className="au-av-img" />
+                  : <span className="au-av-img" style={{ background: bg, color: fg }}>{ini(cl.display_name)}</span>}
+              </span>
+              <span className="au-feed-text">
+                <b>{cl.display_name}</b> a postat pe {cl.platform}
+                {cl.campaign?.brand_name ? <> pentru <b>{cl.campaign.brand_name}</b></> : null}
+                {when ? <span className="au-feed-when">{when}</span> : null}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 export type AuthVariant = 'login' | 'choose' | 'brand' | 'influencer' | 'reset' | 'verify'
 
@@ -73,7 +183,10 @@ export default function AuthShell({ variant, children }: { variant: AuthVariant;
   useEffect(() => {
     // Cifrele sunt decorative: orice eroare aici nu trebuie să afecteze formularul
     fetch('/api/public/stats').then(r => r.ok ? r.json() : null).then(d => { if (d && typeof d.influencers === 'number') setStats(d) }).catch(() => {})
-    fetch('/api/public/clips').then(r => r.ok ? r.json() : null).then(d => setClips((Array.isArray(d?.clips) ? d.clips : []).filter((c: any) => c && c.id && c.display_name).slice(0, 3))).catch(() => {})
+    fetch('/api/public/clips?limit=40').then(r => r.ok ? r.json() : null).then(d => {
+      const real: Clip[] = (Array.isArray(d?.clips) ? d.clips : []).filter((c: any) => c && c.id && c.display_name)
+      setClips(shuffle(onePerCreator(real)))
+    }).catch(() => {})
   }, [])
 
   const c = COPY[variant]
@@ -100,28 +213,7 @@ export default function AuthShell({ variant, children }: { variant: AuthVariant;
             </div>
           )}
 
-          {clips.length > 0 && (
-            <div className="au-feed">
-              <span className="au-feed-label"><span className="au-dot" />Postări recente pe AddFame</span>
-              {clips.map((cl, i) => {
-                const [bg, fg] = TINTS[i % TINTS.length]
-                return (
-                  <div key={cl.id} className="au-feed-row" style={{ animationDelay: `${0.15 + i * 0.12}s` }}>
-                    <span className="au-av">
-                      <span className="au-av-ring" />
-                      {cl.influencer?.avatar
-                        ? <img src={cl.influencer.avatar} alt="" className="au-av-img" />
-                        : <span className="au-av-img" style={{ background: bg, color: fg }}>{ini(cl.display_name)}</span>}
-                    </span>
-                    <span className="au-feed-text">
-                      <b>{cl.display_name}</b> a postat pe {cl.platform}
-                      {cl.campaign?.brand_name ? <> pentru <b>{cl.campaign.brand_name}</b></> : null}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          {clips.length > 0 && <LiveFeed clips={clips} />}
         </div>
         <p className="au-side-foot">© 2026 AddFame · ADD FAME DIGITAL S.R.L.</p>
       </aside>
@@ -175,7 +267,9 @@ export const AUTH_CSS = `
 .au-feed{display:flex;flex-direction:column;gap:8px}
 .au-feed-label{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#1b7fae;margin-bottom:2px}
 .au-feed-row{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.82);border:1px solid rgba(255,255,255,.95);border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.35;box-shadow:0 8px 24px -18px rgba(80,50,200,.4);animation:au-in .6s cubic-bezier(.2,.9,.3,1.15) both}
+.au-feed-list{display:flex;flex-direction:column;gap:8px}
 .au-feed-text{min-width:0}
+.au-feed-when{display:block;font-size:12px;color:var(--soft);margin-top:1px}
 .au-av{position:relative;width:38px;height:38px;flex:none}
 .au-av-ring{position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,#22c8f0,#3090f0,#7040f0,#9030f0)}
 .au-av-img{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);border-radius:50%;border:2px solid #fff;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}

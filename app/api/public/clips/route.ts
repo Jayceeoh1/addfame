@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-let cache: { data: any; ts: number } | null = null
+const cache = new Map<number, { data: any; ts: number }>()
 const CACHE_TTL = 2 * 60 * 1000 // 2 min — fluxul „Live pe AddFame” de pe prima pagină
 
 function shortName(full?: string | null): string {
@@ -11,9 +11,13 @@ function shortName(full?: string | null): string {
   return `${parts[0]} ${parts[parts.length - 1].charAt(0).toUpperCase()}.`
 }
 
-export async function GET() {
-  if (cache && Date.now() - cache.ts < CACHE_TTL) {
-    return NextResponse.json(cache.data, {
+export async function GET(req: Request) {
+  // ?limit=40 — pagina de login/înregistrare rotește mai multe postări; implicit 12 (prima pagină)
+  const asked = Number(new URL(req.url).searchParams.get('limit'))
+  const limit = Number.isFinite(asked) && asked > 0 ? Math.min(Math.floor(asked), 40) : 12
+  const hit = cache.get(limit)
+  if (hit && Date.now() - hit.ts < CACHE_TTL) {
+    return NextResponse.json(hit.data, {
       headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=60' }
     })
   }
@@ -44,7 +48,7 @@ export async function GET() {
       .not('deliverable_url', 'is', null)
       .neq('deliverable_url', '')
       .order('deliverable_approved_at', { ascending: false })
-      .limit(20)
+      .limit(Math.max(20, limit * 2))
 
     // Filtrăm doar URL-uri Instagram/TikTok reale
     const clips = (collabs || [])
@@ -73,10 +77,10 @@ export async function GET() {
         },
         platform: (c.deliverable_url || '').includes('tiktok') ? 'TikTok' : 'Instagram',
       }))
-      .slice(0, 12)
+      .slice(0, limit)
 
     const data = { clips }
-    cache = { data, ts: Date.now() }
+    cache.set(limit, { data, ts: Date.now() })
 
     return NextResponse.json(data, {
       headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=60' }
