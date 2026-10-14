@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { campaignName } from '@/lib/campaign-name'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -129,7 +130,7 @@ export default function BrandCampaignsPage() {
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
 
-      if (data) setCampaigns(data)
+      if (data) setCampaigns(data.map((c: any) => ({ ...c, raw_title: c.title, title: campaignName(c, c.title) })))
 
       // Fetch collaboration counts per campaign
       const { data: collabs } = await supabase

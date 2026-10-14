@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -55,7 +56,7 @@ const POPULAR = 1000
 const fmt = (n: number) => `${n.toLocaleString('ro-RO', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} RON`
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })
 const fmtDateTime = (d: string) => new Date(d).toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-const hasInvoice = (tx: Transaction) => !!tx.smartbill_invoice_number && tx.smartbill_invoice_number !== 'EMITERE'
+const hasInvoice = (tx: Transaction) => !!tx.smartbill_invoice_number && !tx.smartbill_invoice_number.startsWith('EMITERE') && tx.smartbill_invoice_number !== 'VERIFICA'
 
 // ─── Copiere ───────────────────────────────────────────────────────────────────
 function CopyButton({ text, label }: { text: string; label?: string }) {
@@ -148,7 +149,7 @@ function BrandWalletPageInner() {
       const [txRes, campRes] = await Promise.all([
         supabase.from('brand_transactions').select('*').eq('brand_id', b.id)
           .order('created_at', { ascending: false }).limit(100),
-        supabase.from('campaigns').select('id, title, budget, status')
+        supabase.from('campaigns').select('id, title, offer_name, product_name, budget, status')
           .eq('brand_id', b.id).order('created_at', { ascending: false }),
       ])
 
@@ -586,7 +587,7 @@ function BrandWalletPageInner() {
                         <div className="bu-row" style={{ gap: 12, minWidth: 0 }}>
                           <div className="bu-ico" style={{ background: '#efeaff', color: '#4423c4' }}><Briefcase className="w-4 h-4" /></div>
                           <div style={{ minWidth: 0 }}>
-                            <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</p>
+                            <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{campaignName(c, c.title)}</p>
                             <span className="bu-chip" style={{ background: cc.bg, color: cc.fg }}>{c.status}</span>
                           </div>
                         </div>

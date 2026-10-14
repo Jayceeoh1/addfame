@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { campaignName } from '@/lib/campaign-name'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -299,8 +300,8 @@ export default function CampaignDetailPage() {
       const collab = collabs.find(c => c.id === rejectModal.collabId)
       if (collab) {
         const { data: inf } = await sb.from('influencers').select('user_id, name, email').eq('id', collab.influencer_id).single()
-        if (inf?.user_id) await sb.from('notifications').insert({ user_id: inf.user_id, title: '❌ Aplicație refuzată', body: rejectReason ? `${campaign?.brand_name || 'Brandul'} a refuzat aplicația ta: "${rejectReason}"` : `${campaign?.brand_name || 'Brandul'} a refuzat aplicația ta la campania "${campaign?.title}".`, link: '/influencer/collaborations', read: false })
-        if (inf?.email) await fetch('/api/email/rejection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: inf.email, name: inf.name || 'Influencer', campaignTitle: campaign?.title || '', brandName: campaign?.brand_name || '', reason: rejectReason || null }) })
+        if (inf?.user_id) await sb.from('notifications').insert({ user_id: inf.user_id, title: '❌ Aplicație refuzată', body: rejectReason ? `${campaign?.brand_name || 'Brandul'} a refuzat aplicația ta: "${rejectReason}"` : `${campaign?.brand_name || 'Brandul'} a refuzat aplicația ta la campania "${campaign ? campaignName(campaign) : ''}".`, link: '/influencer/collaborations', read: false })
+        if (inf?.email) await fetch('/api/email/rejection', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: inf.email, name: inf.name || 'Influencer', campaignTitle: campaign ? campaignName(campaign) : '', brandName: campaign?.brand_name || '', reason: rejectReason || null }) })
       }
       setCollabs(prev => prev.map(c => c.id === rejectModal.collabId ? { ...c, status: 'REJECTED', rejection_reason: rejectReason } : c))
       const rejectedCollab = collabs.find(c => c.id === rejectModal.collabId)
@@ -348,7 +349,7 @@ export default function CampaignDetailPage() {
       for (const infId of selectedInfs) {
         const inf = influencerData[infId]
         const notifLink = campaign?.campaign_type === 'OPEN_CALL' ? `/influencer/castinguri/${campaignId}` : '/influencer/collaborations'
-        if (inf?.user_id) await sb.from('notifications').insert({ user_id: inf.user_id, title: campaign?.campaign_type === 'OPEN_CALL' ? '🎪 Eveniment nou!' : '🎉 Invitație nouă!', body: campaign?.campaign_type === 'OPEN_CALL' ? `${campaign?.brand_name || 'Un brand'} te invită la evenimentul "${campaign?.title}". Vezi detaliile și înscrie-te!` : `${campaign?.brand_name || 'Un brand'} te-a invitat la campania "${campaign?.title}". Verifică detaliile!`, link: notifLink, read: false })
+        if (inf?.user_id) await sb.from('notifications').insert({ user_id: inf.user_id, title: campaign?.campaign_type === 'OPEN_CALL' ? '🎪 Eveniment nou!' : '🎉 Invitație nouă!', body: campaign?.campaign_type === 'OPEN_CALL' ? `${campaign?.brand_name || 'Un brand'} te invită la evenimentul "${campaign ? campaignName(campaign) : ''}". Vezi detaliile și înscrie-te!` : `${campaign?.brand_name || 'Un brand'} te-a invitat la campania "${campaign ? campaignName(campaign) : ''}". Verifică detaliile!`, link: notifLink, read: false })
       }
       notify(`✅ ${selectedInfs.length} influencer${selectedInfs.length > 1 ? 'i invitați' : ' invitat'}!`)
       setSelectedInfs([]); setBulkMode(false)

@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -277,7 +278,8 @@ export default function BrandDashboard() {
       if (!brand) { router.replace('/auth/login'); return }
       setProfile(brand)
 
-      const { data: camps } = await sb.from('campaigns').select('*').eq('brand_id', brand.id).order('created_at', { ascending: false })
+      const { data: campsRaw } = await sb.from('campaigns').select('*').eq('brand_id', brand.id).order('created_at', { ascending: false })
+      const camps = (campsRaw || []).map((c: any) => ({ ...c, raw_title: c.title, title: campaignName(c, c.title) }))
       setCampaigns(camps || [])
 
       const campIds = (camps || []).map((c: any) => c.id)

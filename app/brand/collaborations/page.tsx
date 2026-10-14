@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { campaignName } from '@/lib/campaign-name'
 import React from 'react'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -739,7 +740,7 @@ export default function BrandCollaborations() {
     }
   }
   // Numele campaniei = produsul (ex. „Imuno Beta Glucan”); titlul generat automat e identic la toate campaniile barter
-  const campName = (camp: any) => (camp?.offer_name || '').trim() || (camp?.title || '').replace(/^\[Barter\]\s*/i, '') || 'Campanie'
+  const campName = (camp: any) => campaignName(camp)
   const campTitle = (c: any) => campName(c.campaign)
   const isBarterCampaign = (cs: any[]) => cs.some(c => c.campaign?.campaign_type === 'BARTER' || /^\[Barter\]/i.test(c.campaign?.title || ''))
 
@@ -876,7 +877,7 @@ export default function BrandCollaborations() {
               <span className="cl-pulse" />
               <span className="bu-sm" style={{ fontWeight: 600 }}>Așteptăm ca influencerul să trimită dovada postului…</span>
             </div>
-            <ContractButton collabId={c.id} campaignTitle={c.campaign?.title || c.campaigns?.title} />
+            <ContractButton collabId={c.id} campaignTitle={campaignName(c.campaign || c.campaigns)} />
           </div>
         )}
 
@@ -1364,7 +1365,7 @@ export default function BrandCollaborations() {
             ) : activeCollabs.slice(0, 5).map(c => (
               <div key={c.id} className="cl-col" style={{ gap: 6 }}>
                 <span className="bu-sm" style={{ fontWeight: 600 }}>{c.influencer?.name || '—'}</span>
-                <ContractButton collabId={c.id} campaignTitle={c.campaign?.title || c.campaigns?.title} />
+                <ContractButton collabId={c.id} campaignTitle={campaignName(c.campaign || c.campaigns)} />
               </div>
             ))}
             {activeCollabs.length > 5 && <span className="bu-xs bu-muted">+ încă {activeCollabs.length - 5} în lista de colaborări</span>}

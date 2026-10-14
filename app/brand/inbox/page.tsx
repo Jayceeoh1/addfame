@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 
 import DraftMessage, { DRAFT_MSG } from '@/components/shared/DraftMessage'
 import { useEffect, useState, useCallback, useRef, Suspense, Fragment } from 'react'
@@ -39,7 +40,8 @@ function InboxContent() {
       if (!brand) return
       setBrandId(brand.id)
 
-      const { data: camps } = await sb.from('campaigns').select('id, title').eq('brand_id', brand.id)
+      const { data: rawCamps } = await sb.from('campaigns').select('id, title, offer_name, product_name').eq('brand_id', brand.id)
+      const camps = (rawCamps || []).map((c: any) => ({ ...c, raw_title: c.title, title: campaignName(c, c.title) }))
       const campIds = (camps || []).map((c: any) => c.id)
       const campMap = Object.fromEntries((camps || []).map((c: any) => [c.id, c]))
       if (!campIds.length) { setCollabs([]); setLoading(false); return }
@@ -138,13 +140,13 @@ function InboxContent() {
       // Notifica influencerul
       try {
         const { data: collab } = await sb.from('collaborations')
-          .select('influencer_id, influencers(user_id, name), campaigns(title)')
+          .select('influencer_id, influencers(user_id, name), campaigns(title, offer_name, product_name)')
           .eq('id', selected.id).single() as { data: any }
         if (collab?.influencers?.user_id) {
           await sb.from('notifications').insert({
             user_id: collab.influencers.user_id,
             title: '💬 Mesaj nou',
-            body: `${selected.brandName || 'Brandul'} ți-a trimis un mesaj în colaborarea "${collab.campaigns?.title || selected.campaign?.title}"`,
+            body: `${selected.brandName || 'Brandul'} ți-a trimis un mesaj în colaborarea "${collab.campaigns ? campaignName(collab.campaigns) : selected.campaign?.title}"`,
             link: '/influencer/inbox',
             read: false,
           })
@@ -158,7 +160,7 @@ function InboxContent() {
                 influencer_email: inf.email,
                 influencer_name: inf.name,
                 brand_name: selected.brandName || 'Brandul',
-                campaign_title: collab.campaigns?.title || selected.campaign?.title || '',
+                campaign_title: (collab.campaigns ? campaignName(collab.campaigns) : selected.campaign?.title) || '',
                 message_preview: content.slice(0, 150),
               }),
             }).catch(() => {})

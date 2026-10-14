@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { campaignName } from '@/lib/campaign-name'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getPlatformSettings } from '@/app/actions/admin'
@@ -40,8 +41,8 @@ export default function BrandAnalyticsPage() {
 
         const [{ data: campaigns }, { data: collabs }] = await Promise.all([
           period > 0
-            ? sb.from('campaigns').select('id, title, status, budget, budget_per_influencer, offer_value, campaign_type, created_at, deadline').eq('brand_id', brand.id).gte('created_at', fromDate)
-            : sb.from('campaigns').select('id, title, status, budget, budget_per_influencer, offer_value, campaign_type, created_at, deadline').eq('brand_id', brand.id),
+            ? sb.from('campaigns').select('id, title, offer_name, product_name, status, budget, budget_per_influencer, offer_value, campaign_type, created_at, deadline').eq('brand_id', brand.id).gte('created_at', fromDate)
+            : sb.from('campaigns').select('id, title, offer_name, product_name, status, budget, budget_per_influencer, offer_value, campaign_type, created_at, deadline').eq('brand_id', brand.id),
           period > 0
             ? sb.from('collaborations').select('id, status, influencer_id, payment_amount, created_at, rejection_reason').eq('brand_id', brand.id).gte('created_at', fromDate)
             : sb.from('collaborations').select('id, status, influencer_id, payment_amount, created_at, rejection_reason').eq('brand_id', brand.id),
@@ -235,7 +236,7 @@ export default function BrandAnalyticsPage() {
             {campaigns.length === 0 && <p className="bu-muted bu-sm" style={{ margin: '8px 0 0' }}>Nicio campanie în perioada aleasă</p>}
             {campaigns.slice(0, 4).map((camp: any) => (
               <div key={camp.id} className="an-row">
-                <span style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{camp.title}</span>
+                <span style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{campaignName(camp, camp.title)}</span>
                 <span className="bu-row" style={{ gap: 8, flex: 'none' }}>
                   <span className="bu-muted bu-xs">{collabs.filter((c: any) => c.status === 'ACTIVE' || c.status === 'COMPLETED').length} inf.</span>
                   <span className="bu-chip" style={{ background: '#dcf5ec', color: '#14532d' }}>

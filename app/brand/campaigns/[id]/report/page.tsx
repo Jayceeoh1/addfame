@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { campaignName } from '@/lib/campaign-name'
 // Raportul campaniei pentru brand: aplicanți, livrări, performanța postărilor (vizualizări, interacțiuni),
 // recenzii. Export CSV (aplicanți / postări) și PDF (tipărire din browser → „Salvează ca PDF”).
 import { parseCount } from '@/lib/tiers'
@@ -183,7 +184,7 @@ export default function CampaignReportPage() {
               <div className="w-8 h-8 brand-grad rounded-xl flex items-center justify-center"><BarChart2 className="w-4 h-4 text-white" /></div>
               <span className="text-xs font-black text-violet-600 uppercase tracking-wider">Raport campanie</span>
             </div>
-            <h1 className="text-2xl font-black text-gray-900" style={{ textWrap: 'balance' }}>{campaign.title}</h1>
+            <h1 className="text-2xl font-black text-gray-900" style={{ textWrap: 'balance' }}>{campaignName(campaign, campaign.title)}</h1>
             <p className="text-sm text-gray-400 mt-0.5">
               Creată {fmtDate(campaign.created_at)}
               {campaign.deadline && ` · Termen ${fmtDate(campaign.deadline)}`}

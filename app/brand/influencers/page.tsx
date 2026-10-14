@@ -1,4 +1,5 @@
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -360,7 +361,7 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
                 <div className="bu-col" style={{ gap: 10 }}>
                   <select value={selectedCampaign} onChange={e => setSelectedCampaign(e.target.value)} className="if-sel">
                     <option value="">Selectează o campanie…</option>
-                    {activeCampaigns.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                    {activeCampaigns.map(c => <option key={c.id} value={c.id}>{campaignName(c, c.title)}</option>)}
                   </select>
                   <div className="bu-row" style={{ gap: 8 }}>
                     <button className="bu-btn p big" style={{ flex: 1 }} onClick={handleInvite} disabled={!selectedCampaign || inviteState.loading}>
@@ -599,7 +600,7 @@ export default function BrandInfluencersPage() {
 
       if (accessState.granted) {
         const infRes = { data: (listJson.influencers ?? []) as Influencer[] }
-        const campRes = await supabase.from('campaigns').select('id, title, status, campaign_type, platforms, min_followers_target, offer_description, description, niches').eq('brand_id', brand.id)
+        const campRes = await supabase.from('campaigns').select('id, title, offer_name, product_name, status, campaign_type, platforms, min_followers_target, offer_description, description, niches').eq('brand_id', brand.id)
 
         setInfluencers((infRes.data as Influencer[]) ?? [])
         setCampaigns((campRes.data as Campaign[]) ?? [])
@@ -849,7 +850,7 @@ export default function BrandInfluencersPage() {
                 >
                   <option value="">Selectează campania...</option>
                   {campaigns.filter(c => c.status === 'ACTIVE' || c.status === 'DRAFT').map(c => (
-                    <option key={c.id} value={c.id}>{c.title}</option>
+                    <option key={c.id} value={c.id}>{campaignName(c, c.title)}</option>
                   ))}
                 </select>
                 <button onClick={getAIRecommendations} disabled={aiLoading || !selectedCampaignForAI} className="bu-btn p big">

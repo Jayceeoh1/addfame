@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import { campaignName } from '@/lib/campaign-name'
 import React from 'react'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -40,8 +41,8 @@ export default function CampaignCalendarPage() {
     if (!user) { router.replace('/auth/login'); return }
     const { data: brand } = await sb.from('brands').select('id').eq('user_id', user.id).single()
     if (!brand) return
-    const { data } = await sb.from('campaigns').select('id, title, status, deadline, created_at, budget').eq('brand_id', brand.id).order('created_at', { ascending: false })
-    setCampaigns(data ?? [])
+    const { data: rawCamps } = await sb.from('campaigns').select('id, title, offer_name, product_name, status, deadline, created_at, budget').eq('brand_id', brand.id).order('created_at', { ascending: false })
+    setCampaigns((rawCamps ?? []).map((c: any) => ({ ...c, raw_title: c.title, title: campaignName(c, c.title) })))
     setLoading(false)
   }, [router])
 

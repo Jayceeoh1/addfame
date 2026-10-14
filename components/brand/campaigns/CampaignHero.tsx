@@ -1,5 +1,6 @@
 // @ts-nocheck
 'use client'
+import { campaignName } from '@/lib/campaign-name'
 import { useState } from 'react'
 import { Calendar, DollarSign, Edit2, Eye, MoreHorizontal, Pause, Play, RefreshCw, Save, TrendingUp, Users, X, EyeOff, Archive, Copy } from 'lucide-react'
 import { STATUS_CFG, fmt, fmtDate, daysLeft } from './types'
@@ -30,7 +31,7 @@ export function CampaignHero({ campaign, collabs, counts, editing, editForm, set
           </div>
           {editing
             ? <input className="field text-xl font-black mb-1 w-full" value={editForm.title || ''} onChange={e => setEditForm((p: any) => ({ ...p, title: e.target.value }))} placeholder="Titlu campanie" />
-            : <h1 className="text-xl font-black text-gray-900 mb-0.5 leading-snug">{campaign.title}</h1>}
+            : <h1 className="text-xl font-black text-gray-900 mb-0.5 leading-snug">{campaignName(campaign, campaign.title)}</h1>}
           <p className="text-gray-500 font-medium text-sm">{campaign.brand_name}</p>
         </div>
 
