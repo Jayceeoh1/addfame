@@ -173,6 +173,8 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
   if (loading) return null
   // brandul nu are nimic de văzut dacă nu există draft
   if (role === 'brand' && !draft) return null
+  // colaborare finalizată / inactivă, fără niciun draft: nu există nimic de încărcat sau de văzut
+  if (role === 'influencer' && !draft && !canSendNew) return null
 
   const summary = draft ? `Draft video v${draft.version}` : 'Draft video'
 
