@@ -277,7 +277,7 @@ function AnnounceInlineButton({ campaignId, campaignTitle, availableCities, avai
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Eroare la trimitere')
       setSent(data.notified ?? data.sent ?? 0)
-      setSentInfo(data.emailPaused ? 'email pe pauză' : `${data.emailed ?? 0} emailuri`)
+      setSentInfo(!data.total ? 'niciunul eligibil (deja în campanie sau neaprobați)' : data.emailPaused ? 'email pe pauză' : `${data.emailed ?? 0} emailuri`)
       setOpen(false)
       setExtraMsg('')
       setSelCities([])

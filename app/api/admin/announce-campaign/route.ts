@@ -52,22 +52,31 @@ export async function POST(req: NextRequest) {
 
     const existingIds = (existing || []).map((c: any) => c.influencer_id)
 
-    let query = admin
-      .from('influencers')
-      .select('id, user_id, name, email, platforms, city, niches, email_reminders_enabled')
-      .eq('approval_status', 'approved')
-
-    // PRIORITATE 1: dacă admin a specificat ID-uri exacte (din selecție), folosim doar pe ei
+    // Influencerii aprobați. Selecția exactă se cere în bucăți de 100 de id-uri (altfel URL-ul e prea lung
+    // și Supabase întoarce eroare → „0 notificați”); fără selecție, se citește tot, pagină cu pagină (max. 1000/cerere).
+    const COLS = 'id, user_id, name, email, platforms, city, niches, email_reminders_enabled'
+    const base = () => admin.from('influencers').select(COLS).eq('approval_status', 'approved')
+    const allInfs: any[] = []
     if (Array.isArray(influencer_ids) && influencer_ids.length > 0) {
-      query = query.in('id', influencer_ids)
-    }
-    // PRIORITATE 2: altfel, aplicăm filtrul de orașe dacă există
-    else if (Array.isArray(filter_cities) && filter_cities.length > 0) {
-      query = query.in('city', filter_cities)
+      const ids = [...new Set(influencer_ids.map(String))]
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data, error } = await base().in('id', ids.slice(i, i + 100))
+        if (error) throw new Error('Influenceri: ' + error.message)
+        allInfs.push(...(data || []))
+      }
+    } else {
+      for (let from = 0; from < 50000; from += 1000) {
+        let q = base().order('id').range(from, from + 999)
+        if (Array.isArray(filter_cities) && filter_cities.length > 0) q = q.in('city', filter_cities)
+        const { data, error } = await q
+        if (error) throw new Error('Influenceri: ' + error.message)
+        allInfs.push(...(data || []))
+        if (!data || data.length < 1000) break
+      }
     }
 
-    const { data: allInfs } = await query
-    let influencers = (allInfs || []).filter((i: any) => !existingIds.includes(i.id))
+    const existingSet = new Set(existingIds)
+    let influencers = allInfs.filter((i: any) => !existingSet.has(i.id))
 
     // Filtru nișe — aplicat ÎN JS (pentru că niches e array)
     // Sărim peste asta dacă a specificat influencer_ids exact
@@ -78,7 +87,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!influencers.length) return NextResponse.json({ ok: true, sent: 0, notified: 0, emailed: 0, total: 0 })
+    if (!influencers.length) return NextResponse.json({ ok: true, sent: 0, notified: 0, emailed: 0, total: 0, alreadyIn: existingIds.length })
 
     // ── 1) notificări în platformă (merg mereu) ──
     const titleText = campaignName(camp, camp.title || 'Campanie')
@@ -92,9 +101,15 @@ export async function POST(req: NextRequest) {
       read: false,
     }))
     let notified = 0
+    let notifyError = ''
     for (let i = 0; i < notes.length; i += 200) {
-      const { error } = await admin.from('notifications').insert(notes.slice(i, i + 200))
-      if (!error) notified += notes.slice(i, i + 200).length
+      const part = notes.slice(i, i + 200)
+      const { error } = await admin.from('notifications').insert(part)
+      if (error) { notifyError = error.message; console.error('[announce-campaign] notifications', error.message) }
+      else notified += part.length
+    }
+    if (!notified && notes.length) {
+      return NextResponse.json({ error: `Notificările nu s-au salvat: ${notifyError || 'eroare necunoscută'}` }, { status: 500 })
     }
 
     // ── 2) emailuri (doar dacă e voie) ──
