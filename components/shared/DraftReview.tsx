@@ -80,13 +80,16 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
   async function upload() {
     if (!file) return
     setErr('')
-    if (!OK_MIME.includes(file.type)) return setErr('Format neacceptat. Folosește MP4, MOV sau WebM.')
+    // iPhone dă uneori tipul gol pentru clipurile din Galerie → îl deducem din extensie
+    const ext = (file.name.split('.').pop() || '').toLowerCase()
+    const mime = file.type || ({ mov: 'video/quicktime', mp4: 'video/mp4', m4v: 'video/x-m4v', webm: 'video/webm' } as Record<string, string>)[ext] || ''
+    if (!OK_MIME.includes(mime)) return setErr('Format neacceptat. Folosește MP4, MOV sau WebM.')
     if (file.size > MAX) return setErr('Fișierul depășește 200 MB.')
     setBusy(true); setProg(0)
     try {
       const r = await fetch('/api/deliverables/upload-url', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collabId, fileName: file.name, size: file.size, mime: file.type, caption, note }),
+        body: JSON.stringify({ collabId, fileName: file.name, size: file.size, mime, caption, note }),
       })
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || 'Nu am putut începe încărcarea.')
@@ -109,7 +112,7 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
           let sm = ''
           try { const b = JSON.parse(x.responseText || '{}'); sm = String(b.message || b.error || '') } catch { sm = String(x.responseText || '').slice(0, 200) }
           const mb = (file.size / 1048576).toFixed(1)
-          reportClientError(`Încărcare draft eșuată: HTTP ${x.status} · ${sm || 'fără mesaj'} · ${mb} MB · ${file.type || 'tip necunoscut'}`)
+          reportClientError(`Încărcare draft eșuată: HTTP ${x.status} · ${sm || 'fără mesaj'} · ${mb} MB · ${mime || 'tip necunoscut'}`)
           const tooBig = x.status === 413 || /size|large|exceed/i.test(sm)
           rej(new Error(tooBig
             ? `Videoclipul (${mb} MB) e prea mare pentru server. Exportă-l la o calitate mai mică (ex. 1080p) sau trimite o variantă mai scurtă și încearcă din nou.`
@@ -118,7 +121,7 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
               : `Încărcarea a eșuat (cod ${x.status}). Încearcă din nou; dacă se repetă, scrie-ne la support@addfame.ro.`))
         }
         x.onerror = () => rej(new Error('Conexiunea s-a întrerupt în timpul încărcării. Verifică internetul (ideal Wi-Fi) și încearcă din nou.'))
-        const fd = new FormData(); fd.append('cacheControl', '3600'); fd.append('', file)
+        const fd = new FormData(); fd.append('cacheControl', '3600'); fd.append('', file.type ? file : file.slice(0, file.size, mime), file.name)
         x.send(fd)
       })
       const c = await fetch('/api/deliverables/complete', {
@@ -357,10 +360,25 @@ export default function DraftReview({ collabId, role, canUpload = true, onChange
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: draft ? '1px solid #e5e3f3' : 0, paddingTop: draft ? 12 : 0 }}>
               <div style={label}>{offerExtra ? 'Trimite un clip suplimentar' : draft ? 'Trimite o versiune nouă' : 'Trimite draftul video'}</div>
               {offerExtra && <div style={{ fontSize: 12, color: '#6a6690', lineHeight: 1.45 }}>Brandul îl vede, îl poate comenta și aproba. Postezi abia după aprobare.</div>}
-              <input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" disabled={busy}
-                onChange={e => { setErr(''); setFile(e.target.files?.[0] ?? null) }} aria-label="Alege videoclipul"
-                style={{ fontSize: 13, fontFamily: 'inherit' }} />
-              {file && <div style={{ fontSize: 12, color: '#6a6690' }}>{file.name} · {fmtMB(file.size)}</div>}
+              {/* Butonul nativ „Alegeți fișierul” e aproape invizibil pe iPhone → un buton mare, clar */}
+              <label style={{
+                position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '16px 14px', borderRadius: 16, cursor: busy ? 'default' : 'pointer',
+                border: `2px dashed ${file ? '#16a06c' : '#b9a6ff'}`, background: file ? '#ecfbf4' : '#f4f0ff', opacity: busy ? 0.6 : 1,
+              }}>
+                <input type="file" accept="video/mp4,video/quicktime,video/webm,video/*,.mp4,.mov,.webm" disabled={busy}
+                  onChange={e => { setErr(''); setFile(e.target.files?.[0] ?? null) }} aria-label="Alege videoclipul"
+                  style={{ position: 'absolute', width: 1, height: 1, opacity: 0, overflow: 'hidden' }} />
+                <span aria-hidden="true" style={{
+                  width: 46, height: 46, borderRadius: 14, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, background: file ? '#16a06c' : accent, color: '#fff',
+                }}>{file ? '✓' : '🎬'}</span>
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                  <b style={{ fontSize: 15, color: '#14123a' }}>{file ? 'Video ales' : 'Alege videoclipul din telefon'}</b>
+                  <span style={{ fontSize: 12, color: '#6a6690', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {file ? `${file.name} · ${fmtMB(file.size)} · apasă ca să schimbi` : 'Apasă aici · MP4 sau MOV, max. 200 MB'}
+                  </span>
+                </span>
+              </label>
               <textarea value={caption} onChange={e => setCaption(e.target.value)} maxLength={2200} placeholder="Descrierea postării (opțional)"
                 style={{ width: '100%', height: 62, border: '1px solid #e5e3f3', borderRadius: 12, padding: '10px 12px', fontFamily: 'inherit', fontSize: 13, resize: 'none', background: '#fbfbff', boxSizing: 'border-box' }} />
               <input value={note} onChange={e => setNote(e.target.value)} maxLength={1000} placeholder="Notă pentru brand (opțional)"
