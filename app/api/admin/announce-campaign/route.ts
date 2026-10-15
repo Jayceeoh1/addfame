@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { bulkEmailPaused, BULK_PAUSED_MSG } from '@/lib/email-suppression'
+import { bulkEmailPaused, isSuppressed, bulkSentToday, bulkDailyLimit, unsubscribeHeaders, unsubscribeUrl } from '@/lib/email-suppression'
+import { escapeHtml } from '@/lib/api-auth'
+import { campaignName } from '@/lib/campaign-name'
 import { verifyAdminSession } from '@/lib/supabase/verify-admin'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -7,14 +9,22 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = process.env.FROM_EMAIL || 'AddFame <noreply@addfame.ro>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'
 
-async function sendEmail(to: string, subject: string, html: string) {
-  if (!RESEND_API_KEY) return
-  await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
-  })
+async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+  if (!RESEND_API_KEY) return false
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html, headers: unsubscribeHeaders(to) }),
+    })
+    return r.ok
+  } catch { return false }
 }
+
+// Anunțul unei campanii:
+//  - notificarea în platformă (clopoțel + push) pleacă MEREU, la toți influencerii aprobați selectați;
+//  - emailul pleacă doar dacă emailurile în masă nu sunt pe pauză (BULK_EMAIL_PAUSED=false),
+//    nu e dezabonat, are memento-urile pe email pornite și nu s-a atins limita zilnică.
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,7 +34,6 @@ export async function POST(req: NextRequest) {
     const { campaign_id, extra_message, filter_cities, filter_niches, influencer_ids } = await req.json()
     if (!campaign_id) return NextResponse.json({ error: 'campaign_id required' }, { status: 400 })
 
-    if (bulkEmailPaused()) return NextResponse.json({ error: BULK_PAUSED_MSG }, { status: 423 })
     const admin = createAdminClient()
 
     const { data: camp } = await admin
@@ -45,9 +54,8 @@ export async function POST(req: NextRequest) {
 
     let query = admin
       .from('influencers')
-      .select('id, user_id, name, email, platforms, city, niches')
+      .select('id, user_id, name, email, platforms, city, niches, email_reminders_enabled')
       .eq('approval_status', 'approved')
-      .or('email_reminders_enabled.is.null,email_reminders_enabled.eq.true')
 
     // PRIORITATE 1: dacă admin a specificat ID-uri exacte (din selecție), folosim doar pe ei
     if (Array.isArray(influencer_ids) && influencer_ids.length > 0) {
@@ -70,7 +78,31 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!influencers.length) return NextResponse.json({ ok: true, sent: 0 })
+    if (!influencers.length) return NextResponse.json({ ok: true, sent: 0, notified: 0, emailed: 0, total: 0 })
+
+    // ── 1) notificări în platformă (merg mereu) ──
+    const titleText = campaignName(camp, camp.title || 'Campanie')
+    const isBarterN = camp.campaign_type === 'barter'
+    const rewardN = isBarterN ? camp.offer_name || 'produs gratuit' : `${camp.budget_per_influencer} RON`
+    const notes = influencers.filter((i: any) => i.user_id).map((i: any) => ({
+      user_id: i.user_id,
+      title: '🚀 Campanie nouă disponibilă!',
+      body: `„${titleText}” de la ${camp.brand_name} — ${rewardN}. Aplică acum!`,
+      link: `/influencer/campaigns/${camp.id}`,
+      read: false,
+    }))
+    let notified = 0
+    for (let i = 0; i < notes.length; i += 200) {
+      const { error } = await admin.from('notifications').insert(notes.slice(i, i + 200))
+      if (!error) notified += notes.slice(i, i + 200).length
+    }
+
+    // ── 2) emailuri (doar dacă e voie) ──
+    const emailPaused = bulkEmailPaused()
+    if (emailPaused) {
+      return NextResponse.json({ ok: true, sent: notified, notified, emailed: 0, total: influencers.length, emailPaused: true })
+    }
+    let budget = Math.max(0, bulkDailyLimit() - await bulkSentToday(admin))
 
     const isBarter = camp.campaign_type === 'barter'
     const rewardText = isBarter ? camp.offer_name || 'produs gratuit' : `${camp.budget_per_influencer} RON`
@@ -81,10 +113,12 @@ export async function POST(req: NextRequest) {
     const hashtags = camp.required_hashtags?.length ? '#' + camp.required_hashtags.join(' #') : null
     const minDays = camp.min_days_online || 30
 
-    let sent = 0
+    let emailed = 0, skipped = 0
 
     for (const inf of influencers) {
-      if (!inf.email) continue
+      if (!inf.email || inf.email_reminders_enabled === false) { skipped++; continue }
+      if (budget <= 0) { skipped++; continue }
+      if (await isSuppressed(admin, inf.email)) { skipped++; continue }
 
       const html = `<!DOCTYPE html>
 <html lang="ro">
@@ -143,14 +177,14 @@ export async function POST(req: NextRequest) {
 
     <div class="camp-card">
       <p class="camp-badge">${isBarter ? '🎁 Campanie barter' : '💰 Campanie plătită'}</p>
-      <p class="camp-title">${camp.title}</p>
-      <p class="camp-brand">de la <strong>${camp.brand_name}</strong></p>
+      <p class="camp-title">${escapeHtml(titleText)}</p>
+      <p class="camp-brand">de la <strong>${escapeHtml(camp.brand_name)}</strong></p>
 
       ${camp.offer_image_url ? `<img src="${camp.offer_image_url}" class="camp-img" alt="Produs campanie" />` : ''}
 
       <div class="stats">
         <div class="stat">
-          <p class="stat-val">${rewardText}</p>
+          <p class="stat-val">${escapeHtml(rewardText)}</p>
           <p class="stat-lbl">${isBarter ? 'produs gratuit' : 'câștiguri'}</p>
         </div>
         ${camp.max_influencers ? `<div class="stat">
@@ -171,18 +205,18 @@ export async function POST(req: NextRequest) {
     ${(deliverables || hashtags || camp.offer_description) ? `
     <div class="brief">
       <p class="brief-title">📋 Ce trebuie să faci</p>
-      ${deliverables ? `<div class="brief-row"><div class="brief-dot"></div><p class="brief-text"><strong>${deliverables}</strong></p></div>` : ''}
-      ${camp.offer_description ? `<div class="brief-row"><div class="brief-dot"></div><p class="brief-text">${camp.offer_description}</p></div>` : ''}
+      ${deliverables ? `<div class="brief-row"><div class="brief-dot"></div><p class="brief-text"><strong>${escapeHtml(deliverables)}</strong></p></div>` : ''}
+      ${camp.offer_description ? `<div class="brief-row"><div class="brief-dot"></div><p class="brief-text">${escapeHtml(camp.offer_description)}</p></div>` : ''}
       ${hashtags ? `<div class="brief-row"><div class="brief-dot"></div><p class="brief-text">Hashtag-uri: <strong style="color:#7c3aed">${hashtags}</strong></p></div>` : ''}
-      ${camp.required_caption ? `<div class="brief-row"><div class="brief-dot"></div><p class="brief-text">Caption: <em>"${camp.required_caption}"</em></p></div>` : ''}
+      ${camp.required_caption ? `<div class="brief-row"><div class="brief-dot"></div><p class="brief-text">Caption: <em>"${escapeHtml(camp.required_caption)}"</em></p></div>` : ''}
     </div>` : ''}
 
     ${extra_message ? `<div class="extra">
-      <p class="extra-text">${extra_message}</p>
+      <p class="extra-text">${escapeHtml(extra_message)}</p>
     </div>` : ''}
 
     <p class="greeting">
-      Bună, <strong>${inf.name}</strong>! 👋<br><br>
+      Bună, <strong>${escapeHtml(inf.name)}</strong>! 👋<br><br>
       O campanie nouă se potrivește profilului tău. <strong>Locurile se ocupă rapid</strong> — aplică acum înainte să se termine!
     </p>
 
@@ -193,30 +227,22 @@ export async function POST(req: NextRequest) {
     </div>
   </div>
   <div class="footer">
-    <p class="footer-txt">© 2026 AddFame · addfame.ro · <a href="${APP_URL}/unsubscribe" class="footer-link">Dezabonează-te</a></p>
+    <p class="footer-txt">© 2026 AddFame · addfame.ro · <a href="${unsubscribeUrl(inf.email)}" class="footer-link">Dezabonează-te</a></p>
   </div>
 </div>
 </div>
 </body>
 </html>`
 
-      await sendEmail(inf.email, `🚀 Campanie nouă: "${camp.title}" de la ${camp.brand_name}`, html)
-
-      if (inf.user_id) {
-        await admin.from('notifications').insert({
-          user_id: inf.user_id,
-          title: '🚀 Campanie nouă disponibilă!',
-          body: `"${camp.title}" de la ${camp.brand_name} — ${rewardText}. Aplică acum!`,
-          link: `/influencer/campaigns/${camp.id}`,
-          read: false,
-        })
+      const subject = `🚀 Campanie nouă: „${titleText}” de la ${camp.brand_name}`
+      if (await sendEmail(inf.email, subject, html)) {
+        emailed++; budget--
+        await admin.from('email_tracking').insert({ id: crypto.randomUUID(), email: inf.email, name: inf.name, subject, sent_at: new Date().toISOString(), opened: false, opened_at: null }).then(() => {}, () => {})
       }
-
-      sent++
-      if (sent % 50 === 0) await new Promise(r => setTimeout(r, 1000))
+      if (emailed && emailed % 50 === 0) await new Promise(r => setTimeout(r, 1000))
     }
 
-    return NextResponse.json({ ok: true, sent, total: influencers.length })
+    return NextResponse.json({ ok: true, sent: notified, notified, emailed, skipped, total: influencers.length, emailPaused: false })
   } catch (e: any) {
     console.error('[admin/announce-campaign]', e)
     return NextResponse.json({ error: e.message }, { status: 500 })

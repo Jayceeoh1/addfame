@@ -250,6 +250,7 @@ function fmtNum(n: number) {
 function AnnounceInlineButton({ campaignId, campaignTitle, availableCities, availableNiches, selectedIds }: { campaignId: string; campaignTitle: string; availableCities: string[]; availableNiches: string[]; selectedIds: string[] }) {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState<number | null>(null)
+  const [sentInfo, setSentInfo] = useState('')
   const [extraMsg, setExtraMsg] = useState('')
   const [open, setOpen] = useState(false)
   const [selCities, setSelCities] = useState<string[]>([])
@@ -274,12 +275,14 @@ function AnnounceInlineButton({ campaignId, campaignTitle, availableCities, avai
         }),
       })
       const data = await res.json()
-      setSent(data.sent ?? 0)
+      if (!res.ok) throw new Error(data.error || 'Eroare la trimitere')
+      setSent(data.notified ?? data.sent ?? 0)
+      setSentInfo(data.emailPaused ? 'email pe pauză' : `${data.emailed ?? 0} emailuri`)
       setOpen(false)
       setExtraMsg('')
       setSelCities([])
       setSelNiches([])
-    } catch {}
+    } catch (e: any) { alert(e?.message || 'Eroare') }
     finally { setSending(false) }
   }
 
@@ -287,7 +290,7 @@ function AnnounceInlineButton({ campaignId, campaignTitle, availableCities, avai
   const toggleNiche = (n: string) => setSelNiches(p => p.includes(n) ? p.filter(x => x !== n) : [...p, n])
 
   if (sent !== null) return (
-    <span className="text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-xl">✅ {sent} notificați</span>
+    <span className="text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-xl">✅ {sent} notificați{sentInfo ? ` · ${sentInfo}` : ''}</span>
   )
 
   if (open) return (
@@ -395,7 +398,7 @@ function AnnounceInlineButton({ campaignId, campaignTitle, availableCities, avai
 
 function AnnouncePanel({ campaign }: { campaign: any }) {
   const [sending, setSending] = useState(false)
-  const [result, setResult] = useState<{ sent: number } | null>(null)
+  const [result, setResult] = useState<{ sent: number; emailed?: number; emailPaused?: boolean } | null>(null)
   const [extraMsg, setExtraMsg] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -410,7 +413,7 @@ function AnnouncePanel({ campaign }: { campaign: any }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Eroare')
-      setResult({ sent: data.sent })
+      setResult({ sent: data.notified ?? data.sent, emailed: data.emailed, emailPaused: data.emailPaused })
       setShowForm(false)
       setExtraMsg('')
     } catch (e: any) { setError(e.message) }
@@ -422,11 +425,11 @@ function AnnouncePanel({ campaign }: { campaign: any }) {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-black text-blue-700 uppercase tracking-wider">📢 Anunță campania</p>
-          <p className="text-xs text-blue-500 mt-0.5">Trimite email tuturor influencerilor eligibili că această campanie e activă</p>
+          <p className="text-xs text-blue-500 mt-0.5">Notifică în platformă (și pe email, dacă e pornit) influencerii eligibili că această campanie e activă</p>
         </div>
         {result && (
           <div className="text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-2.5 py-1 rounded-xl">
-            ✅ {result.sent} emailuri trimise
+            ✅ {result.sent} notificați în platformă · {result.emailPaused ? 'emailurile sunt pe pauză' : `${result.emailed ?? 0} emailuri`}
           </div>
         )}
       </div>
