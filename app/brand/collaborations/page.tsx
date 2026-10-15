@@ -406,6 +406,9 @@ export default function BrandCollaborations() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'grouped'>('grouped')
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set())
+  // vizualizarea aleasă (pe campanii / listă) rămâne la următoarea deschidere
+  useEffect(() => { try { const v = localStorage.getItem('brand-collab-view'); if (v === 'list' || v === 'grouped') setViewMode(v) } catch { /* ignorăm */ } }, [])
+  useEffect(() => { try { localStorage.setItem('brand-collab-view', viewMode) } catch { /* ignorăm */ } }, [viewMode])
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
   const [brandBalance, setBrandBalance] = useState<{ available: number; reserved: number } | null>(null)
 
@@ -461,7 +464,8 @@ export default function BrandCollaborations() {
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get('tab')
     const map: Record<string, Tab> = { review: 'Pending Review', applied: 'Applied', active: 'Active', completed: 'Completed', invited: 'Invited' }
-    if (t && map[t]) { setTab(map[t]); setViewMode('list') }
+    // filtrul se aplică, dar vizualizarea pe campanii rămâne (brandul vede din ce campanie e fiecare)
+    if (t && map[t]) setTab(map[t])
   }, [])
 
   async function doAction(collabId: string, status: 'ACTIVE' | 'REJECTED') {
@@ -1248,7 +1252,7 @@ export default function BrandCollaborations() {
             </b>
             <span className="bu-xs" style={{ color: '#854d0e' }}>Creatorii nu postează până nu aprobi sau ceri modificări. Răspunde de preferat în 48 de ore.</span>
           </div>
-          <button className="bu-btn p" onClick={() => { setTab('Pending Review'); setViewMode('list') }}>Vezi drafturile</button>
+          <button className="bu-btn p" onClick={() => setTab('Pending Review')}>Vezi drafturile</button>
         </div>
       )}
 
