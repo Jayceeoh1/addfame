@@ -153,3 +153,11 @@ export function cleanCount(v: unknown): number | null {
   const n = Math.round(Number(v))
   return Number.isFinite(n) && n >= 0 && n <= 1_000_000 ? n : null
 }
+
+/** Unde duce „Rezervă-ți locul”: linkul pus de admin sau, implicit, formularul AddFame al evenimentului. */
+export function signupHref(e: Pick<SiteEvent, 'slug' | 'signup_url'>): { href: string; external: boolean } {
+  // linkul spre formularul vechi, generic („Eveniment toamnă”) e înlocuit cu formularul evenimentului
+  const raw = (e.signup_url || '').trim()
+  const ext = /(^|addfame\.ro)\/eveniment-toamna\/?$/i.test(raw) ? '' : raw
+  return ext ? { href: ext, external: !ext.startsWith('/') && !/^https?:\/\/(www\.)?addfame\.ro\//i.test(ext) } : { href: `/evenimente/${e.slug}/inscriere`, external: false }
+}

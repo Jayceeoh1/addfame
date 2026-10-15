@@ -3,7 +3,7 @@ import Link from 'next/link'
 import SitePage from '@/components/site/SiteShell'
 import { Mosaic, AlbumCard, Story, EV_CSS, type GalleryPhoto } from '@/components/events/EventsUI'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { coverOf, formatEventDate, photoUrl, splitEvents, type SiteEvent, type SiteEventPhoto } from '@/lib/events'
+import { coverOf, formatEventDate, photoUrl, signupHref, splitEvents, type SiteEvent, type SiteEventPhoto } from '@/lib/events'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,8 +56,8 @@ export default async function EvenimentePage({ searchParams }: { searchParams: P
           <h1 className="ev-h1">Creatori și branduri, <span className="af-grad-text">în aceeași încăpere.</span></h1>
           <p className="af-lead">Organizăm evenimente în care creatorii din platformă se întâlnesc cu brandurile cu care lucrează. Aici găsești următorul eveniment și pozele de la cele de până acum.</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-            {next?.signup_url
-              ? <a href={next.signup_url} target="_blank" rel="noopener noreferrer" className="af-btn af-btn-ink">Rezervă-ți locul</a>
+            {next
+              ? <a href={signupHref(next).href} {...(signupHref(next).external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="af-btn af-btn-ink">Rezervă-ți locul</a>
               : <Link href="/auth/register?type=influencer" className="af-btn af-btn-ink">Creează cont gratuit</Link>}
             {galleryCount > 0 && <a href="#galerie" className="af-btn af-btn-ghost">Vezi pozele</a>}
           </div>
@@ -82,7 +82,7 @@ export default async function EvenimentePage({ searchParams }: { searchParams: P
                 {(next.location || next.city) && <><dt>Locul</dt><dd>{[next.location, next.city].filter(Boolean).join(', ')}</dd></>}
               </dl>
               {next.description && <p>{next.description}</p>}
-              {next.signup_url && <a href={next.signup_url} target="_blank" rel="noopener noreferrer" className="af-btn af-btn-violet">Rezervă-ți locul</a>}
+              <a href={signupHref(next).href} {...(signupHref(next).external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="af-btn af-btn-violet">Rezervă-ți locul</a>
             </>
           ) : (
             <>

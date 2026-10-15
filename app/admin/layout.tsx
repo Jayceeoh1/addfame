@@ -53,7 +53,7 @@ const GROUPS: Group[] = [
   ] },
   { title: 'Evenimente', items: [
     { icon: Images, label: 'Galerie evenimente', href: '/admin/evenimente' },
-    { icon: PartyPopper, label: 'Eveniment toamnă', href: '/admin/event-signups' },
+    { icon: PartyPopper, label: 'Înscrieri evenimente', href: '/admin/event-signups' },
     { icon: Gift, label: 'Puncte', href: '/admin/point-events' },
   ] },
   { title: 'Sistem', items: [

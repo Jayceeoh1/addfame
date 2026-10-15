@@ -425,7 +425,7 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
       try { new URL(u) } catch { setError(`URL invalid: ${u}`); return }
     }
     if (!licenseConsent) { setError('Trebuie să accepți acordul de utilizare a conținutului pentru a trimite dovada'); return }
-    if (!thumbnailUrl) { setError('Screenshot-ul postării este obligatoriu — adaugă o poză din postarea ta'); return }
+    // screenshot-ul e opțional: linkul postării ajunge (unii creatori nu reușesc să încarce poza de pe telefon)
     setSaving(true); setError(null)
     const sb = createClient()
     const now = new Date().toISOString()
@@ -491,7 +491,7 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
       </div>
 
       <div className="ic-f">
-        <label className="iu-label">Screenshot postare <span style={{ color: '#b42318' }}>obligatoriu</span></label>
+        <label className="iu-label">Screenshot postare <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 600 }}>(opțional)</span></label>
         <ThumbnailUpload
           collabId={collab.id}
           currentUrl={thumbnailUrl}
@@ -574,7 +574,7 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
   )
 
   const renderSubmitBtn = (label: string) => (
-    <button onClick={submit} disabled={saving || !licenseConsent || !thumbnailUrl} className="iu-btn p big" style={{ flex: 1 }}>
+    <button onClick={submit} disabled={saving || !licenseConsent} className="iu-btn p big" style={{ flex: 1 }}>
       {saving
         ? <><Loader2 size={16} className="ic-spin" /> Se trimite…</>
         : <><Send size={15} /> {label}</>}

@@ -21,12 +21,17 @@ type Signup = {
   tiktok: string | null
   category: string | null
   status: string
+  event_id?: string | null
 }
+type Ev = { id: string; title: string; starts_at: string | null; slug: string }
 
 export default function EventSignupsPage() {
   const [signups, setSignups] = useState<Signup[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [events, setEvents] = useState<Ev[]>([])
+  // '' = toate · 'none' = formularul vechi (fără eveniment) · id = un eveniment anume
+  const [evFilter, setEvFilter] = useState<string>('')
 
   const load = async () => {
     setLoading(true)
@@ -36,12 +41,21 @@ export default function EventSignupsPage() {
       .select('*')
       .order('created_at', { ascending: false })
     setSignups(data || [])
+    const ev = await fetch('/api/admin/evenimente', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
+    const list: Ev[] = (ev?.events || []).map((e: any) => ({ id: e.id, title: e.title, starts_at: e.starts_at, slug: e.slug }))
+    setEvents(list)
+    // deschidere din Galerie evenimente: /admin/event-signups?event=<id>
+    const q = new URLSearchParams(window.location.search).get('event')
+    if (q) setEvFilter(q)
+    else setEvFilter(prev => prev || (list.find(e => (data || []).some((s: any) => s.event_id === e.id))?.id ?? ''))
     setLoading(false)
   }
+  const evTitle = (id?: string | null) => (id ? events.find(e => e.id === id)?.title || 'Eveniment șters' : 'Eveniment toamnă (formular vechi)')
 
   useEffect(() => { load() }, [])
 
-  const filtered = signups.filter(s => {
+  const inEvent = signups.filter(s => !evFilter || (evFilter === 'none' ? !s.event_id : s.event_id === evFilter))
+  const filtered = inEvent.filter(s => {
     const q = search.toLowerCase()
     return (
       s.first_name.toLowerCase().includes(q) ||
@@ -53,8 +67,9 @@ export default function EventSignupsPage() {
   })
 
   const exportCSV = () => {
-    const headers = ['Prenume', 'Nume', 'Email', 'Telefon', 'Instagram', 'TikTok', 'Categorie', 'Data']
+    const headers = ['Eveniment', 'Prenume', 'Nume', 'Email', 'Telefon', 'Instagram', 'TikTok', 'Categorie', 'Data']
     const rows = filtered.map(s => [
+      evTitle(s.event_id),
       s.first_name,
       s.last_name,
       s.email,
@@ -98,9 +113,9 @@ export default function EventSignupsPage() {
             <div className="w-10 h-10 brand-grad rounded-2xl flex items-center justify-center" style={{ boxShadow: '0 4px 14px rgba(249,115,22,0.3)' }}>
               <Calendar className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-black text-gray-900">Înscrieri Eveniment Toamnă</h1>
+            <h1 className="text-2xl font-black text-gray-900">Înscrieri evenimente</h1>
           </div>
-          <p className="text-gray-400 text-sm ml-13">AddFame Fall Event — lista completă a influencerilor înscriși</p>
+          <p className="text-gray-400 text-sm ml-13">Cine s-a înscris, la ce eveniment. Alege evenimentul mai jos.</p>
         </div>
         <div className="flex gap-3">
           <button onClick={load} className="btn" style={{ background: '#f3f4f6', color: '#374151' }}>
@@ -116,15 +131,15 @@ export default function EventSignupsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="stat-card">
           <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total înscriși</p>
-          <p className="text-3xl font-black text-gray-900">{signups.length}</p>
+          <p className="text-3xl font-black text-gray-900">{inEvent.length}</p>
         </div>
         <div className="stat-card">
           <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Cu Instagram</p>
-          <p className="text-3xl font-black text-orange-500">{signups.filter(s => s.instagram).length}</p>
+          <p className="text-3xl font-black text-orange-500">{inEvent.filter(s => s.instagram).length}</p>
         </div>
         <div className="stat-card">
           <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Cu TikTok</p>
-          <p className="text-3xl font-black text-pink-500">{signups.filter(s => s.tiktok).length}</p>
+          <p className="text-3xl font-black text-pink-500">{inEvent.filter(s => s.tiktok).length}</p>
         </div>
         <div className="stat-card">
           <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Azi</p>
@@ -132,6 +147,18 @@ export default function EventSignupsPage() {
             {signups.filter(s => new Date(s.created_at).toDateString() === new Date().toDateString()).length}
           </p>
         </div>
+      </div>
+
+      {/* Eveniment */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {[...events.filter(e => signups.some(s => s.event_id === e.id) || (e.starts_at && new Date(e.starts_at) >= new Date())).map(e => ({ id: e.id, label: e.title, n: signups.filter(s => s.event_id === e.id).length })),
+          ...(signups.some(s => !s.event_id) ? [{ id: 'none', label: 'Eveniment toamnă (formular vechi)', n: signups.filter(s => !s.event_id).length }] : []),
+          { id: '', label: 'Toate', n: signups.length }].map(o => (
+          <button key={o.id || 'all'} onClick={() => setEvFilter(o.id)} className="btn"
+            style={evFilter === o.id ? { background: '#14123a', color: '#fff' } : { background: '#fff', color: '#374151', border: '1.5px solid #e5e7eb' }}>
+            {o.label} <span style={{ opacity: .7 }}>· {o.n}</span>
+          </button>
+        ))}
       </div>
 
       {/* Search */}
@@ -222,6 +249,7 @@ export default function EventSignupsPage() {
 
                   {/* Categorie */}
                   <td className="px-5 py-4">
+                    {!evFilter && <div className="text-xs font-bold text-violet-700 mb-1">{evTitle(s.event_id)}</div>}
                     {s.category ? (
                       <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>
                         <Tag className="w-3 h-3" />{s.category}

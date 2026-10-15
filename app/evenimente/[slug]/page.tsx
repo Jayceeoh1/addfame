@@ -5,7 +5,7 @@ import SitePage from '@/components/site/SiteShell'
 import { Mosaic, Story, EV_CSS } from '@/components/events/EventsUI'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAdminSession } from '@/lib/supabase/verify-admin'
-import { coverOf, formatEventDate, isUpcoming, photoUrl, type SiteEvent, type SiteEventPhoto } from '@/lib/events'
+import { coverOf, formatEventDate, isUpcoming, photoUrl, signupHref, type SiteEvent, type SiteEventPhoto } from '@/lib/events'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,9 +55,9 @@ export default async function EvenimentPage({ params }: { params: Promise<{ slug
           {event.description && <p className="af-lead" style={{ maxWidth: '42em' }}>{event.description}</p>}
         </section>
       )}
-      {upcoming && event.signup_url && (
-        <div className="af-wrap" style={{ paddingBlock: 16 }}><a href={event.signup_url} target="_blank" rel="noopener noreferrer" className="af-btn af-btn-violet">Rezervă-ți locul</a></div>
-      )}
+      {upcoming && (() => { const su = signupHref(event); return (
+        <div className="af-wrap" style={{ paddingBlock: 16 }}><a href={su.href} {...(su.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="af-btn af-btn-violet">Rezervă-ți locul</a></div>
+      ) })()}
       <section id="galerie" className="af-wrap" style={{ paddingBlock: hasStory ? '48px 88px' : '8px 88px' }}>
         {photos.length > 0
           ? <Mosaic photos={photos.map(p => ({ ...p, eventTitle: event.title }))} />

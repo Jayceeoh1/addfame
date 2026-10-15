@@ -7,7 +7,7 @@ import { formatEventDate, isoToLocalInput, localInputToIso, slugify } from '@/li
 
 type Row = {
   id?: string; slug: string; title: string; status: 'draft' | 'published'; starts_at: string; location: string; city: string
-  description: string; signup_url: string; photos?: number
+  description: string; signup_url: string; photos?: number; signups?: number
   summary: string; story: string; creators_count: string | number; brands_count: string | number
 }
 const EMPTY: Row = { slug: '', title: '', status: 'draft', starts_at: '', location: '', city: 'București', description: '', signup_url: '',
@@ -85,7 +85,7 @@ export default function AdminEventsPage() {
             {F('city', 'Orașul')}
             {F('creators_count', 'Creatori prezenți', { type: 'number', min: 0 }, 'Apare în „Pe scurt”. Gol = nu apare.')}
             {F('brands_count', 'Branduri prezente', { type: 'number', min: 0 })}
-            {F('signup_url', 'Link rezervare locuri', { placeholder: 'https://…' }, 'Gol = butonul „Rezervă-ți locul” nu apare.')}
+            {F('signup_url', 'Link rezervare locuri', { placeholder: 'https://…' }, 'Gol = formularul AddFame (înscrierile apar în Admin → Înscrieri evenimente). Pune un link doar dacă folosești alt formular.')}
             <label className="flex flex-col gap-1.5 text-xs font-bold text-gray-600">
               Status
               <select className={input} value={edit.status} onChange={e => setEdit(p => p ? { ...p, status: e.target.value as any } : p)}>
@@ -136,6 +136,7 @@ export default function AdminEventsPage() {
                   /evenimente/{e.slug} · {e.starts_at ? formatEventDate(e.starts_at) : <i>fără dată</i>}{e.city ? ` · ${e.city}` : ''}
                 </div>
               </div>
+<Link href={`/admin/event-signups?event=${e.id}`} className="px-3 py-2 rounded-xl text-sm font-black text-white flex items-center gap-1.5" style={{ background: 'linear-gradient(135deg,#22c8f0,#7040f0)' }}>{e.signups ?? 0} înscriși</Link>
               <Link href={`/admin/evenimente/${e.id}`} className="px-3 py-2 rounded-xl text-sm font-black bg-gray-900 text-white flex items-center gap-1.5"><Images size={14} /> {e.photos} poze</Link>
               <button onClick={() => { setEdit({ ...EMPTY, ...e, starts_at: isoToLocalInput(e.starts_at), location: e.location || '', city: e.city || '', description: e.description || '', signup_url: e.signup_url || '', summary: e.summary || '', story: e.story || '', creators_count: e.creators_count ?? '', brands_count: e.brands_count ?? '' }); setOk(''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="px-3 py-2 rounded-xl text-sm font-bold border bg-white">Editează</button>
               <a href={`/evenimente/${e.slug}`} target="_blank" rel="noreferrer" className="px-3 py-2 rounded-xl text-sm font-bold border bg-white flex items-center gap-1"><ExternalLink size={14} /> Pagina</a>

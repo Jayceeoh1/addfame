@@ -15,7 +15,11 @@ export async function GET() {
   const counts: Record<string, number> = {}
   const { data: photos } = await admin.from('site_event_photos').select('event_id')
   for (const p of photos || []) counts[p.event_id] = (counts[p.event_id] || 0) + 1
-  return NextResponse.json({ events: (data || []).map(e => ({ ...e, photos: counts[e.id] || 0 })) })
+  // înscrieri pe eveniment (după SQL 40; până atunci 0)
+  const signups: Record<string, number> = {}
+  const { data: su } = await admin.from('event_signups').select('event_id').not('event_id', 'is', null)
+  for (const r of (su || []) as any[]) signups[r.event_id] = (signups[r.event_id] || 0) + 1
+  return NextResponse.json({ events: (data || []).map(e => ({ ...e, photos: counts[e.id] || 0, signups: signups[e.id] || 0 })) })
 }
 
 export async function POST(req: NextRequest) {

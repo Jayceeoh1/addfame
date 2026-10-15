@@ -9,15 +9,35 @@ interface ThumbnailUploadProps {
   onUploaded?: (url: string) => void
 }
 
+/** Micșorează imaginea (max. 1600px, JPG) dacă e mare; dacă browserul nu o poate citi, o lasă cum e. */
+async function shrinkImage(file: File): Promise<File> {
+  if (file.size < 1.5 * 1024 * 1024 && /^image\/(jpe?g|webp)$/.test(file.type)) return file
+  try {
+    const bmp = await createImageBitmap(file)
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(bmp.width * scale); canvas.height = Math.round(bmp.height * scale)
+    canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height)
+    const blob: Blob | null = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85))
+    if (!blob || blob.size >= file.size) return file
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' })
+  } catch {
+    return file
+  }
+}
+
 export function ThumbnailUpload({ collabId, currentUrl, isAdmin = false, onUploaded }: ThumbnailUploadProps) {
   const [preview, setPreview] = useState<string | null>(currentUrl || null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  const handleFile = useCallback(async (file: File) => {
-    if (!file.type.startsWith('image/')) { setError('Selectează o imagine (JPG, PNG, WEBP)'); return }
-    if (file.size > 5 * 1024 * 1024) { setError('Imaginea trebuie să fie sub 5MB'); return }
+  const handleFile = useCallback(async (picked: File) => {
+    const isImg = picked.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(picked.name)
+    if (!isImg) { setError('Selectează o imagine (JPG, PNG, WEBP)'); return }
+    // Screenshot-urile de pe telefon trec ușor de 4–5 MB (limita serverului) → le micșorăm în JPG înainte de upload
+    const file = await shrinkImage(picked)
+    if (file.size > 4.5 * 1024 * 1024) { setError('Imaginea e prea mare. Fă un screenshot nou sau trimite doar linkul postării.'); return }
 
     setError(null)
     setSuccess(false)
@@ -36,9 +56,9 @@ export function ThumbnailUpload({ collabId, currentUrl, isAdmin = false, onUploa
       fd.append('is_admin', isAdmin ? 'true' : 'false')
 
       const res = await fetch('/api/collaborations/thumbnail', { method: 'POST', body: fd })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
 
-      if (!res.ok) throw new Error(data.error || 'Upload eșuat')
+      if (!res.ok) throw new Error(data.error || (res.status === 413 ? 'Imaginea e prea mare.' : 'Upload eșuat. Poți trimite dovada și doar cu linkul postării.'))
 
       setSuccess(true)
       onUploaded?.(data.thumbnail_url)
