@@ -608,3 +608,22 @@ export function emailAdsRightsExpiring(to: string, brandName: string, r: { campa
     <a href="${APP_URL}/brand/campaigns/${r.campaignId}" class="btn">Vezi drepturile campaniei →</a>
   `, to))
 }
+
+/** Creatorului: brandul a răspuns la draftul video (aprobat → poate posta / modificări cerute). */
+export function emailDraftDecision(to: string, name: string, d: { approved: boolean; campaign: string; note?: string | null; due?: string | null }) {
+  const subject = d.approved ? `✅ Draft aprobat — poți posta („${d.campaign}”)` : `✏️ Brandul cere modificări la draft („${d.campaign}”)`
+  const body = d.approved ? `
+    <h1>Draftul tău a fost aprobat ✅</h1>
+    <p>Salut <strong>${escHtml(name || '')}</strong>, brandul a aprobat draftul video pentru <strong>${escHtml(d.campaign)}</strong>.</p>
+    <p><strong>Acum poți posta.</strong> Publică exact varianta aprobată, apoi trimite linkul postării în AddFame, la colaborare.</p>
+    <a href="${APP_URL}/influencer/collaborations" class="btn">Deschide colaborarea →</a>
+  ` : `
+    <h1>Brandul cere modificări ✏️</h1>
+    <p>Salut <strong>${escHtml(name || '')}</strong>, brandul a văzut draftul pentru <strong>${escHtml(d.campaign)}</strong> și cere câteva modificări.</p>
+    ${d.note ? `<p style="background:#fff7ed;border-radius:10px;padding:12px 14px">„${escHtml(d.note)}”</p>` : ''}
+    ${d.due ? `<p>Termen pentru versiunea nouă: <strong>${escHtml(d.due)}</strong>.</p>` : ''}
+    <p>Vezi comentariile pe video, refă clipul și trimite versiunea nouă. <strong>Nu posta</strong> până nu e aprobată.</p>
+    <a href="${APP_URL}/influencer/collaborations" class="btn">Vezi modificările →</a>
+  `
+  return sendEmail(to, subject, baseTemplate(body, to))
+}

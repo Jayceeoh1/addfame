@@ -70,3 +70,11 @@ export async function notifyContractToSign(chatId: number, title: string, url: s
     `<a href="${url}">Deschide și semnează →</a>`
   )
 }
+
+export async function notifyDraftDecision(chatId: number, approved: boolean, campaign: string, note?: string | null) {
+  const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const url = `${APP_URL}/influencer/collaborations`
+  await sendTelegram(chatId, approved
+    ? `✅ <b>Draft aprobat — poți posta!</b>\n\n${esc(campaign)}\n\nPublică exact varianta aprobată, apoi trimite linkul postării în AddFame.\n<a href="${url}">Deschide colaborarea →</a>`
+    : `✏️ <b>Brandul cere modificări la draft</b>\n\n${esc(campaign)}${note ? `\n\n„${esc(note.slice(0, 300))}”` : ''}\n\nNu posta încă. Trimite versiunea nouă din AddFame.\n<a href="${url}">Vezi modificările →</a>`)
+}

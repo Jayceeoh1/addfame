@@ -2,6 +2,7 @@ import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser, unauthorized, forbidden } from '@/lib/api-auth'
+import { alertDraftDecision } from '@/lib/draft-alerts'
 import { getCollabAccess, isUuid, notify, postDraftMessage, summarizeComments, canRequestChanges, revisionDeadline, MAX_REVISION_ROUNDS } from '@/lib/drafts'
 
 // Brandul aprobă draftul sau cere modificări. NU atinge plata / escrow.
@@ -71,7 +72,9 @@ export async function POST(req: NextRequest) {
       await postDraftMessage(admin, d.collaboration_id, user.id, 'changes',
         `Cer modificări la draftul v${d.version}: ${text}${summarizeComments(cs || [])}\n\nTermen pentru versiunea nouă: ${dueAt!.toLocaleString('ro-RO', { timeZone: 'Europe/Bucharest', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} (runda ${round} din ${MAX_REVISION_ROUNDS}).`)
     }
-    return NextResponse.json({ ok: true, status: next })
+    // WhatsApp / Telegram / email către creator (nu blochează răspunsul dacă eșuează)
+    const alerts = await alertDraftDecision(admin, d.collaboration_id, action === 'approve', { note: text || null, due: dueAt })
+    return NextResponse.json({ ok: true, status: next, alerts })
   } catch {
     return NextResponse.json({ error: 'Eroare server' }, { status: 500 })
   }
