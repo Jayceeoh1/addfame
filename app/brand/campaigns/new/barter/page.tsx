@@ -1374,17 +1374,11 @@ function BarterCampaignWizardContent() {
               />
             </div>
 
-            <div className="bz-f">
-              <label>Instrucțiuni suplimentare <small>(opțional)</small></label>
-              <textarea
-                placeholder="ex. Vreau să vorbești despre site-ul nostru, să menționezi că avem reducere 20% săptămâna asta..."
-                value={data.story_instructions}
-                onChange={e => set({ story_instructions: e.target.value })}
-                rows={6}
-                maxLength={2000}
-                className="bz-input"
-              />
-            </div>
+            {/* Instrucțiunile (script, drepturi etc.) se scriu o singură dată, la pasul de brief.
+                Înainte erau două câmpuri legate de aceeași coloană și al doilea îl suprascria pe primul. */}
+            <p className="bu-muted bu-xs" style={{ margin: 0 }}>
+              Instrucțiunile detaliate (script, mesaje, drepturi de utilizare) le scrii la pasul de brief, în „Instrucțiuni de creare conținut”.
+            </p>
 
             <div className="bz-f">
               <p className="bz-lbl" style={{ margin: 0 }}>Influencerii pot accepta oferta imediat?</p>
@@ -1639,10 +1633,10 @@ function BarterCampaignWizardContent() {
             {/* Instructiuni */}
             <div className="bz-f">
               <label>Instrucțiuni de creare conținut</label>
-              <textarea rows={5} placeholder="ex: Arată cum folosești produsul în rutina zilnică. Filmează în lumină naturală. Menționează cele 3 beneficii: X, Y, Z..."
+              <textarea rows={10} placeholder="ex: Arată cum folosești produsul în rutina zilnică. Filmează în lumină naturală. Menționează cele 3 beneficii: X, Y, Z..."
                 value={data.story_instructions}
                 onChange={e => set({ story_instructions: e.target.value })}
-                maxLength={2000}
+                maxLength={6000}
                 className="bz-input" />
             </div>
 

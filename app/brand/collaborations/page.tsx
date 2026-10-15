@@ -49,7 +49,7 @@ const TAB_FILTER: Record<Tab, (c: any) => boolean> = {
   'Applied':        c => c.status === 'PENDING',
   'Invited':        c => c.status === 'INVITED',
   'Active':         c => c.status === 'ACTIVE',
-  'Pending Review': c => c.status === 'ACTIVE' && !!c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at,
+  'Pending Review': c => (c.status === 'ACTIVE' && !!c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at) || c.draft_status === 'pending',
   'Completed':      c => c.status === 'COMPLETED',
   'Declined':       c => c.status === 'REJECTED',
 }
@@ -319,6 +319,8 @@ const TAB_LABEL: Record<Tab, string> = {
 const TAB_ORDER: Tab[] = ['All', 'Pending Review', 'Applied', 'Invited', 'Active', 'Completed', 'Declined']
 const STEPS = ['Selectat', 'Pachet', 'Postare', 'Aprobare', 'Gata']
 
+// Draft video trimis de creator și neverificat încă de brand
+const draftToReview = (c: any) => c.draft_status === 'pending'
 const isPendingReview = (c: any) =>
   c.status === 'ACTIVE' && !!c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at
 const needsAwb = (c: any) => c.status === 'ACTIVE' && !c.package_sent_at && !!c.delivery_name
@@ -332,18 +334,20 @@ function collabStage(c: any): number | null {
   return 2
 }
 
-type Pastel = { label: string; bg: string; fg: string }
+type Pastel = { label: string; bg: string; fg: string; draft?: boolean }
 const GRN = { bg: '#dcf5ec', fg: '#14532d' }, AMB = { bg: '#fff1c2', fg: '#854d0e' }, BLU = { bg: '#e6f0ff', fg: '#1d4fb8' }
 const VIO = { bg: '#efeaff', fg: '#4423c4' }, GRY = { bg: '#f0eff7', fg: '#4a4770' }, ORG = { bg: '#fff1e6', fg: '#9a4206' }
 
 function collabStatus(c: any): Pastel {
   if (c.status === 'PENDING') return { label: 'Aplicare nouă', ...ORG }
   if (c.status === 'INVITED') return { label: 'Invitat', ...GRY }
-  if (c.status === 'COMPLETED') return { label: 'Finalizat', ...VIO }
+  if (c.status === 'COMPLETED') return draftToReview(c) ? { label: '🎬 Clip suplimentar de revizuit', ...AMB, draft: true } as Pastel : { label: 'Finalizat', ...VIO }
   if (c.status === 'REJECTED') return { label: 'Refuzat', ...GRY }
   if (c.status === 'CANCELLED') return { label: 'Anulat', ...GRY }
   if (c.status === 'ACTIVE') {
     if (isPendingReview(c)) return { label: 'Postare de aprobat', ...AMB }
+    if (draftToReview(c)) return { label: '🎬 Draft de revizuit', ...AMB, draft: true } as Pastel
+    if (c.draft_status === 'changes_requested' && !c.deliverable_submitted_at) return { label: 'Draft: modificări cerute', ...ORG }
     const sub = getSubStatus(c)
     if (sub && sub.label.includes('Întârziat')) return { label: 'Întârziat', ...ORG }
     if (needsAwb(c)) return { label: 'Pachet de trimis', ...BLU }
@@ -437,8 +441,12 @@ export default function BrandCollaborations() {
           .select('id, name, avatar, niches, platforms, country, avg_rating, review_count')
           .in('id', infIds as string[])
         const infMap = Object.fromEntries((infs || []).map((i: any) => [i.id, i]))
+        // starea drafturilor video (fără ea pagina merge ca înainte)
+        const draftSt: Record<string, string> = await fetch('/api/deliverables/brand-status', { cache: 'no-store' })
+          .then(r => r.ok ? r.json() : null).then(j => j?.statuses || {}).catch(() => ({}))
         setCollabs(colls.map((c: any) => ({
           ...c,
+          draft_status: draftSt[c.id] || null,
           influencer: infMap[c.influencer_id] || null,
           campaign: campMap[c.campaign_id] || null,
         })))
@@ -684,8 +692,9 @@ export default function BrandCollaborations() {
   }
 
   const pendingReviews = collabs.filter(c =>
-    c.status === 'ACTIVE' && c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at
+    (c.status === 'ACTIVE' && c.deliverable_submitted_at && !c.deliverable_approved_at && !c.deliverable_rejected_at) || c.draft_status === 'pending'
   ).length
+  const draftsToReview = collabs.filter(draftToReview).length
 
   const counts: Record<Tab, number> = {
     'All':            collabs.length,
@@ -872,7 +881,7 @@ export default function BrandCollaborations() {
 
         {(c.status === 'ACTIVE' || c.status === 'COMPLETED') && (
           <>
-          <DraftReview collabId={c.id} role="brand" />
+          <DraftReview collabId={c.id} role="brand" onChanged={() => load()} />
           <DisputeButton collabId={c.id} role="brand" />
           </>
         )}
@@ -938,6 +947,7 @@ export default function BrandCollaborations() {
     const busy = actionId === c.id
     const isExp = expandedId === c.id
     const pend = isPendingReview(c)
+    const dpend = !pend && draftToReview(c)
     const subParts = [
       showCampaign ? campTitle(c) : null,
       inf?.avg_rating > 0 ? `★ ${inf.avg_rating.toFixed(1)}` : null,
@@ -946,7 +956,7 @@ export default function BrandCollaborations() {
       !showCampaign && c.created_at ? fmtDate(c.created_at) : null,
     ].filter(Boolean)
     return (
-      <div key={c.id} className={`cl-rw${pend ? ' hot' : ''}`}>
+      <div key={c.id} className={`cl-rw${pend || dpend ? ' hot' : ''}`}>
         <div className="cl-row">
           <Face inf={inf} size={40} />
           <div className="cl-who">
@@ -959,7 +969,7 @@ export default function BrandCollaborations() {
               : <span className="bu-sm bu-muted">{c.status === 'PENDING' || c.status === 'INVITED' ? 'Încă nu a început' : '—'}</span>}
           </div>
           <div className="cl-stat">
-            <span className="bu-chip" style={{ background: st.bg, color: st.fg }}>{st.label}</span>
+            <span className={`bu-chip${st.draft ? ' cl-draft-chip' : ''}`} style={{ background: st.bg, color: st.fg }}>{st.draft && <i className="cl-dot" aria-hidden="true" />}{st.label}</span>
             {c.status === 'ACTIVE' && c.reserved_amount ? <span className="bu-xs bu-muted">Plată garantată</span> : null}
           </div>
           <div className="cl-act">
@@ -973,10 +983,11 @@ export default function BrandCollaborations() {
               </>
             )}
             {c.status === 'ACTIVE' && pend && <button className="bu-btn p" onClick={() => openReview(c)}>Revizuiește</button>}
-            {c.status === 'ACTIVE' && !pend && needsAwb(c) && <button className="bu-btn p" onClick={() => openAwb(c.id)}>Marchează ca trimis</button>}
-            {c.status === 'ACTIVE' && !pend && !needsAwb(c) && <Link href={`/brand/inbox?collab=${c.id}`} className="bu-btn">Deschide chat</Link>}
+            {dpend && <button className="bu-btn p" onClick={() => setExpandedId(isExp ? null : c.id)}>Vezi draftul</button>}
+            {c.status === 'ACTIVE' && !pend && !dpend && needsAwb(c) && <button className="bu-btn p" onClick={() => openAwb(c.id)}>Marchează ca trimis</button>}
+            {c.status === 'ACTIVE' && !pend && !dpend && !needsAwb(c) && <Link href={`/brand/inbox?collab=${c.id}`} className="bu-btn">Deschide chat</Link>}
             {c.status === 'INVITED' && <Link href={`/brand/inbox?collab=${c.id}`} className="bu-btn">Deschide chat</Link>}
-            {c.status === 'COMPLETED' && <button className="bu-btn" onClick={() => setExpandedId(isExp ? null : c.id)}>Lasă o evaluare</button>}
+            {c.status === 'COMPLETED' && !dpend && <button className="bu-btn" onClick={() => setExpandedId(isExp ? null : c.id)}>Lasă o evaluare</button>}
             <button className="bu-btn cl-chev" aria-label="Detalii" aria-expanded={isExp} onClick={() => setExpandedId(isExp ? null : c.id)}>
               <ChevronRight size={16} style={{ transform: isExp ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }} />
             </button>
@@ -1227,6 +1238,20 @@ export default function BrandCollaborations() {
         </div>
       )}
 
+      {/* Drafturi video care așteaptă brandul */}
+      {draftsToReview > 0 && tab !== 'Pending Review' && (
+        <div className="cl-note amber" style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flexWrap: 'wrap', padding: 16, borderRadius: 16 }}>
+          <span className="bu-ico" style={{ background: '#fff1c2', color: '#854d0e', fontSize: 18 }}>🎬</span>
+          <div className="cl-col" style={{ flex: 1, minWidth: 200 }}>
+            <b className="bu-sm" style={{ color: '#854d0e' }}>
+              {draftsToReview === 1 ? '1 draft video așteaptă aprobarea ta' : `${draftsToReview} drafturi video așteaptă aprobarea ta`}
+            </b>
+            <span className="bu-xs" style={{ color: '#854d0e' }}>Creatorii nu postează până nu aprobi sau ceri modificări. Răspunde de preferat în 48 de ore.</span>
+          </div>
+          <button className="bu-btn p" onClick={() => { setTab('Pending Review'); setViewMode('list') }}>Vezi drafturile</button>
+        </div>
+      )}
+
       {/* Filtre */}
       <div className="cl-col" style={{ gap: 12 }}>
         <div className="bu-search">
@@ -1457,6 +1482,10 @@ const CL_CSS = `
 .cl-gt { font-size:18px !important; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
 .cl-rw { border-top:1px solid #eeecf7; }
 .cl-rw.hot { background:#fffdf5; }
+.cl-draft-chip { display:inline-flex; align-items:center; gap:6px; }
+.cl-dot { width:7px; height:7px; border-radius:50%; background:#f59e0b; box-shadow:0 0 0 0 rgba(245,158,11,.6); animation:cl-pulse 1.8s infinite; }
+@keyframes cl-pulse { 0%{box-shadow:0 0 0 0 rgba(245,158,11,.55)} 70%{box-shadow:0 0 0 7px rgba(245,158,11,0)} 100%{box-shadow:0 0 0 0 rgba(245,158,11,0)} }
+@media (prefers-reduced-motion:reduce){ .cl-dot{animation:none} }
 .cl-row { display:grid; grid-template-columns:40px minmax(120px,190px) minmax(180px,1fr) 128px auto; gap:16px; align-items:center; padding:14px 20px; }
 .cl-who { display:flex; flex-direction:column; min-width:0; }
 .cl-who b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
