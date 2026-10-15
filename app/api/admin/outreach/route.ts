@@ -461,7 +461,7 @@ export async function GET(req: NextRequest) {
   let from = 0
   const pageSize = 1000
   while (true) {
-    let query = ctx.admin.from(table).select('*').order('created_at', { ascending: false }).range(from, from + pageSize - 1)
+    let query = ctx.admin.from(table).select('*').order('created_at', { ascending: false }).order('id').range(from, from + pageSize - 1)
     if (status && status !== 'all') query = query.eq('status', status)
     const { data } = await query
     if (!data || data.length === 0) break

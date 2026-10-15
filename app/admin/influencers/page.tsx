@@ -69,7 +69,8 @@ export default function AdminInfluencers() {
         if (res.data.length < BATCH) break
         offset += BATCH
       }
-      setInfluencers(all)
+      // siguranță: un influencer o singură dată, chiar dacă paginile s-ar suprapune
+      setInfluencers([...new Map(all.map(i => [i.id, i])).values()])
     } catch (e) {
       console.error(e)
     }

@@ -294,6 +294,8 @@ export async function getAllInfluencers(options?: { search?: string; limit?: num
 
     const { data, count, error } = await query
       .order('creator_score', { ascending: false })
+      // ordine unică: mulți au același scor (ex. 375) → fără id, paginile se suprapun (dubluri) și unii lipsesc
+      .order('id', { ascending: true })
       .range(options?.offset || 0, (options?.offset || 0) + (options?.limit || 50) - 1)
 
     if (error) {
