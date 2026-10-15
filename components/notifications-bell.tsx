@@ -92,7 +92,7 @@ export function NotificationsBell({ accentColor = '#8b5cf6' }: { accentColor?: s
                 {n.read && <div className="w-2 h-2 flex-shrink-0" />}
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm ${n.read ? 'font-semibold text-gray-600' : 'font-black text-gray-900'}`}>{n.title}</p>
-                  {n.body && <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{n.body}</p>}
+                  {(n.body || n.message) && <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{n.body || n.message}</p>}
                   <p className="text-[10px] text-gray-300 mt-1">{fmtTime(n.created_at)}</p>
                 </div>
               </button>
