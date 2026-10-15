@@ -1,5 +1,5 @@
-// addfame-v9 — notificări push
-const CACHE_NAME = 'addfame-v9'
+// addfame-v10 — notificări push; paginile nu mai trec prin service worker
+const CACHE_NAME = 'addfame-v10'
 
 self.addEventListener('install', () => {
   self.skipWaiting()
@@ -38,7 +38,7 @@ self.addEventListener('fetch', (event) => {
         return fetch(request).then((response) => {
           if (response.ok) {
             const clone = response.clone()
-            caches.open(CACHE_NAME).then((c) => c.put(request, clone))
+            caches.open(CACHE_NAME).then((c) => c.put(request, clone)).catch(() => {})
           }
           return response
         })
@@ -47,8 +47,9 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Tot restul — direct din retea, fara cache
-  event.respondWith(fetch(request))
+  // Tot restul (pagini, imagini etc.) îl lasă browserul să-l încarce singur.
+  // Înainte trecea prin fetch() din service worker: orice întrerupere de rețea sau navigare
+  // anulată apărea ca „FetchEvent … network error / Failed to fetch” și pagina nu se mai deschidea.
 })
 
 self.addEventListener('push', (event) => {
