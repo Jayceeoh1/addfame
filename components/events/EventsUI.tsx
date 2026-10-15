@@ -104,6 +104,13 @@ export const EV_CSS = `
 .ev-h1{margin:0;font-weight:800;font-size:clamp(36px,5.4vw,64px);line-height:1.04;letter-spacing:-.025em;text-wrap:balance}
 .ev-next{flex:1 1 380px;min-width:0;background:#fff;border:1px solid var(--line);border-radius:20px;padding:clamp(20px,3vw,28px);box-shadow:0 28px 56px -28px rgba(80,50,200,.35);display:flex;flex-direction:column;gap:16px}
 .ev-next-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ev-next.has-banner{padding-top:0;overflow:hidden}
+.ev-next-banner{position:relative;margin:0 calc(-1 * clamp(20px,3vw,28px));aspect-ratio:16/9;max-width:none;background:linear-gradient(135deg,#efeaff,#e3f6ff);overflow:hidden}
+.ev-next-banner img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
+.ev-next:hover .ev-next-banner img{transform:scale(1.03)}
+.ev-next-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,18,58,0) 55%,rgba(20,18,58,.55))}
+.ev-next-date{position:absolute;left:16px;bottom:14px;z-index:1;background:#fff;color:#14123a;font-weight:800;font-size:13px;padding:6px 12px;border-radius:999px;box-shadow:0 8px 20px -8px rgba(0,0,0,.4)}
+@media(prefers-reduced-motion:reduce){.ev-next-banner img{transition:none}}
 .ev-next-badge{font-size:12px;font-weight:700;color:#14532d;background:#dcf5ec;padding:4px 10px;border-radius:999px}
 .ev-next h2{margin:0;font-weight:800;font-size:26px;line-height:1.15}
 .ev-next p{margin:0;color:var(--muted);font-size:15px}

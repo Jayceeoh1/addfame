@@ -3,7 +3,7 @@ import Link from 'next/link'
 import SitePage from '@/components/site/SiteShell'
 import { Mosaic, AlbumCard, Story, EV_CSS, type GalleryPhoto } from '@/components/events/EventsUI'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { coverOf, formatEventDate, splitEvents, type SiteEvent, type SiteEventPhoto } from '@/lib/events'
+import { coverOf, formatEventDate, photoUrl, splitEvents, type SiteEvent, type SiteEventPhoto } from '@/lib/events'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +28,11 @@ export default async function EvenimentePage({ searchParams }: { searchParams: P
   const photos = (ph || []) as SiteEventPhoto[]
   const byEvent = new Map<string, SiteEventPhoto[]>()
   for (const p of photos) byEvent.set(p.event_id, [...(byEvent.get(p.event_id) || []), p])
+
+  // Pozele evenimentului viitor sunt bannerul lui (nu intră în galerie și în cifre până trece data)
+  const nextCover = next ? coverOf(next, byEvent.get(next.id) || []) : null
+  if (next) byEvent.delete(next.id)
+  const galleryCount = [...byEvent.values()].reduce((n, l) => n + l.length, 0)
 
   // Evenimentele cu poze, cele mai recente primele; galeria amestecă pozele în ordinea asta
   const withPhotos = [...events].filter(e => byEvent.has(e.id)).sort((a, b) => new Date(b.starts_at || 0).getTime() - new Date(a.starts_at || 0).getTime())
@@ -54,11 +59,17 @@ export default async function EvenimentePage({ searchParams }: { searchParams: P
             {next?.signup_url
               ? <a href={next.signup_url} target="_blank" rel="noopener noreferrer" className="af-btn af-btn-ink">Rezervă-ți locul</a>
               : <Link href="/auth/register?type=influencer" className="af-btn af-btn-ink">Creează cont gratuit</Link>}
-            {photos.length > 0 && <a href="#galerie" className="af-btn af-btn-ghost">Vezi pozele</a>}
+            {galleryCount > 0 && <a href="#galerie" className="af-btn af-btn-ghost">Vezi pozele</a>}
           </div>
         </div>
 
-        <div className="ev-next">
+        <div className={`ev-next${nextCover ? ' has-banner' : ''}`}>
+          {nextCover && (
+            <div className="ev-next-banner">
+              <img src={photoUrl(nextCover.path)} alt={nextCover.caption || next?.title || ''} decoding="async" fetchPriority="high" />
+              {next?.starts_at && <span className="ev-next-date">{formatEventDate(next.starts_at, false)}</span>}
+            </div>
+          )}
           <div className="ev-next-top">
             <span className="af-eyebrow">Următorul eveniment</span>
             {next && <span className="ev-next-badge">Locuri limitate</span>}
@@ -87,7 +98,7 @@ export default async function EvenimentePage({ searchParams }: { searchParams: P
         <section className="ev-stats" aria-label="AddFame în cifre">
           <div className="af-wrap ev-stats-in">
             <div className="ev-stat"><b>{past.length}</b><span>{past.length === 1 ? 'eveniment organizat' : 'evenimente organizate'}</span></div>
-            {photos.length > 0 && <div className="ev-stat"><b>{photos.length}</b><span>fotografii în galerie</span></div>}
+            {galleryCount > 0 && <div className="ev-stat"><b>{galleryCount}</b><span>fotografii în galerie</span></div>}
             {cities > 1 && <div className="ev-stat"><b>{cities}</b><span>orașe</span></div>}
           </div>
         </section>
