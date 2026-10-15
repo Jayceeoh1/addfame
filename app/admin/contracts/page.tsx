@@ -38,7 +38,7 @@ type Campaign = {
   brand_name?: string; brand_legal_name?: string; brand_cui?: string; brand_address?: string; brand_website?: string
 }
 
-type CampaignInfluencer = { influencer_id: string; name: string; email: string; has_contract: boolean }
+type CampaignInfluencer = { influencer_id: string; name: string; email: string; has_contract: boolean; completed?: boolean }
 
 type TabKey = 'ugc' | 'campanii' | 'cesiune'
 
@@ -598,25 +598,25 @@ export default function ContractsPage() {
                   <div>
                     <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-1.5">1. Selectează campania (completează automat brand + produs)</label>
                     <select className="field" value={cesForm.campaign_id} onChange={e => selectCesCampaign(e.target.value)}>
-                      <option value="">— alege o campanie activă —</option>
-                      {campaigns.map(c => <option key={c.id} value={c.id}>{c.title}{(c.brand_legal_name || c.brand_name) ? ` · ${c.brand_legal_name || c.brand_name}` : ''}</option>)}
+                      <option value="">— alege campania —</option>
+                      {campaigns.map(c => <option key={c.id} value={c.id}>{c.title}{(c.brand_legal_name || c.brand_name) ? ` · ${c.brand_legal_name || c.brand_name}` : ''}{(c as any).status === 'COMPLETED' ? ' (încheiată)' : ''}</option>)}
                     </select>
                   </div>
                 )}
                 {cesForm.campaign_id && (
                   <div>
                     <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-1.5">
-                      2. Selectează influencerul {loadingInf ? '(se încarcă...)' : `(${campInfluencers.length} activi pe campanie)`}
+                      2. Selectează influencerul {loadingInf ? '(se încarcă...)' : `(${campInfluencers.length} pe campanie)`}
                     </label>
                     <select className="field" value={cesForm.influencer_id} onChange={e => selectCesInfluencer(e.target.value)}>
                       <option value="">— alege influencerul —</option>
                       {campInfluencers.map(i => (
                         <option key={i.influencer_id} value={i.influencer_id} disabled={i.has_contract}>
-                          {i.has_contract ? '✓ ' : ''}{i.name}{i.has_contract ? ' — are deja contract' : ''}
+                          {i.has_contract ? '✓ ' : ''}{i.name}{i.has_contract ? ' — are deja contract' : i.completed ? ' — colaborare finalizată' : ''}
                         </option>
                       ))}
                     </select>
-                    {!loadingInf && campInfluencers.length === 0 && <p className="text-xs text-gray-400 mt-1">Niciun influencer activ pe această campanie.</p>}
+                    {!loadingInf && campInfluencers.length === 0 && <p className="text-xs text-gray-400 mt-1">Niciun influencer activ sau finalizat pe această campanie.</p>}
                     {campInfluencers.some(i => i.has_contract) && <p className="text-xs text-green-600 mt-1">Cei cu ✓ au deja contract și sunt blocați ca să nu creezi dublură.</p>}
                   </div>
                 )}

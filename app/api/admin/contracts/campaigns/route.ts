@@ -32,12 +32,14 @@ export async function GET() {
     const { data, error } = await adminClient()
       .from('campaigns')
       .select('id, title, offer_name, status, product_name, product_description, deliverables, platforms, brand_id, brand_name, brands(name, company_legal_name, cui, company_address, website)')
-      .in('status', ['ACTIVE', 'PAUSED'])
+      .in('status', ['ACTIVE', 'PAUSED', 'COMPLETED'])
       .order('created_at', { ascending: false })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    const campaigns = (data || []).map((c: any) => ({
+    // întâi campaniile în desfășurare, apoi cele încheiate (contractele se pot face și după)
+    const rank = (s: string) => (s === 'COMPLETED' ? 1 : 0)
+    const campaigns = [...(data || [])].sort((a: any, b: any) => rank(a.status) - rank(b.status)).map((c: any) => ({
       id: c.id,
       title: campaignName(c, c.title || 'Campanie'),
       raw_title: c.title,

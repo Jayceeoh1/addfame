@@ -22,7 +22,7 @@ async function getAdminUser() {
   return adminRow ? user : null
 }
 
-// Influencerii ACTIVI pe o campanie + daca au deja contract de cesiune pe acea campanie.
+// Influencerii activi SAU finalizați pe o campanie (contractul se poate face și după finalizare) + daca au deja contract de cesiune pe acea campanie.
 export async function GET(req: NextRequest) {
   try {
     const user = await getAdminUser()
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       .from('collaborations')
       .select('influencer_id, status, influencers(id, name, email)')
       .eq('campaign_id', campaignId)
-      .eq('status', 'ACTIVE')
+      .in('status', ['ACTIVE', 'COMPLETED'])
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -58,8 +58,9 @@ export async function GET(req: NextRequest) {
         name: inf?.name || 'Influencer',
         email: inf?.email || '',
         has_contract: withContract.has(c.influencer_id),
+        completed: c.status === 'COMPLETED',
       }
-    })
+    }).sort((a: any, b: any) => Number(a.has_contract) - Number(b.has_contract) || a.name.localeCompare(b.name, 'ro'))
 
     return NextResponse.json({ influencers })
   } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }) }
