@@ -138,7 +138,7 @@ export default function CampaignDetailPage() {
       getBrandCollabHistory(campaignId).then(r => { if ('success' in r) setHistory(r.history) }).catch(() => {})
       const infIds = [...new Set(rows.map((c: any) => c.influencer_id).filter(Boolean))]
       if (infIds.length > 0) {
-        const res = await fetch('/api/admin/influencer-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: infIds }) })
+        const res = await fetch('/api/admin/influencer-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: infIds, campaignId }) })
         if (res.ok) { const infs = await res.json(); setInfluencerData(Object.fromEntries((infs || []).map((i: any) => [i.id, i]))) }
       }
       const collabIds = rows.map((c: any) => c.id)
@@ -718,7 +718,7 @@ export default function CampaignDetailPage() {
               const tone = ({ INVITED: 'blue', PENDING: 'amber', ACTIVE: 'purple', COMPLETED: 'green', REJECTED: 'gray' } as any)[collab.status] || 'gray'
               const reach = getFollowers(inf)
               const sub = [inf?.niches?.slice(0, 2).join(', '), reach > 0 ? `${fmtNum(reach)} urmăritori` : null].filter(Boolean).join(' · ')
-              const openProfile = () => setProfileModal({ ...inf, _slug: infSlug })
+              const openProfile = () => setProfileModal({ ...inf, _slug: infSlug, _social: ['PENDING', 'ACTIVE', 'COMPLETED'].includes(collab.status) ? inf?._social : undefined })
               const spin = <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full" />
               return (
                 <CollabCard

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sanitizeBioForBrand, safePlatforms, toBrandInfluencer } from '../lib/brand-safe'
+import { sanitizeBioForBrand, safePlatforms, toBrandInfluencer, socialLinksFor, SOCIAL_VISIBLE_STATUSES } from '../lib/brand-safe'
 
 describe('sanitizeBioForBrand', () => {
   it('ascunde handle, link, email și telefon', () => {
@@ -30,5 +30,27 @@ describe('toBrandInfluencer', () => {
     expect(r.email).toBeUndefined()
     expect(r.bio).not.toContain('@ana')
     expect(r.name).toBe('Ana')
+  })
+})
+
+describe('socialLinksFor (doar pentru cei care au aplicat)', () => {
+  it('construiește linkurile din handle-uri', () => {
+    const l = socialLinksFor({ instagram_handle: '@ana.pop', tiktok_handle: 'ana', platforms: [] })
+    expect(l).toEqual([
+      { platform: 'instagram', handle: 'ana.pop', url: 'https://www.instagram.com/ana.pop' },
+      { platform: 'tiktok', handle: 'ana', url: 'https://www.tiktok.com/@ana' },
+    ])
+  })
+  it('preferă URL-ul din platforms și ignoră ce nu e http(s)', () => {
+    const l = socialLinksFor({ platforms: [{ platform: 'Instagram', url: 'https://instagram.com/x', followers: '5K' }, { platform: 'tiktok', url: 'javascript:alert(1)' }] })
+    expect(l).toEqual([{ platform: 'instagram', handle: null, url: 'https://instagram.com/x' }])
+  })
+  it('ignoră handle-uri cu caractere ciudate', () => {
+    expect(socialLinksFor({ instagram_handle: 'ana"><script>' })).toEqual([])
+  })
+  it('vizibil doar pentru aplicanți, activi sau finalizați; nu pentru invitați sau refuzați', () => {
+    expect(SOCIAL_VISIBLE_STATUSES).toEqual(['PENDING', 'ACTIVE', 'COMPLETED'])
+    expect(SOCIAL_VISIBLE_STATUSES).not.toContain('INVITED')
+    expect(SOCIAL_VISIBLE_STATUSES).not.toContain('REJECTED')
   })
 })

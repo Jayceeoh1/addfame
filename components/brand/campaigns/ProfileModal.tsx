@@ -23,7 +23,7 @@ export function ProfileModal({ profileModal, onClose }: { profileModal: any; onC
   const igPlatform = p.platforms?.find((x: any) => x.platform?.toLowerCase() === 'instagram')
   const ttPlatform = p.platforms?.find((x: any) => x.platform?.toLowerCase() === 'tiktok')
 
-  // Brandul vede platforma și urmăritorii, fără link sau handle (colaborarea se stabilește doar prin AddFame)
+  // Brandul vede platforma și urmăritorii. Link-urile către conturi (p._social) vin de pe server doar pentru creatorii care au aplicat la campanie.
   const igUrl = igPlatform || igHandle || p.instagram_connected ? 'shown' : null
   const ttUrl = ttPlatform || ttHandle || p.tiktok_connected ? 'shown' : null
   const igFollowers = igPlatform?.followers ? parseCount(igPlatform.followers) : (p.ig_followers || p.instagram_followers || 0)
@@ -110,6 +110,25 @@ export function ProfileModal({ profileModal, onClose }: { profileModal: any; onC
               </div>
             )}
           </div>
+
+          {/* Conturile de social media: doar pentru creatorii care au aplicat la campanie */}
+          {Array.isArray(p._social) && p._social.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-3 text-left">
+              <p className="text-[11px] font-black text-indigo-500 uppercase tracking-wider mb-2">Conturile lor — doar pentru cei care au aplicat</p>
+              <div className="flex flex-col gap-1.5">
+                {p._social.map((l: any) => (
+                  <a key={l.platform} href={l.url} target="_blank" rel="noopener noreferrer nofollow"
+                    className="flex items-center gap-2 bg-white border border-indigo-100 hover:border-indigo-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-800 transition">
+                    {l.platform === 'instagram' ? <Instagram className="w-4 h-4 text-pink-500" /> : l.platform === 'tiktok' ? <TikTokIcon className="w-4 h-4 text-gray-800" /> : <ExternalLink className="w-4 h-4 text-red-500" />}
+                    <span className="capitalize">{l.platform}</span>
+                    {l.handle && <span className="text-gray-400 font-semibold">@{l.handle}</span>}
+                    <ExternalLink className="w-3.5 h-3.5 text-gray-300 ml-auto" />
+                  </a>
+                ))}
+              </div>
+              <p className="text-[10.5px] text-gray-400 mt-2">Folosește-le doar ca să vezi stilul lor de conținut. Colaborarea, mesajele și plata se fac prin AddFame.</p>
+            </div>
+          )}
 
           {/* Stats */}
           {p._stats && p._stats.total > 0 && (

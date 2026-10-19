@@ -33,3 +33,43 @@ export function toBrandInfluencer<T extends Record<string, any>>(row: T) {
   const { instagram_handle, tiktok_handle, youtube_handle, email, phone, ...rest } = row as any
   return { ...rest, bio: sanitizeBioForBrand(row.bio), platforms: safePlatforms(row.platforms) }
 }
+
+/** Colaborările pentru care brandul are voie să vadă conturile de social media: doar cei care au aplicat (sau au acceptat invitația). */
+export const SOCIAL_VISIBLE_STATUSES = ['PENDING', 'ACTIVE', 'COMPLETED']
+
+export type SocialLink = { platform: 'instagram' | 'tiktok' | 'youtube' | string; handle: string | null; url: string }
+
+const cleanHandle = (h: unknown): string | null => {
+  const v = String(h ?? '').trim().replace(/^@/, '')
+  return /^[A-Za-z0-9._-]{1,60}$/.test(v) ? v : null
+}
+const safeUrl = (u: unknown): string | null => {
+  const v = String(u ?? '').trim()
+  if (!v) return null
+  const full = /^www\./i.test(v) ? `https://${v}` : v
+  return /^https?:\/\//i.test(full) ? full : null
+}
+
+/**
+ * Conturile de social media ale unui creator (link + handle), pentru brandul la care a aplicat.
+ * Se apelează DOAR după ce serverul a verificat aplicarea (SOCIAL_VISIBLE_STATUSES).
+ */
+export function socialLinksFor(row: Record<string, any>): SocialLink[] {
+  const byPlatform = new Map<string, SocialLink>()
+  for (const p of normalizePlatforms(row.platforms)) {
+    const platform = String(p.platform || '').toLowerCase().trim()
+    const url = safeUrl(p.url)
+    if (!platform || !url) continue
+    byPlatform.set(platform, { platform, handle: cleanHandle(p.username), url })
+  }
+  const fromHandle = (platform: string, handle: unknown, base: string) => {
+    const h = cleanHandle(handle)
+    if (h && !byPlatform.has(platform)) byPlatform.set(platform, { platform, handle: h, url: base + h })
+    else if (h && byPlatform.get(platform) && !byPlatform.get(platform)!.handle) byPlatform.get(platform)!.handle = h
+  }
+  fromHandle('instagram', row.instagram_handle, 'https://www.instagram.com/')
+  fromHandle('tiktok', row.tiktok_handle, 'https://www.tiktok.com/@')
+  fromHandle('youtube', row.youtube_handle, 'https://www.youtube.com/@')
+  const order = ['instagram', 'tiktok', 'youtube']
+  return [...byPlatform.values()].sort((a, b) => (order.indexOf(a.platform) + 1 || 9) - (order.indexOf(b.platform) + 1 || 9))
+}
