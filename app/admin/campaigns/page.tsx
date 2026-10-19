@@ -2,6 +2,7 @@
 // @ts-nocheck
 import { campaignName } from '@/lib/campaign-name'
 import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
+import CampaignInvoicePanel from '@/components/admin/CampaignInvoicePanel'
 import { useState, useEffect, useCallback } from 'react'
 import { getAllCampaigns, adminUpdateCampaignStatus, deleteCampaign, getAllInfluencers, adminUpdateDeliveryAddress, adminUpdateCampaign, adminImpersonateUser, updateCampaignImages } from '@/app/actions/admin'
 import { getManagedCampaigns, assignInfluencersToManaged, inviteInfluencersToBarter, inviteInfluencersToOpenCall } from '@/app/actions/managed-campaigns'
@@ -2852,6 +2853,9 @@ export default function AdminCampaigns() {
 
               {activeSection === 'actions' && (
                 <div className="space-y-4">
+
+                  {/* Factură SmartBill pe suma introdusă de admin */}
+                  <CampaignInvoicePanel campaignId={selectedCampaign.id} />
 
                   {/* Performance & Raport — disponibil pentru ACTIVE și COMPLETED */}
                   {(selectedCampaign.status === 'ACTIVE' || selectedCampaign.status === 'COMPLETED' || selectedCampaign.status === 'LIVE') && (

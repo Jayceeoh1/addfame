@@ -31,6 +31,7 @@ export interface SmartBillInvoiceParams {
   amountRon: number           // suma în RON, fără TVA (neplatitor TVA)
   description?: string        // descrierea serviciului
   invoiceDate?: string        // YYYY-MM-DD, default azi
+  mentions?: string           // mențiuni pe factură (implicit: textul pentru credite prepaid)
 }
 
 export interface SmartBillInvoiceResult {
@@ -144,7 +145,7 @@ export async function createSmartBillInvoice(
       },
     ],
     sendEmail: false,
-    mentions: `Credite valabile 6 luni de la data emiterii. Platforma AddFame — addfame.ro`,
+    mentions: params.mentions ?? `Credite valabile 6 luni de la data emiterii. Platforma AddFame — addfame.ro`,
     useStock: false,
   }
 
