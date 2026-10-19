@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { createPointEvent, deactivatePointEvent } from '@/app/actions/point-events'
 import { Gift, Plus, Users, Clock, XCircle, RefreshCw } from 'lucide-react'
+import HalloweenQuizAdmin from '@/components/admin/HalloweenQuizAdmin'
 
 interface PointEvent {
   id: string
@@ -90,6 +91,7 @@ export default function PointEventsPage() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
+      <HalloweenQuizAdmin />
       {/* Toast */}
       {toast && (
         <div style={{
