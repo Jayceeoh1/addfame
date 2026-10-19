@@ -1,96 +1,156 @@
 'use client'
 
 // Dashboard influencer: „Trick or Treat” — un dovleac pe zi, 25–31 octombrie. Nu apare în afara perioadei.
-import { useEffect, useState } from 'react'
+// Design: varianta B (card luminos, dovleac 3D), cu animații: strălucire, confetti, „+N puncte”, ziua devine dovleac, bara spre bonus.
+import { useEffect, useMemo, useState } from 'react'
 import { getTreatStatus, openTreat } from '@/app/actions/halloween'
-import { STREAK_BONUS } from '@/lib/halloween'
+import { STREAK_BONUS, TREAT_DAYS } from '@/lib/halloween'
 
-const dayLabel = (iso: string) => String(Number(iso.slice(8, 10)))
+const IMG = { lit: '/halloween/pumpkin-lit.webp', unlit: '/halloween/pumpkin-unlit.webp', mini: '/halloween/pumpkin-mini.webp' }
+const CONFETTI_COLORS = ['#ff8a1f', '#7040f0', '#ffd08a', '#22c8f0', '#ff5d8f', '#9be15d']
 
-export default function HalloweenTreat() {
+export default function HalloweenTreat({ preview }: { preview?: any } = {}) {
   const [s, setS] = useState<any>(null)
   const [busy, setBusy] = useState(false)
-  const [shake, setShake] = useState(false)
   const [reveal, setReveal] = useState<{ points: number; bonus: number } | null>(null)
   const [err, setErr] = useState<string | null>(null)
 
-  useEffect(() => { getTreatStatus().then(setS).catch(() => {}) }, [])
+  useEffect(() => { if (preview) { setS(preview.status); if (preview.reveal) setReveal(preview.reveal); return } getTreatStatus().then(setS).catch(() => {}) }, [preview])
+
+  // bucățile de confetti: poziții fixe, calculate o singură dată
+  const confetti = useMemo(() => Array.from({ length: 22 }, (_, i) => {
+    const ang = (i / 22) * Math.PI * 2 + (i % 3) * 0.2
+    const dist = 90 + (i * 37) % 70
+    return { dx: Math.round(Math.cos(ang) * dist), dy: Math.round(Math.sin(ang) * dist - 30), c: CONFETTI_COLORS[i % CONFETTI_COLORS.length], r: (i * 47) % 360, d: (i % 5) * 0.03 }
+  }), [])
+
   if (!s || s.phase === 'hidden') return null
 
   async function open() {
     if (busy) return
-    setBusy(true); setErr(null); setShake(true)
-    const [r] = await Promise.all([openTreat(), new Promise(res => setTimeout(res, 900))])
-    setShake(false); setBusy(false)
+    setBusy(true); setErr(null)
+    const [r] = await Promise.all([openTreat(), new Promise(res => setTimeout(res, 700))])
+    setBusy(false)
     if ((r as any).error) { setErr((r as any).error); return }
     const ok = r as any
     setReveal({ points: ok.points, bonus: ok.bonus })
     getTreatStatus().then(setS).catch(() => {})
   }
 
-  const opened = (s.days || []).filter((d: any) => d.points != null).length
+  const days: any[] = s.days || []
+  const opened = days.filter(d => d.points != null).length
+  const canOpen = s.phase === 'open' && s.approved && !s.openedToday && !busy
+  const gained = reveal ? reveal.points + reveal.bonus : 0
+
+  const heading =
+    s.phase === 'teaser' ? 'Trick or Treat începe mâine 🦇'
+    : s.phase === 'over' ? 'Mulțumim că ai jucat Trick or Treat!'
+    : reveal ? (reveal.bonus ? 'Ai deschis toți dovlecii!' : 'Ai deschis dovleacul de azi!')
+    : s.openedToday ? 'Ai deschis dovleacul de azi'
+    : 'Un dovleac nou te așteaptă'
 
   return (
-    <section className="hw" aria-label="Trick or Treat de Halloween">
+    <section className="hwb" aria-label="Trick or Treat de Halloween">
       <style>{`
-        .hw { position: relative; overflow: hidden; border-radius: 20px; padding: 22px; color: #fff;
-          background: radial-gradient(120% 140% at 100% 0%, #ff7a1a 0%, rgba(255,122,26,0) 45%), linear-gradient(135deg, #1b0f3d 0%, #2d1260 55%, #3b1170 100%);
-          display: grid; grid-template-columns: auto minmax(0,1fr); gap: 20px; align-items: center; }
-        .hw-moon { position: absolute; right: -40px; top: -40px; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #ffe9c2, #ffb347 60%, rgba(255,179,71,0) 72%); opacity: .35; pointer-events: none; }
-        .hw-pump { position: relative; width: 108px; height: 108px; border-radius: 28px; border: 0; cursor: pointer; font-size: 64px; line-height: 1;
-          background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1.5px rgba(255,160,70,.45), 0 10px 30px rgba(255,122,26,.25);
-          display: grid; place-items: center; transition: transform .15s; font-family: inherit; color: inherit; }
-        .hw-pump:hover:not(:disabled) { transform: translateY(-2px) scale(1.03); }
-        .hw-pump:disabled { cursor: default; }
-        .hw-pump.shake { animation: hwShake .3s ease-in-out infinite; }
-        @keyframes hwShake { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-9deg) } 75% { transform: rotate(9deg) } }
-        .hw-pts { position: absolute; inset: 0; display: grid; place-items: center; font-size: 26px; font-weight: 900; color: #ffd08a; text-shadow: 0 2px 10px rgba(0,0,0,.4); animation: hwPop .5s ease-out; }
-        @keyframes hwPop { from { transform: scale(.4); opacity: 0 } to { transform: scale(1); opacity: 1 } }
-        .hw h2 { margin: 0 0 4px; font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
-        .hw p { margin: 0; color: #d9cff7; font-size: 14px; }
-        .hw-days { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
-        .hw-day { width: 42px; padding: 6px 0 5px; border-radius: 12px; text-align: center; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); font-size: 11px; color: #cfc4f2; }
-        .hw-day b { display: block; font-size: 17px; line-height: 1.2; }
-        .hw-day.done { background: rgba(255,122,26,.18); border-color: rgba(255,160,70,.55); color: #ffd9ad; }
-        .hw-day.today { box-shadow: 0 0 0 2px #ffb347; }
-        .hw-day.miss { opacity: .45; }
-        .hw-meta { margin-top: 10px; font-size: 13px; color: #d9cff7; }
-        .hw-meta b { color: #ffd08a; }
-        .hw-err { margin-top: 10px; font-size: 13px; font-weight: 700; color: #ffb4a8; }
-        @media (max-width: 520px) { .hw { grid-template-columns: 1fr; justify-items: start; } }
-        @media (prefers-reduced-motion: reduce) { .hw-pump.shake, .hw-pts { animation: none; } }
+        .hwb { position: relative; overflow: hidden; border-radius: 20px; padding: 24px 26px; border: 1px solid #ffd2a3;
+          background: linear-gradient(120deg, #fff6ec 0%, #ffe6cc 60%, #ffd6ad 100%); color: #3a1505;
+          display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; }
+        .hwb-tag { align-self: flex-start; display: inline-flex; padding: 4px 10px; border-radius: 999px; background: #14123a; color: #ffd08a; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+        .hwb-txt { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+        .hwb h2 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: #3a1505; text-wrap: balance; }
+        .hwb p { margin: 0; color: #7a4a22; font-size: 14.5px; max-width: 520px; }
+        .hwb-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .hwb-btn { height: 46px; padding: 0 20px; border-radius: 12px; border: 0; background: #7040f0; color: #fff; font-weight: 800; font-size: 15px; font-family: inherit; cursor: pointer; transition: background .15s, transform .15s; }
+        .hwb-btn:hover:not(:disabled) { background: #5f30e0; transform: translateY(-1px); }
+        .hwb-btn:disabled { opacity: .6; cursor: default; }
+        .hwb-pill { height: 46px; padding: 0 16px; border-radius: 12px; background: #fff; border: 1.5px solid #ffc48a; color: #b4500a; font-weight: 800; display: inline-flex; align-items: center; }
+        .hwb-meta { font-size: 13px; color: #7a4a22; }
+        .hwb-meta b { color: #3a1505; }
+        .hwb-days { display: flex; flex-wrap: wrap; gap: 8px; }
+        .hwb-day { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: #fff; color: #b07a4a; border: 1.5px dashed #f0b67a; }
+        .hwb-day.done { background: #ffe2c2; border: 1.5px solid #ffb877; }
+        .hwb-day.done img { width: 36px; height: 36px; object-fit: contain; }
+        .hwb-day.today { box-shadow: 0 0 0 3px #7040f0; }
+        .hwb-day.miss { opacity: .45; }
+        .hwb-day.pop img { animation: hwbIn .6s cubic-bezier(.2,1.6,.4,1); }
+        .hwb-bar { height: 8px; border-radius: 999px; background: rgba(58,21,5,.1); overflow: hidden; max-width: 420px; }
+        .hwb-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ff8a1f, #7040f0); transition: width .8s ease; }
+        .hwb-err { font-size: 13px; font-weight: 700; color: #b42318; }
+        .hwb-art { position: relative; width: 240px; height: 240px; display: grid; place-items: center; }
+        .hwb-art img.big { position: relative; width: 224px; height: 224px; object-fit: contain; animation: hwbBob 3.2s ease-in-out infinite; }
+        .hwb-art.shake img.big { animation: hwbShake .25s ease-in-out infinite; }
+        .hwb-glow { position: absolute; inset: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,190,80,.6), rgba(255,190,80,0)); animation: hwbGlow 2.4s ease-in-out infinite; }
+        .hwb-shadow { position: absolute; left: 34px; right: 34px; bottom: 10px; height: 24px; border-radius: 50%; background: radial-gradient(closest-side, rgba(150,60,0,.28), rgba(150,60,0,0)); }
+        .hwb-plus { position: absolute; top: 0; right: -4px; padding: 6px 12px; border-radius: 999px; background: #7040f0; color: #fff; font-weight: 800; font-size: 22px; box-shadow: 0 8px 20px rgba(112,64,240,.35); animation: hwbPlus .7s cubic-bezier(.2,1.6,.4,1); white-space: nowrap; }
+        .hwb-cf { position: absolute; left: 50%; top: 50%; width: 9px; height: 14px; border-radius: 2px; opacity: 0; animation: hwbCf 1.1s ease-out forwards; }
+        @keyframes hwbBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+        @keyframes hwbShake { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-8deg) } 75% { transform: rotate(8deg) } }
+        @keyframes hwbGlow { 0%,100% { opacity: .7; transform: scale(.96) } 50% { opacity: 1; transform: scale(1.04) } }
+        @keyframes hwbPlus { from { transform: scale(.3) translateY(20px); opacity: 0 } to { transform: scale(1) translateY(0); opacity: 1 } }
+        @keyframes hwbIn { from { transform: scale(0) rotate(-30deg) } to { transform: scale(1) rotate(0) } }
+        @keyframes hwbCf { 0% { opacity: 1; transform: translate(-50%, -50%) rotate(0) } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 40px)) rotate(var(--r)) } }
+        @media (max-width: 640px) {
+          .hwb { grid-template-columns: 1fr; padding: 20px 18px; gap: 8px; }
+          .hwb-art { order: -1; width: 170px; height: 170px; justify-self: center; }
+          .hwb-art img.big { width: 160px; height: 160px; }
+          .hwb h2 { font-size: 22px; }
+          .hwb-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+          .hwb-day { width: 100%; height: auto; aspect-ratio: 1; max-width: 42px; font-size: 12px; }
+          .hwb-day.done img { width: 82%; height: 82%; }
+        }
+        @media (prefers-reduced-motion: reduce) { .hwb *, .hwb *::before { animation: none !important; transition: none !important; } .hwb-cf { display: none; } }
       `}</style>
-      <span className="hw-moon" />
-      <button className={`hw-pump ${shake ? 'shake' : ''}`} onClick={open}
-        disabled={busy || s.phase !== 'open' || s.openedToday || !s.approved}
-        aria-label={s.openedToday ? 'Dovleacul de azi e deschis' : 'Deschide dovleacul de azi'}>
-        <span aria-hidden="true">{s.openedToday && !reveal ? '🍬' : '🎃'}</span>
-        {reveal && <span className="hw-pts">+{reveal.points + reveal.bonus}</span>}
-      </button>
-      <div style={{ position: 'relative', minWidth: 0 }}>
-        {s.phase === 'teaser' && (<>
-          <h2>Trick or Treat începe mâine 🦇</h2>
-          <p>Între 25 și 31 octombrie deschizi câte un dovleac pe zi și primești 5–30 de puncte Creator Score. Deschide-i pe toți 7 și primești încă {STREAK_BONUS} bonus.</p>
-        </>)}
-        {s.phase === 'open' && (<>
-          <h2>{reveal ? (reveal.bonus ? `Ai deschis toți dovlecii! +${reveal.points} și +${reveal.bonus} bonus 🎉` : `+${reveal.points} puncte! Revino mâine 🍬`) : s.openedToday ? 'Ai deschis dovleacul de azi 🍬' : 'Trick or Treat! Deschide dovleacul de azi 🎃'}</h2>
-          <p>{s.approved ? `Câte un dovleac pe zi, până pe 31 octombrie: 5–30 de puncte Creator Score. Toate 7 zilele = +${STREAK_BONUS} bonus.` : 'Profilul tău trebuie să fie aprobat ca să participi.'}</p>
-        </>)}
-        {s.phase === 'over' && (<>
-          <h2>Mulțumim că ai jucat Trick or Treat 👻</h2>
-          <p>Punctele au intrat în Creator Score. Ne vedem la următorul joc!</p>
-        </>)}
-        {s.phase !== 'teaser' && (
-          <div className="hw-days" aria-label={`${opened} din 7 dovleci deschiși`}>
-            {s.days.map((d: any) => (
-              <span key={d.day} className={`hw-day ${d.points != null ? 'done' : ''} ${d.isToday ? 'today' : ''} ${d.points == null && d.past ? 'miss' : ''}`}>
-                <b>{d.points != null ? '🎃' : d.past ? '·' : '?'}</b>{dayLabel(d.day)} oct
-              </span>
-            ))}
+
+      <div className="hwb-txt">
+        <span className="hwb-tag">Trick or Treat · 25–31 oct</span>
+        <h2>{heading}</h2>
+        <p>
+          {s.phase === 'teaser' && <>Între 25 și 31 octombrie deschizi câte un dovleac pe zi și primești 5–30 de puncte Creator Score. Deschide-i pe toți 7 și primești încă {STREAK_BONUS}.</>}
+          {s.phase === 'open' && (s.approved
+            ? <>În fiecare zi te așteaptă un dovleac cu 5–30 de puncte Creator Score. Deschide-i pe toți 7 și primești încă {STREAK_BONUS}.</>
+            : <>Profilul tău trebuie să fie aprobat ca să participi.</>)}
+          {s.phase === 'over' && <>Punctele au intrat în Creator Score. Ne vedem la următorul joc!</>}
+        </p>
+
+        {s.phase === 'open' && (
+          <div className="hwb-row">
+            {s.openedToday
+              ? <span className="hwb-pill">{reveal ? `+${gained} puncte` : `+${days.find(d => d.isToday)?.points ?? 0} puncte azi`} · revino mâine</span>
+              : <button className="hwb-btn" onClick={open} disabled={!canOpen}>{busy ? 'Se deschide…' : 'Deschide dovleacul de azi'}</button>}
+            <span className="hwb-meta"><b>{s.total} puncte</b> strânse · {opened}/{TREAT_DAYS} dovleci</span>
           </div>
         )}
-        {s.phase !== 'teaser' && <div className="hw-meta">Ai strâns <b>{s.total} puncte</b> · {opened}/7 dovleci{s.bonus ? ` · bonus +${s.bonus} ✓` : ''}</div>}
-        {err && <div className="hw-err">{err}</div>}
+        {s.phase === 'over' && <span className="hwb-meta"><b>{s.total} puncte</b> strânse · {opened}/{TREAT_DAYS} dovleci{s.bonus ? ` · bonus +${s.bonus} ✓` : ''}</span>}
+
+        {s.phase !== 'teaser' && (<>
+          <div className="hwb-days" aria-label={`${opened} din ${TREAT_DAYS} dovleci deschiși`}>
+            {days.map(d => {
+              const done = d.points != null
+              return (
+                <span key={d.day} title={done ? `${Number(d.day.slice(8))} oct: +${d.points}` : `${Number(d.day.slice(8))} oct`}
+                  className={`hwb-day ${done ? 'done' : ''} ${d.isToday ? 'today' : ''} ${!done && d.past ? 'miss' : ''} ${done && d.isToday && reveal ? 'pop' : ''}`}>
+                  {done ? <img src={IMG.mini} alt={`+${d.points}`} /> : Number(d.day.slice(8))}
+                </span>
+              )
+            })}
+          </div>
+          <div className="hwb-bar" aria-hidden="true"><i style={{ width: `${Math.round(opened / TREAT_DAYS * 100)}%` }} /></div>
+          <span className="hwb-meta">{s.bonus ? `Bonusul de ${s.bonus} puncte e al tău! 🎉` : `Încă ${TREAT_DAYS - opened} ${TREAT_DAYS - opened === 1 ? 'dovleac' : 'dovleci'} până la bonusul de ${STREAK_BONUS} de puncte`}</span>
+        </>)}
+        {err && <span className="hwb-err">{err}</span>}
+      </div>
+
+      <div className={`hwb-art ${busy ? 'shake' : ''}`}>
+        <span className="hwb-shadow" aria-hidden="true" />
+        {(s.phase !== 'open' || !s.openedToday || reveal) && <span className="hwb-glow" aria-hidden="true" />}
+        <img className="big" src={s.phase === 'open' && s.openedToday && !reveal ? IMG.unlit : IMG.lit} alt="Dovleac de Halloween" />
+        {reveal && <>
+          {confetti.map((c, i) => (
+            <span key={i} className="hwb-cf" aria-hidden="true"
+              style={{ background: c.c, animationDelay: `${c.d}s`, ['--dx' as any]: `${c.dx}px`, ['--dy' as any]: `${c.dy}px`, ['--r' as any]: `${c.r}deg` }} />
+          ))}
+          <span className="hwb-plus" role="status">+{gained} puncte</span>
+        </>}
       </div>
     </section>
   )
