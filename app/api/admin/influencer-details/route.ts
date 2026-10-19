@@ -76,9 +76,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // colaborările brandului cu acești creatori (pe campania dată, dacă e trimisă)
+    // campaniile brandului (aplicările influencerilor nu au mereu brand_id, deci mergem după campanie)
+    let brandCampaignIds: string[] = []
+    if (brandId) {
+      const { data: bc } = await admin.from('campaigns').select('id').eq('brand_id', brandId)
+      brandCampaignIds = (bc || []).map((c: any) => c.id)
+      if (brandCampaignIds.length === 0) return NextResponse.json([], { status: 200 })
+    }
+
+    // colaborările acestor creatori, doar în campaniile brandului
     let collabQ = admin.from('collaborations').select('influencer_id, status, campaign_id').in('influencer_id', ids)
-    if (brandId) collabQ = collabQ.eq('brand_id', brandId)
+    if (brandId) collabQ = collabQ.in('campaign_id', brandCampaignIds)
     const { data: myCollabs } = await collabQ
     const mine = (myCollabs || []) as { influencer_id: string; status: string; campaign_id: string }[]
 
@@ -92,14 +100,14 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await admin
       .from('influencers')
-      .select('id, name, avatar, bio, niches, platforms, avg_rating, review_count, country, city, instagram_connected, ig_followers, tt_followers, instagram_followers, instagram_handle, tiktok_handle, youtube_handle, slug, price_story, price_reel, price_post, price_youtube, price_min, portfolio_urls, recent_posts_urls')
+      .select('id, name, avatar, bio, niches, platforms, avg_rating, review_count, country, city, instagram_connected, ig_followers, tt_followers, instagram_followers, instagram_handle, slug, price_story, price_reel, price_post, price_youtube, price_min, portfolio_urls, recent_posts_urls')
       .in('id', allowedIds)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     // statistici colaborări (doar ale acestui brand; adminul le vede pe toate)
     const statQ = admin.from('collaborations').select('influencer_id, status, payment_amount').in('influencer_id', allowedIds)
-    const { data: collabs } = brandId ? await statQ.eq('brand_id', brandId) : await statQ
+    const { data: collabs } = brandId ? await statQ.in('campaign_id', brandCampaignIds) : await statQ
 
     const result = (data || []).map((inf: any) => {
       const rows = (collabs || []).filter((c: any) => c.influencer_id === inf.id)
