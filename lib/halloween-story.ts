@@ -25,11 +25,12 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, max: number): string[
   return lines
 }
 
-export async function makeStoryImage(opts: { character: QuizCharacter; handle: string; fontDisplay?: string; fontBody?: string }): Promise<Blob> {
+export async function makeStoryImage(opts: { character: QuizCharacter; handle: string; avatar?: string | null; fontDisplay?: string; fontBody?: string }): Promise<Blob> {
   const disp = (opts.fontDisplay || '').trim() || 'system-ui, sans-serif'
   const body = (opts.fontBody || '').trim() || 'system-ui, sans-serif'
   try { await Promise.all([document.fonts.load(`800 100px ${disp}`), document.fonts.load(`700 40px ${body}`)]); await document.fonts.ready } catch { /* fonturile de rezervă merg și ele */ }
-  const [art, logo] = await Promise.all([loadImage(opts.character.img), loadImage('/logo.png').catch(() => null)])
+  const [art, logo, photo] = await Promise.all([loadImage(opts.character.img), loadImage('/logo.png').catch(() => null), opts.avatar ? loadImage(opts.avatar).catch(() => null) : Promise.resolve(null)])
+  const dy = photo ? 175 : 0 // loc pentru poza creatorului
 
   const c = document.createElement('canvas'); c.width = W; c.height = H
   const ctx = c.getContext('2d')!
@@ -71,17 +72,28 @@ export async function makeStoryImage(opts: { character: QuizCharacter; handle: s
   ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,208,138,.6)'; ctx.stroke()
   ctx.fillStyle = '#ffd08a'; ctx.fillText(pill, W / 2, 351)
 
+  // poza de profil a creatorului (cerc cu margine portocalie)
+  if (photo) {
+    const r = 92, cx = W / 2, cy = 505
+    ctx.save(); ctx.shadowColor = 'rgba(255,138,31,.55)'; ctx.shadowBlur = 40
+    ctx.beginPath(); ctx.arc(cx, cy, r + 10, 0, Math.PI * 2); ctx.fillStyle = '#ff8a1f'; ctx.fill(); ctx.restore()
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip()
+    const sz = Math.min(photo.width, photo.height)
+    ctx.drawImage(photo, (photo.width - sz) / 2, (photo.height - sz) / 2, sz, sz, cx - r, cy - r, r * 2, r * 2)
+    ctx.restore()
+  }
+
   // „@nume este…” + personajul
   ctx.font = `700 42px ${body}`; ctx.fillStyle = '#d9cff7'
   const who = (opts.handle || 'Eu').slice(0, 40)
-  ctx.fillText(`${who} este…`, W / 2, 480)
+  ctx.fillText(`${who} este…`, W / 2, 480 + dy)
   ctx.font = `800 104px ${disp}`; ctx.fillStyle = '#ffffff'
   const nameLines = wrap(ctx, opts.character.name, 960)
-  nameLines.forEach((l, i) => ctx.fillText(l, W / 2, 590 + i * 108))
-  const afterName = 590 + (nameLines.length - 1) * 108
+  nameLines.forEach((l, i) => ctx.fillText(l, W / 2, 590 + dy + i * 108))
+  const afterName = 590 + dy + (nameLines.length - 1) * 108
 
-  // ilustrația
-  const size = 660, top = afterName + 40
+  // ilustrația (mai mică când avem poza creatorului)
+  const size = photo ? (nameLines.length > 1 ? 450 : 530) : 660, top = afterName + 40
   const halo = ctx.createRadialGradient(W / 2, top + size / 2, 20, W / 2, top + size / 2, size / 2)
   halo.addColorStop(0, 'rgba(255,170,60,.45)'); halo.addColorStop(1, 'rgba(255,170,60,0)')
   ctx.fillStyle = halo; ctx.fillRect(0, top, W, size)

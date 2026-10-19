@@ -20,7 +20,7 @@ async function me() {
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return null
   const admin = createAdminClient()
-  const { data: inf } = await admin.from('influencers').select('id, user_id, name, instagram_handle, approval_status').eq('user_id', user.id).maybeSingle()
+  const { data: inf } = await admin.from('influencers').select('id, user_id, name, instagram_handle, approval_status, avatar').eq('user_id', user.id).maybeSingle()
   return inf ? { admin, inf } : null
 }
 
@@ -104,3 +104,24 @@ export async function adminSetQuizEnabled(enabled: boolean) {
   return { success: true as const, enabled: !!enabled }
 }
 
+
+
+/** Poza de profil a creatorului ca data-URI, pentru cardul de Story (evită problemele CORS la desenarea în canvas).
+ *  Acceptă doar poze din Supabase Storage, max 3 MB. Întoarce null dacă nu există / nu se poate citi. */
+export async function getStoryAvatar(): Promise<string | null> {
+  const ctx = await me()
+  const url = ctx?.inf?.avatar ? String(ctx.inf.avatar) : ''
+  if (!url) return null
+  if (/^data:image\/(jpeg|png|webp);base64,/.test(url)) return url.length < 4_000_000 ? url : null
+  try {
+    const u = new URL(url)
+    if (u.protocol !== 'https:' || !u.hostname.endsWith('.supabase.co')) return null
+    const r = await fetch(u.toString(), { signal: AbortSignal.timeout(6000) })
+    if (!r.ok) return null
+    const type = (r.headers.get('content-type') || '').split(';')[0]
+    if (!/^image\/(jpeg|png|webp)$/.test(type)) return null
+    const buf = Buffer.from(await r.arrayBuffer())
+    if (buf.length > 3 * 1024 * 1024) return null
+    return `data:${type};base64,${buf.toString('base64')}`
+  } catch { return null }
+}

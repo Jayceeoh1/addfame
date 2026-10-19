@@ -3,7 +3,7 @@
 // Quiz „Ce influencer de Halloween ești?” — 8 întrebări, rezultat cu personaj, +25 puncte o dată, card de Story cu logo AddFame.
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { getQuizState, submitQuiz } from '@/app/actions/halloween-quiz'
+import { getQuizState, submitQuiz, getStoryAvatar } from '@/app/actions/halloween-quiz'
 import { QUIZ_QUESTIONS, QUIZ_POINTS, characterById, scoreQuiz, type QuizCharacter } from '@/lib/halloween-quiz'
 import { makeStoryImage, shareOrDownload } from '@/lib/halloween-story'
 
@@ -58,8 +58,9 @@ export default function HalloweenQuizPage() {
     setSharing(true); setMsg(null)
     try {
       const cs = root.current ? getComputedStyle(root.current) : null
+      const avatar = await getStoryAvatar().catch(() => null)
       const blob = await makeStoryImage({
-        character: result.ch, handle: st?.handle || '',
+        character: result.ch, handle: st?.handle || '', avatar,
         fontDisplay: cs?.getPropertyValue('--font-display'), fontBody: cs?.getPropertyValue('--font-body'),
       })
       const how = await shareOrDownload(blob, `addfame-halloween-${result.ch.id}.png`)
