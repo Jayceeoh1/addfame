@@ -1,5 +1,6 @@
 import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { emailTypoError } from '@/lib/email-typos'
 import { NextResponse } from 'next/server'
 import { isUpcoming } from '@/lib/events'
 
@@ -16,6 +17,7 @@ export async function POST(req: Request) {
     if (!first_name || !last_name || !email || !phone) {
       return NextResponse.json({ error: 'Câmpuri obligatorii lipsă.' }, { status: 400 })
     }
+    { const typo = emailTypoError(email); if (typo) return NextResponse.json({ error: typo }, { status: 400 }) }
     const admin = createAdminClient()
 
     let event_id: string | null = null

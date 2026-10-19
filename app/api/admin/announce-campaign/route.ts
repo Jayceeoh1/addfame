@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { bulkEmailPaused, isSuppressed, bulkSentToday, bulkDailyLimit, unsubscribeHeaders, unsubscribeUrl } from '@/lib/email-suppression'
 import { escapeHtml } from '@/lib/api-auth'
 import { campaignName } from '@/lib/campaign-name'
+import { isTestCampaign } from '@/lib/test-campaign'
 import { verifyAdminSession } from '@/lib/supabase/verify-admin'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -43,6 +44,11 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (!camp) return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+
+    // Campaniile de test nu se anunță niciodată la influenceri reali (au plecat deja o dată la toți → bounce-uri → Spamhaus).
+    if (isTestCampaign(camp)) {
+      return NextResponse.json({ error: 'Campania pare de test (are „test” în titlu sau în numele ofertei). Nu o anunțăm la influenceri. Redenumește-o dacă e reală.' }, { status: 400 })
+    }
 
     // Fetch influenceri aprobați care nu sunt deja în campanie
     const { data: existing } = await admin

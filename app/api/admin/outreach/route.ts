@@ -483,7 +483,7 @@ export async function POST(req: NextRequest) {
   if (body.action === 'send') {
     // Outreach = emailuri către persoane fără cont. A pus addfame.ro pe Spamhaus DBL → oprit implicit.
     if (!coldOutreachEnabled()) return NextResponse.json({
-      error: 'Trimiterea de outreach e oprită: domeniul addfame.ro a fost listat ca spam. Contactează lead-urile personal (telefon, Instagram, email scris de mână din Gmail, câte unul) până la scoaterea de pe listă.',
+      error: 'Trimiterea de outreach e oprită: domeniul addfame.ro a fost listat ca spam. Până la scoaterea de pe listă contactează lead-urile doar prin telefon, WhatsApp sau Instagram — nu prin email, nici din Gmail (orice email rece de pe @addfame.ro prelungește listarea).',
     }, { status: 403 })
     if ((body.lead_ids?.length ?? 0) > Math.min(50, bulkDailyLimit()))
       return NextResponse.json({ error: 'Maxim 50 de lead-uri pe trimitere.' }, { status: 400 })

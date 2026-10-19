@@ -358,7 +358,8 @@ export async function approveDeliverable(collabId: string) {
           : `Brandul a aprobat postarea pentru "${collab.campaigns?.title}". Colaborarea este finalizată.`,
         influencerAmount > 0 ? '/influencer/wallet' : '/influencer/collaborations'
       )
-      if (collab.influencers?.email) {
+      // emailul de plată doar când chiar s-au plătit bani (la barter suma e 0 → fără „Ai primit 0 RON”)
+      if (collab.influencers?.email && influencerAmount > 0) {
         emailPaymentReleased(
           collab.influencers.email,
           collab.influencers.name || 'Influencer',

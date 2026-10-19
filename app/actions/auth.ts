@@ -1,4 +1,5 @@
 'use server'
+import { emailTypoError } from '@/lib/email-typos'
 
 // Auto-approval workflow: All new accounts are auto-approved immediately upon creation
 // This eliminates manual admin intervention while maintaining data integrity and user experience
@@ -211,6 +212,7 @@ export async function registerBrand(
     if (!validateEmail(email)) {
       return { error: 'Invalid email format' }
     }
+    { const typo = emailTypoError(email); if (typo) return { error: typo } }
     const passwordValidation = validatePassword(password)
     if (!passwordValidation.valid) {
       return { error: passwordValidation.errors.join(', ') }
@@ -361,6 +363,7 @@ export async function registerInfluencer(
     if (!validateEmail(email)) {
       return { error: 'Invalid email format' }
     }
+    { const typo = emailTypoError(email); if (typo) return { error: typo } }
     const passwordValidation = validatePassword(password)
     if (!passwordValidation.valid) {
       return { error: passwordValidation.errors.join(', ') }
