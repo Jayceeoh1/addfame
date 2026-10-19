@@ -7,6 +7,7 @@ import './globals.css'
 import PWAInstallBanner from '@/components/PWAInstallBanner'
 import CookieBanner from '@/components/CookieBanner'
 import ErrorReporter from '@/components/shared/ErrorReporter'
+import HalloweenTheme from '@/components/shared/HalloweenTheme'
 import '../styles/mobile.css'
 
 const _geist = localFont({ src: '../lib/fonts/geist-latin-wght-normal.woff2', weight: '100 900', display: 'swap' });
@@ -89,6 +90,7 @@ export default function RootLayout({
         <PWAInstallBanner />
         <CookieBanner />
         <ErrorReporter />
+        <HalloweenTheme />
         <script dangerouslySetInnerHTML={{
           __html: `
           if ('serviceWorker' in navigator) {
