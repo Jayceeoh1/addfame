@@ -1,11 +1,13 @@
 'use client'
 
 // Quiz „Ce influencer de Halloween ești?” — 8 întrebări, rezultat cu personaj, +25 puncte o dată, card de Story cu logo AddFame.
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { getQuizState, submitQuiz, getStoryAvatar } from '@/app/actions/halloween-quiz'
 import { QUIZ_QUESTIONS, QUIZ_POINTS, characterById, scoreQuiz, type QuizCharacter } from '@/lib/halloween-quiz'
 import { makeStoryImage, shareOrDownload } from '@/lib/halloween-story'
+import { planScares, createAudio, sfx, buzz, type ScareKind } from '@/lib/halloween-scares'
+import HalloweenScare from '@/components/influencer/HalloweenScare'
 
 type Screen = 'start' | 'q' | 'result'
 const LETTERS = ['A', 'B', 'C', 'D']
@@ -20,17 +22,52 @@ export default function HalloweenQuizPage() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
+  // modul Fricos: sperieturi scurte, doar dacă alege creatorul
+  const [scaryMode, setScaryMode] = useState(false)
+  const [sound, setSound] = useState(true)
+  const [reduced, setReduced] = useState(false)
+  const [scare, setScare] = useState<ScareKind | 'finale' | null>(null)
+  const [boom, setBoom] = useState(false)
+  const plan = useRef<Record<number, ScareKind>>({})
+  const fired = useRef<Set<number>>(new Set())
+  const audio = useRef<AudioContext | null>(null)
+  const scary = scaryMode && !reduced
 
   useEffect(() => { getQuizState().then(setSt).catch(() => setSt({ enabled: false })) }, [])
+  useEffect(() => {
+    try { setReduced(window.matchMedia('(prefers-reduced-motion: reduce)').matches) } catch { /* rămâne modul prietenos */ }
+    try { setScaryMode(localStorage.getItem('hq_scary') === '1'); setSound(localStorage.getItem('hq_sound') !== '0') } catch { /* fără memorie e ok */ }
+  }, [])
+  function chooseMode(on: boolean) { setScaryMode(on); try { localStorage.setItem('hq_scary', on ? '1' : '0') } catch { /* ok */ } }
+  function toggleSound() { const v = !sound; setSound(v); try { localStorage.setItem('hq_sound', v ? '1' : '0') } catch { /* ok */ } }
+  const closeScare = useCallback(() => setScare(null), [])
+  function fire(kind: ScareKind | 'finale') {
+    setScare(kind)
+    if (sound) sfx(audio.current, kind === 'finale' ? 'cackle' : kind)
+    buzz(kind === 'finale' ? [60, 40, 60] : [120, 50, 220])
+  }
 
   const played = st?.result ? characterById(st.result.characterId) : null
 
-  function start() { setAnswers([]); setI(0); setResult(null); setMsg(null); setScreen('q') }
+  function start() {
+    setAnswers([]); setI(0); setResult(null); setMsg(null); setBoom(false); setScare(null)
+    fired.current = new Set()
+    plan.current = scary ? planScares(QUIZ_QUESTIONS.length) : {}
+    if (scary && sound && !audio.current) audio.current = createAudio() // pornește sunetul din atingerea creatorului
+    else if (audio.current?.state === 'suspended') audio.current.resume().catch(() => {})
+    setScreen('q')
+  }
+  // spre rezultat: în modul Fricos, întâi o clipă de întuneric, apoi personajul „explodează” pe ecran
+  function goResult() { if (scary) { setBoom(true); fire('finale') } setScreen('result') }
   function showSaved() {
     if (!played) return
-    setResult({ ch: played, score: st.result.score, points: 0, replay: false }); setMsg(null); setScreen('result')
+    setResult({ ch: played, score: st.result.score, points: 0, replay: false }); setMsg(null); setBoom(false); setScreen('result')
   }
-  function pick(k: number) { const a = answers.slice(); a[i] = k + 1; setAnswers(a) }
+  function pick(k: number) {
+    const a = answers.slice(); a[i] = k + 1; setAnswers(a)
+    const kind = plan.current[i]
+    if (scary && kind && !fired.current.has(i)) { fired.current.add(i); setTimeout(() => fire(kind), 450) }
+  }
   function back() { if (i === 0) setScreen('start'); else setI(i - 1) }
 
   async function next() {
@@ -39,7 +76,7 @@ export default function HalloweenQuizPage() {
     // a mai jucat: rezultatul nou se arată, fără puncte și fără să-l salvăm
     if (st?.result) {
       const r = scoreQuiz(answers)
-      if (r) { setResult({ ch: r.character, score: r.score, points: 0, replay: true }); setScreen('result') }
+      if (r) { setResult({ ch: r.character, score: r.score, points: 0, replay: true }); goResult() }
       return
     }
     setBusy(true); setMsg(null)
@@ -50,7 +87,7 @@ export default function HalloweenQuizPage() {
     if (!ch) return
     setResult({ ch, score: r.score, points: r.points || 0, replay: !!r.alreadyPlayed })
     setSt((s: any) => ({ ...s, result: { score: r.score, characterId: r.characterId, points: r.points } }))
-    setScreen('result')
+    goResult()
   }
 
   async function share() {
@@ -70,6 +107,21 @@ export default function HalloweenQuizPage() {
   }
 
   const q = QUIZ_QUESTIONS[i]
+
+  const modePicker = (
+    <div className="hq-mode">
+      <span className="hq-mode-l">Alege modul</span>
+      <div className="hq-mode-r">
+        <button className="hq-mode-b" aria-pressed={!scaryMode} onClick={() => chooseMode(false)}>Prietenos 🎃</button>
+        <button className="hq-mode-b" aria-pressed={scaryMode && !reduced} onClick={() => chooseMode(true)} disabled={reduced}>Fricos 👻</button>
+      </div>
+      {reduced && <span className="hq-mode-n">Telefonul tău are „reduce motion” activat, așa că rămâi în modul Prietenos.</span>}
+      {scary && (<>
+        <span className="hq-mode-n">Câteva sperieturi scurte, cu sunet, fără lumini intermitente. Poți închide oricare cu o atingere.</span>
+        <button className="hq-snd" onClick={toggleSound}>{sound ? 'Sunet pornit · oprește' : 'Sunet oprit · pornește'}</button>
+      </>)}
+    </div>
+  )
 
   return (
     <div ref={root} className="hq">
@@ -103,8 +155,18 @@ export default function HalloweenQuizPage() {
         .hq-chip { padding: 6px 12px; border-radius: 999px; background: #fff; border: 1.5px solid #ffc48a; font-weight: 800; font-size: 13px; }
         .hq-chip.v { background: #7040f0; border-color: #7040f0; color: #fff; }
         .hq-msg { font-size: 14px; font-weight: 700; color: #6a3b12; text-align: center; }
+        .hq-mode { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        .hq-mode-l { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #b4500a; }
+        .hq-mode-r { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .hq-mode-b { min-height: 48px; border-radius: 12px; border: 2px solid #ffd2a3; background: #fff; color: #3a1505; font-family: inherit; font-weight: 800; font-size: 14.5px; cursor: pointer; }
+        .hq-mode-b[aria-pressed="true"] { border-color: #7040f0; background: #f1ecff; }
+        .hq-mode-n { font-size: 12.5px; color: #7a4a22; }
+        .hq-snd { background: none; border: 0; padding: 0; font-family: inherit; font-weight: 800; font-size: 13px; color: #7040f0; cursor: pointer; text-decoration: underline; }
+        .hq-snd-i { width: 44px; height: 44px; flex: none; border-radius: 12px; border: 1.5px solid #ffc48a; background: #fff; cursor: pointer; font-size: 18px; }
+        .hq-boom { animation: hqBoom .9s 1.2s cubic-bezier(.2,1.4,.4,1) both; }
+        @keyframes hqBoom { from { opacity: 0; transform: scale(1.35); filter: blur(8px) } to { opacity: 1; transform: scale(1); filter: blur(0) } }
         @keyframes hqBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
-        @media (prefers-reduced-motion: reduce) { .hq-hero { animation: none; } }
+        @media (prefers-reduced-motion: reduce) { .hq-hero, .hq-boom { animation: none; } }
       `}</style>
 
       <div className="hq-card">
@@ -128,10 +190,12 @@ export default function HalloweenQuizPage() {
             <h1>Ce influencer de Halloween ești?</h1>
             {played ? (<>
               <p>Ai jucat deja: tu ești <b style={{ color: '#3a1505' }}>{played.name}</b>. Poți să-ți vezi cardul sau să joci din nou, de distracție (fără puncte).</p>
+              {modePicker}
               <button className="hq-btn" onClick={showSaved}>Vezi rezultatul meu</button>
               <button className="hq-btn2" onClick={start}>Joacă din nou</button>
             </>) : (<>
               <p>8 întrebări, un minut. La final afli ce personaj ești{st.approved ? <> și primești <b style={{ color: '#3a1505' }}>+{QUIZ_POINTS} de puncte</b> Creator Score</> : null}.</p>
+              {modePicker}
               <button className="hq-btn" onClick={start}>Începe quiz-ul</button>
             </>)}
           </div>
@@ -144,6 +208,7 @@ export default function HalloweenQuizPage() {
             </button>
             <div className="hq-bar" aria-hidden="true"><i style={{ width: `${Math.round((i + 1) / QUIZ_QUESTIONS.length * 100)}%` }} /></div>
             <span className="hq-step">{i + 1}/{QUIZ_QUESTIONS.length}</span>
+            {scary && <button className="hq-snd-i" onClick={toggleSound} aria-label={sound ? 'Oprește sunetul' : 'Pornește sunetul'}>{sound ? '🔊' : '🔇'}</button>}
           </div>
           <h2>{q.q}</h2>
           <div className="hq-opts" role="radiogroup" aria-label={q.q}>
@@ -160,7 +225,7 @@ export default function HalloweenQuizPage() {
         </>)}
 
         {st?.enabled && screen === 'result' && result && (
-          <div className="hq-center">
+          <div className={`hq-center ${boom ? 'hq-boom' : ''}`}>
             <span style={{ fontSize: 13, fontWeight: 800, color: '#b4500a', textTransform: 'uppercase', letterSpacing: '.08em' }}>Tu ești…</span>
             <h1>{result.ch.name}</h1>
             <img className="hq-hero" src={result.ch.img} alt={result.ch.name} style={{ width: 250, height: 250 }} />
@@ -177,6 +242,7 @@ export default function HalloweenQuizPage() {
           </div>
         )}
       </div>
+      {scare && <HalloweenScare kind={scare} onDone={closeScare} />}
     </div>
   )
 }
