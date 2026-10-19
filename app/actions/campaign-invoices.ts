@@ -3,6 +3,7 @@
 // Facturi la finalul campaniei: adminul introduce suma, sistemul o emite în SmartBill (seria ADDF).
 // Fiecare emitere are o cheie unică: dublu-click sau reîncercare nu poate crea două facturi.
 
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/verify-admin'
 import { createSmartBillInvoice, smartBillMissingEnv } from '@/lib/smartbill'
@@ -61,6 +62,18 @@ export async function issueCampaignInvoice(campaignId: string, raw: unknown) {
       mentions: `Campania „${camp.title || camp.offer_name || camp.product_name || ''}” — platforma AddFame, addfame.ro`,
     })
     await admin.from('campaign_invoices').update({ status: 'issued', smartbill_number: r.smartbillNumber }).eq('id', row.id)
+    // brandul află că are factură (nu blochează emiterea dacă notificarea nu merge)
+    try {
+      const { data: b } = await admin.from('brands').select('user_id').eq('id', camp.brand_id).maybeSingle()
+      if (b?.user_id) {
+        const title = camp.title || camp.offer_name || camp.product_name || 'campanie'
+        await admin.from('notifications').insert({
+          user_id: b.user_id, title: '🧾 Factură nouă',
+          body: `Factura ${r.smartbillNumber} (${amount.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} RON) pentru campania „${title}” e disponibilă în pagina campaniei.`,
+          link: `/brand/campaigns/${camp.id}`, read: false,
+        })
+      }
+    } catch (e) { console.error('[campaign-invoice] notificare', e) }
     return { success: true as const, number: r.smartbillNumber }
   } catch (e: any) {
     // Refuz clar → nu există factură. Fără răspuns clar → poate exista: „de verificat”.
@@ -71,4 +84,20 @@ export async function issueCampaignInvoice(campaignId: string, raw: unknown) {
         : 'SmartBill nu a răspuns clar. Verifică în SmartBill dacă factura s-a emis înainte să încerci din nou.',
     }
   }
+}
+
+/** Facturile emise pentru o campanie, văzute de brandul care o deține. */
+export async function getBrandCampaignInvoices(campaignId: string) {
+  const sb = await createClient()
+  const { data: { user } } = await sb.auth.getUser()
+  if (!user) return { error: 'Neautentificat' }
+  const admin = createAdminClient()
+  const { data: brand } = await admin.from('brands').select('id').eq('user_id', user.id).maybeSingle()
+  if (!brand) return { error: 'Acces interzis' }
+  const { data: camp } = await admin.from('campaigns').select('id').eq('id', campaignId).eq('brand_id', brand.id).maybeSingle()
+  if (!camp) return { error: 'Acces interzis' }
+  const { data } = await admin.from('campaign_invoices')
+    .select('id, amount, description, smartbill_number, created_at')
+    .eq('campaign_id', campaignId).eq('status', 'issued').order('created_at', { ascending: false })
+  return { success: true as const, invoices: data || [] }
 }

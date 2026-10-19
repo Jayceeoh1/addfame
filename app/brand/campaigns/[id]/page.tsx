@@ -24,6 +24,7 @@ import { COLLAB_CFG, fmt, fmtNum, daysLeft, type Tab } from '@/components/brand/
 import { TIERS, creatorTier } from '@/lib/tiers'
 import TierChip from '@/components/shared/TierChip'
 import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
+import CampaignInvoicesCard from '@/components/brand/campaigns/CampaignInvoicesCard'
 import RightsPanel from '@/components/brand/campaigns/RightsPanel'
 import { getBrandCollabHistory } from '@/app/actions/brand-history'
 import { hasWorkedWith, type InfluencerHistory } from '@/lib/brand-history'
@@ -561,6 +562,8 @@ export default function CampaignDetailPage() {
           </div>
         </div>
       )}
+
+      <CampaignInvoicesCard campaignId={campaignId} />
 
       {/* ── Navigare principală ── */}
       <div className="flex gap-2 mb-5" style={{ overflowX: 'auto', scrollbarWidth: 'none' }}>
