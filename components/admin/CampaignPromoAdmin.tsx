@@ -5,11 +5,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { adminGetFeatured, adminSetFeatured, adminDmList, adminMarkDmSent } from '@/app/actions/featured-campaign'
 import { toCsv, dmMessage, type DmRow } from '@/lib/dm-list'
 
+const pad = (n: number) => String(n).padStart(2, '0')
+function toLocalInput(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}` }
+/** Următoarea duminică la 00:00 (ora din browserul adminului). */
+function nextSunday() { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7)); return d }
+
 export default function CampaignPromoAdmin() {
   const [open, setOpen] = useState(false)
   const [camps, setCamps] = useState<{ id: string; name: string; brand: string; slots: number; taken: number }[]>([])
   const [sel, setSel] = useState('')
   const [on, setOn] = useState(false)
+  const [ends, setEnds] = useState('')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [list, setList] = useState<{ rows: DmRow[]; name: string; link: string; excluded: number; pool: number; approved: number } | null>(null)
@@ -19,13 +25,13 @@ export default function CampaignPromoAdmin() {
   useEffect(() => {
     adminGetFeatured().then(r => {
       if ('error' in r) return
-      setCamps(r.campaigns); setOn(r.enabled); setSel(r.campaignId || r.campaigns[0]?.id || '')
+      setCamps(r.campaigns); setOn(r.enabled); setEnds(r.endsAt ? toLocalInput(new Date(r.endsAt)) : toLocalInput(nextSunday())); setSel(r.campaignId || r.campaigns[0]?.id || '')
     }).catch(() => {})
   }, [])
 
   async function toggle(next: boolean) {
     setBusy(true); setMsg('')
-    const r = await adminSetFeatured(sel, next)
+    const r = await adminSetFeatured(sel, next, ends ? new Date(ends).toISOString() : null)
     setBusy(false)
     if ('error' in r) { setMsg(r.error || 'Eroare'); return }
     setOn(next); setMsg(next ? 'Cardul e pe dashboardul creatorilor.' : 'Cardul a fost oprit.')
@@ -76,6 +82,12 @@ export default function CampaignPromoAdmin() {
             </button>
             <button disabled={busy || !sel} onClick={load} className="h-11 px-5 rounded-xl text-sm font-black bg-gray-900 text-white disabled:opacity-50">Listă DM (300)</button>
           </div>
+          <label className="flex flex-wrap items-center gap-3 text-sm font-semibold text-gray-700">
+            Timer de urgență, „Înscrieri până la”:
+            <input type="datetime-local" value={ends} onChange={e => setEnds(e.target.value)} className="h-11 rounded-xl border-2 border-gray-200 px-3 text-sm" />
+            <button type="button" onClick={() => setEnds('')} className="text-xs font-bold text-gray-500 underline">fără timer</button>
+            {on && <button type="button" disabled={busy} onClick={() => toggle(true)} className="h-10 px-4 rounded-xl bg-purple-600 text-white text-xs font-black disabled:opacity-50">Salvează timerul</button>}
+          </label>
           {msg && <p className="text-sm font-semibold text-gray-700">{msg}</p>}
           {list && (
             <div className="flex flex-col gap-3">

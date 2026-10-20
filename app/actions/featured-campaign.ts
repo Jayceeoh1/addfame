@@ -28,6 +28,8 @@ export async function getFeaturedCampaign() {
   const admin = createAdminClient()
   const { data: s } = await admin.from('platform_settings').select('value').eq('key', SETTING).maybeSingle()
   const id = (s?.value as any)?.campaign_id
+  const endsRaw = (s?.value as any)?.ends_at
+  const endsAt = typeof endsRaw === 'string' && !isNaN(new Date(endsRaw).getTime()) && new Date(endsRaw).getTime() > Date.now() ? endsRaw : null
   if (!(s?.value as any)?.enabled || !isId(id)) return null
   const { data: c } = await admin.from('campaigns')
     .select('id, title, offer_name, product_name, brand_name, status, deadline, max_influencers, current_influencers, offer_value, offer_description, offer_images, offer_image_urls, offer_image_url')
@@ -43,7 +45,7 @@ export async function getFeaturedCampaign() {
     applied = !!col?.length
   }
   const img = (Array.isArray(c.offer_images) && c.offer_images[0]) || (Array.isArray(c.offer_image_urls) && c.offer_image_urls[0]) || c.offer_image_url || null
-  return { id: c.id as string, name: campaignName(c), brand: (c.brand_name as string) || '', offer: offerLine(c.offer_description), left: max ? Math.max(0, max - cur) : null, deadline: (c.deadline as string) || null, image: img as string | null, applied }
+  return { id: c.id as string, name: campaignName(c), brand: (c.brand_name as string) || '', offer: offerLine(c.offer_description), left: max ? Math.max(0, max - cur) : null, deadline: (c.deadline as string) || null, image: img as string | null, applied, endsAt }
 }
 
 export async function adminGetFeatured() {
@@ -58,17 +60,19 @@ export async function adminGetFeatured() {
     success: true as const,
     enabled: (s?.value as any)?.enabled === true,
     campaignId: ((s?.value as any)?.campaign_id as string) || '',
+    endsAt: ((s?.value as any)?.ends_at as string) || '',
     campaigns: (camps || []).map((c: any) => ({ id: c.id as string, name: campaignName(c), brand: c.brand_name || '', slots: c.max_influencers || 0, taken: c.current_influencers || 0 })),
   }
 }
 
-export async function adminSetFeatured(campaignId: string, enabled: boolean) {
+export async function adminSetFeatured(campaignId: string, enabled: boolean, endsAt?: string | null) {
   const auth = await requireAdmin()
   if ('error' in auth) return auth
   if (enabled && !isId(campaignId)) return { error: 'Alege o campanie.' }
+  const ends = endsAt && !isNaN(new Date(endsAt).getTime()) ? new Date(endsAt).toISOString() : null
   const admin = createAdminClient()
   const { error } = await admin.from('platform_settings').upsert({
-    key: SETTING, value: { enabled: !!enabled, campaign_id: isId(campaignId) ? campaignId : null }, label: 'Campanie în prim-plan',
+    key: SETTING, value: { enabled: !!enabled, campaign_id: isId(campaignId) ? campaignId : null, ends_at: ends }, label: 'Campanie în prim-plan',
     description: 'Campania afișată pe dashboardul creatorilor', updated_at: new Date().toISOString(),
   }, { onConflict: 'key' })
   if (error) return { error: error.message }
