@@ -28,7 +28,7 @@ export default function FeaturedCampaignCard() {
         <span className="fcc-tag">Campanie nouă{c.brand ? ` · ${c.brand}` : ''}</span>
         <span className="fcc-t">{c.name}</span>
         <span className="fcc-s">
-          Produse gratuite{c.value ? ` (valoare ~${c.value} lei)` : ''}
+          {c.offer || 'Produse gratuite'}
           {c.left !== null ? ` · ${c.left} locuri rămase` : ''}
           {days !== null && days >= 0 ? ` · ${days} zile` : ''}
         </span>

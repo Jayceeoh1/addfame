@@ -6,11 +6,19 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/verify-admin'
 import { campaignName } from '@/lib/campaign-name'
-import { pickDmList, dmMessage } from '@/lib/dm-list'
+import { pickDmList, dmMessage, igHandleOf } from '@/lib/dm-list'
 
 const SETTING = 'featured_campaign'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'
 const isId = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v)
+
+/** Ce primește creatorul: prima propoziție din descrierea ofertei, scurtată. */
+function offerLine(d: unknown): string {
+  const t = String(d ?? '').replace(/\s+/g, ' ').trim()
+  if (!t) return ''
+  const first = t.split(/(?<=[.!?])\s/)[0].replace(/[.:]+$/, '')
+  return first.length > 120 ? first.slice(0, 117).trimEnd() + '…' : first
+}
 
 /** Pentru creator: campania afișată pe dashboard (sau null). */
 export async function getFeaturedCampaign() {
@@ -22,7 +30,7 @@ export async function getFeaturedCampaign() {
   const id = (s?.value as any)?.campaign_id
   if (!(s?.value as any)?.enabled || !isId(id)) return null
   const { data: c } = await admin.from('campaigns')
-    .select('id, title, offer_name, product_name, brand_name, status, deadline, max_influencers, current_influencers, offer_value, offer_images, offer_image_urls, offer_image_url')
+    .select('id, title, offer_name, product_name, brand_name, status, deadline, max_influencers, current_influencers, offer_value, offer_description, offer_images, offer_image_urls, offer_image_url')
     .eq('id', id).maybeSingle()
   if (!c || c.status !== 'ACTIVE') return null
   if (c.deadline && new Date(c.deadline) < new Date()) return null
@@ -35,7 +43,7 @@ export async function getFeaturedCampaign() {
     applied = !!col?.length
   }
   const img = (Array.isArray(c.offer_images) && c.offer_images[0]) || (Array.isArray(c.offer_image_urls) && c.offer_image_urls[0]) || c.offer_image_url || null
-  return { id: c.id as string, name: campaignName(c), brand: (c.brand_name as string) || '', value: Number(c.offer_value) || 0, left: max ? Math.max(0, max - cur) : null, deadline: (c.deadline as string) || null, image: img as string | null, applied }
+  return { id: c.id as string, name: campaignName(c), brand: (c.brand_name as string) || '', offer: offerLine(c.offer_description), left: max ? Math.max(0, max - cur) : null, deadline: (c.deadline as string) || null, image: img as string | null, applied }
 }
 
 export async function adminGetFeatured() {
@@ -85,7 +93,7 @@ export async function adminDmList(campaignId: string, limit = 300) {
   for (let from = 0; from < 5000; from += 1000) {
     const { data, error } = await admin.from('influencers')
       .select('id, name, instagram_handle, city, niches, creator_score, last_active_at, engagement_rate, instagram_connected, ig_followers, instagram_followers, tt_followers, platforms')
-      .eq('approval_status', 'approved').not('instagram_handle', 'is', null).range(from, from + 999)
+      .ilike('approval_status', 'approved').range(from, from + 999)
     if (error) return { error: error.message }
     all.push(...(data || []))
     if (!data || data.length < 1000) break
@@ -96,7 +104,7 @@ export async function adminDmList(campaignId: string, limit = 300) {
     success: true as const, rows, sent: ((sentRow?.value as any)?.ids as string[]) || [],
     campaignName: name, link: `${APP_URL}/influencer/campaigns/${campaignId}`,
     template: dmMessage('{nume}', name, `${APP_URL}/influencer/campaigns/${campaignId}`),
-    excluded: exclude.size, pool: all.length,
+    excluded: exclude.size, pool: all.filter(c => igHandleOf(c)).length, approved: all.length,
   }
 }
 

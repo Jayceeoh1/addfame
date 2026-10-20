@@ -12,7 +12,7 @@ export default function CampaignPromoAdmin() {
   const [on, setOn] = useState(false)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
-  const [list, setList] = useState<{ rows: DmRow[]; name: string; link: string; excluded: number; pool: number } | null>(null)
+  const [list, setList] = useState<{ rows: DmRow[]; name: string; link: string; excluded: number; pool: number; approved: number } | null>(null)
   const [sent, setSent] = useState<Set<string>>(new Set())
   const [copied, setCopied] = useState('')
 
@@ -35,7 +35,7 @@ export default function CampaignPromoAdmin() {
     const r = await adminDmList(sel, 300)
     setBusy(false)
     if ('error' in r) { setMsg(r.error || 'Eroare'); return }
-    setList({ rows: r.rows, name: r.campaignName, link: r.link, excluded: r.excluded, pool: r.pool })
+    setList({ rows: r.rows, name: r.campaignName, link: r.link, excluded: r.excluded, pool: r.pool, approved: r.approved })
     setSent(new Set(r.sent))
   }
   async function mark(id: string) {
@@ -81,7 +81,7 @@ export default function CampaignPromoAdmin() {
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="font-bold">{list.rows.length} creatori · rămași de contactat: {left}</span>
-                <span className="text-gray-500">({list.excluded} au aplicat deja, din {list.pool} cu Instagram)</span>
+                <span className="text-gray-500">({list.excluded} au aplicat deja, din {list.approved} aprobați, {list.pool} cu Instagram)</span>
                 <button onClick={download} className="ml-auto h-10 px-4 rounded-xl bg-green-600 text-white font-black text-sm">Descarcă CSV</button>
               </div>
               <p className="text-xs text-gray-500">Apasă pe @nume ca să deschizi profilul, „Copiază” pune mesajul gata scris, apoi bifează „Trimis”. Recomandat: 30–40 pe zi, ca Instagram să nu limiteze contul.</p>

@@ -1,5 +1,5 @@
 // Lista de creatori pentru invitații pe Instagram (DM): scor de potrivire, link de profil, CSV, mesaj. Funcții pure.
-import { creatorTierInfo, parseCount } from '@/lib/tiers'
+import { creatorTierInfo, parseCount, normalizePlatforms } from '@/lib/tiers'
 
 export type DmCandidate = {
   id: string; name?: string | null; instagram_handle?: string | null; city?: string | null
@@ -14,6 +14,18 @@ export function cleanHandle(raw: unknown): string | null {
   if (!s) return null
   s = s.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').split(/[/?#\s]/)[0]
   return /^[a-z0-9._]{1,30}$/i.test(s) ? s : null
+}
+
+/** Handle-ul de Instagram: din câmpul instagram_handle, altfel din lista de platforme (username sau link). */
+export function igHandleOf(c: { instagram_handle?: unknown; platforms?: unknown }): string | null {
+  const direct = cleanHandle(c.instagram_handle)
+  if (direct) return direct
+  for (const p of normalizePlatforms(c.platforms) as any[]) {
+    if (String(p?.platform || '').toLowerCase().trim() !== 'instagram') continue
+    const h = cleanHandle(p.username) || cleanHandle(p.handle) || cleanHandle(p.url)
+    if (h) return h
+  }
+  return null
 }
 
 export function instagramUrl(handle: unknown): string | null {
@@ -53,7 +65,7 @@ export function pickDmList(cands: DmCandidate[], campaignNiches: unknown, limit 
   const rows: DmRow[] = []
   for (const c of cands) {
     if (exclude.has(c.id)) continue
-    const handle = cleanHandle(c.instagram_handle)
+    const handle = igHandleOf(c)
     if (!handle) continue
     rows.push({
       id: c.id, name: String(c.name || handle), handle, url: `https://www.instagram.com/${handle}/`,
