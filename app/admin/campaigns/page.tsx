@@ -1,5 +1,6 @@
 'use client'
 // @ts-nocheck
+import CampaignPromoAdmin from '@/components/admin/CampaignPromoAdmin'
 import { campaignName } from '@/lib/campaign-name'
 import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
 import CampaignInvoicePanel from '@/components/admin/CampaignInvoicePanel'
@@ -1289,6 +1290,8 @@ export default function AdminCampaigns() {
           {toast.msg}
         </div>
       )}
+
+      <CampaignPromoAdmin />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6 fade-up">
