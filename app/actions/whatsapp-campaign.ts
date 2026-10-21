@@ -86,7 +86,7 @@ async function loadAll(admin: Admin, campaignId: string) {
   const all: any[] = []
   for (let from = 0; from < 10000; from += 1000) {
     const { data, error } = await admin.from('influencers').select('id, name, phone, settings, last_active_at')
-      .ilike('approval_status', 'approved').filter('settings->notifications->>whatsapp_campaigns', 'eq', 'true')
+      .ilike('approval_status', 'approved')
       .order('last_active_at', { ascending: false, nullsFirst: false }).range(from, from + 999)
     if (error) throw new Error(error.message)
     all.push(...(data || []))
@@ -94,9 +94,11 @@ async function loadAll(admin: Admin, campaignId: string) {
   }
   const announcedSet = new Set(announced), remindedSet = new Set(reminded)
   return {
-    all, announced, reminded, optedIn: all.length,
+    all, announced, reminded, optedIn: all.filter(waOptedIn).length,
     announceAudience: waAudience(all, applied, new Set([...announcedSet, ...recent])),
+    announceAudienceAll: waAudience(all, applied, new Set([...announcedSet, ...recent]), true),
     reminderAudience: waReminderAudience(all, applied, announcedSet, remindedSet, recent24),
+    reminderAudienceAll: waReminderAudience(all, applied, announcedSet, remindedSet, recent24, true),
     skippedRecent: all.filter(c => recent.has(c.id) && !announcedSet.has(c.id) && !applied.has(c.id)).length,
   }
 }
@@ -112,7 +114,7 @@ export async function adminWaStatus(campaignId: string) {
     return {
       success: true as const,
       configured: whatsappConfigured(TEMPLATE), reminderConfigured: whatsappConfigured(REMINDER_TEMPLATE),
-      optedIn: x.optedIn, remaining: x.announceAudience.length, sent: x.announced.length,
+      optedIn: x.optedIn, remaining: x.announceAudience.length, remainingAll: x.announceAudienceAll.length, reminderRemainingAll: x.reminderAudienceAll.length, sent: x.announced.length,
       reminderRemaining: x.reminderAudience.length, reminded: x.reminded.length, skippedRecent: x.skippedRecent,
       closesAt: closes, timeLeft: closes ? timeLeftLabel(new Date(closes).getTime() - Date.now()) : null,
     }
@@ -120,7 +122,7 @@ export async function adminWaStatus(campaignId: string) {
 }
 
 /** Trimite anunțul sau reminder-ul următorilor `limit` creatori (max 25 pe apel; adminul apelează în bucle). */
-export async function adminWaSend(campaignId: string, limit = 25, kind: Kind = 'announce') {
+export async function adminWaSend(campaignId: string, limit = 25, kind: Kind = 'announce', everyone = false) {
   const auth = await requireAdmin()
   if ('error' in auth) return auth
   if (!isId(campaignId)) return { error: 'Alege o campanie.' }
@@ -140,7 +142,7 @@ export async function adminWaSend(campaignId: string, limit = 25, kind: Kind = '
   }
   let x
   try { x = await loadAll(admin, campaignId) } catch (e: any) { return { error: e?.message || 'Eroare' } }
-  const pool = kind === 'reminder' ? x.reminderAudience : x.announceAudience
+  const pool = kind === 'reminder' ? (everyone ? x.reminderAudienceAll : x.reminderAudience) : (everyone ? x.announceAudienceAll : x.announceAudience)
   const batch = pool.slice(0, Math.min(Math.max(1, limit), 25))
   const done = new Set(kind === 'reminder' ? x.reminded : x.announced)
   let ok = 0, failed = 0

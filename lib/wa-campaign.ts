@@ -20,11 +20,14 @@ export function firstName(name: unknown): string {
 }
 
 /** Cei care pot primi anunțul pentru o campanie: au acceptat, au mobil valid, n-au aplicat, n-au primit deja. */
-export function waAudience(cands: WaCandidate[], applied: Set<string>, alreadySent: Set<string>) {
+export function waAudience(cands: WaCandidate[], applied: Set<string>, alreadySent: Set<string>, everyone = false) {
   const out: { id: string; phone: string; first: string }[] = []
   const phones = new Set<string>()
-  for (const c of cands) {
-    if (!waOptedIn(c) || applied.has(c.id) || alreadySent.has(c.id)) continue
+  // „everyone”: și cei care n-au răspuns, dar nu cei care au refuzat explicit; cei cu acord rămân primii.
+  const ordered = everyone ? [...cands.filter(waOptedIn), ...cands.filter(c => !waOptedIn(c))] : cands
+  for (const c of ordered) {
+    if (everyone ? c?.settings?.notifications?.whatsapp_campaigns === false : !waOptedIn(c)) continue
+    if (applied.has(c.id) || alreadySent.has(c.id)) continue
     const phone = waPhone(c.phone)
     if (!phone || phones.has(phone)) continue
     phones.add(phone)
@@ -43,8 +46,8 @@ export function waVars(first: string, campaignName: string, campaignId: string):
 export const WA_MIN_GAP_HOURS = 48
 
 /** Reminder: doar cei care au primit anunțul, n-au aplicat, n-au primit deja reminder, au încă acordul. */
-export function waReminderAudience(cands: WaCandidate[], applied: Set<string>, announced: Set<string>, reminded: Set<string>, recent: Set<string> = new Set()) {
-  return waAudience(cands.filter(c => announced.has(c.id) && !reminded.has(c.id)), applied, recent)
+export function waReminderAudience(cands: WaCandidate[], applied: Set<string>, announced: Set<string>, reminded: Set<string>, recent: Set<string> = new Set(), everyone = false) {
+  return waAudience(cands.filter(c => announced.has(c.id) && !reminded.has(c.id)), applied, recent, everyone)
 }
 
 /** „5 ore”, „1 oră”, „2 zile”, „40 de minute” — pentru variabila din șablonul de reminder. */
