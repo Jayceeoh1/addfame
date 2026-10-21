@@ -37,3 +37,26 @@ export function waAudience(cands: WaCandidate[], applied: Set<string>, alreadySe
 export function waVars(first: string, campaignName: string, campaignId: string): Record<string, string> {
   return { '1': first, '2': campaignName.slice(0, 120), '3': campaignId }
 }
+
+// ─── Reminder „se închid înscrierile” + limita anti-spam ────────────────────────
+/** Pauza minimă între două mesaje de campanie către același om (anunț sau reminder, orice campanie). */
+export const WA_MIN_GAP_HOURS = 48
+
+/** Reminder: doar cei care au primit anunțul, n-au aplicat, n-au primit deja reminder, au încă acordul. */
+export function waReminderAudience(cands: WaCandidate[], applied: Set<string>, announced: Set<string>, reminded: Set<string>, recent: Set<string> = new Set()) {
+  return waAudience(cands.filter(c => announced.has(c.id) && !reminded.has(c.id)), applied, recent)
+}
+
+/** „5 ore”, „1 oră”, „2 zile”, „40 de minute” — pentru variabila din șablonul de reminder. */
+export function timeLeftLabel(ms: number): string | null {
+  if (!(ms > 0)) return null
+  const h = Math.floor(ms / 3_600_000)
+  if (h >= 48) { const d = Math.floor(h / 24); return `${d} ${d === 1 ? 'zi' : d < 20 ? 'zile' : 'de zile'}` }
+  if (h >= 1) return `${h} ${h === 1 ? 'oră' : h < 20 ? 'ore' : 'de ore'}`
+  const m = Math.max(1, Math.floor(ms / 60_000))
+  return `${m} ${m === 1 ? 'minut' : m < 20 ? 'minute' : 'de minute'}`
+}
+
+export function waReminderVars(first: string, campaignName: string, left: string, campaignId: string): Record<string, string> {
+  return { '1': first, '2': campaignName.slice(0, 120), '3': left, '4': campaignId }
+}

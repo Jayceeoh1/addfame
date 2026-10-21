@@ -23,7 +23,8 @@ export default function CampaignPromoAdmin() {
   const [sent, setSent] = useState<Set<string>>(new Set())
   const [copied, setCopied] = useState('')
   const [last, setLast] = useState<number | null>(null)
-  const [wa, setWa] = useState<{ configured: boolean; optedIn: number; remaining: number; sent: number } | null>(null)
+  const [wa, setWa] = useState<{ configured: boolean; reminderConfigured: boolean; optedIn: number; remaining: number; sent: number; reminderRemaining: number; reminded: number; skippedRecent: number; timeLeft: string | null } | null>(null)
+  const [waKind, setWaKind] = useState<'announce' | 'reminder'>('announce')
   const [waArm, setWaArm] = useState(false)
   const [waCount, setWaCount] = useState(20)
   const [waProg, setWaProg] = useState('')
@@ -82,17 +83,18 @@ export default function CampaignPromoAdmin() {
     const r = await adminWaStatus(sel)
     setBusy(false)
     if ('error' in r) { setMsg(r.error || 'Eroare'); return }
-    setWa({ configured: r.configured, optedIn: r.optedIn, remaining: r.remaining, sent: r.sent }); setWaArm(false)
+    setWa({ configured: r.configured, reminderConfigured: r.reminderConfigured, optedIn: r.optedIn, remaining: r.remaining, sent: r.sent, reminderRemaining: r.reminderRemaining, reminded: r.reminded, skippedRecent: r.skippedRecent, timeLeft: r.timeLeft }); setWaArm(false)
   }
   /** Trimite exact câți ai ales (10…200), în pachete de câte 25, cei mai activi primii. */
   async function waSend() {
     if (!wa) return
-    const target = Math.min(waCount, wa.remaining)
+    const avail = waKind === 'reminder' ? wa.reminderRemaining : wa.remaining
+    const target = Math.min(waCount, avail)
     setBusy(true); setMsg(''); setWaArm(false)
-    let ok = 0, failed = 0, left = target, remaining = wa.remaining
+    let ok = 0, failed = 0, left = target, remaining = avail
     while (left > 0) {
       setWaProg(`Se trimite… ${ok + failed}/${target}`)
-      const r = await adminWaSend(sel, Math.min(25, left))
+      const r = await adminWaSend(sel, Math.min(25, left), waKind)
       if ('error' in r) { setMsg(r.error || 'Eroare'); break }
       ok += r.ok; failed += r.failed; remaining = r.remaining
       const done = r.ok + r.failed
@@ -100,7 +102,7 @@ export default function CampaignPromoAdmin() {
       left -= done
     }
     setBusy(false); setWaProg('')
-    setMsg(`WhatsApp: ${ok} trimise${failed ? `, ${failed} eșuate (vezi WhatsApp logs)` : ''}. Mai rămân ${remaining} care au acceptat.`)
+    setMsg(`WhatsApp (${waKind === 'reminder' ? 'reminder' : 'anunț'}): ${ok} trimise${failed ? `, ${failed} eșuate (vezi WhatsApp logs)` : ''}. Mai rămân ${remaining} care au acceptat.`)
     waCheck()
   }
   async function exportApplicants() {
@@ -152,18 +154,32 @@ export default function CampaignPromoAdmin() {
           <div className="flex flex-wrap items-center gap-3 rounded-xl bg-green-50 border border-green-200 p-3">
             <span className="text-sm font-bold text-green-900">Anunț WhatsApp</span>
             <button disabled={busy || !sel} onClick={waCheck} className="h-10 px-4 rounded-xl bg-white border-2 border-green-300 text-green-800 font-black text-sm disabled:opacity-50">Verifică publicul</button>
-            {wa && <span className="text-sm text-green-900">{wa.optedIn} au acceptat WhatsApp · <b>{wa.remaining}</b> de trimis · {wa.sent} trimise deja{!wa.configured ? ' · lipsește șablonul Twilio' : ''}</span>}
-            {wa && wa.configured && wa.remaining > 0 && (<span className="flex flex-wrap items-center gap-2">
-              <label className="text-sm font-bold text-green-900" htmlFor="wa-count">Câți primesc:</label>
-              <select id="wa-count" value={waCount} disabled={busy} onChange={e => { setWaCount(Number(e.target.value)); setWaArm(false) }} className="h-10 rounded-xl border-2 border-green-300 px-2 text-sm font-bold">
-                {[10, 20, 30, 50, 100, 200].map(n => <option key={n} value={n} disabled={n > wa.remaining && n !== 10}>{n}</option>)}
+            {wa && <span className="text-sm text-green-900">{wa.optedIn} au acceptat WhatsApp · anunț: <b>{wa.remaining}</b> de trimis, {wa.sent} trimise · reminder: <b>{wa.reminderRemaining}</b> de trimis, {wa.reminded} trimise{wa.skippedRecent ? ` · ${wa.skippedRecent} sar (au primit alt mesaj în ultimele 48h)` : ''}</span>}
+            {wa && (<span className="flex flex-wrap items-center gap-2 basis-full">
+              <label className="text-sm font-bold text-green-900" htmlFor="wa-kind">Mesaj:</label>
+              <select id="wa-kind" value={waKind} disabled={busy} onChange={e => { setWaKind(e.target.value as any); setWaArm(false) }} className="h-10 rounded-xl border-2 border-green-300 px-2 text-sm font-bold">
+                <option value="announce">Anunț campanie nouă</option>
+                <option value="reminder">Reminder: se închid înscrierile{wa.timeLeft ? ` (în ${wa.timeLeft})` : ''}</option>
               </select>
-              {waArm
-                ? <><span className="text-sm font-bold text-green-900">Trimiți la {Math.min(waCount, wa.remaining)} creatori (cei mai activi)?</span>
-                    <button disabled={busy} onClick={waSend} className="h-10 px-4 rounded-xl bg-green-600 text-white font-black text-sm disabled:opacity-50">Da, trimite</button>
-                    <button onClick={() => setWaArm(false)} className="text-xs font-bold text-gray-600 underline">Anulează</button></>
-                : <button disabled={busy} onClick={() => setWaArm(true)} className="h-10 px-4 rounded-xl bg-green-600 text-white font-black text-sm disabled:opacity-50">Trimite la {Math.min(waCount, wa.remaining)}</button>}
-              {waProg && <span className="text-sm font-bold text-green-900">{waProg}</span>}
+              {(() => {
+                const ready = waKind === 'reminder' ? wa.reminderConfigured : wa.configured
+                const avail = waKind === 'reminder' ? wa.reminderRemaining : wa.remaining
+                if (!ready) return <span className="text-sm font-bold text-red-700">Lipsește șablonul Twilio pentru {waKind === 'reminder' ? 'reminder' : 'anunț'}.</span>
+                if (waKind === 'reminder' && !wa.timeLeft) return <span className="text-sm font-bold text-red-700">Pune timerul pe card ca să știu când se închid înscrierile.</span>
+                if (avail === 0) return <span className="text-sm text-green-900">Nu mai e nimeni de trimis.</span>
+                return (<>
+                  <label className="text-sm font-bold text-green-900" htmlFor="wa-count">Câți primesc:</label>
+                  <select id="wa-count" value={waCount} disabled={busy} onChange={e => { setWaCount(Number(e.target.value)); setWaArm(false) }} className="h-10 rounded-xl border-2 border-green-300 px-2 text-sm font-bold">
+                    {[10, 20, 30, 50, 100, 200].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                  {waArm
+                    ? <><span className="text-sm font-bold text-green-900">Trimiți {waKind === 'reminder' ? 'reminder-ul' : 'anunțul'} la {Math.min(waCount, avail)} creatori?</span>
+                        <button disabled={busy} onClick={waSend} className="h-10 px-4 rounded-xl bg-green-600 text-white font-black text-sm disabled:opacity-50">Da, trimite</button>
+                        <button onClick={() => setWaArm(false)} className="text-xs font-bold text-gray-600 underline">Anulează</button></>
+                    : <button disabled={busy} onClick={() => setWaArm(true)} className="h-10 px-4 rounded-xl bg-green-600 text-white font-black text-sm disabled:opacity-50">Trimite la {Math.min(waCount, avail)}</button>}
+                  {waProg && <span className="text-sm font-bold text-green-900">{waProg}</span>}
+                </>)
+              })()}
             </span>)}
           </div>
           {msg && <p className="text-sm font-semibold text-gray-700">{msg}</p>}
