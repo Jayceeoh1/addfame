@@ -32,6 +32,7 @@ type NotificationSettings = {
   new_followers: boolean
   email_notifications: boolean
   push_notifications: boolean
+  whatsapp_campaigns?: boolean
 }
 
 type PrivacySettings = {
@@ -810,6 +811,7 @@ function SettingsPageInner() {
                 <div className="divide-y divide-border">
                   <SettingRow label="Notificări Email" description="Primește notificări prin email" checked={notifications.email_notifications} onChange={v => setNotifications(p => ({ ...p, email_notifications: v }))} />
                   <PushToggle />
+                  <SettingRow label="Campanii noi pe WhatsApp" description="Un mesaj când apare o campanie nouă (pe numărul din profil)" checked={notifications.whatsapp_campaigns === true} onChange={v => setNotifications(p => ({ ...p, whatsapp_campaigns: v }))} />
                 </div>
 
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-5 mb-2">Activitate</p>

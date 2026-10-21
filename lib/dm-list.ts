@@ -92,3 +92,27 @@ export function dmMessage(firstName: string, campaignName: string, link: string)
   const n = (firstName || '').trim().split(/\s+/)[0] || 'salut'
   return `Salut, ${n}! Sunt de la AddFame. Avem o campanie nouă, „${campaignName}”, cu produse primite gratuit în schimbul unui Reel/Story, și cred că ți se potrivește. Locurile sunt limitate, intră în contul tău AddFame și aplică aici: ${link}`
 }
+
+// ─── Export aplicanți (pentru brand): fără email / telefon ──────────────────────
+const STATUS_RO: Record<string, string> = { PENDING: 'În așteptare', ACTIVE: 'Acceptat', COMPLETED: 'Finalizat', REJECTED: 'Respins', CANCELLED: 'Anulat' }
+
+export type ApplicantRow = { name: string; handle: string; url: string; followers: number; tier: string; city: string; niches: string; engagement: string; status: string; appliedAt: string }
+
+export function buildApplicantRow(col: { status?: string | null; created_at?: string | null }, inf: DmCandidate & { niches?: unknown }): ApplicantRow {
+  const handle = igHandleOf(inf) || ''
+  const info = creatorTierInfo(inf as any)
+  const er = parseCount(inf.engagement_rate) || Number(inf.engagement_rate) || 0
+  return {
+    name: String(inf.name || handle || ''), handle, url: handle ? `https://www.instagram.com/${handle}/` : '',
+    followers: info.followers, tier: info.tier?.label || '', city: String(inf.city || ''),
+    niches: nicheList(inf.niches).join(', '), engagement: er ? String(er).replace('.', ',') + '%' : '',
+    status: STATUS_RO[String(col.status || '').toUpperCase()] || String(col.status || ''),
+    appliedAt: col.created_at ? new Date(col.created_at).toLocaleDateString('ro-RO') : '',
+  }
+}
+
+export function applicantsToCsv(rows: ApplicantRow[]): string {
+  const head = ['Nr', 'Nume AddFame', 'Instagram', 'Link Instagram', 'Urmăritori', 'Nivel', 'Oraș', 'Nișe', 'Engagement', 'Status', 'Data aplicării']
+  const lines = rows.map((r, i) => [i + 1, r.name, r.handle ? '@' + r.handle : '', r.url, r.followers || '', r.tier, r.city, r.niches, r.engagement, r.status, r.appliedAt].map(csvCell).join(','))
+  return '﻿' + [head.join(','), ...lines].join('\r\n')
+}

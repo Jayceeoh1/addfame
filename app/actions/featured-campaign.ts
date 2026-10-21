@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/verify-admin'
 import { campaignName } from '@/lib/campaign-name'
-import { pickDmList, dmMessage, igHandleOf } from '@/lib/dm-list'
+import { pickDmList, dmMessage, igHandleOf, buildApplicantRow } from '@/lib/dm-list'
 
 const SETTING = 'featured_campaign'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'
@@ -121,4 +121,18 @@ export async function adminMarkDmSent(campaignId: string, ids: string[]) {
     key: `dm_sent:${campaignId}`, value: { ids }, label: 'DM trimise', description: 'Creatorii contactați pe Instagram pentru campanie', updated_at: new Date().toISOString(),
   }, { onConflict: 'key' })
   return error ? { error: error.message } : { success: true as const }
+}
+
+/** Aplicanții unei campanii (toate statusurile), fără email/telefon: pentru export CSV către brand. */
+export async function adminApplicants(campaignId: string) {
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth
+  if (!isId(campaignId)) return { error: 'Alege o campanie.' }
+  const admin = createAdminClient()
+  const { data, error } = await admin.from('collaborations')
+    .select('status, created_at, influencers(id, name, instagram_handle, city, niches, engagement_rate, instagram_connected, ig_followers, instagram_followers, tt_followers, platforms)')
+    .eq('campaign_id', campaignId).order('created_at', { ascending: true }).limit(2000)
+  if (error) return { error: error.message }
+  const rows = (data || []).filter((c: any) => c.influencers).map((c: any) => buildApplicantRow(c, Array.isArray(c.influencers) ? c.influencers[0] : c.influencers))
+  return { success: true as const, rows }
 }

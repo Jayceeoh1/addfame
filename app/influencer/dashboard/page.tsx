@@ -17,6 +17,7 @@ import { PointEventsSection } from '@/components/shared/PointEventCard'
 import HalloweenTreat from '@/components/influencer/HalloweenTreat'
 import HalloweenQuizCard from '@/components/influencer/HalloweenQuizCard'
 import FeaturedCampaignCard from '@/components/influencer/FeaturedCampaignCard'
+import WhatsAppOptInCard from '@/components/influencer/WhatsAppOptInCard'
 
 function TikTokIcon({ className }: { className?: string }) {
   return (
@@ -639,6 +640,7 @@ export default function InfluencerDashboard() {
       {profilePct < 100 && <OnboardingChecklist role="influencer" steps={checklistSteps} />}
       {userId && <AnnouncementBanner userId={userId} />}
       <FeaturedCampaignCard />
+      <WhatsAppOptInCard />
       <HalloweenQuizCard />
       <HalloweenTreat />
       {profile?.id && <PointEventsSection influencerId={profile.id} />}
