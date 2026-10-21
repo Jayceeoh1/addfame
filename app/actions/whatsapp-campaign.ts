@@ -131,9 +131,10 @@ export async function adminWaSend(campaignId: string, limit = 25, kind: Kind = '
     ? 'Lipsește TWILIO_TEMPLATE_CAMPAIGN_REMINDER_SID în Vercel (șablonul de reminder aprobat de Meta).'
     : 'Lipsește TWILIO_TEMPLATE_CAMPAIGN_SID în Vercel (șablonul aprobat de Meta).' }
   const admin = createAdminClient()
-  const { data: camp } = await admin.from('campaigns').select('id, title, offer_name, product_name, status, deadline').eq('id', campaignId).maybeSingle()
+  const { data: camp } = await admin.from('campaigns').select('*').eq('id', campaignId).maybeSingle()
   if (!camp || camp.status !== 'ACTIVE') return { error: 'Campania nu e activă.' }
   const name = campaignName(camp)
+  const linkId: string = (camp as any).slug || campaignId   // în link: numele campaniei (slug), altfel id-ul
   let left: string | null = null
   if (kind === 'reminder') {
     const closes = await closesAt(admin, campaignId, (camp.deadline as string) || null)
@@ -150,7 +151,7 @@ export async function adminWaSend(campaignId: string, limit = 25, kind: Kind = '
   for (let i = 0; i < batch.length; i += 5) {
     const part = batch.slice(i, i + 5)
     const res = await Promise.all(part.map(r => sendWhatsAppTemplate(r.phone, tpl,
-      kind === 'reminder' ? waReminderVars(r.first, name, left!, campaignId) : waVars(r.first, name, campaignId))))
+      kind === 'reminder' ? waReminderVars(r.first, name, left!, linkId) : waVars(r.first, name, linkId))))
     res.forEach((m, j) => {
       const r = part[j]
       done.add(r.id)   // și eșecurile: nu reîncercăm automat același număr

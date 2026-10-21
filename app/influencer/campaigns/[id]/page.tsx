@@ -18,7 +18,10 @@ import { CampaignHero, CampaignStats, CampaignSections, CAMPAIGN_CSS, daysLeft, 
 export default function CampaignBriefPage() {
   const params = useParams()
   const router = useRouter()
-  const campaignId = params.id as string
+  const routeParam = decodeURIComponent(String(params.id || ''))
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(routeParam)
+  // Linkul poate conține id-ul (vechi) sau numele campaniei (slug); după încărcare avem mereu id-ul real.
+  const [campaignId, setCampaignId] = useState<string>(isUuid ? routeParam : '')
 
   const [campaign, setCampaign] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -53,21 +56,22 @@ export default function CampaignBriefPage() {
       }
 
       const { data: camp, error } = await sb
-        .from('campaigns').select('*').eq('id', campaignId).eq('status', 'ACTIVE').single()
+        .from('campaigns').select('*').eq(isUuid ? 'id' : 'slug', routeParam).eq('status', 'ACTIVE').single()
 
       if (error || !camp) { router.replace('/influencer/campaigns'); return }
       // Redirectăm OPEN_CALL la pagina de evenimente
-      if (camp.campaign_type === 'OPEN_CALL') { router.replace('/influencer/castinguri/' + campaignId); return }
+      if (camp.campaign_type === 'OPEN_CALL') { router.replace('/influencer/castinguri/' + camp.id); return }
+      setCampaignId(camp.id)
       setCampaign(camp)
 
       if (inf) {
         const { data: collab } = await sb.from('collaborations').select('id, status')
-          .eq('campaign_id', campaignId).eq('influencer_id', inf.id).maybeSingle()
+          .eq('campaign_id', camp.id).eq('influencer_id', inf.id).maybeSingle()
         if (collab) setAlreadyApplied(true)
       }
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
-  }, [campaignId, router])
+  }, [routeParam, isUuid, router])
 
   useEffect(() => { load() }, [load])
 

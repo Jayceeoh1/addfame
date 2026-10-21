@@ -86,7 +86,7 @@ export async function adminDmList(campaignId: string, limit = 300) {
   if ('error' in auth) return auth
   if (!isId(campaignId)) return { error: 'Alege o campanie.' }
   const admin = createAdminClient()
-  const { data: camp } = await admin.from('campaigns').select('id, title, offer_name, product_name, niches').eq('id', campaignId).maybeSingle()
+  const { data: camp } = await admin.from('campaigns').select('*').eq('id', campaignId).maybeSingle()
   if (!camp) return { error: 'Campania nu există.' }
   const [{ data: cols }, { data: sentRow }] = await Promise.all([
     admin.from('collaborations').select('influencer_id').eq('campaign_id', campaignId),
@@ -106,8 +106,8 @@ export async function adminDmList(campaignId: string, limit = 300) {
   const name = campaignName(camp)
   return {
     success: true as const, rows, sent: ((sentRow?.value as any)?.ids as string[]) || [],
-    campaignName: name, link: `${APP_URL}/influencer/campaigns/${campaignId}`,
-    template: dmMessage('{nume}', name, `${APP_URL}/influencer/campaigns/${campaignId}`),
+    campaignName: name, link: `${APP_URL}/influencer/campaigns/${(camp as any).slug || campaignId}`,
+    template: dmMessage('{nume}', name, `${APP_URL}/influencer/campaigns/${(camp as any).slug || campaignId}`),
     excluded: exclude.size, pool: all.filter(c => igHandleOf(c)).length, approved: all.length,
   }
 }
