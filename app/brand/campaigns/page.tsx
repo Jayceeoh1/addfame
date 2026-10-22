@@ -89,6 +89,7 @@ export default function BrandCampaignsPage() {
   const [showSheet, setShowSheet] = useState(false)
   const router = useRouter()
   const [collabCounts, setCollabCounts] = useState<Record<string, number>>({})
+  const [selCounts, setSelCounts] = useState<Record<string, number>>({})
   const [brandVerification, setBrandVerification] = useState<{ status: string; reason?: string | null }>({ status: 'unverified' })
   const [canCreateCampaign, setCanCreateCampaign] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
@@ -140,8 +141,13 @@ export default function BrandCampaignsPage() {
 
       if (collabs) {
         const counts: Record<string, number> = {}
-        collabs.forEach(c => { counts[c.campaign_id] = (counts[c.campaign_id] || 0) + 1 })
+        const sel: Record<string, number> = {}
+        collabs.forEach(c => {
+          counts[c.campaign_id] = (counts[c.campaign_id] || 0) + 1
+          if (c.status === 'ACTIVE' || c.status === 'COMPLETED') sel[c.campaign_id] = (sel[c.campaign_id] || 0) + 1
+        })
         setCollabCounts(counts)
+        setSelCounts(sel)
       }
     } catch (err) { console.error(err) }
     finally { setLoading(false) }
@@ -392,7 +398,8 @@ export default function BrandCampaignsPage() {
             const isLoading = actionLoading === c.id
             const collabs = collabCounts[c.id] || 0
             const slotsTotal = c.max_influencers || 0
-            const slotsUsed = Array.isArray(c.accepted_influencers) ? c.accepted_influencers.length : 0
+            // numărătoare reală: colaborări ACTIVE/COMPLETED (coloana accepted_influencers nu se mai actualizează)
+            const slotsUsed = Math.max(selCounts[c.id] || 0, Array.isArray(c.accepted_influencers) ? c.accepted_influencers.length : 0)
             const pct = slotsTotal > 0 ? Math.min(100, Math.round((slotsUsed / slotsTotal) * 100)) : 0
             const isDraft = c.status === 'DRAFT'
             const isLive = c.status === 'ACTIVE' || c.status === 'PAUSED' || c.status === 'COMPLETED'
