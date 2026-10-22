@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f97316" />
+  <title>AddFame</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --orange: #f97316;
+      --ink: #111827;
+      --muted: #4b5563;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #ffffff;
+      color: var(--ink);
+    }
+    main {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px 24px calc(32px + env(safe-area-inset-bottom));
+    }
+    .bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: calc(4px + env(safe-area-inset-top));
+      background: var(--orange);
+    }
+    img {
+      width: 148px;
+      height: 148px;
+      object-fit: contain;
+    }
+    h1 {
+      margin: 8px 0 0;
+      font-size: 1.45rem;
+      line-height: 1.25;
+      font-weight: 750;
+      max-width: 18rem;
+    }
+    p {
+      margin: 12px 0 0;
+      max-width: 22rem;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+    button {
+      margin-top: 24px;
+      appearance: none;
+      border: 0;
+      background: var(--orange);
+      color: #ffffff;
+      font: inherit;
+      font-weight: 700;
+      padding: 14px 22px;
+      border-radius: 999px;
+      min-width: 12rem;
+    }
+    button:active { transform: scale(0.98); }
+  </style>
+</head>
+<body>
+  <div class="bar" aria-hidden="true"></div>
+  <main>
+    <img src="logo.png" alt="AddFame" width="148" height="148" />
+    <h1>Nu ai conexiune la internet</h1>
+    <p>AddFame are nevoie de internet ca să încarce platforma. Verifică semnalul Wi-Fi sau datele mobile, apoi încearcă din nou.</p>
+    <button type="button" id="retry">Încearcă din nou</button>
+  </main>
+  <script>
+    // Același URL ca PRODUCTION_URL din capacitor.config.js
+    var PRODUCTION_URL = 'https://addfame.ro';
+    document.getElementById('retry').addEventListener('click', function () {
+      window.location.replace(PRODUCTION_URL);
+    });
+  </script>
+</body>
+</html>
