@@ -46,6 +46,9 @@ const config = {
     // Local page in webDir, shown when https://addfame.ro cannot be reached.
     errorPath: 'index.html',
   },
+  // Exact token the site looks for (single word). Do not add spaces or rename it.
+  android: { appendUserAgent: 'AddFameApp' },
+  ios: { appendUserAgent: 'AddFameApp' },
   plugins: {
     SplashScreen: {
       launchAutoHide: true,

@@ -190,6 +190,7 @@ Acest PR nu leagă site-ul de pluginuri native. Următorul pas, tot în `mobile/
 ## De reținut
 
 - WebView-ul Android mărește textul după setarea de font a telefonului. Chrome nu face asta, așa că aceeași pagină arăta mai mare în aplicație și avatarul din „Salut, …” se turtea. `MainActivity` fixează text zoom la 100%, ca în browser.
+- User-agent-ul aplicației se termină cu cuvântul `AddFameApp` (Android și iOS, în `capacitor.config.js`). Site-ul folosește token-ul ca să știe că rulează în aplicație. După orice schimbare a configurării, din acest folder: `npx cap sync`.
 - Site-ul live se vede imediat în aplicație, fără un build nou de magazin. O modificare de iconiță, de plugin sau de `appId` are nevoie de un build nou.
 - Pagina de eroare din `www/` nu are acces la pluginurile Capacitor pe Android. Butonul „Încearcă din nou” reîncarcă `https://addfame.ro`.
 - Apple poate întreba, la review, de ce aplicația este un site într-un WebView (ghidul 4.2). PR 2 este locul în care apar funcțiile native care răspund la asta. Până atunci, TestFlight intern este calea potrivită, nu trimiterea directă la App Store.
