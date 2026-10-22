@@ -61,6 +61,7 @@ function FeedbackButton({ userId }: { userId: string | null }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [existing, setExisting] = useState<{ rating: number; comment: string } | null>(null)
+  const [bonus, setBonus] = useState(0)
 
   useEffect(() => {
     if (!userId) return
@@ -84,9 +85,10 @@ function FeedbackButton({ userId }: { userId: string | null }) {
       body: JSON.stringify({ rating, comment, role: 'influencer' }),
     })
     if (res.ok) {
+      try { const j = await res.json(); setBonus(Number(j?.points) || 0) } catch { /* fără bonus afișat */ }
       setSaved(true)
       setExisting({ rating, comment })
-      setTimeout(() => { setOpen(false); setSaved(false) }, 1800)
+      setTimeout(() => { setOpen(false); setSaved(false) }, 2600)
     }
     setSaving(false)
   }
@@ -111,7 +113,7 @@ function FeedbackButton({ userId }: { userId: string | null }) {
         }}
       >
         <span style={{ fontSize: 14 }}>⭐</span>
-        {existing ? `Recenzia ta: ${existing.rating}/5` : 'Evaluează platforma'}
+        {existing ? `Recenzia ta: ${existing.rating}/5` : 'Evaluează AddFame · +50 puncte'}
       </button>
 
       {/* Modal */}
@@ -126,7 +128,7 @@ function FeedbackButton({ userId }: { userId: string | null }) {
               <div style={{ textAlign: 'center', padding: '16px 0' }}>
                 <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
                 <p style={{ fontSize: 16, fontWeight: 800, color: '#111827', margin: '0 0 4px' }}>Mulțumim!</p>
-                <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>Feedback-ul tău contează pentru noi.</p>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>{bonus > 0 ? `Ai primit +${bonus} puncte Creator Score 🎁` : 'Feedback-ul tău contează pentru noi.'}</p>
               </div>
             ) : (
               <>
@@ -135,7 +137,7 @@ function FeedbackButton({ userId }: { userId: string | null }) {
                     <p style={{ fontSize: 16, fontWeight: 800, color: '#111827', margin: '0 0 2px' }}>
                       {existing ? 'Modifică recenzia' : 'Cum ți se pare AddFame?'}
                     </p>
-                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>Feedback-ul tău ne ajută să îmbunătățim platforma</p>
+                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>{existing ? 'Feedback-ul tău ne ajută să îmbunătățim platforma' : 'Spune-ne sincer părerea ta și primești +50 puncte Creator Score, indiferent de notă'}</p>
                   </div>
                   <button onClick={() => setOpen(false)} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, width: 28, height: 28, cursor: 'pointer', fontSize: 14, color: '#6b7280' }}>✕</button>
                 </div>
