@@ -23,21 +23,27 @@ export function AvatarWithBadge({
   const initials = name?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
-      {/* Avatar */}
+    <div className="relative inline-block shrink-0" style={{ minWidth: size }}>
+      {/* Fixed square. Tailwind preflight (img { max-width: 100%; height: auto })
+          lets a flex row shrink the width while an inline height stays, which
+          turns the circle into an oval. */}
       {avatarUrl ? (
         <img
           src={avatarUrl}
           alt={name || ''}
-          style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', display: 'block' }}
+          className="aspect-square object-cover"
+          style={{ width: size, height: size, maxWidth: 'none', borderRadius: '50%', display: 'block' }}
         />
       ) : (
-        <div style={{
-          width: size, height: size, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #7c3aed, #f97316)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: size * 0.35, fontWeight: 700, color: 'white',
-        }}>
+        <div
+          className="aspect-square"
+          style={{
+            width: size, height: size, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #7c3aed, #f97316)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: size * 0.35, fontWeight: 700, color: 'white',
+          }}
+        >
           {initials}
         </div>
       )}
