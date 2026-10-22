@@ -18,6 +18,9 @@ const BADGE_PRICE = 50 // RON
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { verifiedPurchaseBlocked } from '@/lib/native-app'
+import { useIsNativeApp } from '@/components/native/use-native-app'
+import { VerifiedUnavailableNotice } from '@/components/native/VerifiedUnavailableNotice'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -193,6 +196,7 @@ function BadgeStripeForm({ onSuccess, onCancel }: { onSuccess: () => void; onCan
   const [error, setError] = useState<string | null>(null)
 
   async function handlePay() {
+    if (verifiedPurchaseBlocked()) return
     if (!stripe || !elements) return
     setLoading(true)
     setError(null)
@@ -281,12 +285,15 @@ export default function SettingsPage() {
 function SettingsPageInner() {
   const [activeTab, setActiveTab] = useState<Tab>('account')
   const searchParams = useSearchParams()
+  const nativeApp = useIsNativeApp()
 
   useEffect(() => {
     const tab = searchParams.get('tab') as Tab | null
     if (tab) setActiveTab(tab)
-    if (tab === 'verified' && searchParams.get('pay') === 'stripe') {
-      setTimeout(() => setBadgeModal('choose'), 300)
+    if (tab === 'verified' && searchParams.get('pay') === 'stripe' && !verifiedPurchaseBlocked()) {
+      setTimeout(() => {
+        if (!verifiedPurchaseBlocked()) setBadgeModal('choose')
+      }, 300)
     }
   }, [searchParams])
   const [telegramCode, setTelegramCode] = useState<string | null>(null)
@@ -355,6 +362,10 @@ function SettingsPageInner() {
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+
+  useEffect(() => {
+    if (nativeApp) setBadgeModal(null)
+  }, [nativeApp])
 
   useEffect(() => { fetchSettings() }, [])
 
@@ -434,6 +445,7 @@ function SettingsPageInner() {
   }
 
   async function handleWalletPurchase() {
+    if (verifiedPurchaseBlocked()) return
     setBadgeError(null)
     setBadgeLoading(true)
     try {
@@ -452,6 +464,7 @@ function SettingsPageInner() {
   }
 
   async function handleBankTransfer() {
+    if (verifiedPurchaseBlocked()) return
     if (!billingName.trim()) { setBadgeError('Introdu numele pentru factură.'); return }
     setBadgeError(null)
     setBadgeLoading(true)
@@ -1108,12 +1121,15 @@ function SettingsPageInner() {
                       )}
                     </div>
                     {/* Renew button */}
+                    {!nativeApp && (
                     <button
-                      onClick={() => setBadgeModal('choose')}
+                      data-native-hide="verified-purchase"
+                      onClick={() => { if (!verifiedPurchaseBlocked()) setBadgeModal('choose') }}
                       className="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-black text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-200 transition"
                     >
                       Reînnoiește
                     </button>
+                    )}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     {[
@@ -1130,7 +1146,10 @@ function SettingsPageInner() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-card border-2 border-dashed border-amber-300 dark:border-amber-700 rounded-xl p-6">
+                <div>
+                <VerifiedUnavailableNotice />
+                {!nativeApp && (
+                <div data-native-hide="verified-purchase" className="bg-card border-2 border-dashed border-amber-300 dark:border-amber-700 rounded-xl p-6">
                   <div className="flex items-center gap-4 mb-5">
                     <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                       <Star className="w-7 h-7 text-amber-500" />
@@ -1190,12 +1209,14 @@ function SettingsPageInner() {
                   )}
 
                   <button
-                    onClick={() => setBadgeModal('choose')}
+                    onClick={() => { if (!verifiedPurchaseBlocked()) setBadgeModal('choose') }}
                     className="w-full py-3.5 rounded-xl font-black text-sm text-white bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 transition flex items-center justify-center gap-2 shadow-lg"
                   >
                     <Star className="w-4 h-4 fill-white" /> Activează Verified Creator — {BADGE_PRICE} RON/lună
                   </button>
                   <p className="text-xs text-muted-foreground text-center mt-2">Abonament lunar {BADGE_PRICE} RON/lună. Se reînnoiește automat.</p>
+                </div>
+                )}
                 </div>
               )}
 
@@ -1370,8 +1391,8 @@ function SettingsPageInner() {
       </div>
 
       {/* ── Badge Purchase Modal ─────────────────────────────────────────── */}
-      {badgeModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      {badgeModal && !nativeApp && (
+        <div data-native-hide="verified-purchase" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
 
             {/* Header */}

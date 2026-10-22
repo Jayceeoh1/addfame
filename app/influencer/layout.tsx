@@ -13,6 +13,8 @@ import {
   Star, Award, Building2, CreditCard, AlertCircle, Check, Copy, ArrowLeft, Shield, BarChart2, FileText, Lock, Loader2
 } from 'lucide-react'
 import { fontVars } from '@/lib/fonts'
+import { verifiedPurchaseBlocked } from '@/lib/native-app'
+import { useIsNativeApp } from '@/components/native/use-native-app'
 import './influencer-ui.css'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
@@ -48,6 +50,7 @@ function BadgeStripeForm({ onSuccess, onError, onCancel }: {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (verifiedPurchaseBlocked()) return
     if (!stripe || !elements) return
     setLoading(true)
     const { error } = await stripe.confirmPayment({
@@ -98,6 +101,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
   const [copied, setCopied] = useState<string | null>(null)
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
   const [invitePopup, setInvitePopup] = useState<{ title: string; body: string; link: string } | null>(null)
+  const nativeApp = useIsNativeApp()
 
   // Preload badge images to avoid flash on first render
   useEffect(() => {
@@ -106,6 +110,10 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
       img.src = src
     })
   }, [])
+
+  useEffect(() => {
+    if (nativeApp) setBadgeModal(null)
+  }, [nativeApp])
 
   useEffect(() => {
     const check = () => {
@@ -189,6 +197,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
   }
 
   async function handleWalletPurchase() {
+    if (verifiedPurchaseBlocked()) return
     setBadgeError(null)
     setBadgeLoading(true)
     try {
@@ -205,6 +214,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
   }
 
   async function handleStripeBadge() {
+    if (verifiedPurchaseBlocked()) return
     setBadgeError(null)
     setBadgeLoading(true)
     try {
@@ -221,6 +231,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
   }
 
   async function handleBankTransfer() {
+    if (verifiedPurchaseBlocked()) return
     if (!billingName.trim()) { setBadgeError('Introdu numele pentru factură.'); return }
     setBadgeError(null)
     setBadgeLoading(true)
@@ -322,11 +333,11 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
           })}
 
           {/* ── Verified Creator Banner ─────────────────────────────── */}
-          {profile !== null && !profile.is_verified && (
-            <div className="pt-3 mt-2" style={{ borderTop: '1.5px solid #f5f5f5' }}>
+          {!nativeApp && profile !== null && !profile.is_verified && (
+            <div data-native-hide="verified-purchase" className="pt-3 mt-2" style={{ borderTop: '1.5px solid #f5f5f5' }}>
               {open ? (
                 <button
-                  onClick={() => { setBadgeModal('choose'); setBadgeError(null) }}
+                  onClick={() => { if (verifiedPurchaseBlocked()) return; setBadgeModal('choose'); setBadgeError(null) }}
                   className="badge-pulse w-full rounded-2xl p-3.5 text-left transition hover:scale-[1.02] active:scale-[0.98]"
                   style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 4px 16px rgba(251,191,36,0.35)' }}
                 >
@@ -344,7 +355,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
                 </button>
               ) : (
                 <button
-                  onClick={() => { setBadgeModal('choose'); setBadgeError(null) }}
+                  onClick={() => { if (verifiedPurchaseBlocked()) return; setBadgeModal('choose'); setBadgeError(null) }}
                   className="badge-pulse relative w-full flex justify-center py-2"
                   title="Verified Creator — 50 RON/lună"
                 >
@@ -442,9 +453,10 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
 
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Badge CTA in topbar for mobile */}
-            {profile !== null && !profile.is_verified && (
+            {!nativeApp && profile !== null && !profile.is_verified && (
               <button
-                onClick={() => { setBadgeModal('choose'); setBadgeError(null) }}
+                data-native-hide="verified-purchase"
+                onClick={() => { if (verifiedPurchaseBlocked()) return; setBadgeModal('choose'); setBadgeError(null) }}
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-white badge-pulse"
                 style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 2px 8px rgba(251,191,36,0.4)' }}
               >
@@ -510,15 +522,15 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
         </div>
       )}
 
-      {badgeModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+      {badgeModal && !nativeApp && (
+        <div data-native-hide="verified-purchase" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 {(badgeModal === 'bank_form' || badgeModal === 'wallet_confirm') && (
-                  <button onClick={() => { setBadgeModal('choose'); setBadgeError(null) }} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 mr-1">
+                  <button onClick={() => { if (verifiedPurchaseBlocked()) return; setBadgeModal('choose'); setBadgeError(null) }} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 mr-1">
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                 )}
@@ -583,7 +595,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
                   </button>
 
                   <div className="w-full flex items-center gap-4 p-4 border-2 border-indigo-200 bg-indigo-50/50 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition"
-                    onClick={() => { setBadgeModal(null); router.push('/influencer/settings?tab=verified&pay=stripe') }}>
+                    onClick={() => { if (verifiedPurchaseBlocked()) return; setBadgeModal(null); router.push('/influencer/settings?tab=verified&pay=stripe') }}>
                     <div className="w-11 h-11 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
                       <CreditCard className="w-5 h-5 text-indigo-600" />
                     </div>

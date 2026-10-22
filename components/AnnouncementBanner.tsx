@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Star, X, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
+import { isVerifiedBadgePurchasePrompt } from '@/lib/native-app'
+import { useIsNativeApp } from '@/components/native/use-native-app'
 
 const TYPE_CFG = {
   info:     { border: '#ddd6fe', iconBg: 'rgba(139,92,246,0.15)', emoji: '📢' },
@@ -13,6 +15,7 @@ const TYPE_CFG = {
 }
 
 export default function AnnouncementBanner({ userId }) {
+  const nativeApp = useIsNativeApp()
   const [announcements, setAnnouncements] = useState([])
   const [dismissed, setDismissed] = useState(new Set())
   const [starred, setStarred] = useState(new Set())
@@ -118,11 +121,15 @@ export default function AnnouncementBanner({ userId }) {
     })
   }
 
-  if (announcements.length === 0) return null
+  const shown = nativeApp
+    ? announcements.filter(a => !isVerifiedBadgePurchasePrompt({ title: a.title, body: a.message, message: a.cta_text, link: a.cta_url }))
+    : announcements
+
+  if (shown.length === 0) return null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-      {announcements.map(a => {
+      {shown.map(a => {
         const cfg = TYPE_CFG[a.type] || TYPE_CFG.info
         const isStarred = starred.has(a.id)
         const isExpanded = expanded.has(a.id)
