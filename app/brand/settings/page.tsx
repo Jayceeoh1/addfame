@@ -10,9 +10,10 @@ import { useRouter } from 'next/navigation'
 import {
   Building2, Bell, Lock, Shield, Trash2, Download, Eye, EyeOff,
   CheckCircle, AlertCircle, User, Mail, Smartphone, Globe,
-  CreditCard, LogOut, ChevronRight, Upload, Link2, X, Package, Instagram
+  CreditCard, LogOut, ChevronRight, Upload, Link2, Package, Instagram
 } from 'lucide-react'
 import { BillingDetailsForm } from '@/components/stripe/stripe-payment'
+import { DeletionRequestForm } from '@/components/account/DeletionRequestForm'
 
 type Tab = 'brand' | 'notifications' | 'privacy' | 'security' | 'billing' | 'shipping' | 'danger'
 
@@ -135,11 +136,6 @@ export default function BrandSettingsPage() {
   // Notifications & Privacy
   const [notifications, setNotifications] = useState<NotificationSettings>(DEFAULT_NOTIFICATIONS)
   const [privacy, setPrivacy] = useState<PrivacySettings>(DEFAULT_PRIVACY)
-
-  // Delete
-  const [deleteConfirm, setDeleteConfirm] = useState('')
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   useEffect(() => { fetchSettings() }, [])
 
@@ -388,23 +384,6 @@ export default function BrandSettingsPage() {
     a.download = `addfame-brand-data-${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
-  }
-
-  async function handleDeleteAccount() {
-    if (deleteConfirm !== 'DELETE') return
-    setDeleteLoading(true)
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-      await supabase.from('brands').delete().eq('user_id', user.id)
-      await supabase.auth.signOut()
-      router.replace('/auth/login')
-    } catch (err: any) {
-      setSaveError(err.message || 'Failed to delete account.')
-      setDeleteLoading(false)
-      setShowDeleteModal(false)
-    }
   }
 
   async function handleLogout() {
@@ -926,7 +905,7 @@ export default function BrandSettingsPage() {
           {activeTab === 'danger' && (
             <div className="bu-card bu-card-pad" style={{ borderColor: "#f3c9c4" }}>
               <h2 className="font-bold text-lg mb-1 text-destructive flex items-center gap-2"><Trash2 className="w-5 h-5" /> Danger Zone</h2>
-              <p className="text-sm text-muted-foreground mb-6">Aceste acțiuni sunt ireversibile. Te rugăm să procedezi cu atenție.</p>
+              <p className="text-sm text-muted-foreground mb-6">Ștergerea contului se face prin cerere. Contul nu se închide dacă mai sunt bani sau colaborări deschise.</p>
               <div className="space-y-4">
                 <div className="bs-dr p-4 border border-border rounded-xl">
                   <div>
@@ -950,43 +929,19 @@ export default function BrandSettingsPage() {
                     showSuccess()
                   }}>Dezactivează</Button>
                 </div>
-                <div className="bs-dr p-4 border border-destructive/30 bg-destructive/5 rounded-xl">
-                  <div>
-                    <p className="font-medium text-sm text-destructive">Șterge Contul</p>
-                    <p className="text-xs text-muted-foreground">Șterge permanent brandul și toate campaniile</p>
-                  </div>
-                  <Button variant="destructive" size="sm" onClick={() => setShowDeleteModal(true)}>Șterge</Button>
+                <div className="p-4 border border-destructive/30 bg-destructive/5 rounded-xl">
+                  <p className="font-medium text-sm text-destructive">Șterge contul</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Cererea nu șterge campaniile, tranzacțiile sau facturile. Dacă ai colaborări deschise, bani în escrow sau credite în portofel, contul rămâne activ.
+                    Detalii pe <a href="/stergere-cont">pagina de ștergere a contului</a>.
+                  </p>
+                  <DeletionRequestForm source="app" />
                 </div>
               </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-destructive">Șterge Contul de Brand</h2>
-              <button onClick={() => { setShowDeleteModal(false); setDeleteConfirm('') }} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
-            </div>
-            <p className="text-sm text-muted-foreground mb-5">
-              Aceasta va șterge permanent profilul brandului, toate campaniile, colaborările și datele. Această acțiune <strong>nu poate fi anulată</strong>.
-            </p>
-            <div className="mb-5">
-              <label className="block text-sm font-medium mb-2">Scrie <strong>DELETE</strong> pentru confirmare</label>
-              <Input placeholder="DELETE" value={deleteConfirm} onChange={e => setDeleteConfirm(e.target.value)} />
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => { setShowDeleteModal(false); setDeleteConfirm('') }}>Anulează</Button>
-              <Button variant="destructive" className="flex-1" disabled={deleteConfirm !== 'DELETE' || deleteLoading} onClick={handleDeleteAccount}>
-                {deleteLoading ? 'Deleting...' : 'Delete Forever'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
