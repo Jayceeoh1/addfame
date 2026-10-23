@@ -1,5 +1,26 @@
 import UIKit
 import Capacitor
+import WebKit
+
+/// Injects mobile/hide-verified-purchase.js before any page script.
+/// The file is the single copy of the match rules; see that file to update them.
+class HideVerifiedPurchaseViewController: CAPBridgeViewController {
+    override func webView(with frame: CGRect, configuration: WKWebViewConfiguration) -> WKWebView {
+        if let source = loadHideVerifiedPurchaseScript() {
+            configuration.userContentController.addUserScript(
+                WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+            )
+        }
+        return super.webView(with: frame, configuration: configuration)
+    }
+
+    private func loadHideVerifiedPurchaseScript() -> String? {
+        guard let url = Bundle.main.url(forResource: "hide-verified-purchase", withExtension: "js") else {
+            return nil
+        }
+        return try? String(contentsOf: url, encoding: .utf8)
+    }
+}
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
@@ -8,7 +29,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
 
         window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = CAPBridgeViewController()
+        window?.rootViewController = HideVerifiedPurchaseViewController()
         window?.makeKeyAndVisible()
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)

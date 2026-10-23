@@ -100,6 +100,9 @@ capacitor-cordova-android-plugins
 # Copied web assets
 app/src/main/assets/public
 
+# Generated from mobile/hide-verified-purchase.js by copyHideVerifiedPurchaseScript.
+app/src/main/assets/hide-verified-purchase.js
+
 # Generated Config files
 app/src/main/assets/capacitor.config.json
 app/src/main/assets/capacitor.plugins.json

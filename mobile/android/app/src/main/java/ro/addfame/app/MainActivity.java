@@ -9,6 +9,9 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Before BridgeActivity.load(), so the plugin's document-start script
+        // is registered before the first WebView.loadUrl.
+        registerPlugin(HideVerifiedPurchasePlugin.class);
         super.onCreate(savedInstanceState);
         // Chrome ignores the system font scale. Android WebView applies it as
         // text zoom, so the same page looks larger in the app and the greeting
