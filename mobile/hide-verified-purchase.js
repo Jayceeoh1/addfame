@@ -1,5 +1,6 @@
 /**
- * Hide the Verified Creator *purchase* inside the AddFame native shell.
+ * Hide native-shell-only UI on the live AddFame site:
+ * the Verified Creator purchase, and the PWA "install the app" sheet.
  *
  * This is the only file with the match rules. Android copies it into the APK
  * at build time and injects it at document start. iOS bundles this same file
@@ -45,6 +46,18 @@
  *   Verified Creator nu este disponibil în aplicație.
  * No price, link, or instruction to buy somewhere else. An already verified
  * user keeps the active card.
+ *
+ * Also hidden (PWA install — Apple review treats this as a website install
+ * prompt inside an app):
+ *   - The sheet titled "Instalează aplicația!" (Share / "Pas N din N",
+ *     "Poate mai târziu", "Următorul pas", Android "Adaugă pe ecranul
+ *     principal" / "Add to Home Screen" / "Instalare cu un singur tap").
+ *     PWAInstallModal and PWAInstallBanner are the same sheet.
+ *   - beforeinstallprompt, so Android never shows the browser install bar.
+ *   - The instructions on /influencer/install-app. That route shows
+ *     "Ești deja în aplicația AddFame." instead of the steps.
+ *   - A push row whose text tells the user to install via Safari Share /
+ *     "Adaugă pe ecranul principal". The normal "Activează" push control stays.
  */
 (function () {
   'use strict';
@@ -52,8 +65,10 @@
   if (window.__afHideVerifiedPurchase) return;
 
   var NOTICE = 'Verified Creator nu este disponibil în aplicație.';
+  var PWA_NOTICE = 'Ești deja în aplicația AddFame.';
   var MARK = 'verified-purchase';
   var NOTICE_ATTR = 'data-af-verified-notice';
+  var PWA_NOTICE_ATTR = 'data-af-pwa-notice';
 
   try {
     var host = String((location && location.hostname) || '').toLowerCase();
@@ -63,6 +78,8 @@
   } catch (e) {}
 
   function install() {
+    blockInstallPrompt();
+
     var style = document.createElement('style');
     style.setAttribute('data-af-hide-style', 'verified-purchase');
     style.textContent = '[data-af-hide="' + MARK + '"]{display:none !important;}';
@@ -106,11 +123,14 @@
     patchFetch();
     patchXHR();
 
-    // Client-rendered checkout (the pay=stripe modal opens ~300ms after hydration).
+    // Client-rendered checkout opens ~300ms after hydration.
+    // The PWA sheet calls setShow(true) two seconds after mount.
     schedule();
     setTimeout(schedule, 50);
     setTimeout(schedule, 300);
     setTimeout(schedule, 800);
+    setTimeout(schedule, 2000);
+    setTimeout(schedule, 2600);
 
     function wrapHistory(name) {
       try {
@@ -367,6 +387,107 @@
       if (sample.length > 800) continue;
       if (isPurchasePrompt(sample, attr(block, 'href'))) hidePromptBlock(block);
     }
+
+    hidePwaInstall();
+  }
+
+  // The install sheet, the /influencer/install-app instructions, and the
+  // Safari "add to home screen" hint. A lone "ecran principal" benefit line
+  // is not enough.
+  function isHomeScreenInstall(text) {
+    if (!text) return false;
+    if (/Instaleaz[ăa]\s+aplica[tț]ia/i.test(text)) return true;
+    if (/Instalat cu succes/i.test(text) && /ecran/i.test(text)) return true;
+    if (/Instaleaz[ăa]\s+AddFame/i.test(text) && /ecran|Share|Safari|Home Screen/i.test(text)) return true;
+    var home = /Adaug[ăa]\s+(pe|la)\s+ecran(ul)?\s+principal|Add to Home Screen|Add to Home screen|ecranul principal/i.test(text);
+    var how = /Share|Distribuie|Safari|Pași de instalare|Install app|Instalare cu un singur tap|Pas\s+\d+\s+din\s+\d+|meniul/i.test(text);
+    return home && how;
+  }
+
+  function onInstallPage() {
+    var path = String((location && location.pathname) || '/').replace(/\/+$/, '') || '/';
+    return path === '/influencer/install-app';
+  }
+
+  function hasSmallerInstallChild(node) {
+    var kids = node.children || [];
+    var own = textOf(node);
+    for (var i = 0; i < kids.length; i++) {
+      var childText = textOf(kids[i]);
+      if (childText.length > 12 && childText.length < own.length && isHomeScreenInstall(childText)) return true;
+    }
+    return false;
+  }
+
+  function largestInstallShell(start) {
+    var node = start;
+    var chosen = null;
+    var hops = 0;
+    while (node && hops < 14 && node !== document.body && node !== document.documentElement) {
+      var text = textOf(node);
+      if (text.length > 8000) break;
+      if (!isHomeScreenInstall(text)) break;
+      if (node.tagName === 'DIV' || node.tagName === 'SECTION' || node.tagName === 'MAIN') chosen = node;
+      node = node.parentElement;
+      hops++;
+    }
+    return chosen;
+  }
+
+  function ensurePwaNotice(anchor) {
+    if (!onInstallPage()) return;
+    if (document.querySelector && document.querySelector('[' + PWA_NOTICE_ATTR + ']')) return;
+    var notice = document.createElement('p');
+    notice.setAttribute(PWA_NOTICE_ATTR, '');
+    notice.textContent = PWA_NOTICE;
+    notice.setAttribute('style', 'margin:24px 16px;padding:16px 18px;border-radius:12px;background:#f8fafc;color:#111827;font:600 15px/1.45 system-ui,sans-serif;text-align:center;');
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(notice, anchor);
+  }
+
+  function removePwaNotice() {
+    if (onInstallPage() || !document.querySelectorAll) return;
+    var nodes = document.querySelectorAll('[' + PWA_NOTICE_ATTR + ']');
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].parentNode) nodes[i].parentNode.removeChild(nodes[i]);
+    }
+  }
+
+  function hidePwaInstall() {
+    if (!onInstallPage()) removePwaNotice();
+    if (!document.querySelectorAll) return;
+    var nodes = document.querySelectorAll('h1, h2, h3, p, div');
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i];
+      if (insideHidden(node)) continue;
+      var text = textOf(node);
+      if (text.length < 8 || text.length > 8000) continue;
+      if (!isHomeScreenInstall(text)) continue;
+      var overlay = findOverlay(node);
+      if (overlay && isHomeScreenInstall(textOf(overlay))) {
+        hide(overlay);
+        continue;
+      }
+      if (onInstallPage()) {
+        var shell = largestInstallShell(node);
+        if (shell) {
+          hide(shell);
+          ensurePwaNotice(shell);
+        }
+        continue;
+      }
+      if (hasSmallerInstallChild(node)) continue;
+      hide(node);
+    }
+  }
+
+  function blockInstallPrompt() {
+    if (!window.addEventListener) return;
+    window.addEventListener('beforeinstallprompt', function (event) {
+      try {
+        if (event && event.preventDefault) event.preventDefault();
+        if (event && event.stopImmediatePropagation) event.stopImmediatePropagation();
+      } catch (err) {}
+    }, true);
   }
 
   function hasActiveVerifiedCard() {

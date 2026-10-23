@@ -433,6 +433,92 @@ check('ignores other hosts and an empty addfame page', function () {
   });
 });
 
+check('hides the PWA install sheet and blocks beforeinstallprompt', function () {
+  return run('addfame.ro', '/influencer/dashboard', '', function (document) {
+    mount(document, document.body, {
+      tag: 'div', id: 'pwa', className: 'fixed inset-0 z-[9999]',
+      children: [
+        { tag: 'h2', text: 'Instalează aplicația! 🚀' },
+        { tag: 'p', text: 'Acces rapid, notificări instant, experiență nativă' },
+        { tag: 'p', text: 'Apasă butonul Share' },
+        { tag: 'p', text: 'Găsești butonul Share (pătrățel cu săgeată) în bara de jos a Safari' },
+        { tag: 'p', text: 'Pas 1 din 3' },
+        { tag: 'button', id: 'later', text: 'Poate mai târziu' },
+        { tag: 'button', id: 'next', text: 'Următorul pas →' },
+      ],
+    });
+    mount(document, document.body, {
+      tag: 'div', id: 'android-sheet', className: 'fixed inset-0',
+      children: [
+        { tag: 'h2', text: 'Instalează aplicația!' },
+        { tag: 'p', text: 'Pași de instalare pe Android:' },
+        { tag: 'p', text: 'Selectează "Adaugă pe ecranul principal"' },
+        { tag: 'button', text: 'Instalează' },
+      ],
+    });
+    mount(document, document.body, {
+      tag: 'div', id: 'push-ok',
+      children: [
+        { tag: 'div', text: 'Notificări push pe acest dispozitiv' },
+        { tag: 'button', id: 'push-on', text: 'Activează' },
+      ],
+    });
+    mount(document, document.body, {
+      tag: 'div', id: 'push-safari',
+      children: [
+        { tag: 'div', text: 'Notificări pe telefon' },
+        { tag: 'div', id: 'safari-hint', text: 'Pe iPhone: deschide AddFame în Safari → Distribuie → „Adaugă pe ecranul principal”, apoi activează notificările din aplicația instalată.' },
+      ],
+    });
+    mount(document, document.body, {
+      tag: 'div', id: 'benefit',
+      children: [{ tag: 'p', text: 'Acces rapid de pe ecran principal' }],
+    });
+    mount(document, document.body, {
+      tag: 'h1', id: 'page-title', text: 'Campanii',
+    });
+  }).then(function (page) {
+    const document = page.document;
+    assert(hidden(byId(document, 'pwa')), 'iOS install sheet');
+    assert(hidden(byId(document, 'later')), 'Poate mai târziu');
+    assert(hidden(byId(document, 'next')), 'Următorul pas');
+    assert(hidden(byId(document, 'android-sheet')), 'Android add-to-home sheet');
+    assert(!hidden(byId(document, 'push-on')), 'normal push toggle');
+    assert(hidden(byId(document, 'safari-hint')), 'Safari home-screen hint');
+    assert(!hidden(byId(document, 'push-ok')), 'push row without install steps');
+    assert(!hidden(byId(document, 'benefit')), 'benefit line that only mentions the home screen');
+    assert(!hidden(byId(document, 'page-title')), 'page title');
+    var prevented = false;
+    var stopped = false;
+    var handler = (page.listeners.beforeinstallprompt || [])[0];
+    assert(typeof handler === 'function', 'beforeinstallprompt listener');
+    handler({
+      preventDefault: function () { prevented = true; },
+      stopImmediatePropagation: function () { stopped = true; },
+    });
+    assert(prevented && stopped, 'beforeinstallprompt is swallowed');
+  });
+});
+
+check('replaces the install-app instructions', function () {
+  return run('addfame.ro', '/influencer/install-app', '', function (document) {
+    mount(document, document.body, {
+      tag: 'div', id: 'install-page',
+      children: [
+        { tag: 'h1', text: 'Instalează AddFame' },
+        { tag: 'p', text: 'Adaugă aplicația pe ecranul principal pentru acces rapid, fără să deschizi browser-ul.' },
+        { tag: 'h2', text: 'Apasă butonul Share' },
+        { tag: 'p', text: 'Alege „Add to Home Screen"' },
+      ],
+    });
+  }).then(function (page) {
+    assert(hidden(byId(page.document, 'install-page')), 'install-app steps');
+    var notice = page.document.querySelector('[data-af-pwa-notice]');
+    assert(notice && notice.textContent === 'Ești deja în aplicația AddFame.', 'already-in-app notice');
+    assert(!/Share|Safari|Home Screen|RON/i.test(notice.textContent), 'notice has no install steps');
+  });
+});
+
 check('settings checkout outside the verified tab does not insert the notice', function () {
   return run('addfame.ro', '/cum-functioneaza/influencer/settings', '?tab=account', function (document) {
     mount(document, document.body, {
