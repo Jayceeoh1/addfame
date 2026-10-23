@@ -81,7 +81,7 @@ export async function adminSetFeatured(campaignId: string, enabled: boolean, end
 }
 
 /** Lista celor mai potriviți creatori pentru DM (fără cei care au aplicat deja) + cine a fost marcat „trimis”. */
-export async function adminDmList(campaignId: string, limit = 300) {
+export async function adminDmList(campaignId: string, limit = 300, skipSent = false) {
   const auth = await requireAdmin()
   if ('error' in auth) return auth
   if (!isId(campaignId)) return { error: 'Alege o campanie.' }
@@ -93,6 +93,10 @@ export async function adminDmList(campaignId: string, limit = 300) {
     admin.from('platform_settings').select('value').eq('key', `dm_sent:${campaignId}`).maybeSingle(),
   ])
   const exclude = new Set<string>((cols || []).map((c: any) => c.influencer_id))
+  const applied = exclude.size
+  const sentIds: string[] = ((sentRow?.value as any)?.ids as string[]) || []
+  // „Următorii 300”: sare și peste cei deja contactați, ca lista să aducă creatori noi
+  if (skipSent) sentIds.forEach(id => exclude.add(id))
   const all: any[] = []
   for (let from = 0; from < 5000; from += 1000) {
     const { data, error } = await admin.from('influencers')
@@ -105,17 +109,17 @@ export async function adminDmList(campaignId: string, limit = 300) {
   const rows = pickDmList(all, camp.niches, Math.min(Math.max(1, limit), 500), exclude)
   const name = campaignName(camp)
   return {
-    success: true as const, rows, sent: ((sentRow?.value as any)?.ids as string[]) || [],
+    success: true as const, rows, sent: sentIds, sentTotal: sentIds.length,
     campaignName: name, link: `${APP_URL}/influencer/campaigns/${(camp as any).slug || campaignId}`,
     template: dmMessage('{nume}', name, `${APP_URL}/influencer/campaigns/${(camp as any).slug || campaignId}`),
-    excluded: exclude.size, pool: all.filter(c => igHandleOf(c)).length, approved: all.length,
+    excluded: applied, pool: all.filter(c => igHandleOf(c)).length, approved: all.length,
   }
 }
 
 export async function adminMarkDmSent(campaignId: string, ids: string[]) {
   const auth = await requireAdmin()
   if ('error' in auth) return auth
-  if (!isId(campaignId) || !Array.isArray(ids) || ids.length > 600 || !ids.every(isId)) return { error: 'Date invalide.' }
+  if (!isId(campaignId) || !Array.isArray(ids) || ids.length > 10000 || !ids.every(isId)) return { error: 'Date invalide.' }
   const admin = createAdminClient()
   const { error } = await admin.from('platform_settings').upsert({
     key: `dm_sent:${campaignId}`, value: { ids }, label: 'DM trimise', description: 'Creatorii contactați pe Instagram pentru campanie', updated_at: new Date().toISOString(),

@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { adminGetFeatured, adminSetFeatured, adminDmList, adminMarkDmSent, adminApplicants } from '@/app/actions/featured-campaign'
 import { adminWaStatus, adminWaSend } from '@/app/actions/whatsapp-campaign'
+import { adminBulkApprovePreview, adminBulkApprove } from '@/app/actions/bulk-approve'
 import { toCsv, applicantsToCsv, dmMessage, type DmRow } from '@/lib/dm-list'
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -24,6 +25,10 @@ export default function CampaignPromoAdmin() {
   const [copied, setCopied] = useState('')
   const [last, setLast] = useState<number | null>(null)
   const [waAll, setWaAll] = useState(false)
+  const [ba, setBa] = useState('')
+  const [baPrev, setBaPrev] = useState<{ total: number; pending: { collabId: string; handle: string; name: string }[]; active: string[]; missing: string[]; ambiguous: string[] } | null>(null)
+  const [baArm, setBaArm] = useState(false)
+  const [baProg, setBaProg] = useState('')
   const [wa, setWa] = useState<{ configured: boolean; reminderConfigured: boolean; optedIn: number; remaining: number; remainingAll: number; reminderRemainingAll: number; sent: number; reminderRemaining: number; reminded: number; skippedRecent: number; timeLeft: string | null } | null>(null)
   const [waKind, setWaKind] = useState<'announce' | 'reminder'>('announce')
   const [waArm, setWaArm] = useState(false)
@@ -44,13 +49,14 @@ export default function CampaignPromoAdmin() {
     if ('error' in r) { setMsg(r.error || 'Eroare'); return }
     setOn(next); setMsg(next ? 'Cardul e pe dashboardul creatorilor.' : 'Cardul a fost oprit.')
   }
-  async function load() {
+  async function load(skipSent = false) {
     setBusy(true); setMsg('')
-    const r = await adminDmList(sel, 300)
+    const r = await adminDmList(sel, 300, skipSent)
     setBusy(false)
     if ('error' in r) { setMsg(r.error || 'Eroare'); return }
     setList({ rows: r.rows, name: r.campaignName, link: r.link, excluded: r.excluded, pool: r.pool, approved: r.approved })
     setSent(new Set(r.sent))
+    if (skipSent) setMsg(`Lista nouă: ${r.rows.length} creatori necontactați (${r.sentTotal} contactați deja, ascunși).`)
   }
   async function setMany(ids: string[], value: boolean) {
     const next = new Set(sent)
@@ -106,6 +112,29 @@ export default function CampaignPromoAdmin() {
     setMsg(`WhatsApp (${waKind === 'reminder' ? 'reminder' : 'anunț'}): ${ok} trimise${failed ? `, ${failed} eșuate (vezi WhatsApp logs)` : ''}. Mai rămân ${remaining}.`)
     waCheck()
   }
+  async function baCheck() {
+    setBusy(true); setMsg(''); setBaArm(false)
+    const r = await adminBulkApprovePreview(sel, ba)
+    setBusy(false)
+    if ('error' in r) { setMsg(r.error || 'Eroare'); setBaPrev(null); return }
+    setBaPrev({ total: r.total, pending: r.pending, active: r.active, missing: r.missing, ambiguous: r.ambiguous })
+  }
+  async function baApprove() {
+    if (!baPrev) return
+    const ids = baPrev.pending.map(p => p.collabId)
+    setBusy(true); setMsg(''); setBaArm(false)
+    let ok = 0; const errs: string[] = []
+    for (let i = 0; i < ids.length; i += 15) {
+      setBaProg(`Se aprobă… ${ok}/${ids.length}`)
+      const r = await adminBulkApprove(sel, ids.slice(i, i + 15))
+      if ('error' in r) { errs.push(r.error || 'Eroare'); break }
+      ok += r.ok; errs.push(...r.errors)
+      if (r.errors.some(e => /maxim/i.test(e))) break
+    }
+    setBusy(false); setBaProg('')
+    setMsg(`Aprobate: ${ok} din ${ids.length}.${errs.length ? ` Probleme: ${[...new Set(errs)].slice(0, 3).join(' · ')}` : ''}`)
+    baCheck()
+  }
   async function exportApplicants() {
     setBusy(true); setMsg('')
     const r = await adminApplicants(sel)
@@ -143,7 +172,8 @@ export default function CampaignPromoAdmin() {
             <button disabled={busy || !sel} onClick={() => toggle(!on)} className={`h-11 px-5 rounded-xl text-sm font-black text-white disabled:opacity-50 ${on ? 'bg-red-500' : 'bg-purple-600'}`}>
               {on ? 'Oprește cardul' : 'Pornește cardul'}
             </button>
-            <button disabled={busy || !sel} onClick={load} className="h-11 px-5 rounded-xl text-sm font-black bg-gray-900 text-white disabled:opacity-50">Listă DM (300)</button>
+            <button disabled={busy || !sel} onClick={() => load(false)} className="h-11 px-5 rounded-xl text-sm font-black bg-gray-900 text-white disabled:opacity-50">Listă DM (300)</button>
+            <button disabled={busy || !sel} onClick={() => load(true)} title="Următorii 300 creatori, fără cei deja bifați ca trimis" className="h-11 px-5 rounded-xl text-sm font-black bg-[#5a35e6] text-white disabled:opacity-50">Următorii 300</button>
             <button disabled={busy || !sel} onClick={exportApplicants} className="h-11 px-5 rounded-xl text-sm font-black bg-green-600 text-white disabled:opacity-50">Export aplicanți CSV</button>
           </div>
           <label className="flex flex-wrap items-center gap-3 text-sm font-semibold text-gray-700">
@@ -184,6 +214,23 @@ export default function CampaignPromoAdmin() {
                 </>}</>)
               })()}
             </span>)}
+          </div>
+          <div className="flex flex-col gap-2 rounded-xl bg-purple-50 border border-purple-200 p-3">
+            <span className="text-sm font-bold text-purple-900">Aprobă lista brandului</span>
+            <textarea rows={3} value={ba} onChange={e => { setBa(e.target.value); setBaPrev(null); setBaArm(false) }} placeholder="Lipește handle-urile sau linkurile de Instagram (separate prin spațiu, virgulă sau rând nou)" className="w-full rounded-xl border-2 border-purple-200 p-2 text-sm" />
+            <div className="flex flex-wrap items-center gap-2">
+              <button disabled={busy || !sel || !ba.trim()} onClick={baCheck} className="h-10 px-4 rounded-xl bg-white border-2 border-purple-300 text-purple-800 font-black text-sm disabled:opacity-50">Verifică lista</button>
+              {baPrev && <span className="text-sm text-purple-900"><b>{baPrev.pending.length}</b> de aprobat (PENDING) · {baPrev.active.length} deja aprobați · {baPrev.missing.length} fără cerere · {baPrev.ambiguous.length} ambigui · din {baPrev.total}</span>}
+              {baPrev && baPrev.pending.length > 0 && (baArm
+                ? <><span className="text-sm font-bold text-purple-900">Aprobi {baPrev.pending.length} creatori?</span>
+                    <button disabled={busy} onClick={baApprove} className="h-10 px-4 rounded-xl bg-purple-600 text-white font-black text-sm disabled:opacity-50">Da, aprobă</button>
+                    <button onClick={() => setBaArm(false)} className="text-xs font-bold text-gray-600 underline">Anulează</button></>
+                : <button disabled={busy} onClick={() => setBaArm(true)} className="h-10 px-4 rounded-xl bg-purple-600 text-white font-black text-sm disabled:opacity-50">Aprobă {baPrev.pending.length}</button>)}
+              {baProg && <span className="text-sm font-bold text-purple-900">{baProg}</span>}
+            </div>
+            {baPrev && (baPrev.missing.length > 0 || baPrev.ambiguous.length > 0) && (
+              <p className="text-xs text-purple-900">{baPrev.missing.length > 0 && <>Fără cerere PENDING: {baPrev.missing.join(', ')}. </>}{baPrev.ambiguous.length > 0 && <>Ambigui (două cereri PENDING, aprobă manual): {baPrev.ambiguous.join(', ')}.</>}</p>
+            )}
           </div>
           {msg && <p className="text-sm font-semibold text-gray-700">{msg}</p>}
           {list && (
