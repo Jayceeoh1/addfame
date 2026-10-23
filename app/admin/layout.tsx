@@ -11,7 +11,7 @@ import './admin-ui.css'
 import {
   Users, LayoutDashboard, LogOut, ShieldCheck, Briefcase, Building2, Menu, X, Handshake, ArrowUpRight,
   TrendingUp, Crown, Mail, Send, Bell, Package, Settings, CheckSquare, FileSignature, MessageCircle,
-  PartyPopper, Gift, AlertTriangle, Scale, Megaphone, Images, ShieldAlert, Wallet, BarChart3, PanelLeftClose, PanelLeftOpen,
+  PartyPopper, Gift, AlertTriangle, Scale, Megaphone, Images, ShieldAlert, Wallet, BarChart3, PanelLeftClose, PanelLeftOpen, Star,
 } from 'lucide-react'
 
 type Item = { icon: any; label: string; href: string; superAdminOnly?: boolean; badge?: keyof AdminQueue }
@@ -59,6 +59,7 @@ const GROUPS: Group[] = [
   { title: 'Sistem', items: [
     { icon: Crown, label: 'Admini', href: '/admin/admins', superAdminOnly: true },
     { icon: AlertTriangle, label: 'Erori aplicație', href: '/admin/errors' },
+    { icon: Star, label: 'Rating platformă', href: '/admin/rating' },
     { icon: Settings, label: 'Setări platformă', href: '/admin/settings' },
   ] },
 ]
