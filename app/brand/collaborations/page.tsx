@@ -839,7 +839,7 @@ export default function BrandCollaborations() {
               {c.package_received_at && (
                 <b style={{ color: '#14532d' }}>
                   Primit: {fmtDate(c.package_received_at, { day: 'numeric', month: 'long' })}
-                  {' · '}Deadline post: {new Date(new Date(c.package_received_at).getTime() + (c.post_deadline_days || 5) * 86400000).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}
+                  {' · '}Deadline post: {new Date(new Date(c.package_received_at).getTime() + (c.post_deadline_days || 3) * 86400000).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}
                 </b>
               )}
             </div>

@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
 
       if (!collab) return NextResponse.json({ error: 'Collaboration not found' }, { status: 404 })
 
-      const newDeadlineDays = (collab.post_deadline_days || 14) + extraDays
+      const newDeadlineDays = (collab.post_deadline_days || 3) + extraDays
       await admin.from('collaborations').update({
         post_deadline_days: newDeadlineDays,
       }).eq('id', collaboration_id)

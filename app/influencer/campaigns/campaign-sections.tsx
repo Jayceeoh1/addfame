@@ -205,7 +205,7 @@ export function CampaignSections({ c, onCopy }: { c: any; onCopy?: (text: string
     { title: 'Aplică la campanie', sub: needsAddress ? 'Completează adresa de livrare' : 'Trimite aplicația ta' },
     barter && delivery && { title: 'Primești produsul acasă', sub: 'Bifează în AddFame că l-ai primit' },
     barter && !delivery && { title: 'Ridică de la locație', sub: c.pickup_location_name ? `Locație: ${c.pickup_location_name}` : 'Conform detaliilor brandului' },
-    { title: `Postează în ${c.post_deadline_days || 5} zile${barter ? ' de la primire' : ''}`, sub: 'Respectă instrucțiunile și hashtag-urile' },
+    { title: `Postează în ${c.post_deadline_days || 3} zile${barter ? ' de la primire' : ''}`, sub: 'Respectă instrucțiunile și hashtag-urile' },
     { title: 'Trimite dovada în AddFame', sub: 'Link postare + screenshot obligatoriu' },
   ].filter(Boolean) as any[]
 

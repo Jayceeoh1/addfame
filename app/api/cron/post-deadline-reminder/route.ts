@@ -154,7 +154,7 @@ export async function GET(req: NextRequest) {
     if (!collab.package_received_at) continue
 
     const referenceDate = new Date(collab.package_received_at)
-    const deadlineDays = collab.post_deadline_days || 5
+    const deadlineDays = collab.post_deadline_days || 3
     const deadline = new Date(referenceDate.getTime() + deadlineDays * 86400000)
     const hoursLeft = (deadline.getTime() - now.getTime()) / 3600000
 

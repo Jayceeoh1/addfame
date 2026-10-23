@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     if (!influencer_email || !RESEND_API_KEY) return NextResponse.json({ ok: true })
 
-    const days = deadline_days || 5
+    const days = deadline_days || 3
 
     const html = `<!DOCTYPE html>
 <html lang="ro"><head><meta charset="utf-8"></head>

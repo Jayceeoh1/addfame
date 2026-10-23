@@ -631,7 +631,7 @@ function WhatsAppReminderPanel({ campaignId }: { campaignId: string }) {
   function deadlineInfo(collab: any) {
     if (!collab.package_received_at) return null
     const ref = new Date(collab.package_received_at)
-    const days = collab.post_deadline_days || 5
+    const days = collab.post_deadline_days || 3
     const deadline = new Date(ref.getTime() + days * 86400000)
     const hoursLeft = Math.round((deadline.getTime() - Date.now()) / 3600000)
     return { deadline, hoursLeft }
@@ -2644,7 +2644,7 @@ export default function AdminCampaigns() {
                                     await sb.from('notifications').insert({
                                       user_id: inf.user_id,
                                       title: '📦 Coletul tău a fost confirmat!',
-                                      body: `Countdown-ul de postare a pornit. Ai ${collab.post_deadline_days || 5} zile să postezi și să trimiți dovada.`,
+                                      body: `Countdown-ul de postare a pornit. Ai ${collab.post_deadline_days || 3} zile să postezi și să trimiți dovada.`,
                                       link: '/influencer/collaborations',
                                       read: false,
                                     })
@@ -2660,7 +2660,7 @@ export default function AdminCampaigns() {
                                         influencer_email: inf.email,
                                         influencer_name: inf.name,
                                         campaign_title: selectedCampaign?.title,
-                                        deadline_days: collab.post_deadline_days || 5,
+                                        deadline_days: collab.post_deadline_days || 3,
                                       }),
                                     })
                                   }
@@ -2698,7 +2698,7 @@ export default function AdminCampaigns() {
                               influencerId={collab.influencer_id}
                               onExtended={(days) => {
                                 setCampaignCollabs(prev => prev.map(c => c.id === collab.id
-                                  ? { ...c, post_deadline_days: (c.post_deadline_days || 14) + days }
+                                  ? { ...c, post_deadline_days: (c.post_deadline_days || 3) + days }
                                   : c))
                                 notify(`✅ Deadline extins cu ${days} zile! Influencerul a primit email.`)
                               }} />

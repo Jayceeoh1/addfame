@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     // Calculăm deadline-ul pentru context
     const ref = new Date(collab.package_received_at)
-    const days = collab.post_deadline_days || 5
+    const days = collab.post_deadline_days || 3
     const deadline = new Date(ref.getTime() + days * 86400000)
     const hoursLeft = Math.round((deadline.getTime() - Date.now()) / 3600000)
     const label = hoursLeft <= 12 ? '12 ore' : hoursLeft <= 24 ? '1 zi' : '2 zile'

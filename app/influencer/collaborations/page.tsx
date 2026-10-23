@@ -1140,7 +1140,7 @@ export default function CollaborationsPage() {
               </Note>
             )}
             {!c.deliverable_submitted_at && !c.deliverable_approved_at && c.package_received_at && (() => {
-              const deadline = new Date(new Date(c.package_received_at).getTime() + (c.post_deadline_days || 14) * 86400000)
+              const deadline = new Date(new Date(c.package_received_at).getTime() + (c.post_deadline_days || 3) * 86400000)
               const msLeft = deadline.getTime() - Date.now()
               const daysLeft = Math.max(0, Math.floor(msLeft / 86400000))
               const hoursLeft = Math.max(0, Math.floor((msLeft % 86400000) / 3600000))
