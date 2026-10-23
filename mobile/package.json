@@ -1,0 +1,26 @@
+{
+  "name": "addfame-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor shell that loads the live AddFame site. Not part of the root pnpm project.",
+  "scripts": {
+    "sync": "cap sync",
+    "assets": "capacitor-assets generate --android --ios --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#111111' --splashBackgroundColor '#ffffff' --splashBackgroundColorDark '#111111' --logoSplashScale 0.4",
+    "android:debug": "cap sync android && cd android && ./gradlew assembleDebug",
+    "android:bundle": "cap sync android && cd android && ./gradlew bundleRelease",
+    "ios:sync": "cap sync ios",
+    "test:hide-verified": "node hide-verified-purchase.test.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.5.3"
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same orange as viewport.themeColor in app/layout.tsx -->
+    <color name="colorPrimary">#f97316</color>
+    <color name="colorPrimaryDark">#f97316</color>
+    <color name="colorAccent">#f97316</color>
+</resources>
