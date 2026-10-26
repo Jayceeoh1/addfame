@@ -11,6 +11,7 @@ import {
   Check, FileText, Lock, Gift, ShieldCheck,
 } from 'lucide-react'
 import AuthShell from '@/components/auth/AuthShell'
+import { parseCount } from '@/lib/tiers'
 import {
   BRAND_INDUSTRIES, COMPANY_SIZES, INFLUENCER_NICHES,
   COUNTRIES, validatePassword,
@@ -70,6 +71,8 @@ function RegisterForm() {
 
   const [instagramHandle, setInstagramHandle] = useState('')
   const [tiktokHandle, setTiktokHandle] = useState('')
+  const [igFollowers, setIgFollowers] = useState('')
+  const [ttFollowers, setTtFollowers] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [brandReferralAcknowledged, setBrandReferralAcknowledged] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -131,21 +134,41 @@ function RegisterForm() {
     return val
   }
 
+  /** Numărul de urmăritori scris de creator: „5300”, „5.300”, „5,3k”, „12K”. „5.3” (fără k) e ambiguu → 0. */
+  function followersOf(raw: string): number {
+    const v = raw.trim()
+    if (!v) return 0
+    if (/^\d{1,3}[.,]\d{1,2}$/.test(v)) return 0 // „5.3” fără „k”: nu știm dacă e 5.3K
+    return parseCount(v)
+  }
+
+  /** Cel puțin un cont (Instagram sau TikTok), cu numărul de urmăritori pentru fiecare cont completat. */
+  function socialError(): string | null {
+    const ig = normalizeHandle(instagramHandle, 'instagram')
+    const tt = normalizeHandle(tiktokHandle, 'tiktok')
+    if (!ig && !tt) return 'Adaugă cel puțin un cont de Instagram sau TikTok.'
+    if (ig && followersOf(igFollowers) <= 0) return 'Scrie câți urmăritori ai pe Instagram (ex. 5300 sau 5,3k).'
+    if (tt && followersOf(ttFollowers) <= 0) return 'Scrie câți urmăritori ai pe TikTok (ex. 5300 sau 5,3k).'
+    return null
+  }
+
   const handleInfluencerSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     if (!city.trim()) { setError('Orașul/Comuna este obligatorie'); return }
+    const socialErr = socialError()
+    if (socialErr) { setError(socialErr); return }
     setStep('terms')
   }
 
   const handleTermsSubmit = async () => {
     setError(null); setRateLimited(false); setLoading(true)
     try {
-      const platforms: { platform: string; url: string }[] = []
+      const platforms: { platform: string; url: string; followers?: string }[] = []
       const igHandle = normalizeHandle(instagramHandle, 'instagram')
       const ttHandle = normalizeHandle(tiktokHandle, 'tiktok')
-      if (igHandle) platforms.push({ platform: 'instagram', url: `https://instagram.com/${igHandle}` })
-      if (ttHandle) platforms.push({ platform: 'tiktok', url: `https://tiktok.com/@${ttHandle}` })
+      if (igHandle) platforms.push({ platform: 'instagram', url: `https://instagram.com/${igHandle}`, followers: String(followersOf(igFollowers)) })
+      if (ttHandle) platforms.push({ platform: 'tiktok', url: `https://tiktok.com/@${ttHandle}`, followers: String(followersOf(ttFollowers)) })
 
       const result = await registerInfluencer(
         email, password, influencerName, bio, niches, country,
@@ -499,8 +522,8 @@ function RegisterForm() {
           </div>
 
           <div className="au-field">
-            <span className="au-label">Conturi social media <span style={{ fontWeight: 500, color: '#8783a8' }}>(opțional, recomandat)</span></span>
-            <p className="au-hint" style={{ margin: '0 0 10px' }}>Acceptăm @username, link complet sau doar numele.</p>
+            <span className="au-label">Conturi social media * <span style={{ fontWeight: 500, color: '#8783a8' }}>(cel puțin unul, cu numărul de urmăritori)</span></span>
+            <p className="au-hint" style={{ margin: '0 0 10px' }}>Acceptăm @username, link complet sau doar numele. Numărul de urmăritori stabilește nivelul tău (Nano, Micro, Mid…) pe care îl văd brandurile.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
                 <div className="au-social">
@@ -521,6 +544,11 @@ function RegisterForm() {
                     <CheckCircle size={13} /> instagram.com/{normalizeHandle(instagramHandle, 'instagram')}
                   </p>
                 )}
+                {instagramHandle && normalizeHandle(instagramHandle, 'instagram') && (
+                  <input type="text" inputMode="decimal" className="au-input" style={{ marginTop: 8 }} aria-label="Urmăritori Instagram"
+                    placeholder="Urmăritori Instagram * (ex. 5300 sau 5,3k)"
+                    value={igFollowers} onChange={e => setIgFollowers(e.target.value)} disabled={loading} autoComplete="off" />
+                )}
               </div>
               <div>
                 <div className="au-social">
@@ -537,6 +565,11 @@ function RegisterForm() {
                   <p className="au-hint" style={{ color: 'var(--ac)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <CheckCircle size={13} /> tiktok.com/@{normalizeHandle(tiktokHandle, 'tiktok')}
                   </p>
+                )}
+                {tiktokHandle && normalizeHandle(tiktokHandle, 'tiktok') && (
+                  <input type="text" inputMode="decimal" className="au-input" style={{ marginTop: 8 }} aria-label="Urmăritori TikTok"
+                    placeholder="Urmăritori TikTok * (ex. 5300 sau 5,3k)"
+                    value={ttFollowers} onChange={e => setTtFollowers(e.target.value)} disabled={loading} autoComplete="off" />
                 )}
               </div>
             </div>

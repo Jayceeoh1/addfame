@@ -7,6 +7,7 @@ import { emailTypoError } from '@/lib/email-typos'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateSlug } from '@/lib/slug-utils'
+import { parseCount } from '@/lib/tiers'
 import { revalidatePath } from 'next/cache'
 import { rateLimit, getClientIP, LIMITS } from '@/lib/rate-limit'
 import {
@@ -355,7 +356,7 @@ export async function registerInfluencer(
   cityLat?: number,
   cityLon?: number,
   referralCode?: string,
-  platformsArray?: { platform: string; url: string }[],
+  platformsArray?: { platform: string; url: string; followers?: string }[],
 ) {
   try {
 
@@ -377,6 +378,16 @@ export async function registerInfluencer(
     if (!niches || niches.length === 0) {
       return { error: 'Please select at least one niche' }
     }
+    // Cel puțin un cont de Instagram/TikTok, cu numărul de urmăritori (nivelul creatorului se calculează din el)
+    const socials = (platformsArray || []).filter(p => p && (p.platform === 'instagram' || p.platform === 'tiktok') && p.url)
+    if (socials.length === 0) {
+      return { error: 'Adaugă cel puțin un cont de Instagram sau TikTok.' }
+    }
+    if (socials.some(p => parseCount(p.followers) <= 0)) {
+      return { error: 'Scrie numărul de urmăritori pentru fiecare cont adăugat.' }
+    }
+    const igCount = parseCount(socials.find(p => p.platform === 'instagram')?.followers) || null
+    const ttCount = parseCount(socials.find(p => p.platform === 'tiktok')?.followers) || null
 
     const adminClient = createAdminClient()
 
@@ -461,6 +472,8 @@ export async function registerInfluencer(
       latitude: cityLat || null,
       longitude: cityLon || null,
       platforms: platformsArray && platformsArray.length > 0 ? platformsArray : (platforms || null),
+      instagram_followers: igCount,
+      tt_followers: ttCount,
       approval_status: 'approved',
       verification_status: 'unverified',
       // Generează codul referral unic pentru acest influencer
