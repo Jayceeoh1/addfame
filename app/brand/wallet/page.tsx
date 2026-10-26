@@ -330,7 +330,8 @@ function BrandWalletPageInner() {
         .tp-steps i.on { background: linear-gradient(90deg, #2f6fe0, #5a35e6); width: 34px; }
         .tp-x { width: 40px; height: 40px; border-radius: 12px; border: 0; background: #f6f6fc; color: #4a4770; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
         .tp-x:hover { background: #efeaff; color: #4423c4; }
-        .tp-body { padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+        .tp-body { padding: 18px 20px; flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+        .tp-body > * { flex-shrink: 0; }
         .tp-foot { padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid #eeecf7; background: #fff; flex: none; display: flex; flex-direction: column; gap: 8px; }
         .tp-foot .bu-btn { width: 100%; }
         .tp-sec { display: flex; flex-direction: column; gap: 10px; }
