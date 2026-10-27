@@ -2421,7 +2421,7 @@ export default function AdminCampaigns() {
                           )}
 
                           {/* Adresă livrare */}
-                          {selectedCampaign?.delivery_method !== 'pickup' && (
+                          {selectedCampaign?.campaign_type?.toUpperCase() === 'BARTER' && selectedCampaign?.delivery_method !== 'pickup' && (
                             <div className="mx-4 mb-3">
                               {collab.delivery_address ? (
                                 <div className="bg-white border-2 border-green-200 rounded-xl overflow-hidden">
@@ -2629,7 +2629,7 @@ export default function AdminCampaigns() {
                           )}
 
                           {/* Admin: marchează colet primit dacă influencerul nu a bifat */}
-                          {collab.status === 'ACTIVE' && !collab.package_received_at && (
+                          {collab.status === 'ACTIVE' && !collab.package_received_at && selectedCampaign?.campaign_type?.toUpperCase() === 'BARTER' && (
                             <div className="mx-4 mb-2">
                               <button
                                 onClick={async () => {
