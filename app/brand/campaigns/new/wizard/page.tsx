@@ -364,6 +364,8 @@ export default function WizardPage() {
       budget_per_influencer: data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' ? (parseFloat(data.pay_amount) || 0) : 0,
       budget: 0,
       status: 'DRAFT',
+      // campaniile plătite: brandul aprobă fiecare influencer, fără colet de livrat
+      ...(data.campaign_type === 'PAID' ? { auto_accept_influencers: false, delivery_method: null } : {}),
       platforms: data.platforms,
       offer_name: data.product_name || null,
       offer_value: data.campaign_type === 'PAID' ? 0 : (parseFloat(data.offer_value) || 0),
