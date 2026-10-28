@@ -19,6 +19,8 @@ type EventItem = {
   interested: number
   my_status: string | null
   open: boolean
+  kind?: 'campaign' | 'site'
+  href?: string | null
 }
 
 function fmt(date: string) {
@@ -90,7 +92,7 @@ export default function EvenimentePage() {
       ) : (
         <div className="cs-grid">
           {campaigns.map(c => (
-            <Link key={c.id} href={`/influencer/castinguri/${c.id}`} className="iu-card cs-card">
+            <Link key={c.id} href={c.href || `/influencer/castinguri/${c.id}`} className="iu-card cs-card">
               <div className="cs-ban">
                 {c.banner_url ? <img src={c.banner_url} alt={c.title} /> : <Megaphone size={44} />}
               </div>
@@ -129,7 +131,11 @@ export default function EvenimentePage() {
                   </div>
                 )}
 
-                {c.my_status ? (
+                {c.kind === 'site' ? (
+                  <div className="cs-foot">
+                    <span className="iu-btn p" style={{ marginLeft: 'auto' }}>Vezi evenimentul <ArrowRight size={14} /></span>
+                  </div>
+                ) : c.my_status ? (
                   <div className="cs-foot">
                     <span className="iu-chip" style={{ background: appChip(c.my_status).bg, color: appChip(c.my_status).fg }}>{appChip(c.my_status).t}</span>
                   </div>

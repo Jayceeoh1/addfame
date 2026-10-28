@@ -9,6 +9,7 @@ import { verifyAdminSession } from '@/lib/supabase/verify-admin'
 import { validateEventForm, toBrandEventApplication, eventSlotLimit, eventOpen, type EventFormErrors } from '@/lib/event-signup'
 import { emailEventApplicationsToBrand, emailEventDecision } from '@/lib/email'
 import { isUuid } from '@/lib/drafts'
+import { coverOf, photoUrl, type SiteEvent, type SiteEventPhoto } from '@/lib/events'
 
 const EVENT_FIELDS = 'id, title, description, banner_url, event_date, event_location, min_followers, application_deadline, registration_link, manual_registrations, platforms, status, brand_id, campaign_type, fee_slots, max_influencers'
 
@@ -54,9 +55,32 @@ export async function getEventsForInfluencer() {
     ])
     const myMap = new Map((mine ?? []).map(a => [a.campaign_id, a.status]))
     const bMap = new Map((brands ?? []).map(b => [b.id, b]))
+
+    // Evenimentele AddFame publicate pe site (/evenimente), viitoare: apar și aici, cu link spre pagina publică.
+    let siteItems: any[] = []
+    try {
+      const { data: sites } = await admin.from('site_events')
+        .select('id, slug, title, status, starts_at, location, city, description, signup_url, cover_photo_id')
+        .eq('status', 'published').gte('starts_at', new Date().toISOString()).order('starts_at', { ascending: true })
+      const sIds = (sites ?? []).map(e => e.id)
+      const { data: ph } = sIds.length
+        ? await admin.from('site_event_photos').select('id, event_id, path, position, created_at').in('event_id', sIds).order('position').order('created_at')
+        : { data: [] as any[] }
+      siteItems = (sites ?? []).map(e => {
+        const cover = coverOf(e as unknown as SiteEvent, ((ph ?? []).filter((x: any) => x.event_id === e.id)) as SiteEventPhoto[])
+        return {
+          id: 'site-' + e.id, kind: 'site' as const, href: `/evenimente/${e.slug}`,
+          title: e.title, description: e.description, banner_url: cover ? photoUrl(cover.path) : null,
+          event_date: e.starts_at, event_location: [e.location, e.city].filter(Boolean).join(', ') || null,
+          min_followers: 0, application_deadline: null, platforms: [] as string[],
+          brand: { name: 'AddFame', logo: null }, interested: 0, my_status: null, open: true,
+        }
+      })
+    } catch { /* tabelul sau coloanele lipsesc: lista rămâne doar cu evenimentele-campanie */ }
+
     return {
       success: true as const,
-      events: list.map(c => ({
+      events: [...list.map(c => ({ kind: 'campaign' as const, href: null as string | null,
         id: c.id, title: c.title, description: c.description, banner_url: c.banner_url,
         event_date: c.event_date, event_location: c.event_location, min_followers: c.min_followers,
         application_deadline: c.application_deadline, platforms: c.platforms || [],
@@ -64,7 +88,7 @@ export async function getEventsForInfluencer() {
         interested: (counts.get(c.id) || 0) + (c.manual_registrations || 0),
         my_status: (myMap.get(c.id) as string | undefined) ?? null,
         open: eventOpen(c),
-      })),
+      })), ...siteItems].sort((a: any, b: any) => (a.event_date ? new Date(a.event_date).getTime() : Infinity) - (b.event_date ? new Date(b.event_date).getTime() : Infinity)),
     }
   } catch (e: any) { return { error: e?.message || 'Eroare' } }
 }
