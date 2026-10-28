@@ -1140,7 +1140,8 @@ export default function AdminCampaigns() {
       reservation_required: selectedCampaign.reservation_required || false,
 
       // Delivery
-      delivery_method: selectedCampaign.delivery_method || 'delivery',
+      // campaniile plătite fără colet rămân fără livrare (altfel influencerii ar fi rugați să-și completeze adresa)
+      delivery_method: selectedCampaign.delivery_method ?? (selectedCampaign.campaign_type?.toUpperCase() === 'BARTER' ? 'delivery' : null),
       pickup_location_name: selectedCampaign.pickup_location_name || '',
       pickup_location_address: selectedCampaign.pickup_location_address || '',
 
@@ -1632,14 +1633,35 @@ export default function AdminCampaigns() {
 
                   {/* Stats */}
                   <div className="grid grid-cols-4 gap-3">
-                    <div className="bg-green-50 border border-green-100 rounded-2xl p-3.5 text-center">
-                      <p className="text-lg font-black text-green-600">{fmt(selectedCampaign.budget || 0)}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">Buget total</p>
-                    </div>
-                    <div className="bg-purple-50 border border-purple-100 rounded-2xl p-3.5 text-center">
-                      <p className="text-lg font-black text-purple-600">{fmt(Math.round((selectedCampaign.budget || 0) * 0.25))}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">Comision AddFame</p>
-                    </div>
+                    {selectedCampaign.fee_per_influencer !== null && selectedCampaign.fee_per_influencer !== undefined ? (
+                      // Modelul cu taxă: influencerul primește suma întreagă, AddFame încasează taxa de management
+                      <>
+                        <div className="bg-green-50 border border-green-100 rounded-2xl p-3.5 text-center">
+                          <p className="text-lg font-black text-green-600">
+                            {selectedCampaign.campaign_type === 'BARTER' ? 'Produs' : selectedCampaign.payment_mode === 'OFFER' ? 'Propus' : fmt(Number(selectedCampaign.pay_per_slot ?? selectedCampaign.budget_per_influencer) || 0)}
+                          </p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            {selectedCampaign.campaign_type === 'BARTER' ? 'Barter' : 'Per influencer (întreg)'}
+                            {Number(selectedCampaign.pay_reserved) > 0 ? ` · ${fmt(Number(selectedCampaign.pay_reserved))} blocați` : ''}
+                          </p>
+                        </div>
+                        <div className="bg-purple-50 border border-purple-100 rounded-2xl p-3.5 text-center">
+                          <p className="text-lg font-black text-purple-600">{fmt(Number(selectedCampaign.fee_paid) || (Number(selectedCampaign.fee_per_influencer) || 0) * (Number(selectedCampaign.fee_slots) || 0))}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">Taxă AddFame ({selectedCampaign.fee_slots || 0} × {fmt(Number(selectedCampaign.fee_per_influencer) || 0)})</p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="bg-green-50 border border-green-100 rounded-2xl p-3.5 text-center">
+                          <p className="text-lg font-black text-green-600">{fmt(selectedCampaign.budget || 0)}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">Buget total</p>
+                        </div>
+                        <div className="bg-purple-50 border border-purple-100 rounded-2xl p-3.5 text-center">
+                          <p className="text-lg font-black text-purple-600">{fmt(Math.round((selectedCampaign.budget || 0) * 0.25))}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">Comision AddFame</p>
+                        </div>
+                      </>
+                    )}
                     <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3.5 text-center">
                       <p className="text-lg font-black text-blue-600">{selectedCampaign.max_influencers || 0}</p>
                       <p className="text-[10px] text-gray-400 mt-0.5">Influenceri dorit</p>
@@ -2409,7 +2431,7 @@ export default function AdminCampaigns() {
                           </div>
 
                           {/* Sume */}
-                          {(collab.reserved_amount || collab.payment_amount) && (
+                          {(Number(collab.reserved_amount) > 0 || Number(collab.payment_amount) > 0) && (
                             <div className="px-4 pb-3 flex gap-2">
                               {collab.reserved_amount > 0 && collab.status !== 'COMPLETED' && (
                                 <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">🔒 {collab.reserved_amount.toLocaleString('ro-RO')} RON</span>
@@ -2421,7 +2443,7 @@ export default function AdminCampaigns() {
                           )}
 
                           {/* Adresă livrare */}
-                          {selectedCampaign?.campaign_type?.toUpperCase() === 'BARTER' && selectedCampaign?.delivery_method !== 'pickup' && (
+                          {(selectedCampaign?.delivery_method === 'delivery' || (selectedCampaign?.campaign_type?.toUpperCase() === 'BARTER' && selectedCampaign?.delivery_method !== 'pickup')) && (
                             <div className="mx-4 mb-3">
                               {collab.delivery_address ? (
                                 <div className="bg-white border-2 border-green-200 rounded-xl overflow-hidden">
@@ -2629,7 +2651,7 @@ export default function AdminCampaigns() {
                           )}
 
                           {/* Admin: marchează colet primit dacă influencerul nu a bifat */}
-                          {collab.status === 'ACTIVE' && !collab.package_received_at && selectedCampaign?.campaign_type?.toUpperCase() === 'BARTER' && (
+                          {collab.status === 'ACTIVE' && !collab.package_received_at && (selectedCampaign?.delivery_method === 'delivery' || selectedCampaign?.campaign_type?.toUpperCase() === 'BARTER') && (
                             <div className="mx-4 mb-2">
                               <button
                                 onClick={async () => {
@@ -3338,6 +3360,22 @@ export default function AdminCampaigns() {
                   </div>
                 </label>
               </div>
+
+              {/* Livrare produs la campaniile plătite (la barter se alege mai sus, la „Mod ridicare”) */}
+              {selectedCampaign?.campaign_type?.toUpperCase() !== 'BARTER' && (
+                <div>
+                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Livrare produs</p>
+                  <label className="flex items-start gap-3 p-3 border-2 border-gray-100 rounded-xl cursor-pointer hover:border-indigo-200">
+                    <input type="checkbox" checked={editForm.delivery_method === 'delivery'}
+                      onChange={e => setEditForm((p: any) => ({ ...p, delivery_method: e.target.checked ? 'delivery' : null }))}
+                      className="w-4 h-4 mt-0.5 rounded accent-indigo-500" />
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">Brandul trimite produs</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Bifat: influencerii își completează adresa când aplică. Nebifat: fără colet, fără adresă.</p>
+                    </div>
+                  </label>
+                </div>
+              )}
 
               {/* Story settings */}
               <div>

@@ -292,6 +292,10 @@ export default function WizardPage() {
     min_followers: '',
     deadline: '',
     offer_images: [] as string[],
+    // Trimite brandul un produs? (da = influencerul își completează adresa când aplică)
+    needs_delivery: false,
+    // Cum intră influencerii: false = brandul aprobă fiecare aplicare, true = acceptați direct
+    auto_accept: false,
   })
 
   const set = (key: string, val: any) => setData(d => ({ ...d, [key]: val }))
@@ -299,7 +303,7 @@ export default function WizardPage() {
   useEffect(() => {
     const qs = new URLSearchParams(window.location.search)
     const t = qs.get('type')
-    if (t === 'PAID' || t === 'BARTER') setData(d => ({ ...d, campaign_type: t }))
+    if (t === 'PAID' || t === 'BARTER') setData(d => ({ ...d, campaign_type: t, needs_delivery: t === 'BARTER' }))
     const did = qs.get('draftId')
     if (did) loadDraft(did)
     // Taxa de management se vede din primul pas (prețul vine din Admin → Setări)
@@ -343,6 +347,8 @@ export default function WizardPage() {
         min_followers: Number(c.min_followers) > 0 ? String(c.min_followers) : '',
         deadline: c.deadline ? String(c.deadline).slice(0, 10) : '',
         offer_images: Array.isArray(c.offer_images) ? c.offer_images : [],
+        needs_delivery: c.delivery_method === 'delivery',
+        auto_accept: !!c.auto_accept_influencers,
       }
       setData(d => ({ ...d, ...next }))
       setEditingId(c.id)
@@ -364,8 +370,9 @@ export default function WizardPage() {
       budget_per_influencer: data.campaign_type === 'PAID' && data.payment_mode === 'FIXED' ? (parseFloat(data.pay_amount) || 0) : 0,
       budget: 0,
       status: 'DRAFT',
-      // campaniile plătite: brandul aprobă fiecare influencer, fără colet de livrat
-      ...(data.campaign_type === 'PAID' ? { auto_accept_influencers: false, delivery_method: null } : {}),
+      // alegerile brandului: produs de livrat (adresă la aplicare) și aprobare manuală / acceptare directă
+      delivery_method: data.needs_delivery ? 'delivery' : null,
+      auto_accept_influencers: data.campaign_type === 'PAID' && data.payment_mode === 'OFFER' ? false : !!data.auto_accept,
       platforms: data.platforms,
       offer_name: data.product_name || null,
       offer_value: data.campaign_type === 'PAID' ? 0 : (parseFloat(data.offer_value) || 0),
@@ -485,7 +492,7 @@ export default function WizardPage() {
               { type: 'BARTER', icon: '🎁', title: 'Barter — produs gratuit', desc: 'Oferi produse în schimbul conținutului.' },
               { type: 'PAID', icon: '💰', title: 'Plătită — cash', desc: 'Plătești influencerii per postare livrată.' },
             ].map(opt => (
-              <button key={opt.type} type="button" onClick={() => set('campaign_type', opt.type)}
+              <button key={opt.type} type="button" onClick={() => setData(d => ({ ...d, campaign_type: opt.type, needs_delivery: opt.type === 'BARTER' }))}
                 className={`nw-tile ${data.campaign_type === opt.type ? 'on' : ''}`} style={{ minHeight: 76 }}>
                 <span className="ic">{opt.icon}</span>
                 <span className="t"><b>{opt.title}</b><span>{opt.desc}</span></span>
@@ -568,6 +575,24 @@ export default function WizardPage() {
           {data.campaign_type !== 'PAID' && (
             <div className="nw-f"><label>Valoare produs (RON)</label><input type="number" value={data.offer_value} onChange={e => set('offer_value', e.target.value)} placeholder="150" className="nw-in" /></div>
           )}
+        </div>
+        <div className="bu-card nw-card">
+          <div className="nw-f">
+            <span className="nw-lab">Trimiți un produs influencerilor?</span>
+            <div className="nw-tiles">
+              {[
+                { v: false, icon: '🚫', title: 'Nu, fără colet', desc: 'Influencerii nu completează adresă de livrare.' },
+                { v: true, icon: '📦', title: 'Da, trimit produsul', desc: 'Influencerul își completează adresa când aplică.' },
+              ].map(opt => (
+                <button key={String(opt.v)} type="button" onClick={() => set('needs_delivery', opt.v)}
+                  className={`nw-tile ${data.needs_delivery === opt.v ? 'on' : ''}`} style={{ minHeight: 76 }}>
+                  <span className="ic">{opt.icon}</span>
+                  <span className="t"><b>{opt.title}</b><span>{opt.desc}</span></span>
+                  <span className="ck">{data.needs_delivery === opt.v && <Check size={13} strokeWidth={3} />}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="bu-card nw-card">
           <div className="nw-f"><span className="nw-lab">Imagini produs</span></div>
@@ -692,6 +717,28 @@ export default function WizardPage() {
             </div>
           </div>
         </div>
+        <div className="bu-card nw-card">
+          <div className="nw-f">
+            <span className="nw-lab">Cum intră influencerii în campanie?</span>
+            {data.campaign_type === 'PAID' && data.payment_mode === 'OFFER' ? (
+              <div className="nw-note violet"><span>La „Influencerii propun prețul” alegi tu fiecare influencer, după prețul cerut. Aplicările așteaptă aprobarea ta.</span></div>
+            ) : (
+              <div className="nw-tiles">
+                {[
+                  { v: false, icon: '✋', title: 'Aprob eu fiecare influencer', desc: 'Aplicările intră „În așteptare”; tu alegi pe cine accepți.' },
+                  { v: true, icon: '⚡', title: 'Acceptați direct', desc: 'Primii care aplică ocupă locurile, fără aprobarea ta.' },
+                ].map(opt => (
+                  <button key={String(opt.v)} type="button" onClick={() => set('auto_accept', opt.v)}
+                    className={`nw-tile ${data.auto_accept === opt.v ? 'on' : ''}`} style={{ minHeight: 76 }}>
+                    <span className="ic">{opt.icon}</span>
+                    <span className="t"><b>{opt.title}</b><span>{opt.desc}</span></span>
+                    <span className="ck">{data.auto_accept === opt.v && <Check size={13} strokeWidth={3} />}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </>
     )
 
@@ -710,6 +757,8 @@ export default function WizardPage() {
               { label: 'Conținut', value: [data.tasks_ig_reel && 'Reel', data.tasks_ig_post && 'Post', data.tasks_tt_video && 'TikTok', data.tasks_stories_count > 0 && `${data.tasks_stories_count} Stories`].filter(Boolean).join(', ') || null, ok: hasContent },
               { label: 'Instrucțiuni', value: data.story_instructions ? data.story_instructions.substring(0, 50) + '...' : null, ok: !!data.story_instructions, optional: true },
               { label: 'Influenceri', value: `${data.max_influencers} persoane`, ok: true },
+              { label: 'Livrare produs', value: data.needs_delivery ? 'Da: influencerii completează adresa' : 'Nu: fără colet', ok: true },
+              { label: 'Aprobare', value: (data.campaign_type === 'PAID' && data.payment_mode === 'OFFER') || !data.auto_accept ? 'Aprobi tu fiecare influencer' : 'Acceptați direct, fără aprobare', ok: true },
               { label: 'Taxă management', value: feeInfo ? `${(slots * feeInfo.price).toLocaleString('ro-RO')} RON (${slots} × ${feeInfo.price.toLocaleString('ro-RO')} RON)` : null, ok: feeEnough, optional: true },
               { label: 'Deadline', value: data.deadline ? new Date(data.deadline).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' }) : 'Automat 30 zile', ok: true },
             ].map((row, i, arr) => (

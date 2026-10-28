@@ -427,7 +427,7 @@ export default function CampaignsPage() {
     setApplyError(null)
     setActionLoading(selected.id)
     try {
-      const needsDelivery = selected.delivery_method === 'delivery' && String(selected.campaign_type || '').toUpperCase() === 'BARTER'
+      const needsDelivery = selected.delivery_method === 'delivery'
       if (needsDelivery) {
         if (!applyAddress.name.trim() || !applyAddress.phone.trim() || !applyAddress.address.trim() || !applyAddress.city.trim() || !applyAddress.county.trim()) {
           setApplyError('Completează toate câmpurile obligatorii din adresa de livrare.')
@@ -1080,7 +1080,7 @@ export default function CampaignsPage() {
                 </div>
               ) : (
                 <>
-                  {selected.delivery_method === 'delivery' && String(selected.campaign_type || '').toUpperCase() === 'BARTER' && (
+                  {selected.delivery_method === 'delivery' && (
                     <div className="iu-card cp-sec">
                       <h3>Adresă livrare colet</h3>
                       <div className="cm-addr">

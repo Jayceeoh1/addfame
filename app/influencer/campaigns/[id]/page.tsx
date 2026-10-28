@@ -77,7 +77,8 @@ export default function CampaignBriefPage() {
 
   const isBarter = campaign?.campaign_type?.toUpperCase() === 'BARTER'
   const isDelivery = campaign?.delivery_method === 'delivery'
-  const needsAddress = isBarter && isDelivery
+  // adresa se cere când brandul trimite produs (barter sau campanie plătită cu colet)
+  const needsAddress = isDelivery
 
   async function handleApply() {
     if (!influencerId) { notify('Trebuie să fii logat ca influencer', false); return }
