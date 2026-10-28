@@ -76,7 +76,7 @@ function getEmbedInfo(url: string): { embedUrl: string; type: 'tiktok' | 'instag
     const ttMatch = url.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/)
     if (ttMatch) return { embedUrl: `https://www.tiktok.com/embed/v2/${ttMatch[1]}`, type: 'tiktok' }
     // Instagram reel: https://www.instagram.com/reel/ABC123/
-    const igMatch = url.match(/instagram\.com\/(?:reel|p)\/([A-Za-z0-9_-]+)/)
+    const igMatch = url.match(/instagram\.com\/(?:reels?|p|tv)\/([A-Za-z0-9_-]+)/)
     if (igMatch) return { embedUrl: `https://www.instagram.com/p/${igMatch[1]}/embed/`, type: 'instagram' }
     return null
   } catch { return null }
@@ -144,6 +144,7 @@ export default function PublicInfluencerProfile() {
   const [thumbnails, setThumbnails] = useState<Record<string, string | null>>({})
   const [stats, setStats] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [playing, setPlaying] = useState<{ src: string; type: string } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -519,6 +520,25 @@ export default function PublicInfluencerProfile() {
                     const info = getPostPreviewInfo(url)
                     const thumb = thumbnails[url]
                     const m = describeMaterial(url)
+                    const embed = getEmbedInfo(url)
+                    const inner = (
+                      <>
+                        {thumb
+                          ? <img src={thumb} alt={m.label} loading="lazy" />
+                          : <div className="pf-tile-ph">
+                              <span className="ic" aria-hidden="true">{m.kind === 'ig' ? <InstagramIcon /> : m.kind === 'tt' ? <TikTokSVG /> : <Globe />}</span>
+                              <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}><b>{m.label}</b><small>{m.source}</small></span>
+                            </div>}
+                        {m.video && <span className="pf-play" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg></span>}
+                      </>
+                    )
+                    // Postările Instagram / TikTok se deschid în player-ul din pagină (brandul rămâne pe AddFame)
+                    if (embed) return (
+                      <button key={url + i} type="button" onClick={() => setPlaying({ src: embed.embedUrl, type: embed.type })}
+                        className={`pf-tile ${m.kind}`} aria-label={`Deschide ${m.label} ${m.source}`} style={{ border: 0, padding: 0, cursor: 'pointer', textAlign: 'left', font: 'inherit', color: 'inherit', width: '100%' }}>
+                        {inner}
+                      </button>
+                    )
                     return (
                       <MaybeLink key={url + i} hide={hideSocial} href={url} className={`pf-tile ${m.kind}`}>
                         {thumb
@@ -628,6 +648,19 @@ export default function PublicInfluencerProfile() {
           </aside>
         </div>
       </div>
+      {/* Player postare (Instagram / TikTok) */}
+      {playing && (
+        <div role="dialog" aria-modal="true" aria-label="Postare din portofoliu" onClick={() => setPlaying(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(12,10,30,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: 'min(400px, 100%)', height: 'min(720px, calc(100dvh - 32px))', background: '#fff', borderRadius: 20, overflow: 'hidden' }}>
+            <iframe src={playing.src} title="Postare" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen
+              style={{ width: '100%', height: '100%', border: 0, display: 'block' }} />
+            <button type="button" onClick={() => setPlaying(null)} aria-label="Închide"
+              style={{ position: 'absolute', top: 10, right: 10, width: 40, height: 40, borderRadius: 999, border: 0, background: 'rgba(20,18,58,.8)', color: '#fff', fontSize: 20, lineHeight: 1, cursor: 'pointer' }}>×</button>
+          </div>
+        </div>
+      )}
+
       {/* Invite modal */}
       {inviteOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
