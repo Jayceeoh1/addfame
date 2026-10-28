@@ -97,6 +97,23 @@ function StarRow({ rating, count }) {
   )
 }
 
+// Ce fel de material e un link din portofoliu (pentru plăcuța afișată când nu avem miniatură).
+function describeMaterial(url: string): { kind: 'ig' | 'tt' | 'ot'; label: string; source: string; video: boolean } {
+  const u = String(url || '').toLowerCase()
+  if (u.includes('instagram.com')) {
+    if (/\/(reel|reels|tv)\//.test(u)) return { kind: 'ig', label: 'Reel', source: 'Instagram', video: true }
+    if (u.includes('/stories/')) return { kind: 'ig', label: 'Story', source: 'Instagram', video: false }
+    if (u.includes('/p/')) return { kind: 'ig', label: 'Postare', source: 'Instagram', video: false }
+    return { kind: 'ig', label: 'Profil', source: 'Instagram', video: false }
+  }
+  if (u.includes('tiktok.com')) return { kind: 'tt', label: u.includes('/photo/') ? 'Postare foto' : 'Video', source: 'TikTok', video: !u.includes('/photo/') }
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return { kind: 'ot', label: u.includes('/shorts/') ? 'Short' : 'Video', source: 'YouTube', video: true }
+  if (u.includes('drive.google.com')) return { kind: 'ot', label: 'Material', source: 'Google Drive', video: false }
+  let host = 'Link extern'
+  try { host = new URL(url).hostname.replace(/^www\./, '') } catch {}
+  return { kind: 'ot', label: 'Material', source: host, video: false }
+}
+
 function Stars({ value, size = 14 }: { value: number; size?: number }) {
   return (
     <span style={{ display: 'inline-flex', gap: 2 }} role="img" aria-label={`${Number(value).toFixed(1)} din 5 stele`}>
@@ -346,7 +363,16 @@ export default function PublicInfluencerProfile() {
         .pf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
         .pf-tile { display: block; position: relative; border-radius: 14px; overflow: hidden; background: #efeaff; aspect-ratio: 4 / 5; max-width: 100%; }
         .pf-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .pf-tile-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #5b2fd0; text-align: center; padding: 8px; }
+        .pf-tile-ph { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 12px; }
+        .pf-tile-ph .ic { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.9); }
+        .pf-tile-ph .ic svg { width: 18px; height: 18px; }
+        .pf-tile-ph b { font-size: 13px; line-height: 1.25; }
+        .pf-tile-ph small { font-size: 11px; font-weight: 700; opacity: .75; }
+        .pf-tile.ig .pf-tile-ph { background: #fde9f1; color: #9d1c52; }
+        .pf-tile.tt .pf-tile-ph { background: #18162e; color: #fff; }
+        .pf-tile.tt .pf-tile-ph .ic { color: #18162e; }
+        .pf-tile.ot .pf-tile-ph { background: #efeaff; color: #4423c4; }
+        .pf-tile .pf-play { position: absolute; right: 10px; bottom: 10px; width: 30px; height: 30px; border-radius: 999px; background: rgba(255,255,255,.92); color: #14123a; display: flex; align-items: center; justify-content: center; }
         .pf-dark { background: #14123a; color: #fff; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
         .pf-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
         .pf-row + .pf-row { padding-top: 10px; border-top: 1px solid #f1eff7; }
@@ -492,10 +518,16 @@ export default function PublicInfluencerProfile() {
                   {[...clips, ...recentPosts].map((url: string, i: number) => {
                     const info = getPostPreviewInfo(url)
                     const thumb = thumbnails[url]
-                    const label = info?.type === 'tiktok' ? 'Video TikTok' : info?.type === 'instagram' ? 'Instagram' : `Material ${i + 1}`
+                    const m = describeMaterial(url)
                     return (
-                      <MaybeLink key={url + i} hide={hideSocial} href={url} className="pf-tile">
-                        {thumb ? <img src={thumb} alt={label} loading="lazy" /> : <div className="pf-tile-ph">{label}</div>}
+                      <MaybeLink key={url + i} hide={hideSocial} href={url} className={`pf-tile ${m.kind}`}>
+                        {thumb
+                          ? <img src={thumb} alt={m.label} loading="lazy" />
+                          : <div className="pf-tile-ph">
+                              <span className="ic" aria-hidden="true">{m.kind === 'ig' ? <InstagramIcon /> : m.kind === 'tt' ? <TikTokSVG /> : <Globe />}</span>
+                              <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}><b>{m.label}</b><small>{m.source}</small></span>
+                            </div>}
+                        {m.video && <span className="pf-play" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg></span>}
                       </MaybeLink>
                     )
                   })}
