@@ -70,15 +70,17 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { influencer_name, influencer_email, influencer_phone, influencer_address, amount_lei, payment_days, notes } = body
 
-    if (!influencer_name || !influencer_email || !amount_lei) {
-      return NextResponse.json({ error: 'Campuri obligatorii lipsa: nume, email, suma' }, { status: 400 })
+    // Numele, emailul, telefonul și adresa le poate completa influencerul la semnare
+    if (!amount_lei) {
+      return NextResponse.json({ error: 'Câmp obligatoriu lipsă: suma' }, { status: 400 })
     }
+    const slugBase = String(influencer_name || 'contract-ugc')
 
     // Generate friendly token: slug-shortid
     let token = ''
     let attempts = 0
     while (attempts < 10) {
-      const candidate = makeSlug(influencer_name, randomShortId(6))
+      const candidate = makeSlug(slugBase, randomShortId(6))
       // Check uniqueness
       const { data: existing } = await adminClient()
         .from('ugc_contracts')
@@ -88,14 +90,14 @@ export async function POST(req: NextRequest) {
       if (!existing) { token = candidate; break }
       attempts++
     }
-    if (!token) token = makeSlug(influencer_name, randomShortId(10)) // fallback longer
+    if (!token) token = makeSlug(slugBase, randomShortId(10)) // fallback longer
 
     const { data, error } = await adminClient()
       .from('ugc_contracts')
       .insert({
         token,
-        influencer_name,
-        influencer_email,
+        influencer_name: influencer_name || '',
+        influencer_email: influencer_email || '',
         influencer_phone: influencer_phone || null,
         influencer_address: influencer_address || null,
         amount_lei: Number(amount_lei),

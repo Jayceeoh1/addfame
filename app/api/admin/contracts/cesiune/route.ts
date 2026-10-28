@@ -88,9 +88,8 @@ export async function POST(req: NextRequest) {
       brand_name, brand_cui, brand_reg_com, brand_address, brand_website, notes,
       campaign_id, influencer_id,
     } = body
-    if (!influencer_name || !influencer_email) return NextResponse.json({ error: 'Câmpuri obligatorii lipsă' }, { status: 400 })
-
-    const token = randomToken(influencer_name)
+    // Datele autorului (nume, email, CNP, C.I., domiciliu) le poate completa influencerul la semnare
+    const token = randomToken(influencer_name || campaign_title || 'contract-cesiune')
 
     // Auto-număr contract dacă nu e dat manual: următorul din serie
     let number = contract_number
@@ -102,8 +101,8 @@ export async function POST(req: NextRequest) {
     const { data, error } = await adminClient().from('cesiune_contracts').insert({
       token,
       contract_number: number,
-      influencer_name,
-      influencer_email,
+      influencer_name: influencer_name || '',
+      influencer_email: influencer_email || '',
       influencer_phone: influencer_phone || null,
       influencer_cnp: influencer_cnp || null,
       influencer_ci_serie: influencer_ci_serie || null,

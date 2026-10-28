@@ -195,7 +195,7 @@ export default function ContractPage() {
           <CheckCircle className="w-9 h-9 text-green-500" />
         </div>
         <h2 className="font-black text-gray-900 text-2xl mb-2">Contract semnat!</h2>
-        <p className="text-gray-400 text-sm mb-1">Semnat de <strong className="text-gray-700">{contract?.influencer_name}</strong></p>
+        <p className="text-gray-400 text-sm mb-1">Semnat de <strong className="text-gray-700">{name || contract?.influencer_name}</strong></p>
         {signedAt && <p className="text-gray-400 text-sm">La data: <strong className="text-gray-700">{fmt(signedAt)}</strong></p>}
         <div className="mt-6 p-4 bg-green-50 rounded-2xl border border-green-200">
           <p className="text-green-700 text-sm font-semibold">
@@ -258,9 +258,9 @@ export default function ContractPage() {
               </div>
               <div className="bg-purple-50 rounded-2xl p-5 border border-purple-100">
                 <p className="text-xs font-black text-purple-400 uppercase tracking-wider mb-3">Creator / Influencer</p>
-                <p className="font-black text-gray-900">{contract.influencer_name}</p>
-                <p className="text-sm text-gray-500 mt-1">{contract.influencer_email}</p>
-                {contract.influencer_phone && <p className="text-sm text-gray-500">{contract.influencer_phone}</p>}
+                <p className="font-black text-gray-900">{name || contract.influencer_name || '[numele tău]'}</p>
+                <p className="text-sm text-gray-500 mt-1">{email || contract.influencer_email || '[emailul tău]'}</p>
+                {(phone || contract.influencer_phone) && <p className="text-sm text-gray-500">{phone || contract.influencer_phone}</p>}
               </div>
             </div>
 
@@ -314,7 +314,7 @@ export default function ContractPage() {
                 </div>
                 <div>
                   <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Creator</p>
-                  <p className="font-black text-gray-900">{contract.influencer_name}</p>
+                  <p className="font-black text-gray-900">{name || contract.influencer_name || '[numele tău]'}</p>
                   <div className="mt-4 border-b border-gray-300 pb-1">
                     <p className="text-xs text-gray-400">Semnatura (completati mai jos)</p>
                   </div>

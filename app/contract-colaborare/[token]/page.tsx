@@ -151,7 +151,7 @@ export default function ContractColaborarePage() {
       <div className="bg-white rounded-3xl p-10 text-center max-w-md shadow-xl">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5"><CheckCircle className="w-9 h-9 text-green-500" /></div>
         <h2 className="font-black text-gray-900 text-2xl mb-2">Contract semnat!</h2>
-        <p className="text-gray-400 text-sm mb-1">Semnat de <strong className="text-gray-700">{contract?.influencer_name}</strong></p>
+        <p className="text-gray-400 text-sm mb-1">Semnat de <strong className="text-gray-700">{name || contract?.influencer_name}</strong></p>
         {signedAt && <p className="text-gray-400 text-sm">La data: <strong className="text-gray-700">{fmt(signedAt)}</strong></p>}
         <div className="mt-6 p-4 bg-green-50 rounded-2xl border border-green-200">
           <p className="text-green-700 text-sm font-semibold">Contractul tău a fost înregistrat. Echipa AddFame te va contacta în curând.</p>
@@ -204,9 +204,9 @@ export default function ContractColaborarePage() {
               </div>
               <div className="rounded-2xl p-5 border" style={{ background: '#fdf4ff', borderColor: '#e9d5ff' }}>
                 <p className="text-xs font-black uppercase tracking-wider mb-3" style={{ color: '#a855f8' }}>Creator / Influencer</p>
-                <p className="font-black text-gray-900">{contract.influencer_name}</p>
-                <p className="text-sm text-gray-500 mt-1">{contract.influencer_email}</p>
-                {contract.influencer_phone && <p className="text-sm text-gray-500">{contract.influencer_phone}</p>}
+                <p className="font-black text-gray-900">{name || contract.influencer_name || '[numele tău]'}</p>
+                <p className="text-sm text-gray-500 mt-1">{email || contract.influencer_email || '[emailul tău]'}</p>
+                {(phone || contract.influencer_phone) && <p className="text-sm text-gray-500">{phone || contract.influencer_phone}</p>}
               </div>
             </div>
 
@@ -260,7 +260,7 @@ export default function ContractColaborarePage() {
                 </div>
                 <div>
                   <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Creator</p>
-                  <p className="font-black text-gray-900">{contract.influencer_name}</p>
+                  <p className="font-black text-gray-900">{name || contract.influencer_name || '[numele tău]'}</p>
                   <div className="mt-4 border-b border-gray-300 pb-1"><p className="text-xs text-gray-400">Semnătură (completați mai jos)</p></div>
                   <div className="mt-3 border-b border-gray-300 pb-1"><p className="text-xs text-gray-400">Data: {today}</p></div>
                 </div>

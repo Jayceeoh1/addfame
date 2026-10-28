@@ -462,8 +462,8 @@ export default function ContractsPage() {
                               {(c.influencer_name || '?').trim().charAt(0).toUpperCase()}
                             </span>
                             <span className="min-w-0">
-                              <span className="block font-black text-gray-900 text-sm truncate">{c.influencer_name}</span>
-                              <span className="block text-xs text-gray-400 truncate">{c.influencer_email}</span>
+                              <span className="block font-black text-gray-900 text-sm truncate">{c.influencer_name || <span className="text-gray-400 font-bold">Necompletat (îl completează influencerul)</span>}</span>
+                              <span className="block text-xs text-gray-400 truncate">{c.influencer_email || '—'}</span>
                             </span>
                           </div>
 
@@ -547,7 +547,7 @@ export default function ContractsPage() {
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <div>
                 <h2 className="font-black text-lg text-gray-900">Contract nou {CFG[tab].label}</h2>
-                <p className="text-sm text-gray-400 mt-0.5">Completează datele influencerului</p>
+                <p className="text-sm text-gray-400 mt-0.5">{tab === 'cesiune' ? 'Completezi brandul și produsul; datele autorului le completează influencerul la semnare.' : 'Completezi suma și livrabilele; datele personale le completează influencerul la semnare.'}</p>
               </div>
               <button onClick={() => setShowNew(false)} className="p-2 rounded-xl hover:bg-gray-100 transition">
                 <X className="w-5 h-5 text-gray-400" />
@@ -557,8 +557,8 @@ export default function ContractsPage() {
             {tab === 'ugc' ? (
               <form onSubmit={createUGC} className="p-6 space-y-4">
                 <FieldGrid>
-                  <Field label="Nume complet *" colSpan={2}><input required value={ugcForm.influencer_name} onChange={e => setUgcForm(f => ({ ...f, influencer_name: e.target.value }))} placeholder="ex. Maria Ionescu" className="field" /></Field>
-                  <Field label="Email *"><input required type="email" value={ugcForm.influencer_email} onChange={e => setUgcForm(f => ({ ...f, influencer_email: e.target.value }))} placeholder="maria@email.com" className="field" /></Field>
+                  <Field label="Nume complet" colSpan={2}><input value={ugcForm.influencer_name} onChange={e => setUgcForm(f => ({ ...f, influencer_name: e.target.value }))} placeholder="opțional: îl completează influencerul" className="field" /></Field>
+                  <Field label="Email"><input type="email" value={ugcForm.influencer_email} onChange={e => setUgcForm(f => ({ ...f, influencer_email: e.target.value }))} placeholder="opțional: îl completează influencerul" className="field" /></Field>
                   <Field label="Telefon"><input value={ugcForm.influencer_phone} onChange={e => setUgcForm(f => ({ ...f, influencer_phone: e.target.value }))} placeholder="07xx xxx xxx" className="field" /></Field>
                   <Field label="Adresă" colSpan={2}><input value={ugcForm.influencer_address} onChange={e => setUgcForm(f => ({ ...f, influencer_address: e.target.value }))} placeholder="Str. Exemplu nr. 1, Cluj-Napoca" className="field" /></Field>
                   <Field label="Sumă (LEI) *"><input required type="number" min="1" value={ugcForm.amount_lei} onChange={e => setUgcForm(f => ({ ...f, amount_lei: e.target.value }))} placeholder="500" className="field" /></Field>
@@ -579,8 +579,8 @@ export default function ContractsPage() {
                   </div>
                 )}
                 <FieldGrid>
-                  <Field label="Nume complet *" colSpan={2}><input required value={colabForm.influencer_name} onChange={e => setColabForm(f => ({ ...f, influencer_name: e.target.value }))} placeholder="ex. Maria Ionescu" className="field" /></Field>
-                  <Field label="Email *"><input required type="email" value={colabForm.influencer_email} onChange={e => setColabForm(f => ({ ...f, influencer_email: e.target.value }))} placeholder="maria@email.com" className="field" /></Field>
+                  <Field label="Nume complet" colSpan={2}><input value={colabForm.influencer_name} onChange={e => setColabForm(f => ({ ...f, influencer_name: e.target.value }))} placeholder="opțional: îl completează influencerul" className="field" /></Field>
+                  <Field label="Email"><input type="email" value={colabForm.influencer_email} onChange={e => setColabForm(f => ({ ...f, influencer_email: e.target.value }))} placeholder="opțional: îl completează influencerul" className="field" /></Field>
                   <Field label="Telefon"><input value={colabForm.influencer_phone} onChange={e => setColabForm(f => ({ ...f, influencer_phone: e.target.value }))} placeholder="07xx xxx xxx" className="field" /></Field>
                   <Field label="Adresă" colSpan={2}><input value={colabForm.influencer_address} onChange={e => setColabForm(f => ({ ...f, influencer_address: e.target.value }))} placeholder="Str. Exemplu nr. 1, Cluj-Napoca" className="field" /></Field>
                   <Field label="Titlu campanie"><input value={colabForm.campaign_title} onChange={e => setColabForm(f => ({ ...f, campaign_title: e.target.value }))} placeholder="ex. Fi Ambasador AddFame" className="field" /></Field>
@@ -622,8 +622,8 @@ export default function ContractsPage() {
                 )}
                 <SectionLabel>Influencer (Autor)</SectionLabel>
                 <FieldGrid>
-                  <Field label="Nume complet *" colSpan={2}><input required value={cesForm.influencer_name} onChange={e => setCesForm(f => ({ ...f, influencer_name: e.target.value }))} placeholder="ex. Maria Ionescu" className="field" /></Field>
-                  <Field label="Email *"><input required type="email" value={cesForm.influencer_email} onChange={e => setCesForm(f => ({ ...f, influencer_email: e.target.value }))} placeholder="maria@email.com" className="field" /></Field>
+                  <Field label="Nume complet" colSpan={2}><input value={cesForm.influencer_name} onChange={e => setCesForm(f => ({ ...f, influencer_name: e.target.value }))} placeholder="opțional: îl completează influencerul" className="field" /></Field>
+                  <Field label="Email"><input type="email" value={cesForm.influencer_email} onChange={e => setCesForm(f => ({ ...f, influencer_email: e.target.value }))} placeholder="opțional: îl completează influencerul" className="field" /></Field>
                   <Field label="Telefon"><input value={cesForm.influencer_phone} onChange={e => setCesForm(f => ({ ...f, influencer_phone: e.target.value }))} placeholder="07xx xxx xxx" className="field" /></Field>
                 </FieldGrid>
                 <p className="text-xs text-gray-400 -mt-1">CNP, C.I. și domiciliul le completează influencerul la semnare (sau le poți pune tu aici).</p>

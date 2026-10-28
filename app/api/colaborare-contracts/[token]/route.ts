@@ -40,6 +40,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     const body = await req.json()
     const { signature_image, signature_name, influencer_name, influencer_email, influencer_phone, influencer_address } = body
 
+    // numele și emailul le completează influencerul dacă adminul le-a lăsat goale
+
+    if (!String(influencer_name || contract.influencer_name || '').trim() || !String(influencer_email || contract.influencer_email || '').trim()) {
+
+      return NextResponse.json({ error: 'Completează numele complet și emailul înainte de semnare.' }, { status: 400 })
+
+    }
+
     if (!signature_image && !signature_name) return NextResponse.json({ error: 'Semnătura este obligatorie' }, { status: 400 })
 
     const now = new Date().toISOString()

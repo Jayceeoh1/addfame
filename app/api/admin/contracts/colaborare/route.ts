@@ -46,9 +46,10 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const body = await req.json()
     const { influencer_name, influencer_email, influencer_phone, influencer_address, amount_lei, payment_days, campaign_title, platform, deliverables, notes } = body
-    if (!influencer_name || !influencer_email || !amount_lei) return NextResponse.json({ error: 'Câmpuri obligatorii lipsă' }, { status: 400 })
-    const token = randomToken(influencer_name)
-    const { data, error } = await adminClient().from('colaborare_contracts').insert({ token, influencer_name, influencer_email, influencer_phone: influencer_phone || null, influencer_address: influencer_address || null, amount_lei, payment_days: payment_days || 14, campaign_title: campaign_title || null, platform: platform || null, deliverables: deliverables || null, notes: notes || null, status: 'draft' }).select().single()
+    // Numele, emailul, telefonul și adresa le poate completa influencerul la semnare
+    if (!amount_lei) return NextResponse.json({ error: 'Câmp obligatoriu lipsă: suma' }, { status: 400 })
+    const token = randomToken(influencer_name || campaign_title || 'contract-colaborare')
+    const { data, error } = await adminClient().from('colaborare_contracts').insert({ token, influencer_name: influencer_name || '', influencer_email: influencer_email || '', influencer_phone: influencer_phone || null, influencer_address: influencer_address || null, amount_lei, payment_days: payment_days || 14, campaign_title: campaign_title || null, platform: platform || null, deliverables: deliverables || null, notes: notes || null, status: 'draft' }).select().single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ contract: data })
   } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }) }
