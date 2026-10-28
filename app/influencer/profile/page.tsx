@@ -158,6 +158,30 @@ function PricingSection({ priceStory, setPriceStory, priceReel, setPriceReel, pr
   )
 }
 
+// Redimensionează și convertește o poză în JPG (latura maximă `max` px). Aruncă eroare dacă browserul nu o poate citi.
+function toJpeg(file: File, max: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, max / Math.max(img.naturalWidth || 1, img.naturalHeight || 1))
+        const w = Math.max(1, Math.round((img.naturalWidth || 1) * scale))
+        const h = Math.max(1, Math.round((img.naturalHeight || 1) * scale))
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { URL.revokeObjectURL(url); reject(new Error('canvas')); return }
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h)
+        ctx.drawImage(img, 0, 0, w, h)
+        canvas.toBlob(b => { URL.revokeObjectURL(url); b ? resolve(b) : reject(new Error('blob')) }, 'image/jpeg', 0.88)
+      } catch (err) { URL.revokeObjectURL(url); reject(err) }
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode')) }
+    img.src = url
+  })
+}
+
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -317,19 +341,28 @@ export default function ProfilePage() {
       return
     }
 
-    const objectUrl = URL.createObjectURL(file)
-    setAvatarPreview(objectUrl)
     setAvatarUploading(true)
     setError(null)
 
+    // Orice poză (inclusiv HEIC de pe iPhone) se transformă în JPG, ca să se vadă în toate browserele
+    let jpg: Blob
+    try {
+      jpg = await toJpeg(file, 800)
+    } catch {
+      setAvatarUploading(false)
+      setError('Nu am putut citi poza. Alege o fotografie JPG sau PNG (formatul HEIC de pe iPhone nu se deschide în acest browser).')
+      return
+    }
+    const objectUrl = URL.createObjectURL(jpg)
+    setAvatarPreview(objectUrl)
+
     try {
       const supabase = createClient()
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-      const path = `${userId}/avatar.${ext}`
+      const path = `${userId}/avatar.jpg`
 
       const { error: uploadError } = await supabase.storage
         .from('influencer-avatars')
-        .upload(path, file, { upsert: true, contentType: file.type })
+        .upload(path, jpg, { upsert: true, contentType: 'image/jpeg' })
 
       if (uploadError) {
         if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('row-level security') || uploadError.message.includes('policy')) {
@@ -345,7 +378,7 @@ export default function ProfilePage() {
             if (dbError) setError('Eroare la salvarea fotografiei: ' + dbError.message)
             setAvatarUploading(false)
           }
-          reader.readAsDataURL(file)
+          reader.readAsDataURL(jpg)
           return
         }
         throw uploadError
