@@ -349,9 +349,19 @@ export default function ProfilePage() {
     try {
       jpg = await toJpeg(file, 800)
     } catch {
-      setAvatarUploading(false)
-      setError('Nu am putut citi poza. Alege o fotografie JPG sau PNG (formatul HEIC de pe iPhone nu se deschide în acest browser).')
-      return
+      // Chrome / Windows nu citesc HEIC: îl convertim întâi în JPG direct în browser
+      const isHeic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name)
+      try {
+        if (!isHeic) throw new Error('format')
+        const heic2any = (await import('heic2any')).default
+        const out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 })
+        const converted = Array.isArray(out) ? out[0] : out
+        jpg = await toJpeg(new File([converted], 'avatar.jpg', { type: 'image/jpeg' }), 800)
+      } catch {
+        setAvatarUploading(false)
+        setError('Nu am putut citi poza. Încearcă altă fotografie (JPG, PNG sau HEIC).')
+        return
+      }
     }
     const objectUrl = URL.createObjectURL(jpg)
     setAvatarPreview(objectUrl)
@@ -636,7 +646,7 @@ export default function ProfilePage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif"
                 className="hidden"
                 onChange={handleAvatarChange}
               />
