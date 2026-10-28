@@ -1,7 +1,7 @@
 'use client'
 import { AvatarWithBadge } from '@/components/shared/CreatorBadge'
 // @ts-nocheck
-import { parseCount } from '@/lib/tiers'
+import { parseCount, getTier, formatCount } from '@/lib/tiers'
 
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
@@ -97,6 +97,16 @@ function StarRow({ rating, count }) {
   )
 }
 
+function Stars({ value, size = 14 }: { value: number; size?: number }) {
+  return (
+    <span style={{ display: 'inline-flex', gap: 2 }} role="img" aria-label={`${Number(value).toFixed(1)} din 5 stele`}>
+      {[1, 2, 3, 4, 5].map(s => (
+        <Star key={s} size={size} style={{ color: s <= Math.round(value) ? '#f5a524' : '#e2dfec' }} fill={s <= Math.round(value) ? '#f5a524' : '#e2dfec'} />
+      ))}
+    </span>
+  )
+}
+
 export default function PublicInfluencerProfile() {
   const { slug } = useParams()
   const [inf, setInf] = useState(null)
@@ -150,6 +160,11 @@ export default function PublicInfluencerProfile() {
 
       if (!data) { setNotFound(true); setLoading(false); return }
       setInf(data)
+      // urmăritorii completați de echipă / Instagram conectat (nu sunt în vederea publică)
+      fetch(`/api/influencer-profile?id=${encodeURIComponent(data.id)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(j => { const x = j?.influencer; if (x) setInf(prev => prev ? { ...prev, ig_followers: x.ig_followers, tt_followers: x.tt_followers, instagram_followers: x.instagram_followers } : prev) })
+        .catch(() => {})
 
       // Load collab stats (cifre agregate din baza de date; citirea directă doar ca rezervă)
       const { data: statRows, error: statErr } = await sb.rpc('public_collab_stats', { p_influencer_ids: [data.id] })
@@ -244,421 +259,343 @@ export default function PublicInfluencerProfile() {
     </div>
   )
 
-  const totalFollowers = (inf.platforms || []).reduce((s, p) => s + parseCount(p.followers), 0)
+  // Urmăritori pe platformă: cel mai mare dintre platforms[] și câmpurile completate de echipă / Instagram conectat
+  const platList = (inf.platforms || []).filter((p: any) => p && p.platform)
+  const igExtra = Math.max(parseCount(inf.ig_followers), parseCount(inf.instagram_followers))
+  const ttExtra = parseCount(inf.tt_followers)
+  const followersOf = (p: any) => {
+    const key = String(p.platform || '').toLowerCase()
+    const own = parseCount(p.followers)
+    if (key === 'instagram') return Math.max(own, igExtra)
+    if (key === 'tiktok') return Math.max(own, ttExtra)
+    return own
+  }
+  const platCards = [...platList]
+  if (igExtra > 0 && !platCards.some((p: any) => String(p.platform).toLowerCase() === 'instagram')) platCards.push({ platform: 'instagram' })
+  if (ttExtra > 0 && !platCards.some((p: any) => String(p.platform).toLowerCase() === 'tiktok')) platCards.push({ platform: 'tiktok' })
+  const totalFollowers = platCards.reduce((s: number, p: any) => s + followersOf(p), 0)
+  const tier = getTier(Math.max(0, ...platCards.map(followersOf)))
 
   const avgRating = inf.avg_rating || 0
   const reviewCount = inf.review_count || 0
   const isVerified = inf.is_verified && inf.badge_expires_at && new Date(inf.badge_expires_at) > new Date()
   const isIdentityVerified = inf.identity_verified
+  const erValues = [inf.engagement_rate, ...platList.map((p: any) => p.engagement_rate)].map(v => parseFloat(String(v ?? '').replace(',', '.'))).filter(v => v > 0)
+  const er = erValues.length ? Math.max(...erValues) : 0
+  const prices = [
+    { k: 'Minim / campanie', v: inf.price_min },
+    { k: 'Reel / TikTok', v: inf.price_reel },
+    { k: 'Story', v: inf.price_story },
+    { k: 'Postare feed', v: inf.price_post },
+    { k: 'YouTube', v: inf.price_youtube },
+  ].filter(p => p.v)
+  const completed = stats?.completed || 0
+  const applied = stats?.total || 0
+  const ratingAvg = reviews.length ? reviews.reduce((t, r) => t + Number(r.rating || 0), 0) / reviews.length : avgRating
+  const ratingCount = reviews.length || reviewCount
+  const typesOf = (key: string) => key === 'instagram' ? ['Reel', 'Story', 'Post feed', 'Carousel']
+    : key === 'tiktok' ? ['Video TikTok', 'Live TikTok']
+    : key === 'youtube' ? ['Video YouTube', 'YouTube Short'] : ['Conținut organic']
+  const recentPosts = (inf.recent_posts_urls || []).filter((u: string) => u)
+  const clips = (inf.portfolio_urls || []).filter((u: string) => u)
+  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+  const shownReviews = showAllReviews ? reviews : reviews.slice(0, 6)
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
+    <div className="pf" style={{ fontFamily: "var(--font-body, 'Plus Jakarta Sans'), system-ui, sans-serif" }}>
       <style>{`
-        .card { background:white; border:1.5px solid #f0f0f0; border-radius:20px; }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .fade-up { animation:fadeUp .35s ease both; }
+        .pf { min-height: 100vh; background: #f5f4fa; color: #14123a; padding: 20px 16px 64px; }
+        .pf * { box-sizing: border-box; }
+        .pf-wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        .pf-card { background: #fff; border: 1px solid #e8e5f3; border-radius: 24px; }
+        .pf-pad { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .pf-h2 { margin: 0; font-size: 18px; font-weight: 800; }
+        .pf-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .pf-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; font-weight: 700; color: #4a4770; text-decoration: none; }
+        .pf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #e3e0f0; background: #fff; font: inherit; font-size: 14px; font-weight: 700; color: #14123a; cursor: pointer; }
+        .pf-btn.p { height: 48px; padding: 0 22px; border: 0; background: #5b2fd0; color: #fff; font-size: 15px; font-weight: 800; border-radius: 14px; }
+        .pf-btn.p:hover { background: #4b22c0; }
+        .pf-cover { height: 132px; background: #5b2fd0; position: relative; background-size: cover; background-position: center; }
+        .pf-cover.dots::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.14) 1.5px, transparent 1.5px); background-size: 18px 18px; }
+        .pf-hero { padding: 0 28px 24px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; margin-top: -52px; position: relative; }
+        .pf-ava { width: 112px; height: 112px; border-radius: 28px; border: 5px solid #fff; background: #efeaff; overflow: hidden; flex: none; box-shadow: 0 10px 24px -14px rgba(20,18,58,.45); position: relative; }
+        .pf-id { flex: 999 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding-top: 60px; }
+        .pf-name { margin: 0; font-size: 30px; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; overflow-wrap: anywhere; }
+        .pf-chip { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+        .pf-meta { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; color: #5a5780; font-weight: 600; }
+        .pf-meta span { display: inline-flex; align-items: center; gap: 6px; }
+        .pf-actions { display: flex; gap: 10px; flex-wrap: wrap; flex: 1 1 240px; justify-content: flex-end; }
+        .pf-about { padding: 0 28px 24px; display: flex; flex-direction: column; gap: 14px; }
+        .pf-bio { margin: 0; font-size: 16px; line-height: 1.6; color: #2c2950; max-width: 62ch; overflow-wrap: anywhere; white-space: pre-line; }
+        .pf-niches { display: flex; flex-wrap: wrap; gap: 8px; }
+        .pf-niche { height: 32px; padding: 0 12px; border-radius: 999px; background: #f3effe; color: #4b2bb0; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; }
+        .pf-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+        .pf-stat { padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+        .pf-lab { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #6b6890; }
+        .pf-big { font-size: 30px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+        .pf-sub { font-size: 13px; color: #5a5780; }
+        .pf-cols { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+        .pf-main { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+        .pf-side { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+        .pf-plats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+        .pf-plat { border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px; border: 1px solid #e3e3ea; background: #f8f8fa; }
+        .pf-plat.ig { border-color: #f1d6e6; background: #fff7fb; }
+        .pf-plat-ico { width: 40px; height: 40px; border-radius: 12px; background: #fff; border: 1px solid #ece9f5; display: flex; align-items: center; justify-content: center; flex: none; }
+        .pf-num { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .pf-tag { height: 26px; padding: 0 10px; border-radius: 8px; background: #fff; border: 1px solid #e6e3ef; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; }
+        .pf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        .pf-tile { display: block; position: relative; border-radius: 14px; overflow: hidden; background: #efeaff; aspect-ratio: 4 / 5; max-width: 100%; }
+        .pf-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pf-tile-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #5b2fd0; text-align: center; padding: 8px; }
+        .pf-dark { background: #14123a; color: #fff; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .pf-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+        .pf-row + .pf-row { padding-top: 10px; border-top: 1px solid #f1eff7; }
+        .pf-dark .pf-row + .pf-row { border-top-color: rgba(255,255,255,.14); }
+        .pf-rev-sum { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
+        .pf-rev-avg { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 110px; }
+        .pf-rev-avg b { font-size: 44px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+        .pf-dist { flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; }
+        .pf-dist-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5a5780; font-variant-numeric: tabular-nums; }
+        .pf-bar { flex: 1; height: 8px; border-radius: 999px; background: #f1eff7; overflow: hidden; }
+        .pf-bar i { display: block; height: 100%; background: #f5a524; border-radius: 999px; }
+        .pf-revs { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .pf-rev { border: 1px solid #ece9f5; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px; background: #fcfbff; }
+        .pf-rev-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .pf-rev-logo { width: 40px; height: 40px; border-radius: 12px; background: #efeaff; color: #5b2fd0; font-weight: 800; display: flex; align-items: center; justify-content: center; flex: none; overflow: hidden; }
+        .pf-rev-logo img { width: 100%; height: 100%; object-fit: cover; }
+        .pf-quote { margin: 0; font-size: 15px; line-height: 1.55; color: #2c2950; overflow-wrap: anywhere; }
+        .pf-empty { border: 1px dashed #d9d4ee; border-radius: 16px; padding: 22px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+        .pf-ico { width: 44px; height: 44px; border-radius: 14px; background: #f3effe; color: #5b2fd0; display: flex; align-items: center; justify-content: center; flex: none; }
+        @media (max-width: 640px) {
+          .pf-hero { padding: 0 18px 20px; } .pf-about { padding: 0 18px 20px; } .pf-pad { padding: 18px; }
+          .pf-name { font-size: 26px; } .pf-actions { justify-content: stretch; } .pf-actions .pf-btn { flex: 1 1 auto; }
+        }
       `}</style>
+      <title>{`${inf.name} — Creator pe AddFame`}</title>
 
-      {/* SEO meta via document title */}
-      <title>{inf.name} — Creator pe AddFame</title>
-
-      {/* Header gradient */}
-      <div className="h-40 relative" style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)' }}>
-        <div className="absolute top-4 left-4">
-          <Link href="/" className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-bold transition">
-            <ArrowLeft className="w-4 h-4" /> AddFame
-          </Link>
-        </div>
-        <div className="absolute top-4 right-4 flex items-center gap-2">
-          <button onClick={copyLink} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-1.5 rounded-full transition">
-            {copied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? 'Copiat!' : 'Copiază link'}
+      <div className="pf-wrap">
+        <div className="pf-top">
+          <Link href={brandId ? '/brand/influencers' : '/'} className="pf-back"><ArrowLeft size={18} /> {brandId ? 'Înapoi la creatori' : 'AddFame'}</Link>
+          <button type="button" onClick={copyLink} className="pf-btn">
+            {copied ? <CheckCircle size={16} /> : <Copy size={16} />}{copied ? 'Copiat!' : 'Copiază link'}
           </button>
         </div>
-      </div>
 
-      <div className="max-w-3xl mx-auto px-4 pb-16 -mt-20">
-
-        {/* Main profile card */}
-        <div className="card p-6 mb-5 fade-up">
-          <div className="flex items-end justify-between gap-4 flex-wrap">
-            <div className="flex items-end gap-4">
-              <div className="relative w-24 h-24 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-orange-100 flex-shrink-0" style={{ marginTop: '-32px' }}>
-                {inf.avatar
-                  ? <AvatarWithBadge avatarUrl={inf.avatar} name={inf.name} score={inf.creator_score ?? 0} size={96} />
-                  : <AvatarWithBadge name={inf.name} score={inf.creator_score ?? 0} size={96} />}
-
-                {isVerified && (
-                  <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center border-2 border-white" style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)' }}>
-                    <Star className="w-3.5 h-3.5 text-white fill-white" />
-                  </div>
-                )}
+        {/* Hero */}
+        <section className="pf-card" style={{ overflow: 'hidden' }}>
+          <div className={`pf-cover ${inf.cover_image ? '' : 'dots'}`} style={inf.cover_image ? { backgroundImage: `url(${inf.cover_image})` } : undefined} />
+          <div className="pf-hero">
+            <div className="pf-ava">
+              <AvatarWithBadge avatarUrl={inf.avatar || undefined} name={inf.name} score={inf.creator_score ?? 0} size={102} />
+            </div>
+            <div className="pf-id">
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                <h1 className="pf-name">{inf.name}</h1>
+                {tier && <span className="pf-chip" style={{ background: tier.bg, color: tier.fg }}>{tier.label} · {formatCount(Math.max(...platCards.map(followersOf)))}</span>}
+                {isVerified && <span className="pf-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star size={12} fill="currentColor" /> Verified Creator</span>}
+                {isIdentityVerified && <span className="pf-chip" style={{ background: '#e8f0ff', color: '#1d4ed8' }}><Shield size={12} /> ID verificat</span>}
               </div>
-              <div className="pb-1">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h1 className="text-2xl font-black text-gray-900">{inf.name}</h1>
-                  {isVerified && (
-                    <span className="inline-flex items-center gap-1 text-xs font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
-                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> Verified Creator
-                    </span>
-                  )}
-                  {isIdentityVerified && (
-                    <span className="inline-flex items-center gap-1 text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
-                      <Shield className="w-3 h-3" /> ID verificat
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  {inf.country && <span className="flex items-center gap-1 text-sm text-gray-400"><MapPin className="w-3.5 h-3.5" />{inf.country}</span>}
-                  {totalFollowers > 0 && <span className="flex items-center gap-1 text-sm font-bold text-gray-600"><Users className="w-3.5 h-3.5 text-blue-400" />{fmtNum(totalFollowers)} followeri</span>}
-                  {avgRating > 0 && <StarRow rating={avgRating} count={reviewCount} />}
-                </div>
+              <div className="pf-meta">
+                {inf.country && <span><MapPin size={15} />{inf.country}</span>}
+                {platCards.map((p: any, i: number) => {
+                  const cfg = PLATFORM_CFG[String(p.platform).toLowerCase()]
+                  return <span key={i}>{cfg?.icon || <Globe size={15} />}{cfg?.label || p.platform}</span>
+                })}
+                {ratingAvg > 0 && <span><Star size={15} style={{ color: '#f5a524' }} fill="#f5a524" />{Number(ratingAvg).toFixed(1).replace('.', ',')} ({ratingCount})</span>}
               </div>
             </div>
             {brandId && (
-              <button onClick={() => setInviteOpen(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm text-white flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg,#2f6fe0, #5a35e6)', boxShadow: '0 4px 14px rgba(90,53,230,.3)' }}>
-                <Send className="w-4 h-4" /> Invită la campanie
-              </button>
+              <div className="pf-actions">
+                <button type="button" onClick={() => setInviteOpen(true)} className="pf-btn p"><Send size={16} /> Invită la campanie</button>
+              </div>
             )}
           </div>
-
-          {inf.bio && <p className="text-sm text-gray-600 leading-relaxed mt-5 pt-5" style={{ borderTop: '1.5px solid #f5f5f5' }}>{inf.bio}</p>}
-
-          {(inf.price_min || inf.price_reel || inf.price_story || inf.price_post || inf.price_youtube) && (
-            <div className="mt-4 pt-4" style={{ borderTop: '1.5px solid #f5f5f5' }}>
-              <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Tarife</p>
-              <div className="flex flex-wrap gap-2">
-                {inf.price_min && (
-                  <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-orange-50 border border-orange-100 text-xs font-black text-orange-700">
-                    🎯 Min. {inf.price_min}/campanie
-                  </span>
-                )}
-                {inf.price_story && (
-                  <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-pink-50 border border-pink-100 text-xs font-bold text-pink-700">
-                    Story {inf.price_story}
-                  </span>
-                )}
-                {inf.price_reel && (
-                  <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-50 border border-purple-100 text-xs font-bold text-purple-700">
-                    Reel {inf.price_reel}
-                  </span>
-                )}
-                {inf.price_post && (
-                  <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-100 text-xs font-bold text-blue-700">
-                    Post {inf.price_post}
-                  </span>
-                )}
-                {inf.price_youtube && (
-                  <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 border border-red-100 text-xs font-bold text-red-700">
-                    YouTube {inf.price_youtube}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Stats bar */}
-        {stats && stats.total > 0 && (
-          <div className="card p-5 mb-5 fade-up" style={{ animationDelay: '.04s' }}>
-            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-100">
-              {[
-                { icon: TrendingUp, label: 'Colaborări aplicate', value: stats.total, color: 'text-blue-600' },
-                { icon: CheckCircle, label: 'Completate', value: stats.completed, color: 'text-green-600' },
-                { icon: BarChart2, label: 'Rată succes', value: `${stats.successRate}%`, color: stats.successRate >= 80 ? 'text-green-600' : stats.successRate >= 50 ? 'text-amber-500' : 'text-red-500' },
-                { icon: Award, label: 'Câștigat', value: `${stats.earned.toFixed(0)}`, color: 'text-purple-600' },
-              ].map(s => (
-                <div key={s.label} className="px-4 text-center first:pl-0 last:pr-0">
-                  <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
-                  <p className="text-xs text-gray-400 font-semibold mt-0.5">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="grid sm:grid-cols-2 gap-5">
-          {/* Social Platforms */}
-          {inf.platforms?.length > 0 && (
-            <div className="card p-5 fade-up" style={{ animationDelay: '.06s' }}>
-              <h2 className="font-black text-gray-900 mb-3 flex items-center gap-2">
-                <Share2 className="w-4 h-4 text-gray-400" /> Platforme sociale
-              </h2>
-              <div className="space-y-2.5">
-                {inf.platforms.map((p, i) => {
-                  const cfg = PLATFORM_CFG[p.platform?.toLowerCase()] || { icon: <Globe className="w-4 h-4" />, bg: 'bg-gray-100', text: 'text-gray-600', label: p.platform }
-                  const er = p.engagement_rate
-                  const views = p.avg_views
-                  return (
-                    <div key={i} className={`px-3 py-2.5 rounded-xl ${cfg.bg}`}>
-                      <div className="flex items-center justify-between">
-                        <div className={`flex items-center gap-2.5 ${cfg.text}`}>
-                          {cfg.icon}
-                          <span className="font-bold text-sm">{cfg.label}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {p.followers && <span className="text-xs font-black text-gray-700">{fmtNum(p.followers)}</span>}
-                          {p.url && !hideSocial && <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-600"><ExternalLink className="w-3.5 h-3.5" /></a>}
-                        </div>
-                      </div>
-                      {(er || views) && (
-                        <div className="flex gap-3 mt-1.5 pt-1.5 border-t border-black/5">
-                          {er && <span className="text-xs text-gray-500 font-semibold">ER: <span className="text-green-600 font-bold">{er}%</span></span>}
-                          {views && <span className="text-xs text-gray-500 font-semibold">Avg views: <span className="text-blue-600 font-bold">{fmtNum(views)}</span></span>}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Niches */}
-          {inf.niches?.length > 0 && (
-            <div className="card p-5 fade-up" style={{ animationDelay: '.1s' }}>
-              <h2 className="font-black text-gray-900 mb-3 flex items-center gap-2">
-                <Tag className="w-4 h-4 text-gray-400" /> Nișe de conținut
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {inf.niches.map(n => (
-                  <span key={n} className="inline-flex items-center gap-1.5 text-sm font-bold bg-orange-50 text-orange-600 border border-orange-200 px-3 py-1.5 rounded-full">
-                    <Tag className="w-3 h-3" />{n}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Tarife */}
-          {(inf.price_story || inf.price_reel || inf.price_post || inf.price_youtube || inf.price_min) && (
-            <div className="card p-5 fade-up" style={{ animationDelay: '.12s' }}>
-              <h2 className="font-black text-gray-900 mb-3 flex items-center gap-2">
-                <span className="text-base">💰</span> Tarife
-              </h2>
-              <div className="space-y-2">
-                {inf.price_min && (
-                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                    <span className="text-sm text-gray-500">Minim / campanie</span>
-                    <span className="text-sm font-black text-orange-600">{inf.price_min} RON</span>
-                  </div>
-                )}
-                {inf.price_story && (
-                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                    <span className="text-sm text-gray-500">Story</span>
-                    <span className="text-sm font-black text-gray-800">{inf.price_story} RON</span>
-                  </div>
-                )}
-                {inf.price_reel && (
-                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                    <span className="text-sm text-gray-500">Reel / TikTok</span>
-                    <span className="text-sm font-black text-gray-800">{inf.price_reel} RON</span>
-                  </div>
-                )}
-                {inf.price_post && (
-                  <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                    <span className="text-sm text-gray-500">Post feed</span>
-                    <span className="text-sm font-black text-gray-800">{inf.price_post} RON</span>
-                  </div>
-                )}
-                {inf.price_youtube && (
-                  <div className="flex justify-between items-center py-1.5">
-                    <span className="text-sm text-gray-500">YouTube</span>
-                    <span className="text-sm font-black text-gray-800">{inf.price_youtube} RON</span>
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-gray-400 mt-3">Prețuri orientative · negociabile în campanie</p>
-            </div>
-          )}
-
-          {/* Disponibilitate platforms */}
-          {inf.platforms?.length > 0 && (
-            <div className="card p-5 fade-up" style={{ animationDelay: '.14s' }}>
-              <h2 className="font-black text-gray-900 mb-3 flex items-center gap-2">
-                <BarChart2 className="w-4 h-4 text-gray-400" /> Ce poate crea
-              </h2>
-              <div className="space-y-2">
-                {inf.platforms.filter((p: any) => p.platform).map((p: any, i: number) => {
-                  const platform = p.platform?.toLowerCase()
-                  const types: string[] = []
-                  if (platform === 'instagram') types.push('Reel', 'Story', 'Post feed', 'Carousel')
-                  if (platform === 'tiktok') types.push('Video TikTok', 'Live TikTok')
-                  if (platform === 'youtube') types.push('Video YouTube', 'YouTube Short')
-                  if (!types.length) types.push('Conținut organic')
-                  return (
-                    <div key={i}>
-                      <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1.5">{p.platform}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {types.map(t => (
-                          <span key={t} className="text-xs bg-gray-50 border border-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-semibold">{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Postări recente */}
-        {inf.recent_posts_urls?.filter((u: string) => u).length > 0 && (
-          <div className="card p-5 mt-5 fade-up" style={{ animationDelay: '.11s' }}>
-            <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2">
-              📸 <span>Postări recente</span>
-              <span className="text-sm font-bold text-gray-400 ml-auto">{inf.recent_posts_urls.filter((u: string) => u).length} postări</span>
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {inf.recent_posts_urls.filter((u: string) => u).map((url: string, i: number) => {
-                const info = getPostPreviewInfo(url)
-                if (!info) return (
-                  <MaybeLink key={i} hide={hideSocial} href={url}
-                    className="flex items-center justify-center rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50 transition aspect-square text-xs text-orange-500 font-bold">
-                    🔗 Postare {i + 1}
-                  </MaybeLink>
-                )
-                const isIG = info.type === 'instagram'
-                const thumb = thumbnails[url]
-                return (
-                  <MaybeLink key={i} hide={hideSocial} href={info.directUrl}
-                    className="block rounded-xl overflow-hidden border border-gray-100 hover:border-orange-200 transition group relative"
-                    style={{ aspectRatio: '1' }}>
-                    {thumb
-                      ? <img src={thumb} alt="" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex flex-col items-center justify-center"
-                          style={{ background: isIG ? 'linear-gradient(135deg,#f9f0ff,#fff0f6)' : 'linear-gradient(135deg,#1a1a2e,#2d1463)' }}>
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2"
-                            style={{ background: isIG ? 'linear-gradient(135deg,#2f6fe0, #5a35e6)' : '#000' }}>
-                            {isIG
-                              ? <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069z"/></svg>
-                              : <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
-                            }
-                          </div>
-                          <span className="text-xs font-bold" style={{ color: isIG ? '#be185d' : 'white' }}>{isIG ? 'Instagram' : 'TikTok'}</span>
-                        </div>
-                    }
-                    {!hideSocial && <div className="absolute inset-0 flex items-end p-2 opacity-0 group-hover:opacity-100 transition" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}>
-                      <span className="text-white text-xs font-bold">Vezi postarea →</span>
-                    </div>}
-                  </MaybeLink>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Portfolio clipuri */}
-        {inf.portfolio_urls?.filter((u: string) => u).length > 0 && (
-          <div className="card p-5 mt-5 fade-up" style={{ animationDelay: '.12s' }}>
-            <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2">
-              🎬 <span>Portfolio</span>
-              <span className="text-sm font-bold text-gray-400 ml-auto">{inf.portfolio_urls.filter((u: string) => u).length} clipuri</span>
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {inf.portfolio_urls.filter((u: string) => u).map((url: string, i: number) => {
-                const embed = getEmbedInfo(url)
-                if (!embed) return (
-                  <MaybeLink key={i} hide={hideSocial} href={url}
-                    className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50 transition text-sm text-orange-500 font-bold">
-                    🔗 Clip {i + 1} — vezi pe platformă
-                  </MaybeLink>
-                )
-                const isIGEmbed = embed.type === 'instagram'
-                const thumbP = thumbnails[url]
-                return (
-                  <MaybeLink key={i} hide={hideSocial} href={url}
-                    className="block rounded-xl overflow-hidden border border-gray-100 hover:border-orange-200 hover:scale-[1.02] transition group relative"
-                    style={{ aspectRatio: '9/16', maxHeight: 280 }}>
-                    {thumbP
-                      ? <img src={thumbP} alt="" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex flex-col items-center justify-center"
-                          style={{ background: isIGEmbed ? 'linear-gradient(135deg,#fff0f6,#f9f0ff)' : 'linear-gradient(135deg,#1a1a2e,#2d1463)' }}>
-                          <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
-                            style={{ background: isIGEmbed ? 'linear-gradient(135deg,#2f6fe0, #5a35e6)' : '#000' }}>
-                            {isIGEmbed
-                              ? <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069z"/></svg>
-                              : <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
-                            }
-                          </div>
-                          <span className="text-sm font-bold" style={{ color: isIGEmbed ? '#be185d' : 'white' }}>{isIGEmbed ? 'Instagram Reel' : 'TikTok Video'}</span>
-                        </div>
-                    }
-                    {!hideSocial && <div className="absolute inset-0 flex items-end p-2 opacity-0 group-hover:opacity-100 transition" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}>
-                      <span className="text-white text-xs font-bold">Apasă pentru a vedea →</span>
-                    </div>}
-                  </MaybeLink>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Colaborări finalizate: branduri, postări, recenzii, cifre */}
-        <CollabPortfolio influencerId={inf.id} onLoaded={setPortfolioOk} />
-
-        {/* Recenzii (rezervă, dacă portofoliul nu se încarcă) */}
-        {!portfolioOk && reviews.length > 0 && (() => {
-          const avg = reviews.reduce((t, r) => t + Number(r.rating || 0), 0) / reviews.length
-          const dist = [5, 4, 3, 2, 1].map(st => ({ st, n: reviews.filter(r => Math.round(Number(r.rating)) === st).length }))
-          const shown = showAllReviews ? reviews : reviews.slice(0, 4)
-          return (
-            <div className="card p-5 mt-5 fade-up" style={{ animationDelay: '.14s' }}>
-              <h2 className="font-black text-gray-900 mb-4 flex items-center gap-2">
-                <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Recenzii de la branduri
-              </h2>
-              <div className="flex flex-wrap items-center gap-5 mb-5">
-                <div className="text-center" style={{ minWidth: 92 }}>
-                  <div className="text-4xl font-black text-gray-900" style={{ fontVariantNumeric: 'tabular-nums' }}>{avg.toFixed(1).replace('.', ',')}</div>
-                  <div className="flex gap-0.5 justify-center my-1">
-                    {[1, 2, 3, 4, 5].map(st => <Star key={st} className={`w-3.5 h-3.5 ${st <= Math.round(avg) ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />)}
-                  </div>
-                  <div className="text-xs font-bold text-gray-400">{reviews.length} {reviews.length === 1 ? 'recenzie' : 'recenzii'}</div>
-                </div>
-                <div className="flex-1 space-y-1" style={{ minWidth: 180 }}>
-                  {dist.map(({ st, n }) => (
-                    <div key={st} className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="w-3 font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>{st}</span>
-                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                      <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
-                        <div className="h-full rounded-full bg-amber-400" style={{ width: `${reviews.length ? (n / reviews.length) * 100 : 0}%` }} />
-                      </div>
-                      <span className="w-6 text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>{n}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-3">
-                {shown.map((r, i) => (
-                  <div key={i} className="bg-gray-50 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <div className="flex gap-0.5">
-                        {[1, 2, 3, 4, 5].map(st => (
-                          <Star key={st} className={`w-3.5 h-3.5 ${st <= r.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
-                        ))}
-                      </div>
-                      {r.brand_name && <span className="text-xs font-bold text-gray-700">{r.brand_name}</span>}
-                      <span className="text-xs text-gray-400 ml-auto">
-                        {new Date(r.created_at).toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' })}
-                      </span>
-                    </div>
-                    {r.comment && <p className="text-sm text-gray-600 italic">„{r.comment}”</p>}
-                    {r.campaign_title && <p className="text-[11px] text-gray-400 mt-1.5">Campania: {r.campaign_title}</p>}
-                  </div>
-                ))}
-              </div>
-              {reviews.length > 4 && (
-                <button onClick={() => setShowAllReviews(v => !v)} className="mt-3 text-sm font-bold text-violet-600 hover:text-violet-800">
-                  {showAllReviews ? 'Arată mai puține' : `Vezi toate cele ${reviews.length} recenzii`}
-                </button>
+          {(inf.bio || inf.niches?.length > 0) && (
+            <div className="pf-about">
+              {inf.bio && <p className="pf-bio">{inf.bio}</p>}
+              {inf.niches?.length > 0 && (
+                <div className="pf-niches">{inf.niches.map((n: string) => <span key={n} className="pf-niche">{n}</span>)}</div>
               )}
             </div>
-          )
-        })()}
-      </div>
+          )}
+        </section>
 
+        {/* Cifrele importante */}
+        <section className="pf-stats" aria-label="Pe scurt">
+          <div className="pf-card pf-stat">
+            <span className="pf-lab">Audiență totală</span>
+            <span className="pf-big">{totalFollowers > 0 ? totalFollowers.toLocaleString('ro-RO') : '—'}</span>
+            <span className="pf-sub">{platCards.length ? platCards.map((p: any) => PLATFORM_CFG[String(p.platform).toLowerCase()]?.label || p.platform).join(' + ') : 'Platforme necompletate'}</span>
+          </div>
+          <div className="pf-card pf-stat">
+            <span className="pf-lab">Engagement</span>
+            <span className="pf-big">{er > 0 ? `${String(er).replace('.', ',')}%` : '—'}</span>
+            <span className="pf-sub">{er > 0 ? 'Rata medie de interacțiune' : 'Încă necalculat'}</span>
+          </div>
+          <div className="pf-card pf-stat">
+            <span className="pf-lab">Rating branduri</span>
+            <span className="pf-big">{ratingAvg > 0 ? Number(ratingAvg).toFixed(1).replace('.', ',') : '—'}</span>
+            <span className="pf-sub">{ratingCount > 0 ? `${ratingCount} ${ratingCount === 1 ? 'recenzie' : 'recenzii'}` : 'Încă nicio recenzie'}</span>
+          </div>
+          <div className="pf-card pf-stat">
+            <span className="pf-lab">Pe AddFame</span>
+            <span className="pf-big">{completed > 0 ? completed : 'Nou'}</span>
+            <span className="pf-sub">{completed > 0 ? `${completed === 1 ? 'colaborare finalizată' : 'colaborări finalizate'}` : applied > 0 ? `${applied} ${applied === 1 ? 'aplicare' : 'aplicări'} la campanii` : 'Primele campanii urmează'}</span>
+          </div>
+        </section>
+
+        <div className="pf-cols">
+          <div className="pf-main">
+
+            {/* Platforme */}
+            {platCards.length > 0 && (
+              <section className="pf-card pf-pad">
+                <h2 className="pf-h2">Platforme</h2>
+                <div className="pf-plats">
+                  {platCards.map((p: any, i: number) => {
+                    const key = String(p.platform).toLowerCase()
+                    const cfg = PLATFORM_CFG[key] || { icon: <Globe size={18} />, label: p.platform, color: '#14123a' }
+                    const f = followersOf(p)
+                    const pEr = parseFloat(String(p.engagement_rate ?? '').replace(',', '.'))
+                    return (
+                      <div key={i} className={`pf-plat ${key === 'instagram' ? 'ig' : ''}`}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                            <span className="pf-plat-ico" style={{ color: cfg.color }}>{cfg.icon}</span>
+                            <b style={{ fontSize: 15 }}>{cfg.label}</b>
+                          </div>
+                          {p.url && !hideSocial && <a href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Deschide ${cfg.label}`} style={{ color: '#6b6890', display: 'inline-flex', minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><ExternalLink size={16} /></a>}
+                        </div>
+                        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}><span className="pf-num">{f > 0 ? f.toLocaleString('ro-RO') : '—'}</span><span className="pf-sub" style={{ fontSize: 12 }}>followeri</span></div>
+                          {pEr > 0 && <div style={{ display: 'flex', flexDirection: 'column' }}><span className="pf-num">{String(pEr).replace('.', ',')}%</span><span className="pf-sub" style={{ fontSize: 12 }}>engagement</span></div>}
+                          {p.avg_views && <div style={{ display: 'flex', flexDirection: 'column' }}><span className="pf-num">{fmtNum(p.avg_views)}</span><span className="pf-sub" style={{ fontSize: 12 }}>vizualizări medii</span></div>}
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {typesOf(key).map(t => <span key={t} className="pf-tag">{t}</span>)}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Postări recente + clipuri */}
+            {(recentPosts.length > 0 || clips.length > 0) && (
+              <section className="pf-card pf-pad">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+                  <h2 className="pf-h2">Portofoliu</h2>
+                  <span className="pf-sub">{recentPosts.length + clips.length} {recentPosts.length + clips.length === 1 ? 'material' : 'materiale'}</span>
+                </div>
+                <div className="pf-grid">
+                  {[...clips, ...recentPosts].map((url: string, i: number) => {
+                    const info = getPostPreviewInfo(url)
+                    const thumb = thumbnails[url]
+                    const label = info?.type === 'tiktok' ? 'Video TikTok' : info?.type === 'instagram' ? 'Instagram' : `Material ${i + 1}`
+                    return (
+                      <MaybeLink key={url + i} hide={hideSocial} href={url} className="pf-tile">
+                        {thumb ? <img src={thumb} alt={label} loading="lazy" /> : <div className="pf-tile-ph">{label}</div>}
+                      </MaybeLink>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Colaborări finalizate: branduri, postări reale și cifrele lor */}
+            <CollabPortfolio influencerId={inf.id} onLoaded={setPortfolioOk} />
+
+            {/* Recenzii de la branduri */}
+            <section className="pf-card pf-pad" id="recenzii">
+              <h2 className="pf-h2">Recenzii de la branduri</h2>
+              {reviews.length > 0 ? (
+                <>
+                  <div className="pf-rev-sum">
+                    <div className="pf-rev-avg">
+                      <b>{ratingAvg.toFixed(1).replace('.', ',')}</b>
+                      <Stars value={ratingAvg} size={16} />
+                      <span className="pf-sub" style={{ fontWeight: 700 }}>{reviews.length} {reviews.length === 1 ? 'recenzie' : 'recenzii'}</span>
+                    </div>
+                    <div className="pf-dist">
+                      {[5, 4, 3, 2, 1].map(st => {
+                        const n = reviews.filter(r => Math.round(Number(r.rating)) === st).length
+                        return (
+                          <div key={st} className="pf-dist-row">
+                            <span style={{ width: 10, fontWeight: 800 }}>{st}</span>
+                            <Star size={12} style={{ color: '#f5a524' }} fill="#f5a524" />
+                            <span className="pf-bar"><i style={{ width: `${(n / reviews.length) * 100}%` }} /></span>
+                            <span style={{ width: 22, textAlign: 'right' }}>{n}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  <div className="pf-revs">
+                    {shownReviews.map((r, i) => (
+                      <article key={i} className="pf-rev">
+                        <div className="pf-rev-head">
+                          <span className="pf-rev-logo">{r.brand_logo ? <img src={r.brand_logo} alt="" /> : (r.brand_name || 'B').trim()[0]?.toUpperCase()}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                            <b style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.brand_name || 'Brand verificat'}</b>
+                            <span className="pf-sub" style={{ fontSize: 12 }}>{fmtDate(r.created_at)}</span>
+                          </div>
+                          <span style={{ marginLeft: 'auto' }}><Stars value={Number(r.rating) || 0} size={14} /></span>
+                        </div>
+                        {r.comment
+                          ? <p className="pf-quote">„{r.comment}”</p>
+                          : <p className="pf-quote" style={{ color: '#6b6890' }}>A dat {Number(r.rating)} {Number(r.rating) === 1 ? 'stea' : 'stele'}, fără comentariu.</p>}
+                        {r.campaign_title && <span className="pf-sub" style={{ fontSize: 12 }}>Campania: <b style={{ color: '#4a4770' }}>{r.campaign_title}</b></span>}
+                      </article>
+                    ))}
+                  </div>
+                  {reviews.length > 6 && (
+                    <button type="button" onClick={() => setShowAllReviews(v => !v)} className="pf-btn" style={{ alignSelf: 'flex-start' }}>
+                      {showAllReviews ? 'Arată mai puține' : `Vezi toate cele ${reviews.length} recenzii`}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="pf-empty">
+                  <span className="pf-ico"><Star size={20} /></span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: '1 1 240px', minWidth: 0 }}>
+                    <b style={{ fontSize: 15 }}>Primele recenzii vin după prima colaborare finalizată</b>
+                    <span className="pf-sub">{completed > 0 ? 'Brandurile n-au lăsat încă o recenzie.' : 'Creator nou pe AddFame. Poți fi primul brand care lucrează cu el.'}</span>
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+
+          <aside className="pf-side">
+            <section className="pf-dark">
+              <h2 className="pf-h2">Tarife orientative</h2>
+              {prices.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {prices.map(p => (
+                    <div key={p.k} className="pf-row"><span style={{ color: '#d6d2f0' }}>{p.k}</span><b style={{ fontVariantNumeric: 'tabular-nums' }}>{p.v} RON</b></div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ margin: 0, fontSize: 14, color: '#d6d2f0', lineHeight: 1.5 }}>Prețul se stabilește în campanie, în funcție de formatul cerut.</p>
+              )}
+              {brandId && <button type="button" onClick={() => setInviteOpen(true)} className="pf-btn" style={{ height: 48, border: 0, fontSize: 15, fontWeight: 800 }}>Invită la campanie</button>}
+              <span style={{ fontSize: 12, color: '#b9b4dc' }}>Plata se face prin AddFame, după aprobarea postării.</span>
+            </section>
+
+            <section className="pf-card pf-pad">
+              <h2 className="pf-h2">Pe scurt</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {tier && <div className="pf-row"><span style={{ color: '#6b6890' }}>Nivel</span><b>{tier.label} ({tier.range})</b></div>}
+                {inf.country && <div className="pf-row"><span style={{ color: '#6b6890' }}>Țară</span><b>{inf.country}</b></div>}
+                {isIdentityVerified && <div className="pf-row"><span style={{ color: '#6b6890' }}>Identitate</span><b style={{ color: '#14532d' }}>Verificată</b></div>}
+                <div className="pf-row"><span style={{ color: '#6b6890' }}>Aplicări</span><b>{applied}</b></div>
+                <div className="pf-row"><span style={{ color: '#6b6890' }}>Colaborări finalizate</span><b>{completed}</b></div>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </div>
       {/* Invite modal */}
       {inviteOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
