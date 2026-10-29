@@ -123,3 +123,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Capacitor shell only. The head script sets data-native-app before first paint.
+   Web browsers never get the attribute, so these rules do not change the site. */
+html[data-native-app="1"] [data-native-hide="verified-purchase"] {
+  display: none !important;
+}
+[data-native-only="verified-purchase"] {
+  display: none !important;
+}
+html[data-native-app="1"] [data-native-only="verified-purchase"] {
+  display: block !important;
+}
