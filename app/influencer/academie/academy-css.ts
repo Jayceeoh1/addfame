@@ -137,4 +137,11 @@ export const ACADEMY_CSS = `
 .al-cert-btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .al-cert-b2 { min-height: 46px; padding: 0 16px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.45); background: transparent; color: #fff; font: inherit; font-weight: 800; font-size: 14.5px; cursor: pointer; }
 .al-cert-b2:disabled, .al-cert .ac-btn:disabled { opacity: .6; cursor: default; }
+.al-how { margin-top: 4px; background: #fff; border: 1px solid #e8e5f3; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; line-height: 1.5; color: #2c2950; }
+.al-how b { color: #14123a; }
+.al-link { align-self: flex-start; background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 800; font-size: 14px; color: #5b2fd0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.al-stepinfo { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; font-weight: 700; color: #6b6890; }
+.al-check ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.al-check li { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; line-height: 1.45; color: #2c2950; }
+.al-check li svg { color: #5b2fd0; flex: none; margin-top: 3px; }
 `

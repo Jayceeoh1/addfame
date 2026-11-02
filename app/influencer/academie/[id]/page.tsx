@@ -111,6 +111,19 @@ export default function LectiePage() {
                 {st.progress?.passed && <span className="ac-chip ok">Trecută · {st.progress.bestScore}/{qs.length}</span>}
               </div>
               {L.summary && <p className="ac-muted" style={{ fontSize: 15 }}>{L.summary}</p>}
+              <div className="al-how">
+                <b>Cum funcționează</b>
+                <span>1. Citești {pages.length} pași scurți: ce înseamnă fiecare lucru, exemple și câteva exerciții. Aici nu ai nimic de răspuns, apeși doar „Mai departe”.</span>
+                <span>2. La final dai <b>testul de {qs.length} întrebări</b>. Din el iese nivelul tău (Bronze, Silver, Gold sau Platinum).</span>
+                <button type="button" className="al-link" onClick={startQuiz}>Știi deja? Sari direct la test →</button>
+              </div>
+            </div>
+          )}
+
+          {p > 0 && (
+            <div className="al-stepinfo">
+              <span>Pasul {p + 1} din {pages.length} · apoi testul ({qs.length} întrebări)</span>
+              <button type="button" className="al-link" onClick={startQuiz}>Sari la test</button>
             </div>
           )}
 
@@ -131,7 +144,7 @@ export default function LectiePage() {
 
           <div className="al-nav al-sticky">
             {p > 0 && <button className="al-btn2" onClick={prevPage}>Înapoi</button>}
-            <button className="al-btn" onClick={nextPage}>{p < pages.length - 1 ? 'Continuă' : `Începe testul · ${qs.length} întrebări`}</button>
+            <button className="al-btn" onClick={nextPage}>{p < pages.length - 1 ? 'Mai departe' : `Începe testul · ${qs.length} întrebări`}</button>
           </div>
           {p === pages.length - 1 && !st.approved && !st.progress?.passed && <p className="ac-warn">Poți da testul acum, dar punctele se acordă doar profilurilor aprobate.</p>}
         </>)}
@@ -232,7 +245,6 @@ function LessonStart({ L, st, qs, concepts, onStart }: any) {
 }
 
 function StepView({ step, n, total }: { step: AcademyStep; n: number; total: number }) {
-  const [checked, setChecked] = useState<Record<number, boolean>>({})
   const [picked, setPicked] = useState<'a' | 'b' | null>(null)
   const [shown, setShown] = useState(false)
   const [draft, setDraft] = useState('')
@@ -251,10 +263,10 @@ function StepView({ step, n, total }: { step: AcademyStep; n: number; total: num
       )}
       {step.checklist && step.checklist.length > 0 && (
         <div className="ac-card al-check">
-          <b>Verifică înainte să postezi</b>
-          {step.checklist.map((c, k) => (
-            <label key={k}><input type="checkbox" checked={!!checked[k]} onChange={e => setChecked(s => ({ ...s, [k]: e.target.checked }))} />{c}</label>
-          ))}
+          <b>De reținut</b>
+          <ul>
+            {step.checklist.map((c, k) => <li key={k}><Tick />{c}</li>)}
+          </ul>
         </div>
       )}
     </div>
