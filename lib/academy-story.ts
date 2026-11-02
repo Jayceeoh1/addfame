@@ -24,7 +24,7 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, max: number): string[
   return lines
 }
 
-export async function makeAcademyStory(opts: { tier: AcademyTier; handle: string; name?: string | null; avatar?: string | null; lessons: number; fontDisplay?: string; fontBody?: string }): Promise<Blob> {
+export async function makeAcademyStory(opts: { tier: AcademyTier; handle: string; name?: string | null; avatar?: string | null; fontDisplay?: string; fontBody?: string }): Promise<Blob> {
   const disp = (opts.fontDisplay || '').trim() || 'system-ui, sans-serif'
   const body = (opts.fontBody || '').trim() || 'system-ui, sans-serif'
   try { await Promise.all([document.fonts.load(`800 100px ${disp}`), document.fonts.load(`700 40px ${body}`)]); await document.fonts.ready } catch { /* fonturile de rezervă merg și ele */ }
@@ -87,7 +87,7 @@ export async function makeAcademyStory(opts: { tier: AcademyTier; handle: string
   // text
   y += 90
   ctx.font = `500 40px ${body}`; ctx.fillStyle = '#ddd5ff'
-  wrap(ctx, `Am terminat Academia AddFame: ${opts.lessons} lecții despre conținut, branduri și încredere.`, 860).slice(0, 3)
+  wrap(ctx, 'Am terminat Academia AddFame: conținut, partea tehnică, lucrul cu brandurile și încredere.', 860).slice(0, 3)
     .forEach((l, i) => ctx.fillText(l, W / 2, y + i * 54))
 
   // îndemn jos

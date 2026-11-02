@@ -134,4 +134,7 @@ export const ACADEMY_CSS = `
 .ac-tier { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 8px; }
 .ac-tier img { width: 96px; height: 96px; }
 .ac-tier b { font-size: 15px; }
+.al-cert-btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.al-cert-b2 { min-height: 46px; padding: 0 16px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.45); background: transparent; color: #fff; font: inherit; font-weight: 800; font-size: 14.5px; cursor: pointer; }
+.al-cert-b2:disabled, .al-cert .ac-btn:disabled { opacity: .6; cursor: default; }
 `

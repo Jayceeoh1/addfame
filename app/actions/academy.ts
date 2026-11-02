@@ -17,7 +17,7 @@ async function me() {
   if (!user) return null
   const admin = createAdminClient()
   const { data: inf } = await admin.from('influencers')
-    .select('id, user_id, name, avatar, instagram_handle, approval_status, creator_score, academy_certified_at, academy_tier')
+    .select('id, user_id, name, avatar, instagram_handle, approval_status, creator_score, academy_certified_at, academy_tier, academy_cert_code')
     .eq('user_id', user.id).maybeSingle()
   return inf ? { admin, inf } : null
 }
@@ -54,11 +54,21 @@ export async function getAcademy() {
       passed: !!p?.passed_at, bestScore: p?.best_score ?? null, attempts: p?.attempts ?? 0,
     }
   })
+  const passedRows = (prog || []).filter((p: any) => p.passed_at)
+  const fullProg = inf.academy_certified_at && passedRows.length
+    ? (await admin.from('academy_progress').select('first_score, first_total, best_score, total').eq('influencer_id', inf.id).not('passed_at', 'is', null)).data || []
+    : []
+  const certScore = fullProg.length ? {
+    correct: fullProg.reduce((n: number, r: any) => n + (Number(r.first_score ?? r.best_score) || 0), 0),
+    total: fullProg.reduce((n: number, r: any) => n + (Number(r.first_total ?? r.total) || 0), 0),
+  } : null
   return {
     success: true as const,
     approved: inf.approval_status === 'approved',
     certifiedAt: inf.academy_certified_at as string | null,
     tier: (isTier(inf.academy_tier) ? inf.academy_tier : null) as AcademyTier | null,
+    certCode: (inf.academy_cert_code as string | null) ?? null,
+    certScore,
     name: inf.name as string | null,
     avatar: (inf.avatar as string | null) ?? null,
     score: (inf.creator_score as number) ?? 0,
@@ -176,6 +186,7 @@ export async function submitLesson(id: string, answers: number[]) {
   let justCertified = false
   let tier: AcademyTier | null = isTier(inf.academy_tier) ? inf.academy_tier : null
   let firstCorrect = 0, firstTotal = 0, bonus = 0
+  let certCode: string | null = (inf.academy_cert_code as string | null) ?? null
   if (passed && !certified) {
     const { data: pub } = await admin.from('academy_lessons').select('id').eq('published', true)
     const { data: done } = await admin.from('academy_progress').select('lesson_id, passed_at, first_score, first_total, best_score, total').eq('influencer_id', inf.id)
@@ -188,7 +199,9 @@ export async function submitLesson(id: string, answers: number[]) {
         firstTotal += Number(d.first_total ?? d.total) || 0
       }
       const t = tierFor(firstCorrect, firstTotal)
-      const { data: c } = await admin.from('influencers').update({ academy_certified_at: now, academy_tier: t }).eq('id', inf.id).is('academy_certified_at', null).select('id')
+      const { data: code } = await admin.rpc('academy_next_cert_code')
+      const { data: c } = await admin.from('influencers').update({ academy_certified_at: now, academy_tier: t, ...(code ? { academy_cert_code: String(code) } : {}) }).eq('id', inf.id).is('academy_certified_at', null).select('id')
+      if (c?.length) certCode = code ? String(code) : null
       certified = true
       justCertified = !!c?.length
       if (justCertified) {
@@ -216,7 +229,7 @@ export async function submitLesson(id: string, answers: number[]) {
   }
 
   revalidatePath('/influencer/academie')
-  return { success: true as const, score, total: qs.length, needed, passed, firstPass, points, certified, justCertified, tier, bonus, firstCorrect, firstTotal, review }
+  return { success: true as const, score, total: qs.length, needed, passed, firstPass, points, certified, justCertified, tier, bonus, firstCorrect, firstTotal, certCode, certifiedAt: justCertified ? now : (inf.academy_certified_at as string | null), review }
 }
 
 /** Pentru profilul public: e creator certificat și cu ce nivel? */
@@ -329,4 +342,25 @@ export async function adminMoveLesson(id: string, dir: -1 | 1) {
   for (let k = 0; k < list.length; k++) await admin.from('academy_lessons').update({ position: k + 1 }).eq('id', list[k])
   revalidatePath('/influencer/academie')
   return { success: true as const }
+}
+
+/** Pagina publică de verificare: certificatul după cod (fără date private). */
+export async function getCertificateByCode(code: string) {
+  const c = String(code || '').trim().toUpperCase()
+  if (!/^AF-\d{4}-\d{3,8}$/.test(c)) return null
+  try {
+    const admin = createAdminClient()
+    const { data: inf, error } = await admin.from('influencers')
+      .select('id, name, slug, avatar, creator_score, academy_certified_at, academy_tier, academy_cert_code')
+      .eq('academy_cert_code', c).not('academy_certified_at', 'is', null).maybeSingle()
+    if (error || !inf) return null
+    const { data: rows } = await admin.from('academy_progress').select('first_score, first_total, best_score, total').eq('influencer_id', inf.id).not('passed_at', 'is', null)
+    const correct = (rows || []).reduce((n: number, r: any) => n + (Number(r.first_score ?? r.best_score) || 0), 0)
+    const total = (rows || []).reduce((n: number, r: any) => n + (Number(r.first_total ?? r.total) || 0), 0)
+    return {
+      code: inf.academy_cert_code as string, name: (inf.name as string) || 'Creator AddFame', slug: (inf.slug as string | null) ?? inf.id,
+      avatar: (inf.avatar as string | null) ?? null, score: (inf.creator_score as number) ?? 0,
+      tier: (isTier(inf.academy_tier) ? inf.academy_tier : 'bronze') as AcademyTier, at: inf.academy_certified_at as string, correct, total,
+    }
+  } catch { return null }
 }

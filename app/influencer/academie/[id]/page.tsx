@@ -175,7 +175,7 @@ export default function LectiePage() {
         {L && screen === 'result' && res && (<>
           {res.justCertified && res.tier ? (
             <CertificateCard tier={res.tier} name={st.me?.name} avatar={st.me?.avatar} score={(st.me?.score || 0) + (res.points || 0) + (res.bonus || 0)}
-              handle={st.me?.handle || ''} lessons={L.position} fresh firstCorrect={res.firstCorrect} firstTotal={res.firstTotal} bonus={res.bonus} />
+              handle={st.me?.handle || ''} fresh correct={res.firstCorrect} total={res.firstTotal} bonus={res.bonus} code={res.certCode} at={res.certifiedAt} />
           ) : res.passed ? (
             <div className="ac-card al-done">
               <div className="al-medal" aria-hidden="true">{(L.badge_name || L.title || '?').slice(0, 1).toUpperCase()}</div>
