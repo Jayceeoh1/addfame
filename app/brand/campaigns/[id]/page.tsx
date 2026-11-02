@@ -23,6 +23,8 @@ import { PauseModal, DraftModal, RejectModal } from '@/components/brand/campaign
 import { COLLAB_CFG, fmt, fmtNum, daysLeft, type Tab } from '@/components/brand/campaigns/types'
 import { TIERS, creatorTier } from '@/lib/tiers'
 import TierChip from '@/components/shared/TierChip'
+import { AcademyTierChip } from '@/components/shared/CreatorBadge'
+import { getAcademyTiers } from '@/app/actions/academy'
 import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
 import CampaignInvoicesCard from '@/components/brand/campaigns/CampaignInvoicesCard'
 import RightsPanel from '@/components/brand/campaigns/RightsPanel'
@@ -79,6 +81,7 @@ export default function CampaignDetailPage() {
   const [campaign, setCampaign] = useState<any>(null)
   const [collabs, setCollabs] = useState<any[]>([])
   const [influencerData, setInfluencerData] = useState<Record<string, any>>({})
+  const [academyTiers, setAcademyTiers] = useState<Record<string, string>>({})
   const [reviews, setReviews] = useState<any[]>([])
   const [agencyCosts, setAgencyCosts] = useState(DEFAULT_AGENCY_COSTS)
   const [loading, setLoading] = useState(true)
@@ -139,6 +142,8 @@ export default function CampaignDetailPage() {
       getBrandCollabHistory(campaignId).then(r => { if ('success' in r) setHistory(r.history) }).catch(() => {})
       const infIds = [...new Set(rows.map((c: any) => c.influencer_id).filter(Boolean))]
       if (infIds.length > 0) {
+        // nivelul din Academie (Bronze…Platinum), nu blochează pagina
+        getAcademyTiers(infIds as string[]).then(setAcademyTiers).catch(() => {})
         const res = await fetch('/api/admin/influencer-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: infIds, campaignId }) })
         if (res.ok) { const infs = await res.json(); setInfluencerData(Object.fromEntries((infs || []).map((i: any) => [i.id, i]))) }
       }
@@ -735,6 +740,7 @@ export default function CampaignDetailPage() {
                     <>
                       <HistoryPills h={history[collab.influencer_id]} />
                       {inf && <TierChip of={inf} />}
+                      <AcademyTierChip tier={academyTiers[collab.influencer_id]} />
                       {isActive && <>
                       {packageSent && <span className="cx-pill blue">Produs trimis</span>}
                       {packageReceived && <span className="cx-pill green">Produs primit</span>}

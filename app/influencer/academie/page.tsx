@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getAcademy } from '@/app/actions/academy'
 import { ACADEMY_CSS } from './academy-css'
+import CertificateCard from '@/components/academy/CertificateCard'
+import { TIERS, TIER_ORDER } from '@/lib/academy'
 
 export default function AcademiePage() {
   const [st, setSt] = useState<any>(null)
@@ -29,7 +31,7 @@ export default function AcademiePage() {
             <section className="ac-hero">
               <span className="ac-tag"><Cap /> Academia AddFame</span>
               <h1>{st.certifiedAt ? 'Ești creator certificat AddFame' : 'Devino creator certificat AddFame'}</h1>
-              <p>Lecții scurte despre ce verifică brandurile la fiecare colaborare. Fiecare se încheie cu un test, iar la final primești badge-ul „Creator certificat” pe profil.</p>
+              <p>Lecții scurte, cu exemple și exerciții, despre ce verifică brandurile la fiecare colaborare. La final primești o ramă pe poza de profil: Bronze, Silver, Gold sau Platinum, după răspunsurile tale de la prima încercare.</p>
               {lessons.length > 0 && (
                 <div className="ac-prog">
                   <div className="ac-prog-row"><span>Progresul tău</span><b>{done} din {lessons.length} {lessons.length === 1 ? 'lecție' : 'lecții'}</b></div>
@@ -49,12 +51,32 @@ export default function AcademiePage() {
 
             <aside className="ac-card ac-gain">
               <span className="ac-label">Ce câștigi</span>
-              <div className="ac-gain-row"><span className="ac-ico"><Medal /></span><div><b>Badge „Creator certificat”</b><span>vizibil brandurilor pe profilul tău</span></div></div>
+              <div className="ac-gain-row"><span className="ac-ico"><Medal /></span><div><b>Ramă pe poza de profil</b><span>o văd brandurile, pe profil și la aplicări</span></div></div>
               <div className="ac-gain-row"><span className="ac-ico"><StarI /></span><div><b>+{totalPoints} puncte Creator Score</b><span>o singură dată, când treci fiecare test</span></div></div>
               <div className="ac-gain-row"><span className="ac-ico"><Clock /></span><div><b>~{minutes} minute în total</b><span>poți relua testul oricând</span></div></div>
               {!st.approved && <p className="ac-warn">Punctele se acordă după ce profilul tău e aprobat.</p>}
             </aside>
           </div>
+
+          {st.certifiedAt && st.tier && (
+            <CertificateCard tier={st.tier} name={st.name} avatar={st.avatar} score={st.score} handle={st.handle} lessons={lessons.length} />
+          )}
+
+          {!st.certifiedAt && lessons.length > 0 && (
+            <section className="ac-card">
+              <div className="ac-sec-h"><h2 style={{ fontSize: 18 }}>Nivelurile de certificat</h2><span className="ac-muted">după răspunsurile corecte din prima, la toate lecțiile</span></div>
+              <div className="ac-tiers">
+                {TIER_ORDER.map(k => (
+                  <div key={k} className="ac-tier">
+                    <img src={TIERS[k].frame} alt={`Ramă ${TIERS[k].label}`} width={96} height={96} />
+                    <b>{TIERS[k].label}</b>
+                    <span className="ac-muted">{k === 'platinum' ? '100% corecte' : k === 'gold' ? 'cel puțin 95%' : k === 'silver' ? 'cel puțin 90%' : 'ai trecut toate lecțiile'}</span>
+                    {TIERS[k].bonus > 0 && <span className="ac-chip v">+{TIERS[k].bonus} puncte</span>}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {lessons.length > 0 && (
             <section className="ac-sec">

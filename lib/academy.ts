@@ -2,6 +2,46 @@
 
 export type AcademyQuestion = { q: string; options: string[]; correct: number; explain?: string }
 
+/** Pașii interactivi ai unei lecții, înainte de test. */
+export type AcademyStep =
+  | { type: 'concept'; title: string; what?: string; why?: string; bad?: string; good?: string; checklist?: string[] }
+  | { type: 'choose'; prompt: string; a: string; b: string; better: 'a' | 'b'; explain?: string }
+  | { type: 'exercise'; prompt: string; brief?: string; example?: string; why?: string }
+
+export type AcademyTier = 'bronze' | 'silver' | 'gold' | 'platinum'
+
+/** Nivelurile de certificat: rama de pe poza de profil + bonusul de puncte. */
+export const TIERS: Record<AcademyTier, { label: string; frame: string; bonus: number; bg: string; fg: string }> = {
+  bronze:   { label: 'Bronze',   frame: '/academie/rama-bronze.webp',   bonus: 0,   bg: '#f6e4d6', fg: '#7a431b' },
+  silver:   { label: 'Silver',   frame: '/academie/rama-silver.webp',   bonus: 25,  bg: '#eceff3', fg: '#46505e' },
+  gold:     { label: 'Gold',     frame: '/academie/rama-gold.webp',     bonus: 50,  bg: '#fff1c2', fg: '#7a5200' },
+  platinum: { label: 'Platinum', frame: '/academie/rama-platinum.webp', bonus: 100, bg: '#e9e4ff', fg: '#3b2a9e' },
+}
+export const TIER_ORDER: AcademyTier[] = ['bronze', 'silver', 'gold', 'platinum']
+export function isTier(t: any): t is AcademyTier { return typeof t === 'string' && t in TIERS }
+
+/** Nivelul după răspunsurile corecte de la prima încercare (20 din 20 = Platinum, 19 = Gold, 18 = Silver). */
+export function tierFor(correct: number, total: number): AcademyTier {
+  if (!total) return 'bronze'
+  const p = correct / total
+  if (p >= 1) return 'platinum'
+  if (p >= 0.95) return 'gold'
+  if (p >= 0.9) return 'silver'
+  return 'bronze'
+}
+
+export function cleanSteps(raw: any): AcademyStep[] {
+  if (!Array.isArray(raw)) return []
+  const str = (v: any) => (v == null ? '' : String(v)).trim()
+  const out: AcademyStep[] = []
+  for (const s of raw) {
+    if (s?.type === 'concept' && str(s.title)) out.push({ type: 'concept', title: str(s.title), what: str(s.what), why: str(s.why), bad: str(s.bad), good: str(s.good), checklist: Array.isArray(s.checklist) ? s.checklist.map(str).filter(Boolean) : [] })
+    else if (s?.type === 'choose' && str(s.prompt) && str(s.a) && str(s.b)) out.push({ type: 'choose', prompt: str(s.prompt), a: str(s.a), b: str(s.b), better: s.better === 'a' ? 'a' : 'b', explain: str(s.explain) })
+    else if (s?.type === 'exercise' && str(s.prompt)) out.push({ type: 'exercise', prompt: str(s.prompt), brief: str(s.brief), example: str(s.example), why: str(s.why) })
+  }
+  return out
+}
+
 export type AcademyLesson = {
   id: string
   position: number
@@ -13,6 +53,7 @@ export type AcademyLesson = {
   body: string | null
   video_url: string | null
   questions: AcademyQuestion[]
+  steps: AcademyStep[]
   pass_min: number
   published: boolean
 }

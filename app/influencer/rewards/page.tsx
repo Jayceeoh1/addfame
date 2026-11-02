@@ -16,7 +16,7 @@ export default function RewardsPage() {
     sb.auth.getUser().then(({ data: { user } }) => {
       if (!user) return
       sb.from('influencers')
-        .select('name, avatar, creator_score')
+        .select('*')
         .eq('user_id', user.id)
         .single()
         .then(({ data }) => {
@@ -113,7 +113,7 @@ export default function RewardsPage() {
           <div className="ir-glow" />
           <div className="ir-lbl" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Zap className="w-4 h-4" /> Scorul tău actual</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <AvatarWithBadge avatarUrl={profile.avatar} name={profile.name} score={score} size={60} />
+            <AvatarWithBadge avatarUrl={profile.avatar} name={profile.name} score={score} size={60} frame={profile?.academy_certified_at ? (profile?.academy_tier || 'bronze') : null} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</p>
               <div className="ir-score">{score.toLocaleString('ro-RO')}<small>pts · {config.label}</small></div>

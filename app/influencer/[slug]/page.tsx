@@ -1,5 +1,5 @@
 'use client'
-import { AvatarWithBadge } from '@/components/shared/CreatorBadge'
+import { AvatarWithBadge, AcademyTierChip } from '@/components/shared/CreatorBadge'
 // @ts-nocheck
 import { parseCount, getTier, formatCount } from '@/lib/tiers'
 
@@ -8,7 +8,7 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   Globe, MapPin, Tag, Star, ArrowLeft, ExternalLink,
-  Send, Shield, CheckCircle, TrendingUp, Award, GraduationCap,
+  Send, Shield, CheckCircle, TrendingUp, Award,
   Users, BarChart2, Clock, Copy, Share2
 } from 'lucide-react'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
@@ -186,7 +186,7 @@ export default function PublicInfluencerProfile() {
         .catch(() => {})
 
       // Academia: creator certificat?
-      getAcademyCertified(data.id).then(at => { if (at) setInf(prev => prev ? { ...prev, academy_certified_at: at } : prev) }).catch(() => {})
+      getAcademyCertified(data.id).then(c => { if (c) setInf(prev => prev ? { ...prev, academy_certified_at: c.at, academy_tier: c.tier } : prev) }).catch(() => {})
 
       // Load collab stats (cifre agregate din baza de date; citirea directă doar ca rezervă)
       const { data: statRows, error: statErr } = await sb.rpc('public_collab_stats', { p_influencer_ids: [data.id] })
@@ -416,16 +416,22 @@ export default function PublicInfluencerProfile() {
         <section className="pf-card" style={{ overflow: 'hidden' }}>
           <div className={`pf-cover ${inf.cover_image ? '' : 'dots'}`} style={inf.cover_image ? { backgroundImage: `url(${inf.cover_image})` } : undefined} />
           <div className="pf-hero">
+            {inf.academy_tier ? (
+              <div style={{ flex: 'none', marginBottom: -18 }}>
+                <AvatarWithBadge avatarUrl={inf.avatar || undefined} name={inf.name} score={inf.creator_score ?? 0} size={104} frame={inf.academy_tier} />
+              </div>
+            ) : (
             <div className="pf-ava">
               <AvatarWithBadge avatarUrl={inf.avatar || undefined} name={inf.name} score={inf.creator_score ?? 0} size={102} />
             </div>
+            )}
             <div className="pf-id">
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                 <h1 className="pf-name">{inf.name}</h1>
                 {tier && <span className="pf-chip" style={{ background: tier.bg, color: tier.fg }}>{tier.label} · {formatCount(Math.max(...platCards.map(followersOf)))}</span>}
                 {isVerified && <span className="pf-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star size={12} fill="currentColor" /> Verified Creator</span>}
                 {isIdentityVerified && <span className="pf-chip" style={{ background: '#e8f0ff', color: '#1d4ed8' }}><Shield size={12} /> ID verificat</span>}
-                {inf.academy_certified_at && <span className="pf-chip" style={{ background: '#5b2fd0', color: '#fff' }} title="A terminat Academia AddFame"><GraduationCap size={12} /> Creator certificat</span>}
+                {inf.academy_certified_at && <AcademyTierChip tier={inf.academy_tier || 'bronze'} style={{ height: 26, padding: '0 10px', fontSize: 12 }} />}
               </div>
               <div className="pf-meta">
                 {inf.country && <span><MapPin size={15} />{inf.country}</span>}

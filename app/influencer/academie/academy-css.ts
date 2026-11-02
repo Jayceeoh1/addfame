@@ -84,4 +84,54 @@ export const ACADEMY_CSS = `
 .al-cert { border-radius: 22px; padding: 22px; background: linear-gradient(150deg, #2a1673, #5b2fd0); color: #fff; display: flex; flex-direction: column; gap: 8px; align-items: center; text-align: center; }
 .al-cert h2 { font-size: 24px; font-weight: 800; }
 .al-cert p { color: #e4ddff; }
+
+/* v2: pași interactivi, verificare pe loc, certificat cu ramă */
+.al-top { display: flex; flex-direction: column; gap: 8px; }
+.al-top .al-back { min-height: 36px; }
+.al-pbar { height: 8px; background: #ece9f5; }
+.al-pbar i { background: linear-gradient(90deg, #7c5cff, #5b2fd0); }
+.al-step-c { display: flex; flex-direction: column; gap: 14px; }
+.al-h2 { font-size: clamp(24px, 4vw, 30px); line-height: 1.15; font-weight: 800; }
+.al-sec { display: flex; flex-direction: column; gap: 4px; }
+.al-sec p { font-size: 16px; line-height: 1.6; color: #2c2950; max-width: 65ch; }
+.al-k { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #6b6890; }
+.al-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.al-ex { border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.al-ex > span { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; }
+.al-ex p { font-size: 14.5px; line-height: 1.5; }
+.al-ex.bad { background: #fff4f2; border: 1.5px solid #f3c9c2; color: #4a2018; }
+.al-ex.bad > span { color: #9b2c1c; }
+.al-ex.good { background: #effaf4; border: 1.5px solid #b9e6cf; color: #123d26; }
+.al-ex.good > span { color: #14532d; }
+.al-check { gap: 10px; }
+.al-check label { display: flex; gap: 10px; align-items: center; font-size: 14.5px; line-height: 1.4; color: #2c2950; min-height: 34px; cursor: pointer; }
+.al-check input { width: 20px; height: 20px; accent-color: #5b2fd0; flex: none; }
+.al-choice { display: flex; flex-direction: column; gap: 8px; width: 100%; text-align: left; font: inherit; font-size: 15px; line-height: 1.5; color: #14123a; padding: 14px; border-radius: 18px; background: #fff; border: 2px solid #e3e0f0; cursor: pointer; }
+.al-choice:hover:not(:disabled) { border-color: #c9bdf7; }
+.al-choice.ok { background: #ecf9f2; border-color: #1f9d6b; }
+.al-choice.dim { opacity: .7; }
+.al-choice:disabled { cursor: default; }
+.al-choice-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.al-ta { border: 1.5px solid #d9d4ee; border-radius: 14px; padding: 12px; font: inherit; font-size: 15px; font-weight: 500; line-height: 1.5; color: #14123a; resize: vertical; background: #fff; text-transform: none; letter-spacing: 0; }
+.al-opt.ok { background: #ecf9f2; border-color: #1f9d6b; color: #14532d; font-weight: 800; }
+.al-opt.ok b { background: #1f9d6b; color: #fff; }
+.al-opt.bad { background: #fff1e8; border-color: #c2410c; color: #7a2e08; }
+.al-opt.bad b { background: #c2410c; color: #fff; }
+.al-opt.dim { opacity: .65; }
+.al-opt:disabled { cursor: default; }
+.al-fb { border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; line-height: 1.5; }
+.al-fb b { font-size: 15px; }
+.al-fb.ok { background: #dcf5ec; color: #14532d; }
+.al-fb.bad { background: #fff1e8; color: #7a2e08; }
+.al-sticky { position: sticky; bottom: 0; padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to top, #f6f6fc 70%, rgba(246,246,252,0)); }
+.al-done { align-items: center; text-align: center; }
+.al-medal { width: 104px; height: 104px; border-radius: 999px; background: #5b2fd0; color: #fff; display: grid; place-items: center; font-size: 42px; font-weight: 800; box-shadow: 0 0 0 8px #e6dfff; }
+.al-learned { display: flex; gap: 10px; align-items: center; font-size: 14.5px; color: #2c2950; }
+.al-learned svg { color: #1f9d6b; flex: none; }
+.al-cert { gap: 10px; padding: 26px 20px; }
+.al-cert .ac-btn { margin-top: 6px; }
+.ac-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.ac-tier { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 8px; }
+.ac-tier img { width: 96px; height: 96px; }
+.ac-tier b { font-size: 15px; }
 `

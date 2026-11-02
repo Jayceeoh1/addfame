@@ -588,7 +588,7 @@ export default function InfluencerDashboard() {
       {/* SALUT */}
       <section className="cd-hello">
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
-          <AvatarWithBadge avatarUrl={profile?.avatar} name={profile?.name} score={score} size={64} />
+          <AvatarWithBadge avatarUrl={profile?.avatar} name={profile?.name} score={score} size={64} frame={profile?.academy_certified_at ? (profile?.academy_tier || 'bronze') : null} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
             <span className="cd-muted" style={{ fontSize: 13, fontWeight: 600 }}>{greeting} · {today}</span>
             <h1>Salut, {firstName}.</h1>

@@ -4,17 +4,17 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { GraduationCap, Plus, ChevronUp, ChevronDown, Trash2, Eye, RefreshCw } from 'lucide-react'
 import { adminAcademy, adminSaveLesson, adminDeleteLesson, adminMoveLesson } from '@/app/actions/academy'
-import { parseQuestionsText, passNeeded, videoEmbed, type AcademyLesson, type AcademyQuestion } from '@/lib/academy'
+import { parseQuestionsText, passNeeded, videoEmbed, TIERS, TIER_ORDER, type AcademyLesson, type AcademyQuestion, type AcademyStep } from '@/lib/academy'
 
 type Row = AcademyLesson & { stats: { tried: number; passed: number } }
 const LETTERS = ['A', 'B', 'C', 'D']
 const EMPTY: Omit<AcademyLesson, 'id' | 'position'> = {
-  title: '', summary: '', badge_name: '', minutes: 5, points: 20, body: '', video_url: '', questions: [], pass_min: 0, published: false,
+  title: '', summary: '', badge_name: '', minutes: 5, points: 20, body: '', video_url: '', questions: [], steps: [], pass_min: 0, published: false,
 }
 
 export default function AdminAcademiePage() {
   const [rows, setRows] = useState<Row[]>([])
-  const [meta, setMeta] = useState({ started: 0, certified: 0 })
+  const [meta, setMeta] = useState<{ started: number; certified: number; byTier?: Record<string, number> }>({ started: 0, certified: 0 })
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [selId, setSelId] = useState<string | 'new' | null>(null)
@@ -31,7 +31,7 @@ export default function AdminAcademiePage() {
     const r: any = await adminAcademy()
     setLoading(false)
     if (r?.error) { setErr(r.error); return }
-    setRows(r.lessons); setMeta({ started: r.started, certified: r.certified })
+    setRows(r.lessons); setMeta({ started: r.started, certified: r.certified, byTier: r.byTier })
     const want = keep ?? selId
     const pick = (want && want !== 'new' && r.lessons.find((l: Row) => l.id === want)) || (want === 'new' ? null : r.lessons[0])
     if (pick) open(pick)
@@ -41,9 +41,9 @@ export default function AdminAcademiePage() {
 
   function open(l: Row | null) {
     setConfirmDel(false); setNote(''); setImportOpen(false); setDirty(false)
-    if (!l) { setSelId('new'); setF({ ...EMPTY, questions: [] }); return }
+    if (!l) { setSelId('new'); setF({ ...EMPTY, questions: [], steps: [] }); return }
     setSelId(l.id)
-    setF({ ...l, summary: l.summary || '', badge_name: l.badge_name || '', body: l.body || '', video_url: l.video_url || '', questions: l.questions.map(q => ({ ...q, options: [...q.options] })) })
+    setF({ ...l, summary: l.summary || '', badge_name: l.badge_name || '', body: l.body || '', video_url: l.video_url || '', questions: l.questions.map(q => ({ ...q, options: [...q.options] })), steps: (l.steps || []).map(st => ({ ...st, ...(st.type === 'concept' ? { checklist: [...(st.checklist || [])] } : {}) })) })
   }
   function set(k: string, v: any) { setF((p: any) => ({ ...p, [k]: v })); setDirty(true); setNote('') }
   function setQ(i: number, patch: Partial<AcademyQuestion>) { set('questions', f.questions.map((q: AcademyQuestion, k: number) => k === i ? { ...q, ...patch } : q)) }
@@ -60,6 +60,15 @@ export default function AdminAcademiePage() {
     const j = i + d; if (j < 0 || j >= f.questions.length) return
     const a = [...f.questions]; [a[i], a[j]] = [a[j], a[i]]; set('questions', a)
   }
+
+  function setStep(i: number, patch: any) { set('steps', f.steps.map((st: any, k: number) => k === i ? { ...st, ...patch } : st)) }
+  function addStep(type: AcademyStep['type']) {
+    const blank: any = type === 'concept' ? { type, title: '', what: '', why: '', bad: '', good: '', checklist: [] }
+      : type === 'choose' ? { type, prompt: '', a: '', b: '', better: 'b', explain: '' } : { type, prompt: '', brief: '', example: '', why: '' }
+    set('steps', [...(f.steps || []), blank])
+  }
+  function delStep(i: number) { set('steps', f.steps.filter((_: any, k: number) => k !== i)) }
+  function moveStep(i: number, d: -1 | 1) { const j = i + d; if (j < 0 || j >= f.steps.length) return; const a = [...f.steps]; [a[i], a[j]] = [a[j], a[i]]; set('steps', a) }
 
   const parsed = useMemo(() => importText.trim() ? parseQuestionsText(importText) : null, [importText])
   function applyImport(mode: 'replace' | 'append') {
@@ -116,7 +125,12 @@ export default function AdminAcademiePage() {
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <div className="bg-white border rounded-2xl" style={{ padding: '6px 14px' }}><b style={{ fontSize: 18 }}>{meta.certified}</b> <span style={{ fontSize: 12, color: '#5a5780' }}>creatori certificați</span></div>
-          <div className="bg-white border rounded-2xl" style={{ padding: '6px 14px' }}><b style={{ fontSize: 18 }}>{meta.started}</b> <span style={{ fontSize: 12, color: '#5a5780' }}>au dat cel puțin un test</span></div>
+          <div className="bg-white border rounded-2xl" style={{ padding: '6px 14px' }}><b style={{ fontSize: 18 }}>{meta.started}</b> <span style={{ fontSize: 12, color: '#5a5780' }}>au început</span></div>
+          {meta.certified > 0 && meta.byTier && (
+            <div className="bg-white border rounded-2xl" style={{ padding: '6px 10px', display: 'flex', gap: 6, alignItems: 'center' }}>
+              {TIER_ORDER.map(k => <span key={k} title={TIERS[k].label} style={{ fontSize: 12, fontWeight: 800, padding: '3px 8px', borderRadius: 99, background: TIERS[k].bg, color: TIERS[k].fg }}>{TIERS[k].label} {meta.byTier?.[k] || 0}</span>)}
+            </div>
+          )}
           <button className="aa-b" onClick={() => load(selId)}><RefreshCw size={14} /> Reîncarcă</button>
           <button className="aa-b p" onClick={() => open(null)}><Plus size={16} /> Lecție nouă</button>
         </div>
@@ -171,10 +185,57 @@ export default function AdminAcademiePage() {
               {badVideo && <span style={{ color: '#9b1c1c', fontWeight: 700 }}>Linkul nu pare YouTube sau Vimeo, nu va apărea în lecție.</span>}
             </label>
 
-            <label className="aa-l">Conținutul lecției
-              <textarea className="aa-ta" rows={8} value={f.body} onChange={e => set('body', e.target.value)} />
+            <label className="aa-l">Text introductiv (opțional, apare înaintea pașilor)
+              <textarea className="aa-ta" rows={4} value={f.body} onChange={e => set('body', e.target.value)} />
               <span style={{ fontWeight: 600, color: '#6b6890' }}>Rând gol = paragraf nou · **text** = bold · „&gt; ” la început = casetă de atenție · „- ” = listă</span>
             </label>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#4a4770' }}>Pașii lecției · {(f.steps || []).length} (înainte de test)</span>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button className="aa-b" onClick={() => addStep('concept')}><Plus size={14} /> Concept</button>
+                  <button className="aa-b" onClick={() => addStep('choose')}><Plus size={14} /> Care e mai bun?</button>
+                  <button className="aa-b" onClick={() => addStep('exercise')}><Plus size={14} /> Exercițiu</button>
+                </div>
+              </div>
+              {(f.steps || []).map((st: any, i: number) => (
+                <div key={i} style={{ border: '1px solid #ece9f5', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 8, background: st.type === 'concept' ? '#fcfbff' : st.type === 'choose' ? '#f7faff' : '#f6fcf9' }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <b style={{ fontSize: 12, color: '#6b6890', flex: 1 }}>{i + 1}. {st.type === 'concept' ? 'Concept' : st.type === 'choose' ? 'Care e mai bun?' : 'Exercițiu'}</b>
+                    <button className="aa-ib" disabled={i === 0} onClick={() => moveStep(i, -1)} aria-label="Mai sus"><ChevronUp size={14} /></button>
+                    <button className="aa-ib" disabled={i === f.steps.length - 1} onClick={() => moveStep(i, 1)} aria-label="Mai jos"><ChevronDown size={14} /></button>
+                    <button className="aa-ib" onClick={() => delStep(i)} aria-label="Șterge pasul" style={{ color: '#9b1c1c' }}><Trash2 size={14} /></button>
+                  </div>
+                  {st.type === 'concept' && (<>
+                    <input className="aa-in" style={{ fontWeight: 700 }} value={st.title} placeholder="Titlu (ex. Hook-ul)" onChange={e => setStep(i, { title: e.target.value })} />
+                    <textarea className="aa-ta" rows={2} value={st.what} placeholder="Ce este" onChange={e => setStep(i, { what: e.target.value })} />
+                    <textarea className="aa-ta" rows={2} value={st.why} placeholder="De ce contează pentru brand" onChange={e => setStep(i, { why: e.target.value })} />
+                    <div className="aa-grid">
+                      <textarea className="aa-ta" rows={2} value={st.bad} placeholder="Așa nu (opțional)" onChange={e => setStep(i, { bad: e.target.value })} />
+                      <textarea className="aa-ta" rows={2} value={st.good} placeholder="Așa da (opțional)" onChange={e => setStep(i, { good: e.target.value })} />
+                    </div>
+                    <textarea className="aa-ta" rows={3} value={(st.checklist || []).join('\n')} placeholder="Verifică înainte să postezi: câte un punct pe rând" onChange={e => setStep(i, { checklist: e.target.value.split('\n') })} />
+                  </>)}
+                  {st.type === 'choose' && (<>
+                    <input className="aa-in" style={{ fontWeight: 700 }} value={st.prompt} placeholder="Întrebarea (ex. Care caption e mai bun?)" onChange={e => setStep(i, { prompt: e.target.value })} />
+                    {(['a', 'b'] as const).map(k => (
+                      <label key={k} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                        <input type="radio" name={`st${i}`} checked={st.better === k} onChange={() => setStep(i, { better: k })} style={{ width: 18, height: 18, accentColor: '#1f9d6b', marginTop: 10, flex: 'none' }} aria-label={`Varianta ${k.toUpperCase()} e mai bună`} />
+                        <textarea className="aa-ta" rows={2} value={st[k]} placeholder={`Varianta ${k.toUpperCase()}`} onChange={e => setStep(i, { [k]: e.target.value })} style={st.better === k ? { borderColor: '#1f9d6b' } : undefined} />
+                      </label>
+                    ))}
+                    <input className="aa-in" value={st.explain} placeholder="De ce e mai bună (apare după alegere)" onChange={e => setStep(i, { explain: e.target.value })} />
+                  </>)}
+                  {st.type === 'exercise' && (<>
+                    <input className="aa-in" style={{ fontWeight: 700 }} value={st.prompt} placeholder="Cerința (ex. Scrie hook-ul pentru…)" onChange={e => setStep(i, { prompt: e.target.value })} />
+                    <textarea className="aa-ta" rows={2} value={st.brief} placeholder="Din brief (contextul)" onChange={e => setStep(i, { brief: e.target.value })} />
+                    <textarea className="aa-ta" rows={2} value={st.example} placeholder="Un exemplu bun" onChange={e => setStep(i, { example: e.target.value })} />
+                    <input className="aa-in" value={st.why} placeholder="De ce merge exemplul" onChange={e => setStep(i, { why: e.target.value })} />
+                  </>)}
+                </div>
+              ))}
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

@@ -1,6 +1,8 @@
 'use client'
 
 import { BADGE_IMAGES, LEVEL_CONFIG, getCreatorLevel, type CreatorLevel } from '@/lib/creator-score'
+import type { CSSProperties } from 'react'
+import { TIERS, isTier, type AcademyTier } from '@/lib/academy'
 
 // ── Badge mic pe avatar ───────────────────────────────────────────
 // Folosire: <AvatarWithBadge avatarUrl={inf.avatar} score={inf.creator_score} size={48} />
@@ -10,13 +12,17 @@ export function AvatarWithBadge({
   score = 0,
   size = 48,
   showLabel = false,
+  frame = null,
 }: {
   avatarUrl?: string | null
   name?: string | null
   score?: number
   size?: number
   showLabel?: boolean
+  /** Nivelul din Academie: pune rama Bronze/Silver/Gold/Platinum în jurul pozei. */
+  frame?: AcademyTier | string | null
 }) {
+  if (isTier(frame)) return <FramedAvatar avatarUrl={avatarUrl} name={name} score={score} size={size} tier={frame} />
   const level = getCreatorLevel(score)
   const config = LEVEL_CONFIG[level]
   const badgeSize = Math.round(size * 0.38)
@@ -128,4 +134,36 @@ export function CreatorScoreWidget({ score = 0, name }: { score?: number; name?:
       )}
     </div>
   )
+}
+
+// ── Poza de profil cu rama din Academie ──────────────────────────
+// Rama (600×600) are golul pentru poză cu centrul la ~49% / 48% și diametrul ~72% din lățime.
+function FramedAvatar({ avatarUrl, name, score = 0, size, tier }: { avatarUrl?: string | null; name?: string | null; score?: number; size: number; tier: AcademyTier }) {
+  const level = getCreatorLevel(score)
+  const F = Math.round(size / 0.72)
+  const left = Math.round(F * 0.4933 - size / 2)
+  const top = Math.round(F * 0.4833 - size / 2)
+  const badgeSize = Math.round(size * 0.34)
+  const initials = name?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'
+  const t = TIERS[tier]
+  return (
+    <div style={{ position: 'relative', width: F, height: F, flex: 'none' }} title={`Creator certificat ${t.label} · Academia AddFame`}>
+      {avatarUrl ? (
+        <img src={avatarUrl} alt={name || ''} style={{ position: 'absolute', left, top, width: size, height: size, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
+      ) : (
+        <div style={{ position: 'absolute', left, top, width: size, height: size, borderRadius: '50%', background: 'linear-gradient(135deg, #7c3aed, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700, color: 'white' }}>{initials}</div>
+      )}
+      <img src={t.frame} alt={`Ramă ${t.label}`} style={{ position: 'absolute', inset: 0, width: F, height: F, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: Math.round(F * 0.04), right: Math.round(F * 0.02), width: badgeSize, height: badgeSize, borderRadius: '50%', border: '2px solid white', overflow: 'hidden', background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
+        <img src={BADGE_IMAGES[level]} alt={level} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      </div>
+    </div>
+  )
+}
+
+/** Eticheta scurtă „Certificat Gold”, pentru liste unde poza e mică. */
+export function AcademyTierChip({ tier, style }: { tier?: string | null; style?: CSSProperties }) {
+  if (!isTier(tier)) return null
+  const t = TIERS[tier]
+  return <span title="Academia AddFame" style={{ display: 'inline-flex', alignItems: 'center', height: 22, padding: '0 8px', borderRadius: 999, background: t.bg, color: t.fg, fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap', ...style }}>Certificat {t.label}</span>
 }
