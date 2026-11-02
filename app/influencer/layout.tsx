@@ -10,7 +10,7 @@ import AdminFloatingButton from '@/components/AdminFloatingButton'
 import {
   LayoutDashboard, Briefcase, Zap, MessageSquare, Megaphone,
   Wallet, Settings, LogOut, Menu, X, User, ChevronRight, Sliders,
-  Star, Award, Building2, CreditCard, AlertCircle, Check, Copy, ArrowLeft, Shield, BarChart2, FileText, Lock, Loader2
+  Star, Award, Building2, GraduationCap, CreditCard, AlertCircle, Check, Copy, ArrowLeft, Shield, BarChart2, FileText, Lock, Loader2
 } from 'lucide-react'
 import { fontVars } from '@/lib/fonts'
 import './influencer-ui.css'
@@ -34,6 +34,7 @@ const NAV = [
   // { icon: Shield, label: 'Verificare ID', href: '/influencer/verify' }, // temporar dezactivat
   { icon: Settings, label: 'Setări', href: '/influencer/settings' },
   { icon: Star, label: 'Recompense', href: '/influencer/rewards' },
+  { icon: GraduationCap, label: 'Academie', href: '/influencer/academie' },
 ]
 
 // ─── Stripe form pentru badge ─────────────────────────────────────────────────

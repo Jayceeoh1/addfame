@@ -8,13 +8,14 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   Globe, MapPin, Tag, Star, ArrowLeft, ExternalLink,
-  Send, Shield, CheckCircle, TrendingUp, Award,
+  Send, Shield, CheckCircle, TrendingUp, Award, GraduationCap,
   Users, BarChart2, Clock, Copy, Share2
 } from 'lucide-react'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 import Link from 'next/link'
 import Head from 'next/head'
 import CollabPortfolio from '@/components/influencer/CollabPortfolio'
+import { getAcademyCertified } from '@/app/actions/academy'
 
 const PLATFORM_CFG = {
   instagram: { icon: <InstagramIcon className="w-5 h-5" />, bg: 'bg-pink-50', text: 'text-pink-600', label: 'Instagram', color: '#E1306C' },
@@ -183,6 +184,9 @@ export default function PublicInfluencerProfile() {
         .then(r => r.ok ? r.json() : null)
         .then(j => { const x = j?.influencer; if (x) setInf(prev => prev ? { ...prev, ig_followers: x.ig_followers, tt_followers: x.tt_followers, instagram_followers: x.instagram_followers } : prev) })
         .catch(() => {})
+
+      // Academia: creator certificat?
+      getAcademyCertified(data.id).then(at => { if (at) setInf(prev => prev ? { ...prev, academy_certified_at: at } : prev) }).catch(() => {})
 
       // Load collab stats (cifre agregate din baza de date; citirea directă doar ca rezervă)
       const { data: statRows, error: statErr } = await sb.rpc('public_collab_stats', { p_influencer_ids: [data.id] })
@@ -421,6 +425,7 @@ export default function PublicInfluencerProfile() {
                 {tier && <span className="pf-chip" style={{ background: tier.bg, color: tier.fg }}>{tier.label} · {formatCount(Math.max(...platCards.map(followersOf)))}</span>}
                 {isVerified && <span className="pf-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star size={12} fill="currentColor" /> Verified Creator</span>}
                 {isIdentityVerified && <span className="pf-chip" style={{ background: '#e8f0ff', color: '#1d4ed8' }}><Shield size={12} /> ID verificat</span>}
+                {inf.academy_certified_at && <span className="pf-chip" style={{ background: '#5b2fd0', color: '#fff' }} title="A terminat Academia AddFame"><GraduationCap size={12} /> Creator certificat</span>}
               </div>
               <div className="pf-meta">
                 {inf.country && <span><MapPin size={15} />{inf.country}</span>}

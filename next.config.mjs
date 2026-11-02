@@ -40,7 +40,7 @@ const securityHeaders = [
       "media-src 'self' blob: https://*.supabase.co",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://api.stripe.com https://js.stripe.com https://fonts.googleapis.com https://fonts.gstatic.com https://www.googletagmanager.com https://generativelanguage.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
       "worker-src 'self' blob:",
-      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.instagram.com https://www.tiktok.com",
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.instagram.com https://www.tiktok.com https://www.youtube-nocookie.com https://player.vimeo.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
