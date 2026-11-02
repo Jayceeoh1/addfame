@@ -364,3 +364,64 @@ export async function getCertificateByCode(code: string) {
     }
   } catch { return null }
 }
+
+/** Admin: cine a început / a terminat Academia, cu scorurile și nivelul. */
+export async function adminAcademyPeople() {
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth
+  const admin = createAdminClient()
+  const { data: prog, error } = await admin.from('academy_progress')
+    .select('influencer_id, lesson_id, attempts, first_score, first_total, best_score, total, passed_at, points, created_at, updated_at')
+    .order('updated_at', { ascending: false }).limit(2000)
+  if (error) return { error: NOT_READY }
+  const ids = Array.from(new Set((prog || []).map((p: any) => p.influencer_id)))
+  const infs: Record<string, any> = {}
+  for (let k = 0; k < ids.length; k += 200) {
+    let { data, error: e }: { data: any[] | null; error: any } = await admin.from('influencers')
+      .select('id, name, email, phone, slug, instagram_handle, academy_certified_at, academy_tier, academy_cert_code').in('id', ids.slice(k, k + 200))
+    if (e) ({ data } = await admin.from('influencers').select('id, name, email, phone, slug, instagram_handle, academy_certified_at, academy_tier').in('id', ids.slice(k, k + 200)) as any)
+    for (const r of data || []) infs[r.id] = r
+  }
+  const { data: lessons } = await admin.from('academy_lessons').select('id, title, position')
+  const lt = new Map((lessons || []).map((l: any) => [l.id, l]))
+  const people = ids.map(id => {
+    const i = infs[id] || {}
+    const rows = (prog || []).filter((p: any) => p.influencer_id === id)
+    const first = rows.reduce((n: number, r: any) => n + (Number(r.first_score ?? 0) || 0), 0)
+    const firstTotal = rows.reduce((n: number, r: any) => n + (Number(r.first_total ?? 0) || 0), 0)
+    const best = rows.reduce((n: number, r: any) => n + (Number(r.best_score ?? 0) || 0), 0)
+    const total = rows.reduce((n: number, r: any) => n + (Number(r.total ?? 0) || 0), 0)
+    const last = rows.map((r: any) => r.updated_at).sort().pop() || null
+    return {
+      id, name: i.name || '—', email: i.email || null, phone: i.phone || null, slug: i.slug || id,
+      instagram: i.instagram_handle ? String(i.instagram_handle).replace(/^@/, '') : null,
+      certifiedAt: i.academy_certified_at || null, tier: isTier(i.academy_tier) ? i.academy_tier : null, code: i.academy_cert_code || null,
+      attempts: rows.reduce((n: number, r: any) => n + (r.attempts || 0), 0),
+      passed: rows.filter((r: any) => r.passed_at).length, lessons: rows.length,
+      first, firstTotal, best, total, points: rows.reduce((n: number, r: any) => n + (r.points || 0), 0),
+      lessonTitles: rows.map((r: any) => (lt.get(r.lesson_id) as any)?.title).filter(Boolean),
+      last,
+    }
+  }).sort((a, b) => String(b.last || '').localeCompare(String(a.last || '')))
+  return { success: true as const, people }
+}
+
+/** Admin: resetează Academia pentru un creator (scade punctele primite, șterge certificatul și progresul). */
+export async function adminResetAcademy(influencerId: string) {
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth
+  const admin = createAdminClient()
+  const { data: inf } = await admin.from('influencers').select('id, creator_score, academy_tier').eq('id', influencerId).maybeSingle()
+  if (!inf) return { error: 'Creator negăsit.' }
+  const { data: rows } = await admin.from('academy_progress').select('points').eq('influencer_id', influencerId)
+  const lessonPts = (rows || []).reduce((n: number, r: any) => n + (r.points || 0), 0)
+  const bonus = isTier(inf.academy_tier) ? TIERS[inf.academy_tier].bonus : 0
+  const minus = lessonPts + bonus
+  const base = { creator_score: Math.max(0, (inf.creator_score || 0) - minus), academy_certified_at: null, academy_tier: null }
+  let { error } = await admin.from('influencers').update({ ...base, academy_cert_code: null }).eq('id', influencerId)
+  if (error) ({ error } = await admin.from('influencers').update(base).eq('id', influencerId))
+  if (error) return { error: error.message }
+  await admin.from('academy_progress').delete().eq('influencer_id', influencerId)
+  revalidatePath('/influencer/academie')
+  return { success: true as const, minus }
+}
