@@ -630,7 +630,7 @@ export default function PublicInfluencerProfile() {
             </section>
           </div>
 
-          <aside className="pf-side">
+          <div className="pf-side">
             <section className="pf-dark">
               <h2 className="pf-h2">Tarife orientative</h2>
               {prices.length > 0 ? (
@@ -656,7 +656,7 @@ export default function PublicInfluencerProfile() {
                 <div className="pf-row"><span style={{ color: '#6b6890' }}>Colaborări finalizate</span><b>{completed}</b></div>
               </div>
             </section>
-          </aside>
+          </div>
         </div>
       </div>
       {/* Player postare (Instagram / TikTok) */}

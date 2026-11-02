@@ -150,7 +150,7 @@ export default function AdminAcademiePage() {
       {tab === 'people' && <AcademyPeople onChange={() => load(selId)} />}
 
       <div style={{ display: tab === 'lessons' ? 'flex' : 'none', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
-        <aside className="bg-white border rounded-2xl" style={{ flex: '1 1 280px', minWidth: 0, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="bg-white border rounded-2xl" style={{ flex: '1 1 280px', minWidth: 0, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {loading && !rows.length && <p style={{ padding: 10, fontSize: 13 }}>Se încarcă…</p>}
           {!loading && !rows.length && !err && <p style={{ padding: 10, fontSize: 13, color: '#5a5780' }}>Nicio lecție încă. Apasă „Lecție nouă”.</p>}
           {rows.map((l, k) => (
@@ -166,7 +166,7 @@ export default function AdminAcademiePage() {
               </div>
             </div>
           ))}
-        </aside>
+        </div>
 
         {selId && (
           <main className="bg-white border rounded-2xl" style={{ flex: '999 1 560px', minWidth: 0, padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>

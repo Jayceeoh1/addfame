@@ -49,13 +49,13 @@ export default function AcademiePage() {
               )}
             </section>
 
-            <aside className="ac-card ac-gain">
+            <div className="ac-card ac-gain">
               <span className="ac-label">Ce câștigi</span>
               <div className="ac-gain-row"><span className="ac-ico"><Medal /></span><div><b>Certificat + ramă pe poza de profil</b><span>certificatul îl descarci, rama o văd brandurile</span></div></div>
               <div className="ac-gain-row"><span className="ac-ico"><StarI /></span><div><b>+{totalPoints} puncte Creator Score</b><span>o singură dată, când treci fiecare test</span></div></div>
               <div className="ac-gain-row"><span className="ac-ico"><Clock /></span><div><b>~{minutes} minute în total</b><span>poți relua testul oricând</span></div></div>
               {!st.approved && <p className="ac-warn">Punctele se acordă după ce profilul tău e aprobat.</p>}
-            </aside>
+            </div>
           </div>
 
           {st.certifiedAt && st.tier && (
