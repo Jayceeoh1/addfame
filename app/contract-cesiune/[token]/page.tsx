@@ -73,8 +73,13 @@ export default function ContractCesiunePage() {
     if (!token) return
     fetch(`/api/cesiune-contracts/${token}`)
       .then(r => r.json())
-      .then(d => {
-        if (d.error) { setError(d.error); return }
+      .then(async d => {
+        if (d.error) {
+          // Linkul din șablonul WhatsApp duce aici și pentru contractele de colaborare: le trimitem la pagina lor
+          const col = await fetch(`/api/colaborare-contracts/${token}`).then(r => r.ok ? r.json() : null).catch(() => null)
+          if (col?.contract) { window.location.replace(`/contract-colaborare/${token}`); return }
+          setError(d.error); return
+        }
         setContract(d.contract)
         setName(d.contract.influencer_name || '')
         setEmail(d.contract.influencer_email || '')

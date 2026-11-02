@@ -96,15 +96,16 @@ export default function ContractsPage() {
   const flash = (msg: string, ok = true) => { setNotice({ msg, ok }); setTimeout(() => setNotice(null), 6000) }
 
   /** Un click: notificare în platformă + email + Telegram (dacă e legat). */
-  async function sendContract(id: string) {
+  async function sendContract(id: string, type: TabKey = 'cesiune') {
     setSendingId(id)
     try {
-      const r = await fetch(`/api/admin/contracts/cesiune/${id}/send`, { method: 'POST' })
+      const r = await fetch(`/api/admin/contracts/${CFG[type].api}/${id}/send`, { method: 'POST' })
       const d = await r.json().catch(() => ({}))
       if (!r.ok) { flash(d.error || 'Nu am putut trimite contractul.', false); return false }
       const ch = [d.sent?.app && 'platformă', d.sent?.email && 'email', d.sent?.whatsapp && 'WhatsApp', d.sent?.telegram && 'Telegram'].filter(Boolean).join(' + ')
       flash(`✉️ Contract trimis la semnat (${ch}).${d.whatsappNote && d.whatsappNote !== 'neconfigurat' ? ` WhatsApp: ${d.whatsappNote}.` : ''}`)
-      setCesContracts(prev => prev.map(c => c.id === id ? { ...c, status: 'sent' } : c))
+      if (type === 'campanii') setColabContracts(prev => prev.map(c => c.id === id ? { ...c, status: 'sent' as any } : c))
+      else setCesContracts(prev => prev.map(c => c.id === id ? { ...c, status: 'sent' } : c))
       return true
     } finally { setSendingId(null) }
   }
@@ -157,6 +158,7 @@ export default function ContractsPage() {
       const data = await res.json()
       if (data.error) { alert(data.error); return }
       setColabContracts(prev => [data.contract, ...prev])
+      if (sendNow && data.contract?.id) await sendContract(data.contract.id, 'campanii')
       setShowNew(false)
       setColabForm({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '14', campaign_title: '', platform: '', deliverables: '', notes: '' })
     } finally { setSaving(false) }
@@ -304,7 +306,7 @@ export default function ContractsPage() {
   async function sendGroup(key: string, ids: string[]) {
     setBulkBusy(key)
     let ok = 0
-    for (const id of ids) { if (await sendContract(id)) ok++ }
+    for (const id of ids) { if (await sendContract(id, tab)) ok++ }
     setBulkBusy(null); setBulkArmed(null)
     flash(`✉️ Trimise la semnat: ${ok} din ${ids.length}.`, ok === ids.length)
   }
@@ -390,6 +392,7 @@ export default function ContractsPage() {
             const open = !collapsed.has(g.key)
             const rows = all.filter(rowMatches)
             const isCes = tab === 'cesiune'
+            const canSend = tab === 'cesiune' || tab === 'campanii'
             return (
               <section key={g.key} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 {/* Antet campanie */}
@@ -427,7 +430,7 @@ export default function ContractsPage() {
                           <Plus className="w-3.5 h-3.5" /> Contract
                         </button>
                       )}
-                      {isCes && unsigned.length > 0 && (
+                      {canSend && unsigned.length > 0 && (
                         bulkArmed === g.key ? (
                           <span className="flex items-center gap-1">
                             <button onClick={() => sendGroup(g.key, unsigned.map(c => c.id))} disabled={!!bulkBusy}
@@ -491,8 +494,8 @@ export default function ContractsPage() {
                           </div>
 
                           <div className="flex items-center justify-end gap-1.5 flex-none ml-auto sm:w-[400px]">
-                            {isCes && c.status !== 'signed' && (
-                              <button onClick={() => sendContract(c.id)} disabled={sendingId === c.id}
+                            {canSend && c.status !== 'signed' && (
+                              <button onClick={() => sendContract(c.id, tab)} disabled={sendingId === c.id}
                                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black bg-sky-600 text-white hover:bg-sky-700 transition disabled:opacity-60">
                                 <Send className="w-3.5 h-3.5" /> {sendingId === c.id ? '…' : c.status === 'sent' ? 'Retrimite' : 'Trimite'}
                               </button>
@@ -590,6 +593,10 @@ export default function ContractsPage() {
                   <Field label="Termen plată (zile) *"><input required type="number" min="1" max="90" value={colabForm.payment_days} onChange={e => setColabForm(f => ({ ...f, payment_days: e.target.value }))} className="field" /></Field>
                   <Field label="Observații interne" colSpan={2}><textarea value={colabForm.notes} onChange={e => setColabForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Note interne..." className="field resize-none" /></Field>
                 </FieldGrid>
+                <label className="flex items-start gap-2.5 text-sm text-gray-700 cursor-pointer bg-orange-50 border border-orange-100 rounded-xl p-3">
+                  <input type="checkbox" checked={sendNow} onChange={e => setSendNow(e.target.checked)} className="mt-0.5" />
+                  <span><b>Trimite imediat creatorului la semnat</b><br /><span className="text-xs text-gray-500">Notificare în platformă, email, WhatsApp (dacă are telefon) și Telegram (dacă și-a legat contul). Ai nevoie de emailul creatorului.</span></span>
+                </label>
                 <ModalButtons onCancel={() => setShowNew(false)} saving={saving} grad={accentGrad} label="Colaborare" />
               </form>
             ) : (
