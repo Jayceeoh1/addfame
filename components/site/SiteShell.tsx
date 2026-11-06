@@ -60,7 +60,7 @@ export function SiteFooter() {
   const cols = [
     { title: 'Platformă', links: [['Pentru branduri', '/pentru-branduri'], ['Pentru influenceri', '/pentru-influenceri'], ['Cum funcționează', '/cum-functioneaza'], ['Întrebări frecvente', '/intrebari-frecvente']] },
     { title: 'Companie', links: [['Despre noi', '/despre-noi'], ['Evenimente', '/evenimente'], ['Contact', '/contact'], ['Creează cont', '/auth/register']] },
-    { title: 'Legal', links: [['Termeni și condiții', '/termeni'], ['Confidențialitate', '/politica-de-confidentialitate'], ['Cookie-uri', '/politica-de-confidentialitate#s-7']] },
+    { title: 'Legal', links: [['Termeni și condiții', '/termeni'], ['Confidențialitate', '/politica-de-confidentialitate'], ['Ștergere cont', '/stergere-cont'], ['Cookie-uri', '/politica-de-confidentialitate#s-7']] },
   ]
   return (
     <footer className="af-footer">

@@ -349,7 +349,7 @@ function SettingsPageInner() {
 
   // Delete account
   const [deleteConfirm, setDeleteConfirm] = useState('')
-  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   useEffect(() => { fetchSettings() }, [])
@@ -601,21 +601,7 @@ function SettingsPageInner() {
   }
 
   async function handleDeleteAccount() {
-    if (deleteConfirm !== 'STERGE') return
-    setDeleteLoading(true)
-    try {
-      const res = await fetch('/api/influencer/delete-account', { method: 'DELETE' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Eroare la ștergere')
-      // Delogare și redirect
-      const supabase = createClient()
-      await supabase.auth.signOut()
-      router.replace('/auth/login')
-    } catch (err: any) {
-      setSaveError(err.message || 'Eroare la ștergerea contului.')
-      setDeleteLoading(false)
-      setShowDeleteModal(false)
-    }
+    window.location.assign('/stergere-cont')
   }
 
   async function handleLogout() {
@@ -1331,11 +1317,11 @@ function SettingsPageInner() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 800, color: '#b91c1c', margin: '0 0 4px' }}>Șterge contul definitiv</p>
-                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0, lineHeight: 1.5 }}>Toate datele tale, profilul și istoricul vor fi șterse permanent. Această acțiune nu poate fi anulată.</p>
+                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0, lineHeight: 1.5 }}>Deschide pagina de ștergere a contului. Contul nu se închide dacă mai ai colaborări deschise, bani în escrow sau sold în portofel.</p>
                   </div>
                   <button
                     style={{ flexShrink: 0, padding: '8px 16px', borderRadius: 10, border: 'none', background: '#ef4444', fontSize: 13, fontWeight: 800, cursor: 'pointer', color: 'white', fontFamily: 'inherit' }}
-                    onClick={() => setShowDeleteModal(true)}>
+                    onClick={() => { window.location.assign('/stergere-cont') }}>
                     Șterge contul
                   </button>
                 </div>

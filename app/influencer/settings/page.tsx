@@ -16,6 +16,7 @@ import {
 import { purchaseVerifiedBadgeWallet, initiateBadgeBankTransfer, getInfluencerStats } from '@/app/actions/badge'
 const BADGE_PRICE = 50 // RON
 import { useRouter } from 'next/navigation'
+import { DeletionRequestForm } from '@/components/account/DeletionRequestForm'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
@@ -351,11 +352,6 @@ function SettingsPageInner() {
   const [notifications, setNotifications] = useState<NotificationSettings>(DEFAULT_NOTIFICATIONS)
   const [privacy, setPrivacy] = useState<PrivacySettings>(DEFAULT_PRIVACY)
 
-  // Delete account
-  const [deleteConfirm, setDeleteConfirm] = useState('')
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-
   useEffect(() => { fetchSettings() }, [])
 
   async function fetchSettings() {
@@ -602,24 +598,6 @@ function SettingsPageInner() {
     a.download = `influex-data-${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
-  }
-
-  async function handleDeleteAccount() {
-    if (deleteConfirm !== 'STERGE') return
-    setDeleteLoading(true)
-    try {
-      const res = await fetch('/api/influencer/delete-account', { method: 'DELETE' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Eroare la ștergere')
-      // Delogare și redirect
-      const supabase = createClient()
-      await supabase.auth.signOut()
-      router.replace('/auth/login')
-    } catch (err: any) {
-      setSaveError(err.message || 'Eroare la ștergerea contului.')
-      setDeleteLoading(false)
-      setShowDeleteModal(false)
-    }
   }
 
   async function handleLogout() {
@@ -1350,19 +1328,13 @@ function SettingsPageInner() {
                 </div>
               </div>
 
-              {/* Ștergere cont */}
               <div className="iu-card iu-card-pad" style={{ borderColor: '#f3c9c4', background: '#fff8f7' }}>
-                <div className="is-dr" style={{ padding: 0, border: 0, background: 'transparent' }}>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 800, color: '#b42318', margin: '0 0 4px' }}>Șterge contul definitiv</p>
-                    <p style={{ fontSize: 13, color: '#6a6690', margin: 0, lineHeight: 1.5 }}>Toate datele tale, profilul și istoricul vor fi șterse permanent. Această acțiune nu poate fi anulată.</p>
-                  </div>
-                  <button
-                    className="iu-btn" style={{ background: '#b42318', borderColor: '#b42318', color: '#fff' }}
-                    onClick={() => setShowDeleteModal(true)}>
-                    Șterge contul
-                  </button>
-                </div>
+                <p style={{ fontSize: 14, fontWeight: 800, color: '#b42318', margin: '0 0 4px' }}>Șterge contul</p>
+                <p style={{ fontSize: 13, color: '#6a6690', margin: '0 0 14px', lineHeight: 1.5 }}>
+                  Cererea se înregistrează aici. Dacă ai colaborări deschise, bani în escrow sau sold în portofel, contul rămâne activ până le rezolvi.
+                  Explicația completă este pe <a href="/stergere-cont">pagina de ștergere a contului</a>.
+                </p>
+                <DeletionRequestForm source="app" />
               </div>
             </div>
           )}
@@ -1677,72 +1649,6 @@ function SettingsPageInner() {
         </div>
       )}
 
-      {/* Modal ștergere cont */}
-      {showDeleteModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 20, padding: 28, width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', fontFamily: "var(--font-body, system-ui), system-ui, sans-serif" }}>
-            {/* Icon */}
-            <div style={{ width: 52, height: 52, borderRadius: 16, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            </div>
-
-            <h2 style={{ fontSize: 18, fontWeight: 900, color: '#111827', margin: '0 0 8px' }}>Sigur vrei să îți ștergi contul?</h2>
-            <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6, margin: '0 0 12px' }}>
-              Aceasta va șterge definitiv profilul tău, istoricul tranzacțiilor, platformele sociale și toate datele asociate. <strong style={{ color: '#374151' }}>Nu poate fi anulat.</strong>
-            </p>
-
-            {/* Warning momentum */}
-            <div style={{ background: '#f5f3ff', border: '1.5px solid #ddd6fe', borderRadius: 12, padding: '12px 14px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <span style={{ fontSize: 18, flexShrink: 0 }}>⚡</span>
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 800, color: '#92400e', margin: '0 0 3px' }}>Ești printre primii 150 de creatori din România pe AddFame!</p>
-                <p style={{ fontSize: 12, color: '#b45309', margin: 0, lineHeight: 1.5 }}>Platforma abia a lansat și brandurile românești încep să posteze campanii. Cei care sunt deja înregistrați vor fi primii invitați. Dacă pleci acum, pierzi acest avantaj față de ceilalți.</p>
-              </div>
-            </div>
-
-            {/* Ce se șterge */}
-            <div style={{ background: '#fef2f2', borderRadius: 12, padding: '12px 14px', marginBottom: 20 }}>
-              {['Profilul și informațiile personale', 'Platformele sociale conectate', 'Istoricul colaborărilor', 'Metodele de plată', 'Wallet și tranzacțiile'].map(item => (
-                <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: 12, color: '#b91c1c' }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  {item}
-                </div>
-              ))}
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 12, fontWeight: 800, color: '#374151', display: 'block', marginBottom: 6 }}>
-                Scrie <strong style={{ color: '#ef4444' }}>STERGE</strong> pentru a confirma
-              </label>
-              <input
-                style={{ width: '100%', padding: '10px 14px', border: `2px solid ${deleteConfirm === 'STERGE' ? '#ef4444' : '#e5e7eb'}`, borderRadius: 12, fontSize: 14, fontWeight: 700, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', letterSpacing: 1 }}
-                placeholder="STERGE"
-                value={deleteConfirm}
-                onChange={e => setDeleteConfirm(e.target.value.toUpperCase())}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #e5e7eb', background: 'white', fontSize: 14, fontWeight: 800, cursor: 'pointer', color: '#374151', fontFamily: 'inherit' }}
-                onClick={() => { setShowDeleteModal(false); setDeleteConfirm('') }}>
-                Anulează
-              </button>
-              <button
-                style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', background: deleteConfirm === 'STERGE' && !deleteLoading ? '#ef4444' : '#fca5a5', fontSize: 14, fontWeight: 900, cursor: deleteConfirm === 'STERGE' && !deleteLoading ? 'pointer' : 'not-allowed', color: 'white', fontFamily: 'inherit', transition: 'background .15s' }}
-                disabled={deleteConfirm !== 'STERGE' || deleteLoading}
-                onClick={handleDeleteAccount}>
-                {deleteLoading
-                  ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                      <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
-                      Se șterge…
-                    </span>
-                  : 'Șterge definitiv'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

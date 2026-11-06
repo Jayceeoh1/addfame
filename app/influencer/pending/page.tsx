@@ -168,6 +168,10 @@ export default function InfluencerPendingPage() {
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm text-gray-400 bg-gray-50 hover:bg-gray-100 transition">
                   <LogOut className="w-4 h-4" /> Ieși din cont
                 </button>
+                <a href="/stergere-cont"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm text-red-600 bg-red-50 hover:bg-red-100 transition">
+                  Solicită ștergerea contului
+                </a>
               </div>
             </div>
 
@@ -221,6 +225,10 @@ export default function InfluencerPendingPage() {
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-black text-sm text-white bg-gray-800 hover:bg-gray-900 transition">
               <LogOut className="w-4 h-4" /> Ieși din cont
             </button>
+            <a href="/stergere-cont"
+              className="w-full flex items-center justify-center gap-2 py-3 mt-2 rounded-2xl font-bold text-sm text-red-600 bg-red-50 hover:bg-red-100 transition">
+              Solicită ștergerea contului
+            </a>
           </div>
         )}
       </div>

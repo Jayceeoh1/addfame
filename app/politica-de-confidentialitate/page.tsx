@@ -85,7 +85,7 @@ export default function PrivacyPage() {
 
         <Section title="6. Drepturile tale">
           <p>Conform GDPR, ai dreptul la: <strong>acces</strong> (să știi ce date deținem), <strong>rectificare</strong> (să corectezi date incorecte), <strong>ștergere</strong> (să ceri ștergerea datelor), <strong>portabilitate</strong> (să primești datele în format structurat), <strong>opoziție</strong> (față de prelucrarea bazată pe interes legitim).</p>
-          <p>Exercitați aceste drepturi scriind la <a href="mailto:privacy@addfame.ro">privacy@addfame.ro</a>. Răspundem în maxim 30 de zile.</p>
+          <p>Exercitați aceste drepturi scriind la <a href="mailto:privacy@addfame.ro">privacy@addfame.ro</a>. Răspundem în maxim 30 de zile. Ștergerea contului se poate porni și direct, fără email, de pe <a href="/stergere-cont">pagina de ștergere a contului</a>.</p>
         </Section>
 
         <Section title="7. Cookie-uri">

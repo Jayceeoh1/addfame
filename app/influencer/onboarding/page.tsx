@@ -235,6 +235,10 @@ export default function InfluencerOnboarding() {
             </button>
           </div>
         )}
+
+        <p className="text-center text-xs text-gray-400 mt-6">
+          <a href="/stergere-cont" className="underline font-bold">Solicită ștergerea contului</a>
+        </p>
       </div>
     </div>
   )

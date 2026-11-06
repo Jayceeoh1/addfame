@@ -14,7 +14,7 @@ export default async function DataDeletionStatus({ searchParams }: { searchParam
           Datele conectate prin Instagram (token de acces, statistici și postări sincronizate) au fost șterse din AddFame.
         </p>
         <p style={{ ...muted, marginTop: 16 }}>Cod de confirmare: <b style={{ color: '#14123a' }}>{code}</b></p>
-        <p style={{ ...muted, marginTop: 24 }}>Pentru ștergerea completă a contului scrie-ne la privacy@addfame.ro.</p>
+        <p style={{ ...muted, marginTop: 24 }}>Pentru ștergerea completă a contului folosește <a href="/stergere-cont">pagina de ștergere a contului</a> sau scrie-ne la privacy@addfame.ro.</p>
       </main>
     )
   }
@@ -29,6 +29,7 @@ export default async function DataDeletionStatus({ searchParams }: { searchParam
         <li><b>Din AddFame:</b> intră în cont → Profil (creator) sau Setări (brand) → Instagram → <b>Deconectează</b>. Ștergem imediat tokenul de acces, statisticile și postările sincronizate.</li>
         <li><b>Din Instagram:</b> Setări → Aplicații și site-uri → găsește AddFame → <b>Elimină</b>. Ștergem automat datele Instagram asociate contului tău.</li>
         <li><b>Prin email:</b> scrie-ne la <a href="mailto:privacy@addfame.ro">privacy@addfame.ro</a> de pe adresa contului și ștergem datele (sau întregul cont) în maximum 30 de zile.</li>
+        <li><b>Contul întreg:</b> pașii și formularul sunt pe <a href="/stergere-cont">pagina de ștergere a contului</a>.</li>
       </ol>
       <p style={{ ...muted, marginTop: 20 }}>
         Detalii despre datele pe care le folosim: <a href="/politica-de-confidentialitate">Politica de confidențialitate</a>.
