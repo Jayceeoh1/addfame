@@ -4,12 +4,16 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Bell, X, CheckCheck } from 'lucide-react'
 import { PushToggle } from '@/components/shared/PushToggle'
+import { isVerifiedBadgePurchasePrompt } from '@/lib/native-app'
+import { useIsNativeApp } from '@/components/native/use-native-app'
 
 export function NotificationsBell({ accentColor = '#8b5cf6' }: { accentColor?: string }) {
   const [notifs, setNotifs] = useState<any[]>([])
   const [open, setOpen] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
+  const nativeApp = useIsNativeApp()
+  const visible = nativeApp ? notifs.filter(n => !isVerifiedBadgePurchasePrompt(n)) : notifs
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
@@ -57,7 +61,7 @@ export function NotificationsBell({ accentColor = '#8b5cf6' }: { accentColor?: s
     setNotifs(p => p.map(n => n.id === id ? { ...n, read: true } : n))
   }
 
-  const unread = notifs.filter(n => !n.read).length
+  const unread = visible.filter(n => !n.read).length
   const fmtTime = (d: string) => {
     const diff = Math.floor((Date.now() - new Date(d).getTime()) / 60000)
     if (diff < 1) return 'acum'
@@ -91,12 +95,12 @@ export function NotificationsBell({ accentColor = '#8b5cf6' }: { accentColor?: s
             </div>
           </div>
           <div className="max-h-80 overflow-y-auto">
-            {notifs.length === 0 ? (
+            {visible.length === 0 ? (
               <div className="text-center py-10">
                 <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
                 <p className="text-sm font-bold text-gray-400">Nicio notificare</p>
               </div>
-            ) : notifs.map(n => (
+            ) : visible.map(n => (
               <button key={n.id} onClick={() => { markRead(n.id); if (n.link) window.location.href = n.link }}
                 className="w-full flex items-start gap-3 px-4 py-3 text-left transition hover:bg-gray-50"
                 style={{ borderBottom: '1px solid #f9f9f9', background: !n.read ? '#fafbff' : undefined }}>

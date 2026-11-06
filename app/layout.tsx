@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { nativeAppBootSource } from '@/lib/native-app'
 import { SessionGuard } from '@/components/shared/session-guard'
 import { LangProvider } from '@/lib/i18n/context'
 import localFont from 'next/font/local'
@@ -73,8 +74,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ro">
+    <html lang="ro" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: nativeAppBootSource() }} />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
