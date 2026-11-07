@@ -29,7 +29,11 @@ export default function AdminRapoartePage() {
     if (r?.error) { setErr(r.error); setItems([]); return }
     setItems(r.rows)
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    // ?campanie=<id> (din fereastra campaniei) → lista filtrată pe campanie
+    try { const c = new URLSearchParams(window.location.search).get('campanie'); if (c) setCamp(c) } catch { /* fără filtru */ }
+  }, [])
 
   const campaigns = useMemo(() => {
     const m = new Map<string, string>()

@@ -2888,17 +2888,17 @@ export default function AdminCampaigns() {
                       <div className="flex items-start justify-between gap-3 flex-wrap">
                         <div className="flex-1">
                           <p className="text-xs font-black text-orange-600 uppercase tracking-wider mb-1">📊 Performance & Raport</p>
-                          <p className="text-sm font-black text-gray-900 mb-1">Tracking date influenceri + generare raport PDF</p>
-                          <p className="text-xs text-gray-500">Adaugă manual statisticile (reach, likes, sentiment, audiență) per influencer. Raportul se actualizează live.</p>
+                          <p className="text-sm font-black text-gray-900 mb-1">Raport pentru fiecare creator</p>
+                          <p className="text-xs text-gray-500">Creatorii își pun cifrele și capturile; tu le verifici, completezi textele și publici raportul pentru brand.</p>
                         </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          <a href={`/admin/campaigns/${selectedCampaign.id}/performance`}
+                        <div className="flex gap-2 flex-shrink-0 flex-wrap">
+                          <a href={`/admin/rapoarte?campanie=${selectedCampaign.id}`}
                             className="px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-black flex items-center gap-1.5 transition">
-                            <Edit className="w-3.5 h-3.5" /> Introdu date
+                            <Edit className="w-3.5 h-3.5" /> Rapoarte creatori
                           </a>
                           <a href={`/admin/campaigns/${selectedCampaign.id}/report`} target="_blank"
                             className="px-3 py-2 rounded-lg bg-white border-2 border-orange-200 hover:border-orange-400 text-orange-600 text-xs font-black flex items-center gap-1.5 transition">
-                            <Eye className="w-3.5 h-3.5" /> Preview raport
+                            <Eye className="w-3.5 h-3.5" /> Raport campanie (vechi)
                           </a>
                         </div>
                       </div>
