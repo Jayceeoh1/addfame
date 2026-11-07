@@ -362,16 +362,16 @@ export async function emailWithdrawalApproved(to: string, influencerName: string
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:16px;padding:20px;margin:20px 0;text-align:center">
       <p style="margin:0;font-size:13px;color:#16a34a;font-weight:700">Sumă în procesare</p>
       <p style="margin:6px 0 4px;font-size:32px;font-weight:900;color:#15803d">${netAmount} RON</p>
-      <p style="margin:0;font-size:12px;color:#6b7280">Din ${amount} RON solicitați (după taxă 5%)</p>
+      ${netAmount < amount ? `<p style="margin:0;font-size:12px;color:#6b7280">Din ${amount} RON solicitați</p>` : ''}
     </div>
 
     <div style="background:#f9fafb;border-radius:12px;padding:16px;margin:16px 0">
       <p style="margin:0 0 6px;font-size:13px;color:#6b7280">Metodă de plată: <strong>${method}</strong></p>
-      <p style="margin:0;font-size:13px;color:#6b7280">Timp estimat: <strong>1-3 zile lucrătoare</strong></p>
+      <p style="margin:0;font-size:13px;color:#6b7280">Termen: <strong>în cel mult 12 zile lucrătoare de la cerere</strong></p>
     </div>
 
     <a href="${APP_URL}/influencer/wallet" class="btn">Vezi wallet-ul →</a>
-    <p style="font-size:13px;color:#9ca3af;margin-top:12px">Dacă nu primești plata în 3 zile lucrătoare, contactează-ne la <a href="mailto:contact@addfame.ro" style="color:#f97316">contact@addfame.ro</a></p>
+    <p style="font-size:13px;color:#9ca3af;margin-top:12px">Dacă nu primești plata în 12 zile lucrătoare de la cerere, contactează-ne la <a href="mailto:contact@addfame.ro" style="color:#f97316">contact@addfame.ro</a></p>
   `))
 }
 

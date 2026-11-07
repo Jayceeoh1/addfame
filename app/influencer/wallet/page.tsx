@@ -362,7 +362,7 @@ export default function WalletPage() {
           <div className="iw-note">
             <Info className="w-4 h-4" style={{ flex: 'none', marginTop: 2 }} />
             <span>
-              Retragere minimă <strong>{WITHDRAWAL_MIN} RON</strong> · fără taxe · o dată la {WITHDRAWAL_CYCLE_DAYS} zile
+              Retragere minimă <strong>{WITHDRAWAL_MIN} RON</strong> · fără taxe · o dată la {WITHDRAWAL_CYCLE_DAYS} zile · plata în cel mult 12 zile lucrătoare
               {!wStatus.canWithdraw && wStatus.nextAvailable && <> · următoarea: <strong>{wStatus.nextAvailable.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}</strong></>}
             </span>
           </div>

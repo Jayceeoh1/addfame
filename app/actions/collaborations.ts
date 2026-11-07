@@ -745,7 +745,7 @@ export async function requestWithdrawal(amount: number, methodId: string) {
 
     await notify(admin, user.id,
       '📤 Cerere de retragere trimisă',
-      `Cererea de ${amount.toFixed(2)} RON${fee > 0 ? ` (net: ${netAmount.toFixed(2)} RON)` : ''} a fost înregistrată. Procesare în 3-5 zile lucrătoare.`,
+      `Cererea de ${amount.toFixed(2)} RON${fee > 0 ? ` (net: ${netAmount.toFixed(2)} RON)` : ''} a fost înregistrată. Primești banii în cel mult 12 zile lucrătoare.`,
       '/influencer/wallet'
     )
 
