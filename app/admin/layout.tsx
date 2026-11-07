@@ -11,7 +11,7 @@ import './admin-ui.css'
 import {
   Users, LayoutDashboard, LogOut, ShieldCheck, Briefcase, Building2, Menu, X, Handshake, ArrowUpRight,
   TrendingUp, Crown, Mail, Send, Bell, Package, Settings, CheckSquare, FileSignature, MessageCircle,
-  PartyPopper, Gift, AlertTriangle, Scale, Megaphone, Images, ShieldAlert, Wallet, BarChart3, PanelLeftClose, PanelLeftOpen, Star, GraduationCap,
+  PartyPopper, Gift, AlertTriangle, Scale, Megaphone, Images, ShieldAlert, Wallet, BarChart3, PanelLeftClose, PanelLeftOpen, Star, GraduationCap, FileBarChart2,
 } from 'lucide-react'
 
 type Item = { icon: any; label: string; href: string; superAdminOnly?: boolean; badge?: keyof AdminQueue }
@@ -33,6 +33,7 @@ const GROUPS: Group[] = [
     { icon: Handshake, label: 'Colaborări', href: '/admin/collaborations' },
     { icon: Package, label: 'Livrări', href: '/admin/deliveries', badge: 'shipments' },
     { icon: CheckSquare, label: 'Dovezi postări', href: '/admin/reviews', badge: 'proofs' },
+    { icon: FileBarChart2, label: 'Rapoarte', href: '/admin/rapoarte' },
     { icon: FileSignature, label: 'Contracte', href: '/admin/contracts' },
     { icon: Scale, label: 'Litigii', href: '/admin/disputes', badge: 'disputes' },
     { icon: ShieldAlert, label: 'Mesaje semnalate', href: '/admin/mesaje-semnalate', badge: 'flags' },

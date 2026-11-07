@@ -12,6 +12,7 @@ import {
   Target, Zap, BarChart2, FileText, Eye, Heart, RefreshCw, Printer, ExternalLink, Info,
 } from 'lucide-react'
 import Link from 'next/link'
+import { publishedReportsForCampaign } from '@/app/actions/collab-report'
 
 const TikTokIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -55,6 +56,7 @@ export default function CampaignReportPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [reportIds, setReportIds] = useState<string[]>([])
 
   const load = useCallback(async () => {
     const sb = createClient()
@@ -84,6 +86,7 @@ export default function CampaignReportPage() {
     setLoading(false)
 
     fetch(`/api/brand/campaign-report?id=${campaignId}`).then(r => r.json()).then(setMetrics).catch(() => setMetrics({ rows: [], totals: null }))
+    publishedReportsForCampaign(campaignId).then(r => setReportIds(r.ids)).catch(() => null)
   }, [campaignId, router])
 
   useEffect(() => { load() }, [load])
@@ -257,13 +260,13 @@ export default function CampaignReportPage() {
                   <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
                     <td className="px-4 py-3 font-bold text-gray-800 whitespace-nowrap">{r.influencer_name || '—'}</td>
                     <td className="px-4 py-3">
-                      {r.url ? (
+                      {/^https?:\/\//.test(r.url || '') ? (
                         <a href={r.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-700 hover:underline">
                           {PLATFORM_ICON[r.platform] ?? <Zap className="w-4 h-4 text-gray-300" />}
                           <span className="max-w-[180px] truncate">{r.url.replace(/^https:\/\//, '')}</span>
                           <ExternalLink className="w-3 h-3 no-print" />
                         </a>
-                      ) : <span className="text-xs text-gray-400 capitalize">{r.platform}</span>}
+                      ) : <span className="text-xs text-gray-500 font-bold">{r.kind === 'story' || String(r.url || '').startsWith('story:') ? (r.label || 'Story') : <span className="capitalize">{r.platform}</span>}</span>}
                     </td>
                     <td className="px-4 py-3 num font-black text-gray-900">{cell(r.views)}</td>
                     <td className="px-4 py-3 num text-gray-700">{cell(r.likes)}</td>
@@ -408,7 +411,7 @@ export default function CampaignReportPage() {
             <table className="w-full text-sm">
               <thead style={{ background: '#fafafa', borderBottom: '1.5px solid #f0f0f0' }}>
                 <tr>
-                  {['Creator', 'Platforme', 'Status', 'Postare', 'Plată'].map(h => (
+                  {['Creator', 'Platforme', 'Status', 'Postare', 'Plată', 'Raport'].map(h => (
                     <th key={h} className="px-5 py-3.5 text-left text-xs font-black text-gray-400 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -452,6 +455,11 @@ export default function CampaignReportPage() {
                       </td>
                       <td className="px-5 py-4 font-black text-green-600 num whitespace-nowrap">
                         {c.payment_amount > 0 ? fmtRon(c.payment_amount) : <span className="text-gray-300 font-normal">—</span>}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {reportIds.includes(c.id)
+                          ? <Link href={`/raport/${c.id}`} className="inline-flex items-center gap-1.5 text-xs font-black text-violet-700 hover:underline"><FileText className="w-3.5 h-3.5" /> Vezi raportul</Link>
+                          : <span className="text-xs text-gray-300">{c.status === 'COMPLETED' ? 'în pregătire' : '—'}</span>}
                       </td>
                     </tr>
                   )

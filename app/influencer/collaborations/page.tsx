@@ -1218,8 +1218,8 @@ export default function CollaborationsPage() {
           </Note>
         )}
 
-        {/* Statisticile postării (apar în raportul brandului) */}
-        {(c.status === 'ACTIVE' || c.status === 'COMPLETED') && c.deliverable_url && <PostStatsForm collabId={c.id} />}
+        {/* Statisticile pentru raportul colaborării (postări + story-uri) */}
+        {(c.status === 'ACTIVE' || c.status === 'COMPLETED') && <PostStatsForm collabId={c.id} />}
 
         {/* Mesaj de la brand */}
         {c.message && c.message !== 'You have been invited to collaborate on a campaign.' && (
