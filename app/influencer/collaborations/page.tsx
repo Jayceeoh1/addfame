@@ -947,10 +947,11 @@ export default function CollaborationsPage() {
   )
 
   async function confirmPackageReceived(c: Collaboration) {
+    if (!c.package_sent_at) return // coletul nu a fost trimis încă
     const sb = createClient()
     const now = new Date().toISOString()
     const { error } = await sb.from('collaborations').update({ package_received_at: now }).eq('id', c.id)
-    if (error) { alert('Nu am putut salva confirmarea. Încearcă din nou.'); return }
+    if (error) { alert(/trimis/i.test(error.message || '') ? 'Coletul nu a fost marcat încă ca trimis.' : 'Nu am putut salva confirmarea. Încearcă din nou.'); return }
     setCollabs(prev => prev.map(col => col.id === c.id ? { ...col, package_received_at: now } : col))
   }
 
@@ -1131,12 +1132,14 @@ export default function CollaborationsPage() {
         {c.status === 'ACTIVE' && deliveryBarter && c.delivery_name && (
           <>
             {!c.package_received_at && (
-              <Note tone="blue" title={c.package_sent_at ? 'Pachetul tău e în drum' : 'Ai primit produsul?'}>
+              <Note tone="blue" title={c.package_sent_at ? 'Pachetul tău e în drum' : 'Coletul e în pregătire'}>
                 {c.package_courier && <span className="iu-sm">Curier: <b>{c.package_courier}</b>{c.package_tracking ? ` · AWB: ${c.package_tracking}` : ''}</span>}
-                <span className="iu-xs">{c.package_sent_at ? `Trimis pe ${fmtLong(c.package_sent_at)}. Confirmă când ajunge.` : 'Brandul nu a marcat încă expedierea. Dacă ai primit deja produsul, confirmă aici ca să înceapă termenul de postare.'}</span>
-                <button className="iu-btn p" style={{ alignSelf: 'flex-start' }} onClick={() => confirmPackageReceived(c)}>
-                  <Check size={15} /> Am primit coletul
-                </button>
+                <span className="iu-xs">{c.package_sent_at ? `Trimis pe ${fmtLong(c.package_sent_at)}. Confirmă când ajunge.` : 'Te anunțăm când e trimis. Butonul „Am primit coletul” apare după expediere.'}</span>
+                {c.package_sent_at && (
+                  <button className="iu-btn p" style={{ alignSelf: 'flex-start' }} onClick={() => confirmPackageReceived(c)}>
+                    <Check size={15} /> Am primit coletul
+                  </button>
+                )}
               </Note>
             )}
             {!c.deliverable_submitted_at && !c.deliverable_approved_at && c.package_received_at && (() => {
@@ -1340,7 +1343,7 @@ export default function CollaborationsPage() {
     } else if (c.status === 'ACTIVE') {
       if (isRejectedPost(c)) main = <button className="iu-btn p" onClick={() => setDeliverableModalId(c.id)}><Upload size={15} /> Retrimite dovada</button>
       else if (needsAddress(c)) main = <button className="iu-btn p" onClick={() => setAddressModal({ collabId: c.id })}><Truck size={15} /> Adaugă adresa</button>
-      else if (isDeliveryBarter(c) && !c.package_received_at) main = <button className="iu-btn p" onClick={() => confirmPackageReceived(c)}><Package size={15} /> Am primit coletul</button>
+      else if (isDeliveryBarter(c) && !c.package_received_at && c.package_sent_at) main = <button className="iu-btn p" onClick={() => confirmPackageReceived(c)}><Package size={15} /> Am primit coletul</button>
       else if (isPickupBarter(c) && !c.checked_in_at) main = <button className="iu-btn p" onClick={toggle}><Check size={15} /> Check-in</button>
       else if (isPendingReview(c)) main = <Link href={`/influencer/inbox?collab=${c.id}`} className="iu-btn"><MessageSquare size={15} /> Deschide chat</Link>
       else if (waitingDraft(c)) main = <button className="iu-btn" onClick={toggle}><Eye size={15} /> Vezi draftul</button>

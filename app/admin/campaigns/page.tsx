@@ -9,6 +9,7 @@ import { getAllCampaigns, adminUpdateCampaignStatus, deleteCampaign, getAllInflu
 import { getManagedCampaigns, assignInfluencersToManaged, inviteInfluencersToBarter, inviteInfluencersToOpenCall } from '@/app/actions/managed-campaigns'
 import { approveApplication, generateCheckinCode, approveDeliverable as approveDeliverableAction } from '@/app/actions/collaborations'
 import { adminApproveApplication } from '@/app/actions/admin'
+import PayToWalletButton from '@/components/admin/PayToWalletButton'
 import { createClient } from '@/lib/supabase/client'
 import {
   Briefcase, Search, Trash2, RefreshCw, Play, Pause,
@@ -2430,14 +2431,23 @@ export default function AdminCampaigns() {
                             </div>
                           </div>
 
-                          {/* Sume */}
-                          {(Number(collab.reserved_amount) > 0 || Number(collab.payment_amount) > 0) && (
-                            <div className="px-4 pb-3 flex gap-2">
+                          {/* Sume + plată manuală în wallet (campanii plătite pe factură) */}
+                          {(Number(collab.reserved_amount) > 0 || Number(collab.payment_amount) > 0 || (['ACTIVE', 'COMPLETED'].includes(collab.status) && selectedCampaign?.campaign_type?.toUpperCase() !== 'BARTER')) && (
+                            <div className="px-4 pb-3 flex gap-2 flex-wrap items-center">
                               {collab.reserved_amount > 0 && collab.status !== 'COMPLETED' && (
                                 <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">🔒 {collab.reserved_amount.toLocaleString('ro-RO')} RON</span>
                               )}
                               {collab.payment_amount > 0 && (
-                                <span className="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">✅ {collab.payment_amount.toLocaleString('ro-RO')} RON plătit</span>
+                                <span className="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">✅ {Number(collab.payment_amount).toLocaleString('ro-RO')} RON plătit</span>
+                              )}
+                              {['ACTIVE', 'COMPLETED'].includes(collab.status) && selectedCampaign?.campaign_type?.toUpperCase() !== 'BARTER' && (
+                                <PayToWalletButton
+                                  collabId={collab.id}
+                                  name={collab.influencers?.name || 'creator'}
+                                  paid={Number(collab.payment_amount) || 0}
+                                  suggested={Number(collab.payment_amount) > 0 ? 0 : (Number(selectedCampaign?.budget_per_influencer) || 0)}
+                                  onPaid={(paidNow) => setCampaignCollabs(prev => prev.map(x => x.id === collab.id ? { ...x, payment_amount: paidNow } : x))}
+                                />
                               )}
                             </div>
                           )}
