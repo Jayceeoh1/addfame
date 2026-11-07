@@ -36,6 +36,8 @@ export const ADMIN_REPORT_CSS = `
 .ar-tab.on{background:#15123a;border-color:#15123a;color:#fff}
 .ar-metric{border-top:1px solid #eeebf6;padding-top:14px;display:flex;flex-direction:column;gap:10px}
 .ar-metric:first-of-type{border-top:0;padding-top:0}
+.ar-metric{border-radius:12px;transition:background .15s, outline-color .15s;outline:2px dashed transparent;outline-offset:4px}
+.ar-metric.drop{background:#f6f2ff;outline-color:#7c5cf0}
 .ar-shot{width:44px;height:44px;border-radius:8px;overflow:hidden;border:1px solid #e5e3f3;flex:none;display:block}
 .ar-shot img{width:100%;height:100%;object-fit:cover}
 .ar-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}

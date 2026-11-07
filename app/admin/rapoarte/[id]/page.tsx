@@ -42,6 +42,23 @@ export default function AdminRaportEditor() {
   const [confirmDel, setConfirmDel] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [shotFor, setShotFor] = useState<string | null>(null)
+  const [dragRow, setDragRow] = useState<string | null>(null)
+  const activeRow = useRef<string | null>(null)
+  const uploadRef = useRef(uploadShot)
+  uploadRef.current = uploadShot
+
+  // Ctrl+V cu o captură în clipboard → se încarcă la rândul peste care e mouse-ul (sau ultimul atins)
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const item = [...(e.clipboardData?.items || [])].find(i => i.kind === 'file' && i.type.startsWith('image/'))
+      const file = item?.getAsFile()
+      if (!file || !activeRow.current) return
+      e.preventDefault()
+      uploadRef.current(file, activeRow.current)
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  }, [])
 
   function fill(r: CollabReport, keepSettings = false) {
     setRep(r)
@@ -94,8 +111,9 @@ export default function AdminRaportEditor() {
     await load(true)
   }
 
-  async function uploadShot(file: File) {
-    const rowId = shotFor; if (!rowId) return
+  async function uploadShot(file: File, target?: string) {
+    const rowId = target || shotFor; if (!rowId) return
+    if (!file.type.startsWith('image/')) return note(rowId, false, 'Trage o imagine (captură de ecran).')
     setBusy('shot:' + rowId)
     try {
       const fd = new FormData(); fd.append('row_id', rowId); fd.append('file', file)
@@ -188,7 +206,11 @@ export default function AdminRaportEditor() {
           const [cls, txt] = SRC[row.source] || SRC.pending
           const deletable = row.kind === 'story' || row.source === 'admin'
           return (
-            <div key={row.id} className="ar-metric">
+            <div key={row.id} className={`ar-metric${dragRow === row.id ? ' drop' : ''}`}
+              onMouseEnter={() => { activeRow.current = row.id }} onFocusCapture={() => { activeRow.current = row.id }}
+              onDragOver={e => { if ([...e.dataTransfer.types].includes('Files')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if (dragRow !== row.id) setDragRow(row.id) } }}
+              onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragRow(null) }}
+              onDrop={e => { e.preventDefault(); setDragRow(null); const f = e.dataTransfer.files?.[0]; if (f) uploadShot(f, row.id) }}>
               <div className="ar-row">
                 <input className="ar-in" style={{ flex: '1 1 220px', fontWeight: 700 }} aria-label="Numele din raport" value={d.label ?? ''} onChange={e => setDraft(v => ({ ...v, [row.id]: { ...d, label: e.target.value } }))} />
                 <select className="ar-sel" aria-label="Tip" value={d.kind || row.kind} onChange={e => setDraft(v => ({ ...v, [row.id]: { ...d, kind: e.target.value } }))}>
@@ -211,6 +233,7 @@ export default function AdminRaportEditor() {
                   {busy === 'shot:' + row.id ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} />} {row.screenshot_url ? 'Schimbă captura' : 'Adaugă captura'}
                 </button>
                 {row.screenshot_url && <button type="button" className="ar-btn" onClick={() => removeShot(row.id)} disabled={!!busy}><X size={14} /> Scoate captura</button>}
+                <span className="ar-sub" style={{ fontSize: 12 }}>{dragRow === row.id ? 'Dă drumul imaginii aici' : 'sau trage captura aici / Ctrl+V'}</span>
                 {deletable && (confirmDel === row.id
                   ? <><button type="button" className="ar-btn d" onClick={() => delRow(row.id)}>Da, șterge</button><button type="button" className="ar-btn" onClick={() => setConfirmDel(null)}>Nu</button></>
                   : <button type="button" className="ar-btn d" onClick={() => setConfirmDel(row.id)} aria-label="Șterge rândul"><Trash2 size={14} /></button>)}

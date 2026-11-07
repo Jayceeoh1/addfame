@@ -47,6 +47,23 @@ export function PostStatsForm({ collabId }: { collabId: string }) {
   const [topMsg, setTopMsg] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [shotFor, setShotFor] = useState<string | null>(null)
+  const [dragRow, setDragRow] = useState<string | null>(null)
+  const activeRow = useRef<string | null>(null)
+  const uploadRef = useRef<(f: File, id?: string) => void>(() => {})
+
+  // Ctrl+V cu o captură în clipboard → se încarcă la rândul peste care e mouse-ul
+  useEffect(() => {
+    if (!open || published) return
+    function onPaste(e: ClipboardEvent) {
+      const item = [...(e.clipboardData?.items || [])].find(i => i.kind === 'file' && i.type.startsWith('image/'))
+      const file = item?.getAsFile()
+      if (!file || !activeRow.current) return
+      e.preventDefault()
+      uploadRef.current(file, activeRow.current)
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  }, [open, published])
 
   function apply(j: any) {
     const list: Row[] = j.rows || []
@@ -93,8 +110,9 @@ export function PostStatsForm({ collabId }: { collabId: string }) {
 
   function pickShot(id: string) { setShotFor(id); fileRef.current?.click() }
 
-  async function uploadShot(file: File) {
-    const id = shotFor; if (!id) return
+  async function uploadShot(file: File, target?: string) {
+    const id = target || shotFor; if (!id) return
+    if (!file.type.startsWith('image/')) { setMsg(m => ({ ...m, [id]: { ok: false, text: 'Trage o imagine (captură de ecran).' } })); return }
     setBusy('shot:' + id)
     try {
       const fd = new FormData(); fd.append('row_id', id); fd.append('file', file)
@@ -108,11 +126,14 @@ export function PostStatsForm({ collabId }: { collabId: string }) {
     } finally { setBusy(null); setShotFor(null); if (fileRef.current) fileRef.current.value = '' }
   }
 
+  uploadRef.current = uploadShot
+
   const filled = (rows || []).filter(r => ALL_KEYS.some(k => (r as any)[k] != null)).length
   const total = rows?.length || 0
 
   return (
     <div style={{ border: '1.5px solid #ebe8f7', borderRadius: 16, background: '#fff', overflow: 'hidden' }}>
+      <style>{'@media (pointer:coarse){.psf-hint{display:none}}'}</style>
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" hidden
         onChange={e => { const f = e.target.files?.[0]; if (f) uploadShot(f) }} />
       <button type="button" onClick={() => setOpen(o => !o)}
@@ -143,7 +164,12 @@ export function PostStatsForm({ collabId }: { collabId: string }) {
             const fields = r.kind === 'story' ? STORY_FIELDS : POST_FIELDS
             const ro = published || r.verified
             return (
-              <div key={r.id} style={{ borderTop: '1px solid #f0eef8', paddingTop: 12, display: 'grid', gap: 10 }}>
+              <div key={r.id}
+                onMouseEnter={() => { activeRow.current = ro ? null : r.id }} onFocusCapture={() => { activeRow.current = ro ? null : r.id }}
+                onDragOver={e => { if (!ro && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if (dragRow !== r.id) setDragRow(r.id) } }}
+                onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragRow(null) }}
+                onDrop={e => { if (ro) return; e.preventDefault(); setDragRow(null); const f = e.dataTransfer.files?.[0]; if (f) uploadShot(f, r.id) }}
+                style={{ borderTop: '1px solid #f0eef8', paddingTop: 12, display: 'grid', gap: 10, borderRadius: 12, outline: `2px dashed ${dragRow === r.id ? '#7c5cf0' : 'transparent'}`, outlineOffset: 4, background: dragRow === r.id ? '#f6f2ff' : undefined }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                   {r.kind === 'story' ? (
                     <input value={labels[r.id] ?? ''} disabled={ro} aria-label="Numele story-ului" placeholder="ex. Story 1 · unboxing"
@@ -197,6 +223,7 @@ export function PostStatsForm({ collabId }: { collabId: string }) {
                       )}
                     </>
                   )}
+                  {!ro && !msg[r.id] && <span className="psf-hint" style={{ fontSize: 12, color: '#6a6690' }}>{dragRow === r.id ? 'Dă drumul imaginii aici' : 'sau trage captura aici / Ctrl+V'}</span>}
                   {msg[r.id] && <span style={{ fontSize: 12, color: msg[r.id].ok ? '#14532d' : '#b42318' }}>{msg[r.id].text}</span>}
                 </div>
               </div>
