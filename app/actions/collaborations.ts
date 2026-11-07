@@ -709,9 +709,13 @@ export async function requestWithdrawal(amount: number, methodId: string) {
       return { error: `Sold insuficient. Disponibil: ${(inf.wallet_balance || 0).toLocaleString('ro-RO')} RON` }
     }
 
+    // Fără o metodă de plată completă nu avem unde trimite banii
     const { data: method } = await admin.from('influencer_payment_methods')
-      .select('id, type, label').eq('id', methodId).eq('user_id', user.id).single()
-    if (!method) return { error: 'Metodă de plată invalidă.' }
+      .select('id, type, label, details').eq('id', methodId).eq('user_id', user.id).maybeSingle()
+    if (!method) return { error: 'Adaugă o metodă de plată în wallet înainte să retragi banii.' }
+    const { methodProblem } = await import('@/lib/payment-methods')
+    const problem = methodProblem(method.type, method.details as any)
+    if (problem) return { error: `${problem} Completează metoda de plată în wallet, apoi încearcă din nou.` }
 
     const fee = Math.round(amount * WITHDRAWAL_FEE * 100) / 100
     const netAmount = Math.round((amount - fee) * 100) / 100

@@ -75,6 +75,8 @@ type WalletData = {
   last_payout_at?: string | null
 }
 
+import { methodIsComplete, methodProblem, REQUIRED_FIELDS } from '@/lib/payment-methods'
+
 const PAYMENT_TYPES = [
   {
     id: 'bank_transfer', label: 'Transfer Bancar', icon: Building2, color: 'text-blue-500', bg: 'bg-blue-500/10',
@@ -118,6 +120,7 @@ type ActiveTab = 'overview' | 'payment_methods'
 
 export default function WalletPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
+  const [methodNotice, setMethodNotice] = useState<string | null>(null)
   const [wallet, setWallet] = useState<WalletData>({ available_balance: 0, total_earned: 0, pending_payout: 0 })
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [influencerInfo, setInfluencerInfo] = useState<any>(null)
@@ -187,6 +190,7 @@ export default function WalletPage() {
     if (amount < WITHDRAWAL_MIN) return setPayoutError(`Suma minimă de retragere este ${WITHDRAWAL_MIN} RON.`)
     if (amount > wallet.available_balance) return setPayoutError(`Depășești soldul disponibil de ${wallet.available_balance.toLocaleString('ro-RO')} RON.`)
     if (!selectedMethodId) return setPayoutError('Selectează o metodă de plată.')
+    if (!methodIsComplete(paymentMethods.find(m => m.id === selectedMethodId) as any)) return setPayoutError('Metoda de plată aleasă nu e completă. Verific-o în „Metode plată”.')
 
     const method = paymentMethods.find(m => m.id === selectedMethodId)
     setPayoutLoading(true)
@@ -207,10 +211,12 @@ export default function WalletPage() {
     if (!selectedType) return setMethodError('Selectează un tip de plată.')
     const typeConfig = PAYMENT_TYPES.find(t => t.id === selectedType)!
     for (const field of typeConfig.fields) {
-      if (!field.placeholder.includes('optional') && !methodFields[field.key]) {
+      if ((REQUIRED_FIELDS[selectedType] || []).includes(field.key) && !String(methodFields[field.key] || '').trim()) {
         return setMethodError(`Completează câmpul: ${field.label}.`)
       }
     }
+    const problem = methodProblem(selectedType, methodFields)
+    if (problem) return setMethodError(problem)
 
     setMethodSaving(true)
     try {
@@ -250,6 +256,12 @@ export default function WalletPage() {
   }
 
   async function handleDeleteMethod(id: string) {
+    // cu o retragere în curs, păstrăm cel puțin o metodă completă, ca să avem unde trimite banii
+    const rest = paymentMethods.filter(m => m.id !== id && methodIsComplete(m as any))
+    if (wallet.pending_payout > 0 && rest.length === 0) {
+      setMethodNotice('Ai o retragere în curs. Adaugă altă metodă de plată înainte să o ștergi pe aceasta.')
+      return
+    }
     const supabase = createClient()
     await supabase.from('influencer_payment_methods').delete().eq('id', id)
     await fetchAll()
@@ -282,7 +294,8 @@ export default function WalletPage() {
     </div>
   )
 
-  const canPayout = wallet.available_balance >= WITHDRAWAL_MIN && paymentMethods.length > 0
+  const hasMethod = paymentMethods.some(m => methodIsComplete(m as any))
+  const canPayout = wallet.available_balance >= WITHDRAWAL_MIN && hasMethod
   const wStatus = getWithdrawalStatus(wallet.last_payout_at)
 
   return (
@@ -370,7 +383,11 @@ export default function WalletPage() {
           <button onClick={() => setShowPayoutModal(true)} disabled={!canPayout} className="iw-cta">
             <ArrowUpRight className="w-4 h-4" /> Retrage fonduri
           </button>
-          {paymentMethods.length === 0 && <p style={{ margin: 0, fontSize: 12.5, color: 'rgba(255,255,255,.65)' }}>Adaugă o metodă de plată mai întâi</p>}
+          {!hasMethod && (
+            <button type="button" onClick={() => setActiveTab('payment_methods')} style={{ margin: 0, padding: 0, border: 0, background: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: '#fff', textDecoration: 'underline', fontFamily: 'inherit', minHeight: 32 }}>
+              {paymentMethods.length ? 'Completează metoda de plată ca să poți retrage' : 'Adaugă o metodă de plată ca să poți retrage'}
+            </button>
+          )}
         </div>
 
         <div className="iw-stats">
@@ -455,6 +472,8 @@ export default function WalletPage() {
             </button>
           </div>
 
+          {methodNotice && <p role="alert" style={{ margin: '0 0 12px', padding: '10px 14px', borderRadius: 12, background: '#fff1c2', color: '#6b4700', fontSize: 13.5, fontWeight: 600 }}>{methodNotice}</p>}
+
           {paymentMethods.length === 0 ? (
             <div className="iu-card iw-empty">
               <div className="iu-ico" style={{ background: '#efeaff', color: '#5b2fd0', width: 56, height: 56, borderRadius: 16 }}><CreditCard className="w-6 h-6" /></div>
@@ -478,6 +497,7 @@ export default function WalletPage() {
                       <div className="iu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
                         <p style={{ fontWeight: 700, fontSize: 14 }}>{method.label}</p>
                         {method.is_default && <span className="iu-chip" style={{ background: '#efeaff', color: '#5b2fd0' }}>Implicit</span>}
+                        {!methodIsComplete(method as any) && <span className="iu-chip" style={{ background: '#fdecec', color: '#b42318' }}>Incompletă · {methodProblem(method.type, (method as any).details)}</span>}
                       </div>
                       {Object.entries(method.details).slice(0, 1).map(([key, value]) => (
                         <p key={key} className="iu-xs iu-muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value as string}</p>
