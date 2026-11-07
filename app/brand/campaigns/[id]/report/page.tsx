@@ -399,7 +399,10 @@ export default function CampaignReportPage() {
       <div className="card overflow-hidden fu" style={{ animationDelay: '.16s' }}>
         <div className="p-5 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-black text-gray-900 flex items-center gap-2"><FileText className="w-4 h-4 text-violet-400" /> Creatori</h2>
-          <span className="text-xs text-gray-400 font-bold">{collabs.filter(c => c.status !== 'REJECTED').length} în campanie</span>
+          <span className="flex items-center gap-3">
+            {reportIds.length > 0 && <Link href={`/raport/campanie/${campaignId}`} className="no-print inline-flex items-center gap-1.5 text-xs font-black text-white bg-violet-600 hover:bg-violet-700 rounded-lg px-3 py-2"><FileText className="w-3.5 h-3.5" /> Raport total ({reportIds.length})</Link>}
+            <span className="text-xs text-gray-400 font-bold">{collabs.filter(c => c.status !== 'REJECTED').length} în campanie</span>
+          </span>
         </div>
         {collabs.filter(c => c.status !== 'REJECTED').length === 0 ? (
           <div className="text-center py-12">

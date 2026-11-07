@@ -2,7 +2,7 @@
 // Admin → Rapoarte: toate colaborările active și finalizate, cu starea raportului și a cifrelor.
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { FileBarChart2, RefreshCw, Search } from 'lucide-react'
+import { FileBarChart2, RefreshCw, Search, Eye } from 'lucide-react'
 import { adminListReports } from '@/app/actions/collab-report'
 import { ADMIN_REPORT_CSS } from './admin-report-css'
 
@@ -90,6 +90,7 @@ export default function AdminRapoartePage() {
             <option value="">Toate campaniile</option>
             {campaigns.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </select>
+          {camp && <a href={`/raport/campanie/${camp}`} target="_blank" rel="noopener noreferrer" className="ar-btn p"><Eye size={15} /> Raport total campanie</a>}
         </div>
       </div>
 

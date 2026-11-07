@@ -231,3 +231,46 @@ export async function adminDeleteRow(rowId: string) {
   if (r?.screenshot_path) { try { await admin.storage.from('rapoarte').remove([r.screenshot_path]) } catch { /* rămâne în bucket */ } }
   return { ok: true }
 }
+
+// ── Raportul total pe campanie ─────────────────────────────────────────
+
+export type CampaignReportData = {
+  campaign: { id: string; name: string; brandName: string }
+  viewer: ReportViewer
+  reports: CollabReport[]
+  drafts: number            // rapoarte nepublicate (doar pentru admin)
+}
+
+/** Toate rapoartele unei campanii. Brandul vede doar rapoartele publicate; adminul alege dacă include ciornele. */
+export async function getCampaignReport(campaignId: string, includeDrafts = false): Promise<{ data?: CampaignReportData; error?: string }> {
+  if (!isUuid(campaignId)) return { error: 'Campanie inexistentă.' }
+  const user = await getSessionUser()
+  if (!user) return { error: 'login' }
+  const admin = createAdminClient()
+  const { data: camp } = await admin.from('campaigns').select('*').eq('id', campaignId).maybeSingle()
+  if (!camp) return { error: 'Campanie inexistentă.' }
+  const isAdmin = !!(await verifyAdminSession())
+  if (!isAdmin) {
+    const { data: brand } = await admin.from('brands').select('id').eq('user_id', user.id).maybeSingle()
+    if (!brand || brand.id !== camp.brand_id) return { error: 'Nu ai acces la acest raport.' }
+  }
+  const { data: collabs } = await admin.from('collaborations').select('id').eq('campaign_id', campaignId).in('status', ['ACTIVE', 'COMPLETED']).limit(80)
+  const ids = (collabs || []).map((c: any) => c.id)
+  const { data: reps } = ids.length ? await admin.from('collaboration_reports').select('collaboration_id, status').in('collaboration_id', ids) : { data: [] as any[] }
+  const published = new Set((reps || []).filter((r: any) => r.status === 'published').map((r: any) => r.collaboration_id))
+  const want = isAdmin && includeDrafts ? ids : ids.filter(id => published.has(id))
+  const reports: CollabReport[] = []
+  for (let i = 0; i < want.length; i += 6) {
+    const part = await Promise.all(want.slice(i, i + 6).map(id => loadCollabReport(admin, id)))
+    for (const r of part) if (r) reports.push(isAdmin ? r : { ...r, settings: { ...r.settings, admin_note: null } })
+  }
+  reports.sort((a, b) => b.totals.views - a.totals.views)
+  return {
+    data: {
+      campaign: { id: camp.id, name: campaignName(camp, camp.title || 'Campanie'), brandName: reports[0]?.campaign.brandName || camp.brand_name || 'Brand' },
+      viewer: isAdmin ? 'admin' : 'brand',
+      reports,
+      drafts: isAdmin ? ids.filter(id => !published.has(id)).length : 0,
+    },
+  }
+}

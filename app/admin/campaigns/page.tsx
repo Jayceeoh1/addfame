@@ -2896,9 +2896,13 @@ export default function AdminCampaigns() {
                             className="px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-black flex items-center gap-1.5 transition">
                             <Edit className="w-3.5 h-3.5" /> Rapoarte creatori
                           </a>
-                          <a href={`/admin/campaigns/${selectedCampaign.id}/report`} target="_blank"
+                          <a href={`/raport/campanie/${selectedCampaign.id}`} target="_blank"
                             className="px-3 py-2 rounded-lg bg-white border-2 border-orange-200 hover:border-orange-400 text-orange-600 text-xs font-black flex items-center gap-1.5 transition">
-                            <Eye className="w-3.5 h-3.5" /> Raport campanie (vechi)
+                            <Eye className="w-3.5 h-3.5" /> Raport total
+                          </a>
+                          <a href={`/admin/campaigns/${selectedCampaign.id}/report`} target="_blank"
+                            className="px-2 py-2 text-gray-400 hover:text-gray-600 text-xs font-bold flex items-center transition">
+                            vechiul raport
                           </a>
                         </div>
                       </div>
