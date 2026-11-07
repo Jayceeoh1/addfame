@@ -1,6 +1,7 @@
 'use client'
 // @ts-nocheck
 import { campaignName } from '@/lib/campaign-name'
+import { approveDeliverable as approveDeliverableAction } from '@/app/actions/collaborations'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, X, Clock, ExternalLink, Search, RefreshCw } from 'lucide-react'
@@ -57,38 +58,12 @@ export default function AdminReviewsPage() {
   async function approve(collabId: string) {
     setWorking(collabId)
     try {
-      const sb = createClient()
-      const now = new Date().toISOString()
-      const collab = collabs.find(c => c.id === collabId)
-
-      // Calculeaza plata
-      const totalBudget = collab?.reserved_amount > 0
-        ? collab.reserved_amount
-        : collab?.campaigns?.budget_per_influencer || 0
-      const platformFee = Math.round(totalBudget * 0.2 * 100) / 100
-      const influencerAmount = Math.round((totalBudget - platformFee) * 100) / 100
-
-      await sb.from('collaborations').update({
-        status: 'COMPLETED',
-        deliverable_approved_at: now,
-        completed_at: now,
-        payment_amount: influencerAmount,
-        platform_fee: platformFee,
-      }).eq('id', collabId)
-
-      // Notifica influencerul
-      if (collab?.influencers?.user_id) {
-        await sb.from('notifications').insert({
-          user_id: collab.influencers.user_id,
-          title: '✅ Postarea ta a fost aprobată!',
-          body: `Colaborarea pentru "${collab.campaigns ? campaignName(collab.campaigns) : ''}" a fost finalizată. ${influencerAmount > 0 ? `${influencerAmount} RON au fost adăugați în wallet.` : ''}`,
-          link: '/influencer/collaborations',
-          read: false,
-        })
-      }
-
+      // Aceeași plată ca la brand (pe server): campaniile cu taxă plătesc suma întreagă din bugetul blocat,
+      // fără comision; banii intră în wallet, se scrie tranzacția și se trimite notificarea.
+      const r: any = await approveDeliverableAction(collabId)
+      if (r?.error) throw new Error(r.error)
       setCollabs(p => p.filter(c => c.id !== collabId))
-      notify('✅ Postare aprobată!')
+      notify('✅ Postare aprobată, plata a intrat în wallet-ul creatorului.')
     } catch (e: any) { notify(e.message || 'Eroare', false) }
     finally { setWorking(null) }
   }
