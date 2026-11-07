@@ -115,7 +115,7 @@ export default function AdminRevenue() {
           {[
             { label: 'Comision platformă', value: '15%', desc: 'din fiecare colaborare finalizată', color: 'text-indigo-600', bg: 'bg-indigo-50' },
             { label: 'Câștig influencer', value: '85%', desc: 'din bugetul colaborării', color: 'text-green-600', bg: 'bg-green-50' },
-            { label: 'Fee retragere', value: '5%', desc: 'la retragerea din wallet', color: 'text-amber-600', bg: 'bg-amber-50' },
+            { label: 'Fee retragere', value: '0%', desc: 'fără taxă din 7 nov. 2026', color: 'text-amber-600', bg: 'bg-amber-50' },
           ].map((m, i) => (
             <div key={i} className={`${m.bg} rounded-xl p-4`}>
               <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-1">{m.label}</p>

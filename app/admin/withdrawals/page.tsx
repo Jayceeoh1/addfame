@@ -136,7 +136,7 @@ export default function AdminWithdrawals() {
           const MethodIcon = method ? (METHOD_ICONS[method.type] ?? Wallet) : Wallet
           const methodColor = method ? (METHOD_COLORS[method.type] ?? 'text-gray-600 bg-gray-50') : 'text-gray-600 bg-gray-50'
           const gross = Math.abs(item.amount)
-          const fee = item.fee ?? Math.round(gross * 0.05 * 100) / 100
+          const fee = Number(item.fee) || 0
           const net = gross - fee
 
           return (
@@ -213,7 +213,7 @@ export default function AdminWithdrawals() {
                     <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Sumar</p>
                     <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
                       <div className="flex justify-between text-sm"><span className="text-gray-500">Sumă solicitată</span><span className="font-black">{fmt(gross)}</span></div>
-                      <div className="flex justify-between text-sm"><span className="text-gray-500">Fee platformă 5%</span><span className="font-bold text-red-500">-{fmt(fee)}</span></div>
+                      {fee > 0 && <div className="flex justify-between text-sm"><span className="text-gray-500">Taxă retragere</span><span className="font-bold text-red-500">-{fmt(fee)}</span></div>}
                       <div className="flex justify-between text-sm border-t border-gray-100 pt-2 mt-1">
                         <span className="font-black">De trimis</span>
                         <span className="font-black text-green-600 text-base">{fmt(net)}</span>

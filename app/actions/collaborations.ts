@@ -27,7 +27,7 @@ import {
 } from '@/lib/email'
 
 const PLATFORM_COMMISSION = 0.15
-const WITHDRAWAL_FEE = 0.05
+const WITHDRAWAL_FEE = 0 // fără taxă la retragere: creatorul primește toată suma
 
 async function notify(admin: any, userId: string, title: string, body: string, link?: string) {
   try {
@@ -729,23 +729,23 @@ export async function requestWithdrawal(amount: number, methodId: string) {
       user_id: user.id,
       type: 'PAYOUT',
       amount: -amount,
-      description: `Retragere via ${method.label || method.type} (net: ${netAmount.toFixed(2)} RON după 5% fee)`,
+      description: `Retragere via ${method.label || method.type}${fee > 0 ? ` (net: ${netAmount.toFixed(2)} RON)` : ''}`,
       status: 'pending',
       fee,
       payment_method_id: methodId,
     })
 
-    try {
+    if (fee > 0) try {
       await admin.from('platform_revenue').insert({
         amount: fee,
         type: 'withdrawal_fee',
-        description: `5% fee retragere: ${inf.name}`,
+        description: `Taxă retragere: ${inf.name}`,
       })
     } catch (_) { }
 
     await notify(admin, user.id,
       '📤 Cerere de retragere trimisă',
-      `Cererea de ${amount.toFixed(2)} RON (net: ${netAmount.toFixed(2)} RON) a fost înregistrată. Procesare în 3-5 zile lucrătoare.`,
+      `Cererea de ${amount.toFixed(2)} RON${fee > 0 ? ` (net: ${netAmount.toFixed(2)} RON)` : ''} a fost înregistrată. Procesare în 3-5 zile lucrătoare.`,
       '/influencer/wallet'
     )
 

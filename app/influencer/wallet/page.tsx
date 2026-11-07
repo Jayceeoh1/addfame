@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 const WITHDRAWAL_MIN = 250       // 250 RON prag minim
-const WITHDRAWAL_FEE = 0.05      // 5% taxă
+const WITHDRAWAL_FEE = 0         // fără taxă la retragere
 const WITHDRAWAL_CYCLE_DAYS = 15  // ciclu retragere 15 zile
 
 
@@ -362,7 +362,7 @@ export default function WalletPage() {
           <div className="iw-note">
             <Info className="w-4 h-4" style={{ flex: 'none', marginTop: 2 }} />
             <span>
-              Retragere minimă <strong>{WITHDRAWAL_MIN} RON</strong> · taxă {Math.round(WITHDRAWAL_FEE * 100)}% · o dată la {WITHDRAWAL_CYCLE_DAYS} zile
+              Retragere minimă <strong>{WITHDRAWAL_MIN} RON</strong> · fără taxe · o dată la {WITHDRAWAL_CYCLE_DAYS} zile
               {!wStatus.canWithdraw && wStatus.nextAvailable && <> · următoarea: <strong>{wStatus.nextAvailable.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}</strong></>}
             </span>
           </div>
@@ -580,10 +580,10 @@ export default function WalletPage() {
                     />
                     {parseFloat(payoutAmount) >= 50 ? (
                       <p className="iu-xs" style={{ margin: 0, color: '#14532d', fontWeight: 700 }}>
-                        Primești: {(parseFloat(payoutAmount) * 0.95).toFixed(2)} RON (după 5% taxă)
+                        Primești: {(parseFloat(payoutAmount) * (1 - WITHDRAWAL_FEE)).toFixed(2)} RON, fără taxe
                       </p>
                     ) : (
-                      <p className="iu-xs iu-muted" style={{ margin: 0 }}>Minim 250 RON · taxă 5%</p>
+                      <p className="iu-xs iu-muted" style={{ margin: 0 }}>Minim {WITHDRAWAL_MIN} RON · fără taxe</p>
                     )}
                   </div>
 

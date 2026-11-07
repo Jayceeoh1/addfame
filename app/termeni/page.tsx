@@ -74,7 +74,7 @@ export default function TermsPage() {
 
         <Section title="4. Plăți și comisioane">
           <p><strong>Branduri:</strong> La publicarea unei campanii, brandul alege numărul de influenceri și plătește din creditele din wallet taxa fixă per influencer în vigoare la acel moment. Dacă o campanie este respinsă la verificare, taxa se returnează integral. La închiderea campaniei, taxa aferentă locurilor neocupate se returnează în wallet; taxa aferentă influencerilor selectați nu se returnează. Pentru campaniile publicate înainte de introducerea acestui model se aplică condițiile în vigoare la data publicării lor.</p>
-          <p><strong>Influenceri:</strong> Fondurile câștigate pot fi retrase oricând. La retragere se aplică un fee de procesare de 5% din suma retrasă. Retragerile sunt procesate manual în 3-5 zile lucrătoare.</p>
+          <p><strong>Influenceri:</strong> Fondurile câștigate pot fi retrase oricând. Retragerile se fac fără taxe și sunt procesate manual în 3-5 zile lucrătoare.</p>
           <p>Toate prețurile sunt exprimate în <strong>RON (lei românești)</strong>. Plățile și retragerile se procesează exclusiv în RON.</p>
         </Section>
 
