@@ -8,7 +8,8 @@ import {
   Wallet, TrendingUp, ArrowUpRight, ArrowDownLeft, Clock,
   CheckCircle, XCircle, AlertCircle, X, Plus, Trash2,
   Building2, CreditCard, Smartphone, Star, Edit2, Shield, Info
-, Download } from 'lucide-react'
+, Download, Package, Hourglass } from 'lucide-react'
+import { walletFromCollabs, txView } from '@/lib/wallet-view'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -21,9 +22,8 @@ function generateInfluencerInvoice(tx: any, influencer: any) {
   const date = new Date(tx.created_at)
   const invoiceNum = `AF-INF-${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}-${tx.id.slice(0,6).toUpperCase()}`
   const net = Math.abs(tx.amount)
-  const commission = parseFloat((net / 0.85 * 0.15).toFixed(2))
-  const gross = parseFloat((net + commission).toFixed(2))
-  return `<!DOCTYPE html><html lang="ro"><head><meta charset="utf-8"><title>Chitanta ${invoiceNum} — AddFame</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1f2937;padding:40px;background:white}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px}.logo{font-size:24px;font-weight:900;color:#7c3aed}.badge{background:#f3f0ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px 16px;text-align:right}.badge .label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em}.badge .number{font-size:18px;font-weight:800;color:#7c3aed;margin-top:2px}.parties{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:32px;padding:24px;background:#f9fafb;border-radius:12px}.party-label{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}.party-name{font-size:15px;font-weight:800;color:#1f2937;margin-bottom:4px}.party-detail{font-size:13px;color:#6b7280;margin-bottom:2px}table{width:100%;border-collapse:collapse;margin-bottom:24px}th{background:#7c3aed;color:white;padding:10px 14px;text-align:left;font-size:12px;font-weight:700}td{padding:12px 14px;border-bottom:1px solid #f3f4f6;font-size:13px}tr:last-child td{border-bottom:none}.totals{margin-left:auto;width:280px}.totals-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.totals-row.total{border-top:2px solid #7c3aed;padding-top:10px;margin-top:4px;font-size:16px;font-weight:800;color:#7c3aed}.footer{margin-top:40px;padding-top:20px;border-top:1px solid #f3f4f6;text-align:center;font-size:12px;color:#9ca3af}</style></head><body><div class="header"><div><div class="logo">AddFame</div><p style="font-size:12px;color:#9ca3af;margin-top:4px;">addfame.ro · contact@addfame.ro</p></div><div class="badge"><div class="label">Chitanta</div><div class="number">${invoiceNum}</div></div></div><div class="parties"><div><div class="party-label">Platitor</div><div class="party-name">AddFame SRL</div><div class="party-detail">addfame.ro</div><div class="party-detail">contact@addfame.ro</div></div><div><div class="party-label">Beneficiar (Creator)</div><div class="party-name">${influencer?.name || 'Creator'}</div><div class="party-detail">${influencer?.city ? influencer.city + ', ' : ''}Romania</div></div></div><table><thead><tr><th>Descriere</th><th>Data</th><th style="text-align:right">Suma bruta</th><th style="text-align:right">Comision (15%)</th><th style="text-align:right">Net primit</th></tr></thead><tbody><tr><td>${tx.description || 'Colaborare campanie'}</td><td>${date.toLocaleDateString('ro-RO',{day:'numeric',month:'long',year:'numeric'})}</td><td style="text-align:right">${gross.toFixed(2)} RON</td><td style="text-align:right;color:#ef4444">-${commission.toFixed(2)} RON</td><td style="text-align:right;font-weight:700;color:#15803d">${net.toFixed(2)} RON</td></tr></tbody></table><div class="totals"><div class="totals-row"><span style="color:#6b7280">Suma bruta colaborare</span><span>${gross.toFixed(2)} RON</span></div><div class="totals-row"><span style="color:#6b7280">Comision platforma (15%)</span><span style="color:#ef4444">-${commission.toFixed(2)} RON</span></div><div class="totals-row total"><span>Total primit</span><span>${net.toFixed(2)} RON</span></div></div><div class="footer"><p>Aceasta chitanta este generata automat de platforma AddFame.</p><p style="margin-top:4px;">contact@addfame.ro · addfame.ro</p></div></body></html>`
+  const esc = (v: any) => String(v ?? '').replace(/[&<>"]/g, (ch: string) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[ch])
+  return `<!DOCTYPE html><html lang="ro"><head><meta charset="utf-8"><title>Chitanta ${invoiceNum} — AddFame</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1f2937;padding:40px;background:white}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px}.logo{font-size:24px;font-weight:900;color:#7c3aed}.badge{background:#f3f0ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px 16px;text-align:right}.badge .label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em}.badge .number{font-size:18px;font-weight:800;color:#7c3aed;margin-top:2px}.parties{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:32px;padding:24px;background:#f9fafb;border-radius:12px}.party-label{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}.party-name{font-size:15px;font-weight:800;color:#1f2937;margin-bottom:4px}.party-detail{font-size:13px;color:#6b7280;margin-bottom:2px}table{width:100%;border-collapse:collapse;margin-bottom:24px}th{background:#7c3aed;color:white;padding:10px 14px;text-align:left;font-size:12px;font-weight:700}td{padding:12px 14px;border-bottom:1px solid #f3f4f6;font-size:13px}.totals{margin-left:auto;width:280px}.totals-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}.totals-row.total{border-top:2px solid #7c3aed;padding-top:10px;margin-top:4px;font-size:16px;font-weight:800;color:#7c3aed}.footer{margin-top:40px;padding-top:20px;border-top:1px solid #f3f4f6;text-align:center;font-size:12px;color:#9ca3af}</style></head><body><div class="header"><div><div class="logo">AddFame</div><p style="font-size:12px;color:#9ca3af;margin-top:4px;">addfame.ro · contact@addfame.ro</p></div><div class="badge"><div class="label">Chitanta</div><div class="number">${invoiceNum}</div></div></div><div class="parties"><div><div class="party-label">Platitor</div><div class="party-name">ADD FAME DIGITAL SRL</div><div class="party-detail">CUI 54992560</div><div class="party-detail">addfame.ro · contact@addfame.ro</div></div><div><div class="party-label">Beneficiar (Creator)</div><div class="party-name">${esc(influencer?.name || 'Creator')}</div><div class="party-detail">${influencer?.city ? esc(influencer.city) + ', ' : ''}Romania</div></div></div><table><thead><tr><th>Descriere</th><th>Data</th><th style="text-align:right">Suma primita</th></tr></thead><tbody><tr><td>${esc(tx.description || 'Colaborare campanie')}</td><td>${date.toLocaleDateString('ro-RO',{day:'numeric',month:'long',year:'numeric'})}</td><td style="text-align:right;font-weight:700;color:#15803d">${net.toFixed(2)} RON</td></tr></tbody></table><div class="totals"><div class="totals-row total"><span>Total primit in wallet</span><span>${net.toFixed(2)} RON</span></div></div><div class="footer"><p>Aceasta chitanta este generata automat de platforma AddFame.</p><p style="margin-top:4px;">contact@addfame.ro · addfame.ro</p></div></body></html>`
 }
 
 function downloadInfluencerInvoice(tx: any, influencer: any) {
@@ -52,7 +52,7 @@ function getWithdrawalStatus(lastPayoutAt?: string | null) {
 
 type Transaction = {
   id: string
-  type: 'EARN' | 'PAYOUT'
+  type: string
   amount: number
   description: string
   status: 'completed' | 'pending' | 'failed'
@@ -116,11 +116,14 @@ const PAYMENT_TYPES = [
   },
 ]
 
-type ActiveTab = 'overview' | 'payment_methods'
+type ActiveTab = 'overview' | 'barter' | 'payment_methods'
 
 export default function WalletPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
   const [methodNotice, setMethodNotice] = useState<string | null>(null)
+  const [collabs, setCollabs] = useState<any[]>([])
+  const [txLimit, setTxLimit] = useState(20)
+  const [txMore, setTxMore] = useState(false)
   const [wallet, setWallet] = useState<WalletData>({ available_balance: 0, total_earned: 0, pending_payout: 0 })
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [influencerInfo, setInfluencerInfo] = useState<any>(null)
@@ -143,7 +146,7 @@ export default function WalletPage() {
   const [methodSaving, setMethodSaving] = useState(false)
   const [methodError, setMethodError] = useState<string | null>(null)
 
-  useEffect(() => { fetchAll() }, [])
+  useEffect(() => { fetchAll() }, [txLimit])
 
   async function fetchAll() {
     try {
@@ -152,8 +155,8 @@ export default function WalletPage() {
       if (!user) return
 
       const [influencerRes, txRes, infInfoRes, pmRes] = await Promise.all([
-        supabase.from('influencers').select('wallet_balance, total_earned, pending_payout, last_payout_at').eq('user_id', user.id).single(),
-        supabase.from('transactions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
+        supabase.from('influencers').select('id, wallet_balance, total_earned, pending_payout, last_payout_at').eq('user_id', user.id).single(),
+        supabase.from('transactions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(txLimit + 1),
         supabase.from('influencers').select('name, city').eq('user_id', user.id).single(),
         supabase.from('influencer_payment_methods').select('*').eq('user_id', user.id).order('is_default', { ascending: false }),
       ])
@@ -166,7 +169,17 @@ export default function WalletPage() {
           last_payout_at: influencerRes.data.last_payout_at ?? null,
         })
       }
-      if (txRes.data) setTransactions(txRes.data)
+      if (txRes.data) { setTransactions(txRes.data.slice(0, txLimit)); setTxMore(txRes.data.length > txLimit) }
+      // colaborările active (bani care urmează) și cele barter (produse primite)
+      if (influencerRes.data?.id) {
+        const { data: cs } = await supabase.from('collaborations')
+          .select('*, campaigns(*)')
+          .eq('influencer_id', influencerRes.data.id)
+          .in('status', ['ACTIVE', 'COMPLETED'])
+          .order('created_at', { ascending: false })
+          .limit(300)
+        setCollabs(cs || [])
+      }
       if (infInfoRes.data) setInfluencerInfo(infInfoRes.data)
       if (pmRes.data) setPaymentMethods(pmRes.data)
     } catch (err) {
@@ -295,6 +308,8 @@ export default function WalletPage() {
   )
 
   const hasMethod = paymentMethods.some(m => methodIsComplete(m as any))
+  const wv = walletFromCollabs(collabs)
+  const fmtR = (v: number) => `${v.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RON`
   const canPayout = wallet.available_balance >= WITHDRAWAL_MIN && hasMethod
   const wStatus = getWithdrawalStatus(wallet.last_payout_at)
 
@@ -370,7 +385,8 @@ export default function WalletPage() {
         <div className="iw-wallet">
           <div className="iw-glow" />
           <div className="iw-lbl" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Wallet className="w-4 h-4" /> Sold disponibil</div>
-          <div className="iw-bal">{wallet.available_balance.toFixed(2)}<small>RON</small></div>
+          <div className="iw-bal">{wallet.available_balance.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<small>RON</small></div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,.75)' }}>Total câștigat până acum: <b style={{ color: '#fff' }}>{fmtR(wallet.total_earned)}</b>{wv.barterValue > 0 && <> · plus produse de <b style={{ color: '#fff' }}>{fmtR(wv.barterValue)}</b></>}</div>
 
           <div className="iw-note">
             <Info className="w-4 h-4" style={{ flex: 'none', marginTop: 2 }} />
@@ -393,25 +409,47 @@ export default function WalletPage() {
         <div className="iw-stats">
           <div className="iu-card iw-stat">
             <div className="iu-row" style={{ gap: 10 }}>
-              <div className="iu-ico" style={{ background: '#dcf5ec', color: '#14532d', width: 34, height: 34, borderRadius: 10 }}><TrendingUp className="w-4 h-4" /></div>
-              <span className="iu-label">Total câștigat</span>
+              <div className="iu-ico" style={{ background: '#efeaff', color: '#5b2fd0', width: 34, height: 34, borderRadius: 10 }}><Hourglass className="w-4 h-4" /></div>
+              <span className="iu-label">Urmează</span>
             </div>
-            <div className="v">{wallet.total_earned.toFixed(2)} RON</div>
+            <div className="v">{fmtR(wv.upcomingTotal)}</div>
+            <span className="iu-xs iu-muted">{wv.upcoming.length ? `din ${wv.upcoming.length} ${wv.upcoming.length === 1 ? 'colaborare activă' : 'colaborări active'} · intră când e aprobată postarea` : 'nicio colaborare plătită activă'}</span>
           </div>
           <div className="iu-card iw-stat">
             <div className="iu-row" style={{ gap: 10 }}>
               <div className="iu-ico" style={{ background: '#fff1c2', color: '#854d0e', width: 34, height: 34, borderRadius: 10 }}><Clock className="w-4 h-4" /></div>
-              <span className="iu-label">În așteptare</span>
+              <span className="iu-label">În transfer</span>
             </div>
-            <div className="v">{wallet.pending_payout.toFixed(2)} RON</div>
+            <div className="v">{fmtR(wallet.pending_payout)}</div>
+            <span className="iu-xs iu-muted">{wallet.pending_payout > 0 ? 'retrageri cerute, pe drum spre tine' : 'nicio retragere în curs'}</span>
           </div>
         </div>
       </div>
+
+      {wv.upcoming.length > 0 && (
+        <div className="iu-card iu-card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div className="iu-row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+            <b style={{ fontSize: 15 }}>Bani care urmează</b>
+            <span className="iu-xs iu-muted">Intră în sold imediat ce brandul aprobă postarea</span>
+          </div>
+          {wv.upcoming.map(u => (
+            <div key={u.id} className="iw-tx">
+              <div className="iu-ico" style={{ background: '#efeaff', color: '#5b2fd0' }}><Hourglass className="w-4 h-4" /></div>
+              <div className="iw-tx-main">
+                <p className="iw-tx-d">{u.title}</p>
+                <p className="iu-xs iu-muted">{u.brand}{u.since ? ` · acceptată ${formatDate(u.since)}` : ''}</p>
+              </div>
+              <div className="iw-tx-r"><span className="iw-tx-amt" style={{ color: '#5b2fd0' }}>{fmtR(u.amount)}</span></div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="iu-tabs">
         {[
           { id: 'overview', label: 'Tranzacții', icon: Wallet },
+          { id: 'barter', label: `Produse primite${wv.barter.length ? ` (${wv.barter.length})` : ''}`, icon: Package },
           { id: 'payment_methods', label: 'Metode plată', icon: CreditCard },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id as ActiveTab)} className={`iu-pill${activeTab === tab.id ? ' on' : ''}`} style={{ minHeight: 44 }}>
@@ -432,7 +470,8 @@ export default function WalletPage() {
           ) : (
             <div>
               {transactions.map((tx) => {
-                const isEarn = tx.type === 'EARN'
+                const view = txView(tx)
+                const isEarn = !view.out
                 const chip = TX_CHIP[tx.status] ?? TX_CHIP.pending
                 return (
                   <div key={tx.id} className="iw-tx">
@@ -440,16 +479,16 @@ export default function WalletPage() {
                       {isEarn ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                     </div>
                     <div className="iw-tx-main">
-                      <p className="iw-tx-d">{tx.description || (isEarn ? 'Câștig colaborare' : 'Retragere')}</p>
-                      <p className="iu-xs iu-muted">{formatDate(tx.created_at)}</p>
+                      <p className="iw-tx-d">{tx.description || view.label}</p>
+                      <p className="iu-xs iu-muted">{view.label} · {formatDate(tx.created_at)}</p>
                     </div>
                     <div className="iw-tx-r">
                       <span className="iw-tx-amt" style={{ color: isEarn ? '#14532d' : '#14123a' }}>
-                        {isEarn ? '+' : '-'}{Math.abs(tx.amount).toFixed(2)} RON
+                        {isEarn ? '+' : '−'}{fmtR(view.amount)}
                       </span>
                       <span className="iu-chip" style={{ background: chip.bg, color: chip.fg }}>{chip.label}</span>
                     </div>
-                    {isEarn && tx.status === 'completed' && (
+                    {String(tx.type).toUpperCase() === 'EARN' && tx.status === 'completed' && (
                       <button className="iw-ib" onClick={() => downloadInfluencerInvoice(tx, influencerInfo)} title="Descarcă chitanță" aria-label="Descarcă chitanță">
                         <Download className="w-4 h-4" />
                       </button>
@@ -457,7 +496,47 @@ export default function WalletPage() {
                   </div>
                 )
               })}
+              {txMore && (
+                <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12 }}>
+                  <button type="button" className="iu-btn" style={{ height: 44 }} onClick={() => setTxLimit(l => l + 30)}>Arată mai multe</button>
+                </div>
+              )}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Produse primite (barter) */}
+      {activeTab === 'barter' && (
+        <div className="iu-card iu-card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {wv.barter.length === 0 ? (
+            <div className="iw-empty">
+              <div className="iu-ico" style={{ background: '#efeaff', color: '#5b2fd0', width: 56, height: 56, borderRadius: 16 }}><Package className="w-6 h-6" /></div>
+              <h3>Niciun produs încă</h3>
+              <p className="iu-muted iu-sm" style={{ margin: 0 }}>Produsele din campaniile barter apar aici, cu valoarea lor.</p>
+            </div>
+          ) : (
+            <>
+              <div className="iu-row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, paddingBottom: 6 }}>
+                <b style={{ fontSize: 15 }}>Produse primite în valoare de {fmtR(wv.barterValue)}</b>
+                <span className="iu-xs iu-muted">Nu intră în sold și nu se retrag. Sunt câștigul tău din campaniile barter.</span>
+              </div>
+              {wv.barter.map(b => (
+                <div key={b.id} className="iw-tx">
+                  <div className="iu-ico" style={{ background: '#efeaff', color: '#5b2fd0', overflow: 'hidden', padding: 0 }}>
+                    {b.image ? <img src={b.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package className="w-4 h-4" />}
+                  </div>
+                  <div className="iw-tx-main">
+                    <p className="iw-tx-d">{b.product}</p>
+                    <p className="iu-xs iu-muted">{b.brand}{b.at ? ` · ${formatDate(b.at)}` : ''}</p>
+                  </div>
+                  <div className="iw-tx-r">
+                    <span className="iw-tx-amt">{b.value > 0 ? fmtR(b.value) : '—'}</span>
+                    <span className="iu-chip" style={b.done ? { background: '#dcf5ec', color: '#14532d' } : { background: '#efeaff', color: '#5b2fd0' }}>{b.done ? 'Primit' : 'În curs'}</span>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
         </div>
       )}
