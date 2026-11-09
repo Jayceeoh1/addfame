@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { logScore } from '@/lib/score-log'
 
 // ─── Influencer: revendică un eveniment ───────────────────────────────────────
 export async function claimPointEvent(eventId: string) {
@@ -73,6 +74,7 @@ export async function claimPointEvent(eventId: string) {
       .from('influencers')
       .update({ creator_score: newScore })
       .eq('id', inf.id)
+    await logScore(admin, { influencerId: inf.id, points: event.points, kind: 'point_event', label: event.title ? `Eveniment: ${event.title}` : 'Bonus eveniment' })
 
     // Notificare în platformă
     try {

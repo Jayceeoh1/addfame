@@ -7,6 +7,7 @@ import { randomInt } from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { bucharestDay, treatDays, treatPhase, rollTreat, earnedStreakBonus, STREAK_BONUS } from '@/lib/halloween'
+import { logScore } from '@/lib/score-log'
 
 async function currentInfluencer() {
   const sb = await createClient()
@@ -70,6 +71,7 @@ export async function openTreat() {
   const { data: fresh } = await admin.from('influencers').select('creator_score').eq('id', inf.id).maybeSingle()
   const newScore = (fresh?.creator_score ?? 0) + gained
   await admin.from('influencers').update({ creator_score: newScore }).eq('id', inf.id)
+  await logScore(admin, { influencerId: inf.id, points: gained, kind: 'halloween', label: bonus > 0 ? 'Halloween: cutie zilnică + bonus serie' : 'Halloween: cutie zilnică' })
 
   try {
     await admin.from('notifications').insert({

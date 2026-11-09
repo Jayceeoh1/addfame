@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logScore } from '@/lib/score-log'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'
 const RESEND_API_KEY = process.env.RESEND_API_KEY
@@ -82,6 +83,7 @@ export async function GET(req: NextRequest) {
       p_influencer_id: inf.id,
       p_points: -100,
     })
+    await logScore(admin, { influencerId: inf.id, points: -100, kind: 'inbox_ignored', label: 'Fără răspuns în inbox 7 zile' })
 
     // 1 strike automat
     const newStrikes = (inf.strikes || 0) + 1

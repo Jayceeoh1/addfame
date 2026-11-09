@@ -10,6 +10,7 @@ import { checkSmartBill } from '@/lib/smartbill'
 import { finalizeTopup, issueTopupInvoice, isRealInvoiceNumber } from '@/lib/topup'
 import { parseSmartBillNumber } from '@/lib/smartbill'
 import { after } from 'next/server'
+import { logScore } from '@/lib/score-log'
 
 // Helper: Generate URL-friendly slug
 function generateSlugFromName(name: string): string {
@@ -840,6 +841,7 @@ export async function rejectInfluencer(id: string, reason?: string) {
     // Creator Score: penalizare raportare/respingere cont
     try {
       await sb.rpc('update_creator_score', { p_influencer_id: id, p_points: -80 })
+      await logScore(sb, { influencerId: id, points: -80, kind: 'account_rejected', label: 'Cont respins / raportat de admin' })
     } catch (_) {}
     revalidatePath('/admin/influencers')
     return { success: true }

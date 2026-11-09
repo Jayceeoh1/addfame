@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/verify-admin'
 import { passNeeded, cleanSteps, tierFor, TIERS, isTier, type AcademyLesson, type AcademyQuestion, type AcademyTier } from '@/lib/academy'
+import { logScore } from '@/lib/score-log'
 
 const NOT_READY = 'Academia nu e pornită încă (rulează SQL 44).'
 
@@ -178,6 +179,7 @@ export async function submitLesson(id: string, answers: number[]) {
       points = award
       const { data: fresh } = await admin.from('influencers').select('creator_score').eq('id', inf.id).maybeSingle()
       await admin.from('influencers').update({ creator_score: (fresh?.creator_score ?? 0) + award }).eq('id', inf.id)
+      await logScore(admin, { influencerId: inf.id, points: award, kind: 'academy_lesson', label: 'Lecție Academie' })
     }
   }
 
@@ -210,6 +212,7 @@ export async function submitLesson(id: string, answers: number[]) {
         if (bonus > 0) {
           const { data: fresh } = await admin.from('influencers').select('creator_score').eq('id', inf.id).maybeSingle()
           await admin.from('influencers').update({ creator_score: (fresh?.creator_score ?? 0) + bonus }).eq('id', inf.id)
+          await logScore(admin, { influencerId: inf.id, points: bonus, kind: 'academy_certificate', label: 'Bonus certificare Academie' })
         }
       }
     }

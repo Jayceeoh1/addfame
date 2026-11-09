@@ -20,6 +20,7 @@ import { isFeeModelCampaign, countSelectedInfluencers } from '@/lib/campaign-fee
 import { eligibility, hasTargeting, ELIG_MESSAGE } from '@/lib/eligibility'
 import { isOfferCampaign, parseOfferPrice } from '@/lib/offer'
 import { limitAction, LIMITS } from '@/lib/rate-limit'
+import { logScore } from '@/lib/score-log'
 import {
   emailCollaborationApproved,
   emailPaymentReleased,
@@ -463,23 +464,27 @@ export async function approveDeliverable(collabId: string) {
     try {
       if (collab.influencers?.id) {
         let scorePoints = SCORE.COLLAB_COMPLETED
+        const scoreLog: { points: number; kind: string; label: string }[] = [
+          { points: SCORE.COLLAB_COMPLETED, kind: 'collab_completed', label: 'Colaborare finalizată' },
+        ]
 
         // Bonus viteză: cât timp a trecut de la acceptare până la submitere
         const acceptedAt = collab.created_at ? new Date(collab.created_at) : null
         const submittedAt = collab.deliverable_submitted_at ? new Date(collab.deliverable_submitted_at) : null
         if (acceptedAt && submittedAt) {
           const hoursElapsed = (submittedAt.getTime() - acceptedAt.getTime()) / 3_600_000
-          if (hoursElapsed <= 24) scorePoints += SCORE.PROOF_24H_BONUS
-          else if (hoursElapsed <= 48) scorePoints += SCORE.PROOF_48H_BONUS
+          if (hoursElapsed <= 24) { scorePoints += SCORE.PROOF_24H_BONUS; scoreLog.push({ points: SCORE.PROOF_24H_BONUS, kind: 'proof_24h', label: 'Dovadă trimisă în 24h' }) }
+          else if (hoursElapsed <= 48) { scorePoints += SCORE.PROOF_48H_BONUS; scoreLog.push({ points: SCORE.PROOF_48H_BONUS, kind: 'proof_48h', label: 'Dovadă trimisă în 48h' }) }
         }
 
         // Bonus aprobare prima oară (fără respingeri anterioare)
-        if (!collab.deliverable_rejected_at) scorePoints += SCORE.APPROVED_FIRST_TRY
+        if (!collab.deliverable_rejected_at) { scorePoints += SCORE.APPROVED_FIRST_TRY; scoreLog.push({ points: SCORE.APPROVED_FIRST_TRY, kind: 'approved_first_try', label: 'Aprobată din prima' }) }
 
         await admin.rpc('update_creator_score', {
           p_influencer_id: collab.influencers.id,
           p_points: scorePoints,
         })
+        await logScore(admin, scoreLog.map(e => ({ ...e, influencerId: collab.influencers.id, collabId: collab.id, campaignId: collab.campaign_id, campaignTitle: collab.campaigns?.title })))
 
         // Notifică influencerul despre puncte câștigate
         await notify(admin, collab.influencers.user_id,
@@ -546,6 +551,12 @@ export async function rejectDeliverable(collabId: string, reason: string) {
         await admin.rpc('update_creator_score', {
           p_influencer_id: collab.influencers.id,
           p_points: penalty,
+        })
+        await logScore(admin, {
+          influencerId: collab.influencers.id, points: penalty,
+          kind: wasRejectedBefore ? 'rejected_consecutive' : 'rejected',
+          label: wasRejectedBefore ? 'A doua respingere consecutivă' : 'Dovadă respinsă',
+          collabId: collab.id, campaignId: collab.campaign_id, campaignTitle: collab.campaigns?.title,
         })
       }
     } catch (_) { /* score fail silently */ }
@@ -687,7 +698,7 @@ export async function requestWithdrawal(amount: number, methodId: string) {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) return { error: 'Not authenticated' }
 
-    if (!amount || amount < 250) return { error: 'Suma minimă de retragere este 250 RON.' }
+    if (!amount || amount < 200) return { error: 'Suma minimă de retragere este 200 RON.' }
 
     const { data: inf } = await admin.from('influencers')
       .select('id, wallet_balance, pending_payout, name, last_payout_at')

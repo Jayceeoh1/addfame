@@ -5,11 +5,16 @@ import { createClient } from '@/lib/supabase/client'
 import { getCreatorLevel, LEVEL_CONFIG, BADGE_IMAGES } from '@/lib/creator-score'
 import { AvatarWithBadge } from '@/components/shared/CreatorBadge'
 import Link from 'next/link'
+import { summarizeScoreLog, monthLabel, type ScoreLogRow } from '@/lib/score-log'
 import { ArrowLeft, Zap, TrendingUp, TrendingDown, Clock, CheckCircle, Star, Shield, Users, AlertTriangle } from 'lucide-react'
 
 export default function RewardsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [log, setLog] = useState<ScoreLogRow[]>([])
+  const [logErr, setLogErr] = useState(false)
+  const [tab, setTab] = useState<'camp' | 'time'>('camp')
+  const [filter, setFilter] = useState<'all' | 'gain' | 'loss'>('all')
 
   useEffect(() => {
     const sb = createClient()
@@ -19,9 +24,15 @@ export default function RewardsPage() {
         .select('*')
         .eq('user_id', user.id)
         .single()
-        .then(({ data }) => {
+        .then(async ({ data }) => {
           setProfile(data)
           setLoading(false)
+          if (data?.id) {
+            const { data: rows, error } = await sb.from('creator_score_log')
+              .select('id, points, kind, label, collab_id, campaign_id, campaign_title, estimated, created_at')
+              .eq('influencer_id', data.id).order('created_at', { ascending: false }).limit(500)
+            if (error) setLogErr(true); else setLog(rows || [])
+          }
         })
     })
   }, [])
@@ -33,6 +44,13 @@ export default function RewardsPage() {
   const progress = nextLevel
     ? Math.round(((score - config.min) / (nextLevel - config.min)) * 100)
     : 100
+
+  const sum = summarizeScoreLog(log, score)
+  const fmt = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toLocaleString('ro-RO')
+  const fdate = (iso: string) => new Date(iso).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' })
+  const visible = sum.list.filter(r => filter === 'all' || (filter === 'gain' ? r.points > 0 : r.points < 0))
+  const months: { m: string; rows: ScoreLogRow[] }[] = []
+  for (const r of visible) { const m = monthLabel(r.created_at); const last = months[months.length - 1]; if (last && last.m === m) last.rows.push(r); else months.push({ m, rows: [r] }) }
 
   const levels = [
     { key: 'starter', pts: '0–299', desc: 'Punct de plecare pentru toți creatorii noi.' },
@@ -85,6 +103,16 @@ export default function RewardsPage() {
         .ir-cta { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: linear-gradient(135deg, #7040f0, #9030f0); color: #fff; border-radius: 20px; padding: 22px 24px; }
         .ir-cta .iu-btn { background: #fff; color: #5b2fd0; border-color: #fff; }
         .ir-cta .iu-btn:hover { background: #f6f1ff; }
+        .ir-sum { display: flex; gap: 10px; flex-wrap: wrap; }
+        .ir-sum > div { flex: 1; min-width: 120px; background: rgba(255,255,255,.1); border-radius: 12px; padding: 10px 14px; }
+        .ir-sum small { display: block; font-size: 11px; color: rgba(255,255,255,.7); }
+        .ir-sum b { font-size: 20px; font-weight: 800; }
+        .ir-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+        .ir-tab { border: 0; cursor: pointer; padding: 8px 14px; border-radius: 99px; font-size: 13px; font-weight: 700; background: #f0eff7; color: #14123a; font-family: inherit; }
+        .ir-tab.on { background: #7040f0; color: #fff; }
+        .ir-camp { border: 1px solid #e5e3f3; border-radius: 14px; padding: 12px 14px; }
+        .ir-line { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding-top: 6px; }
+        .ir-est { font-size: 10px; background: #f0eff7; color: #4a4770; border-radius: 99px; padding: 2px 7px; margin-left: 6px; font-weight: 600; }
         @media (max-width: 900px) { .ir-cols { grid-template-columns: minmax(0,1fr); } }
         @media (max-width: 640px) {
           .ir-ladder { grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -131,6 +159,100 @@ export default function RewardsPage() {
               {nextLevel && <span>{nextLevel.toLocaleString('ro-RO')} pts</span>}
             </div>
           </div>
+
+          {!logErr && (
+            <div className="ir-sum">
+              <div><small>Câștigate</small><b style={{ color: '#6ee7b7' }}>{fmt(sum.earned)}</b></div>
+              <div><small>Pierdute</small><b style={{ color: '#fca5a5' }}>{fmt(sum.lost)}</b></div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Istoricul punctelor */}
+      {profile && (
+        <div className="iu-card iu-card-pad">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+            <h2 style={{ margin: 0 }}>Istoricul punctelor</h2>
+            <div className="ir-tabs">
+              <button type="button" className={`ir-tab ${tab === 'camp' ? 'on' : ''}`} onClick={() => setTab('camp')}>Pe campanii</button>
+              <button type="button" className={`ir-tab ${tab === 'time' ? 'on' : ''}`} onClick={() => setTab('time')}>Cronologic</button>
+            </div>
+          </div>
+
+          {logErr ? (
+            <p className="iu-sm iu-muted" style={{ margin: 0 }}>Istoricul nu e disponibil încă. Revino în câteva minute.</p>
+          ) : tab === 'camp' ? (
+            <div style={{ display: 'grid', gap: 10 }}>
+              {sum.campaigns.map(g => (
+                <div key={g.key} className="ir-camp">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                    <b style={{ fontSize: 14 }}>{g.title}</b>
+                    <b style={{ color: g.net < 0 ? '#b42318' : '#14532d' }}>{fmt(g.net)}</b>
+                  </div>
+                  {g.rows.map((r, i) => (
+                    <div key={i} className="ir-line iu-muted">
+                      <span>{r.label}{r.estimated && <span className="ir-est">estimat</span>} · {fdate(r.created_at)}</span>
+                      <b style={{ color: r.points < 0 ? '#b42318' : '#14532d' }}>{fmt(r.points)}</b>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              {(sum.outside.length > 0 || sum.other !== 0) && (
+                <div className="ir-camp">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                    <b style={{ fontSize: 14 }}>Din afara campaniilor</b>
+                    <b style={{ color: sum.outsideNet + sum.other < 0 ? '#b42318' : '#14532d' }}>{fmt(sum.outsideNet + sum.other)}</b>
+                  </div>
+                  {sum.outside.map((r, i) => (
+                    <div key={i} className="ir-line iu-muted">
+                      <span>{r.label}{r.estimated && <span className="ir-est">estimat</span>} · {fdate(r.created_at)}</span>
+                      <b style={{ color: r.points < 0 ? '#b42318' : '#14532d' }}>{fmt(r.points)}</b>
+                    </div>
+                  ))}
+                  {sum.other !== 0 && (
+                    <div className="ir-line iu-muted"><span>Alte puncte (bonusuri și evenimente mai vechi, fără detalii)</span><b style={{ color: sum.other < 0 ? '#b42318' : '#14532d' }}>{fmt(sum.other)}</b></div>
+                  )}
+                </div>
+              )}
+              {sum.list.length === 0 && sum.other === 0 && <p className="iu-sm iu-muted" style={{ margin: 0 }}>Încă nu ai puncte. Finalizează prima colaborare și apar aici.</p>}
+            </div>
+          ) : (
+            <div>
+              <div className="ir-tabs" style={{ marginBottom: 6 }}>
+                {([['all', 'Toate'], ['gain', 'Câștigate'], ['loss', 'Pierdute']] as const).map(([k, l]) => (
+                  <button key={k} type="button" className={`ir-tab ${filter === k ? 'on' : ''}`} onClick={() => setFilter(k)}>{l}</button>
+                ))}
+              </div>
+              {months.map(({ m, rows }) => (
+                <div key={m}>
+                  <div className="iu-label" style={{ margin: '16px 0 2px' }}>{m}</div>
+                  {rows.map((r, i) => {
+                    const neg = r.points < 0
+                    return (
+                      <div key={i} className="ir-row">
+                        <div className="iu-ico" style={{ background: neg ? '#fde8e6' : '#dcf5ec', color: neg ? '#b42318' : '#14532d', width: 36, height: 36, borderRadius: 10, fontWeight: 800 }}>{neg ? '−' : '+'}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 14, fontWeight: 600 }}>{r.label}{r.estimated && <span className="ir-est">estimat</span>}</p>
+                          <p className="iu-xs iu-muted">{[r.campaign_title, fdate(r.created_at)].filter(Boolean).join(' · ')}</p>
+                        </div>
+                        <span className="iu-chip" style={{ background: neg ? '#fde8e6' : '#dcf5ec', color: neg ? '#b42318' : '#14532d', flex: 'none' }}>{fmt(r.points)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+              {filter === 'all' && sum.other !== 0 && (
+                <div className="ir-row" style={{ marginTop: 8 }}>
+                  <div className="iu-ico" style={{ background: '#f0eff7', color: '#4a4770', width: 36, height: 36, borderRadius: 10, fontWeight: 800 }}>±</div>
+                  <div style={{ flex: 1 }}><p style={{ fontSize: 14, fontWeight: 600 }}>Alte puncte</p><p className="iu-xs iu-muted">Bonusuri și evenimente mai vechi, fără detalii</p></div>
+                  <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}>{fmt(sum.other)}</span>
+                </div>
+              )}
+              {months.length === 0 && <p className="iu-sm iu-muted" style={{ margin: '12px 0 0' }}>Nimic de afișat aici.</p>}
+            </div>
+          )}
+          <p className="iu-xs iu-muted" style={{ margin: '14px 0 0' }}>„Estimat” = reconstituit din colaborările de dinainte să existe acest istoric. Lipsește ceva? Scrie-ne din Mesaje.</p>
         </div>
       )}
 

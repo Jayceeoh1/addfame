@@ -2,6 +2,7 @@ import { limitRequest, LIMITS } from '@/lib/rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logScore } from '@/lib/score-log'
 
 const REVIEW_BONUS = 50
 
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
         const { error: upErr } = await admin.from('influencers').update({ creator_score: newScore }).eq('id', inf.id)
         if (!upErr) {
           points = REVIEW_BONUS
+          await logScore(admin, { influencerId: inf.id, points: REVIEW_BONUS, kind: 'platform_review', label: 'Recenzie despre platformă' })
           try {
             await admin.from('notifications').insert({
               user_id: user.id, title: `🎁 +${REVIEW_BONUS} puncte Creator Score!`,

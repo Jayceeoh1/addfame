@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/verify-admin'
 import { scoreQuiz, QUIZ_POINTS, QUIZ_CHARACTERS } from '@/lib/halloween-quiz'
+import { logScore } from '@/lib/score-log'
 
 const SETTING = 'halloween_quiz'
 
@@ -62,6 +63,7 @@ export async function submitQuiz(answers: number[]) {
   if (points > 0) {
     const { data: fresh } = await admin.from('influencers').select('creator_score').eq('id', inf.id).maybeSingle()
     await admin.from('influencers').update({ creator_score: (fresh?.creator_score ?? 0) + points }).eq('id', inf.id)
+    await logScore(admin, { influencerId: inf.id, points, kind: 'halloween_quiz', label: 'Quiz Halloween' })
     try {
       await admin.from('notifications').insert({
         user_id: inf.user_id, title: `🎃 +${points} puncte — ești ${res.character.name}!`,
