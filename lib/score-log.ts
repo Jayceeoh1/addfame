@@ -14,7 +14,7 @@ export type ScoreEntry = {
 export async function logScore(admin: any, entries: ScoreEntry | ScoreEntry[]): Promise<void> {
   try {
     const rows = (Array.isArray(entries) ? entries : [entries])
-      .filter(e => e.influencerId && Number.isFinite(e.points) && e.points !== 0)
+      .filter(e => e.influencerId && Number.isFinite(e.points) && (e.points !== 0 || e.kind === 'strike'))
       .map(e => ({
         influencer_id: e.influencerId, points: Math.round(e.points), kind: e.kind, label: e.label,
         collab_id: e.collabId ?? null, campaign_id: e.campaignId ?? null, campaign_title: e.campaignTitle ?? null,

@@ -2742,7 +2742,13 @@ export default function AdminCampaigns() {
                               <button onClick={async () => {
                                 setCollabAction(collab.id)
                                 const sb = createClient()
-                                await sb.from('collaborations').update({ status: 'COMPLETED', completed_at: new Date().toISOString() }).eq('id', collab.id)
+                                if (collab.deliverable_submitted_at) {
+                                  // cu dovadă: aprobare completă (plată, puncte, notificări)
+                                  const res: any = await approveDeliverableAction(collab.id)
+                                  if (res?.error) { notify(res.error, false); setCollabAction(null); return }
+                                } else {
+                                  await sb.from('collaborations').update({ status: 'COMPLETED', completed_at: new Date().toISOString() }).eq('id', collab.id)
+                                }
                                 setCampaignCollabs(prev => prev.map(c => c.id === collab.id ? { ...c, status: 'COMPLETED' } : c))
                                 notify('✅ Colaborare finalizată.')
                                 setCollabAction(null)

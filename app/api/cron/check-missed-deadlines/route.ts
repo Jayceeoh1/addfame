@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { awardScore, logScore } from '@/lib/score-log'
+
+// Penalizarea afișată pe pagina Recompense pentru „Colaborare expirată”
+const EXPIRED_PENALTY = -300
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'
 const RESEND_API_KEY = process.env.RESEND_API_KEY
@@ -78,6 +82,9 @@ export async function GET(req: NextRequest) {
       reason: `Nu a postat în termenul limită pentru campania "${camp?.title}"`,
       given_by: null, // automat
     })
+    const logBase = { influencerId: inf.id, collabId: collab.id, campaignId: camp?.id, campaignTitle: camp?.title }
+    await awardScore(admin, { ...logBase, points: EXPIRED_PENALTY, kind: 'expired', label: 'Colaborare expirată: nu a postat în termen' })
+    await logScore(admin, { ...logBase, points: 0, kind: 'strike', label: 'Strike: nu a postat în termenul limită' })
 
     await admin.from('influencers').update({
       strikes: newStrikes,

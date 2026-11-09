@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/supabase/verify-admin'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logScore } from '@/lib/score-log'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'
 const RESEND_API_KEY = process.env.RESEND_API_KEY
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
         reason: reason || 'Nu a postat în termenul limită',
         given_by: session.userId,
       })
+      await logScore(admin, { influencerId: influencer_id, collabId: collaboration_id || null, points: 0, kind: 'strike', label: `Strike: ${String(reason || 'Nu a postat în termenul limită').slice(0, 140)}` })
 
       // Update influencer
       await admin.from('influencers').update({

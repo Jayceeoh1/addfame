@@ -193,7 +193,7 @@ export default function RewardsPage() {
                   {g.rows.map((r, i) => (
                     <div key={i} className="ir-line iu-muted">
                       <span>{r.label}{r.estimated && <span className="ir-est">estimat</span>} · {fdate(r.created_at)}</span>
-                      <b style={{ color: r.points < 0 ? '#b42318' : '#14532d' }}>{fmt(r.points)}</b>
+                      <b style={{ color: r.kind === 'strike' ? '#854d0e' : r.points < 0 ? '#b42318' : '#14532d' }}>{r.kind === 'strike' ? 'strike' : fmt(r.points)}</b>
                     </div>
                   ))}
                 </div>
@@ -207,7 +207,7 @@ export default function RewardsPage() {
                   {sum.outside.map((r, i) => (
                     <div key={i} className="ir-line iu-muted">
                       <span>{r.label}{r.estimated && <span className="ir-est">estimat</span>} · {fdate(r.created_at)}</span>
-                      <b style={{ color: r.points < 0 ? '#b42318' : '#14532d' }}>{fmt(r.points)}</b>
+                      <b style={{ color: r.kind === 'strike' ? '#854d0e' : r.points < 0 ? '#b42318' : '#14532d' }}>{r.kind === 'strike' ? 'strike' : fmt(r.points)}</b>
                     </div>
                   ))}
                   {sum.other !== 0 && (
@@ -229,14 +229,15 @@ export default function RewardsPage() {
                   <div className="iu-label" style={{ margin: '16px 0 2px' }}>{m}</div>
                   {rows.map((r, i) => {
                     const neg = r.points < 0
+                    const strike = r.kind === 'strike'
                     return (
                       <div key={i} className="ir-row">
-                        <div className="iu-ico" style={{ background: neg ? '#fde8e6' : '#dcf5ec', color: neg ? '#b42318' : '#14532d', width: 36, height: 36, borderRadius: 10, fontWeight: 800 }}>{neg ? '−' : '+'}</div>
+                        <div className="iu-ico" style={{ background: strike ? '#fff1c2' : neg ? '#fde8e6' : '#dcf5ec', color: strike ? '#854d0e' : neg ? '#b42318' : '#14532d', width: 36, height: 36, borderRadius: 10, fontWeight: 800 }}>{strike ? '!' : neg ? '−' : '+'}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontSize: 14, fontWeight: 600 }}>{r.label}{r.estimated && <span className="ir-est">estimat</span>}</p>
                           <p className="iu-xs iu-muted">{[r.campaign_title, fdate(r.created_at)].filter(Boolean).join(' · ')}</p>
                         </div>
-                        <span className="iu-chip" style={{ background: neg ? '#fde8e6' : '#dcf5ec', color: neg ? '#b42318' : '#14532d', flex: 'none' }}>{fmt(r.points)}</span>
+                        <span className="iu-chip" style={{ background: strike ? '#fff1c2' : neg ? '#fde8e6' : '#dcf5ec', color: strike ? '#854d0e' : neg ? '#b42318' : '#14532d', flex: 'none' }}>{strike ? 'strike' : fmt(r.points)}</span>
                       </div>
                     )
                   })}
