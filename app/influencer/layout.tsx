@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { fontVars } from '@/lib/fonts'
 import './influencer-ui.css'
+import { WITHDRAWALS_PAUSED } from '@/lib/withdrawals-config'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
@@ -317,7 +318,10 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
               >
                 <item.icon className={`nav-icon ${active ? 'text-violet-600' : ''}`} />
                 {open && <span>{item.label}</span>}
-                {open && active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-600" />}
+                {open && WITHDRAWALS_PAUSED && item.href === '/influencer/wallet' && (
+                  <span className="ml-auto text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: '#fff1c2', color: '#854d0e' }}>Mentenanță</span>
+                )}
+                {open && active && !(WITHDRAWALS_PAUSED && item.href === '/influencer/wallet') && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-600" />}
               </Link>
             )
           })}
@@ -465,6 +469,11 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
         </header>
 
         <main className="flex-1 overflow-y-auto bg-gray-50">
+          {WITHDRAWALS_PAUSED && (
+            <Link href="/influencer/wallet" className="block text-center text-xs font-bold px-4 py-2.5" style={{ background: '#fff1c2', color: '#854d0e' }}>
+              Portofelul e în mentenanță: retragerile sunt oprite temporar, iar banii tăi sunt în siguranță. Plățile se trimit manual, în cel mult 15 zile lucrătoare de la aprobarea postării.
+            </Link>
+          )}
           {children}
       <PWAInstallModal />
         </main>
