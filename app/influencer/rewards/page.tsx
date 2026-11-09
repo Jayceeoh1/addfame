@@ -162,8 +162,8 @@ export default function RewardsPage() {
 
           {!logErr && (
             <div className="ir-sum">
-              <div><small>Câștigate</small><b style={{ color: '#6ee7b7' }}>{fmt(sum.earned)}</b></div>
-              <div><small>Pierdute</small><b style={{ color: '#fca5a5' }}>{fmt(sum.lost)}</b></div>
+              <div><small>Câștigate</small><b style={{ color: '#6ee7b7' }}>{fmt(sum.earned + Math.max(sum.other, 0))}</b></div>
+              <div><small>Pierdute</small><b style={{ color: '#fca5a5' }}>{fmt(sum.lost + Math.min(sum.other, 0))}</b></div>
             </div>
           )}
         </div>
@@ -211,7 +211,7 @@ export default function RewardsPage() {
                     </div>
                   ))}
                   {sum.other !== 0 && (
-                    <div className="ir-line iu-muted"><span>Alte puncte (bonusuri și evenimente mai vechi, fără detalii)</span><b style={{ color: sum.other < 0 ? '#b42318' : '#14532d' }}>{fmt(sum.other)}</b></div>
+                    <div className="ir-line iu-muted"><span>Alte puncte (colaborări, bonusuri și evenimente mai vechi, fără detalii)</span><b style={{ color: sum.other < 0 ? '#b42318' : '#14532d' }}>{fmt(sum.other)}</b></div>
                   )}
                 </div>
               )}
@@ -245,7 +245,7 @@ export default function RewardsPage() {
               {filter === 'all' && sum.other !== 0 && (
                 <div className="ir-row" style={{ marginTop: 8 }}>
                   <div className="iu-ico" style={{ background: '#f0eff7', color: '#4a4770', width: 36, height: 36, borderRadius: 10, fontWeight: 800 }}>±</div>
-                  <div style={{ flex: 1 }}><p style={{ fontSize: 14, fontWeight: 600 }}>Alte puncte</p><p className="iu-xs iu-muted">Bonusuri și evenimente mai vechi, fără detalii</p></div>
+                  <div style={{ flex: 1 }}><p style={{ fontSize: 14, fontWeight: 600 }}>Alte puncte</p><p className="iu-xs iu-muted">Colaborări, bonusuri și evenimente mai vechi, fără detalii</p></div>
                   <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}>{fmt(sum.other)}</span>
                 </div>
               )}

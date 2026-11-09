@@ -20,7 +20,7 @@ import { isFeeModelCampaign, countSelectedInfluencers } from '@/lib/campaign-fee
 import { eligibility, hasTargeting, ELIG_MESSAGE } from '@/lib/eligibility'
 import { isOfferCampaign, parseOfferPrice } from '@/lib/offer'
 import { limitAction, LIMITS } from '@/lib/rate-limit'
-import { logScore } from '@/lib/score-log'
+import { awardScore } from '@/lib/score-log'
 import {
   emailCollaborationApproved,
   emailPaymentReleased,
@@ -480,11 +480,7 @@ export async function approveDeliverable(collabId: string) {
         // Bonus aprobare prima oară (fără respingeri anterioare)
         if (!collab.deliverable_rejected_at) { scorePoints += SCORE.APPROVED_FIRST_TRY; scoreLog.push({ points: SCORE.APPROVED_FIRST_TRY, kind: 'approved_first_try', label: 'Aprobată din prima' }) }
 
-        await admin.rpc('update_creator_score', {
-          p_influencer_id: collab.influencers.id,
-          p_points: scorePoints,
-        })
-        await logScore(admin, scoreLog.map(e => ({ ...e, influencerId: collab.influencers.id, collabId: collab.id, campaignId: collab.campaign_id, campaignTitle: collab.campaigns?.title })))
+        await awardScore(admin, scoreLog.map(e => ({ ...e, influencerId: collab.influencers.id, collabId: collab.id, campaignId: collab.campaign_id, campaignTitle: collab.campaigns?.title })))
 
         // Notifică influencerul despre puncte câștigate
         await notify(admin, collab.influencers.user_id,
@@ -548,11 +544,7 @@ export async function rejectDeliverable(collabId: string, reason: string) {
         // Verifică dacă a mai fost respins înainte (respingere consecutivă)
         const wasRejectedBefore = !!collab.deliverable_rejected_at
         const penalty = wasRejectedBefore ? SCORE.REJECTED_CONSECUTIVE : SCORE.REJECTED
-        await admin.rpc('update_creator_score', {
-          p_influencer_id: collab.influencers.id,
-          p_points: penalty,
-        })
-        await logScore(admin, {
+        await awardScore(admin, {
           influencerId: collab.influencers.id, points: penalty,
           kind: wasRejectedBefore ? 'rejected_consecutive' : 'rejected',
           label: wasRejectedBefore ? 'A doua respingere consecutivă' : 'Dovadă respinsă',

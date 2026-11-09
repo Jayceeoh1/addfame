@@ -57,3 +57,28 @@ export function monthLabel(iso: string): string {
   const s = d.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' })
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
+
+/** Acordă (sau scade) puncte și le trece în istoric. RPC-ul nu aruncă erori, așa că îi verificăm răspunsul;
+ *  dacă pică, actualizăm direct scorul. Întoarce true doar dacă punctele chiar s-au aplicat. */
+export async function awardScore(admin: any, entries: ScoreEntry | ScoreEntry[]): Promise<boolean> {
+  const list = (Array.isArray(entries) ? entries : [entries]).filter(e => e.influencerId && e.points)
+  if (!list.length) return false
+  const id = list[0].influencerId
+  const total = list.reduce((s, e) => s + e.points, 0)
+  let ok = false
+  try {
+    const { error } = await admin.rpc('update_creator_score', { p_influencer_id: id, p_points: total })
+    ok = !error
+    if (error) console.error('[score] update_creator_score a eșuat:', error.message)
+  } catch (e: any) { console.error('[score] update_creator_score a aruncat:', e?.message) }
+  if (!ok) {
+    try {
+      const { data: fresh } = await admin.from('influencers').select('creator_score').eq('id', id).maybeSingle()
+      const { error } = await admin.from('influencers').update({ creator_score: Math.max(0, (fresh?.creator_score ?? 0) + total) }).eq('id', id)
+      ok = !error
+      if (error) console.error('[score] update direct eșuat:', error.message)
+    } catch { /* rămâne ok=false */ }
+  }
+  if (ok) await logScore(admin, list)
+  return ok
+}
