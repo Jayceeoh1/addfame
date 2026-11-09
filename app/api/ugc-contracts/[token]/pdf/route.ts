@@ -227,7 +227,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
 
   <div class="article">
     <h4>4. Remuneratia</h4>
-    <p>Beneficiarul va achita Creatorului suma de <span class="highlight">${c.amount_lei.toLocaleString('ro-RO')} LEI</span>. Plata se va efectua in termen de <span class="highlight">${c.payment_days} zile</span> de la acceptarea materialului. Plata include realizarea materialului si drepturile de utilizare acordate.</p>
+    <p>Beneficiarul va achita Creatorului suma de <span class="highlight">${c.amount_lei.toLocaleString('ro-RO')} LEI</span>. Plata se va efectua in termen de <span class="highlight">${c.payment_days} zile lucrătoare</span> de la acceptarea materialului. Plata include realizarea materialului si drepturile de utilizare acordate.</p>
   </div>
 
   <div class="article">

@@ -110,8 +110,8 @@ export default function ContractsPage() {
     } finally { setSendingId(null) }
   }
 
-  const [ugcForm, setUgcForm] = useState({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '14', notes: '' })
-  const [colabForm, setColabForm] = useState({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '14', campaign_title: '', platform: '', deliverables: '', notes: '' })
+  const [ugcForm, setUgcForm] = useState({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '15', notes: '' })
+  const [colabForm, setColabForm] = useState({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '15', campaign_title: '', platform: '', deliverables: '', notes: '' })
   const [cesForm, setCesForm] = useState({
     influencer_name: '', influencer_email: '', influencer_phone: '',
     influencer_cnp: '', influencer_ci_serie: '', influencer_ci_numar: '', influencer_address: '',
@@ -147,7 +147,7 @@ export default function ContractsPage() {
       if (data.error) { alert(data.error); return }
       setUgcContracts(prev => [data.contract, ...prev])
       setShowNew(false)
-      setUgcForm({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '14', notes: '' })
+      setUgcForm({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '15', notes: '' })
     } finally { setSaving(false) }
   }
 
@@ -160,7 +160,7 @@ export default function ContractsPage() {
       setColabContracts(prev => [data.contract, ...prev])
       if (sendNow && data.contract?.id) await sendContract(data.contract.id, 'campanii')
       setShowNew(false)
-      setColabForm({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '14', campaign_title: '', platform: '', deliverables: '', notes: '' })
+      setColabForm({ influencer_name: '', influencer_email: '', influencer_phone: '', influencer_address: '', amount_lei: '', payment_days: '15', campaign_title: '', platform: '', deliverables: '', notes: '' })
     } finally { setSaving(false) }
   }
 
@@ -481,7 +481,7 @@ export default function ContractsPage() {
                             ) : (
                               <>
                                 <span className="block font-bold text-gray-700">{(c as UGCContract).amount_lei?.toLocaleString('ro-RO')} RON</span>
-                                <span className="block text-gray-400">{(c as UGCContract).payment_days} zile termen</span>
+                                <span className="block text-gray-400">{(c as UGCContract).payment_days} zile lucrătoare termen</span>
                               </>
                             )}
                           </div>
@@ -565,7 +565,7 @@ export default function ContractsPage() {
                   <Field label="Telefon"><input value={ugcForm.influencer_phone} onChange={e => setUgcForm(f => ({ ...f, influencer_phone: e.target.value }))} placeholder="07xx xxx xxx" className="field" /></Field>
                   <Field label="Adresă" colSpan={2}><input value={ugcForm.influencer_address} onChange={e => setUgcForm(f => ({ ...f, influencer_address: e.target.value }))} placeholder="Str. Exemplu nr. 1, Cluj-Napoca" className="field" /></Field>
                   <Field label="Sumă (LEI) *"><input required type="number" min="1" value={ugcForm.amount_lei} onChange={e => setUgcForm(f => ({ ...f, amount_lei: e.target.value }))} placeholder="500" className="field" /></Field>
-                  <Field label="Termen plată (zile) *"><input required type="number" min="1" max="90" value={ugcForm.payment_days} onChange={e => setUgcForm(f => ({ ...f, payment_days: e.target.value }))} className="field" /></Field>
+                  <Field label="Termen plată (zile lucrătoare) *"><input required type="number" min="1" max="90" value={ugcForm.payment_days} onChange={e => setUgcForm(f => ({ ...f, payment_days: e.target.value }))} className="field" /></Field>
                   <Field label="Observații interne" colSpan={2}><textarea value={ugcForm.notes} onChange={e => setUgcForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Note interne..." className="field resize-none" /></Field>
                 </FieldGrid>
                 <ModalButtons onCancel={() => setShowNew(false)} saving={saving} grad={accentGrad} />
@@ -590,7 +590,7 @@ export default function ContractsPage() {
                   <Field label="Platformă"><input value={colabForm.platform} onChange={e => setColabForm(f => ({ ...f, platform: e.target.value }))} placeholder="ex. Instagram, TikTok" className="field" /></Field>
                   <Field label="Livrabile" colSpan={2}><input value={colabForm.deliverables} onChange={e => setColabForm(f => ({ ...f, deliverables: e.target.value }))} placeholder="ex. 2 Reels + 3 Stories pe Instagram" className="field" /></Field>
                   <Field label="Sumă (LEI) *"><input required type="number" min="1" value={colabForm.amount_lei} onChange={e => setColabForm(f => ({ ...f, amount_lei: e.target.value }))} placeholder="500" className="field" /></Field>
-                  <Field label="Termen plată (zile) *"><input required type="number" min="1" max="90" value={colabForm.payment_days} onChange={e => setColabForm(f => ({ ...f, payment_days: e.target.value }))} className="field" /></Field>
+                  <Field label="Termen plată (zile lucrătoare) *"><input required type="number" min="1" max="90" value={colabForm.payment_days} onChange={e => setColabForm(f => ({ ...f, payment_days: e.target.value }))} className="field" /></Field>
                   <Field label="Observații interne" colSpan={2}><textarea value={colabForm.notes} onChange={e => setColabForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Note interne..." className="field resize-none" /></Field>
                 </FieldGrid>
                 <label className="flex items-start gap-2.5 text-sm text-gray-700 cursor-pointer bg-orange-50 border border-orange-100 rounded-xl p-3">

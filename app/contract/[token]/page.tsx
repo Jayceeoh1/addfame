@@ -284,7 +284,7 @@ export default function ContractPage() {
 
               <div>
                 <h4 className="font-black text-gray-900 mb-2">4. Remuneratia</h4>
-                <p>Beneficiarul va achita Creatorului suma de <strong className="text-indigo-700">{contract.amount_lei.toLocaleString('ro-RO')} LEI</strong>. Plata se va efectua in termen de <strong className="text-indigo-700">{contract.payment_days} zile</strong> de la acceptarea materialului. Plata include realizarea materialului si drepturile de utilizare acordate.</p>
+                <p>Beneficiarul va achita Creatorului suma de <strong className="text-indigo-700">{contract.amount_lei.toLocaleString('ro-RO')} LEI</strong>. Plata se va efectua in termen de <strong className="text-indigo-700">{contract.payment_days} zile lucrătoare</strong> de la acceptarea materialului. Plata include realizarea materialului si drepturile de utilizare acordate.</p>
               </div>
 
               <div>

@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         influencer_phone: influencer_phone || null,
         influencer_address: influencer_address || null,
         amount_lei: Number(amount_lei),
-        payment_days: Number(payment_days) || 14,
+        payment_days: Number(payment_days) || 15,
         notes: notes || null,
         status: 'draft',
         created_by_admin_id: user.id,
