@@ -146,14 +146,19 @@ export function CampaignStats({ c, collabAmount }: { c: any; collabAmount?: numb
         <span className="iu-xs iu-muted">{barter ? 'gratuit' : offer ? 'îl scrii când aplici' : negotiable ? 'preț negociat' : 'recompensă'}</span>
       </div>
       <div className="cp-stat">
-        <span className="iu-label">Deadline</span>
-        <b style={{ color: expired ? '#b42318' : urgent ? '#9a4206' : '#14123a' }}>{!has ? '—' : expired ? 'Expirat' : `${days} zile`}</b>
+        <span className="iu-label">Înscrieri până</span>
+        <b style={{ color: expired ? '#b42318' : urgent ? '#9a4206' : '#14123a' }}>{!has ? '—' : expired ? 'Închise' : `${days} zile`}</b>
         <span className="iu-xs iu-muted">{has ? fmtDate(c.deadline) : ''}</span>
       </div>
       <div className="cp-stat">
         <span className="iu-label">Locuri</span>
         <b>{c.current_influencers || 0}/{c.max_influencers || '∞'}</b>
         <span className="iu-xs iu-muted">ocupate</span>
+      </div>
+      <div className="cp-stat" style={{ gridColumn: '1 / -1', borderTop: '1px solid #eeecf7', paddingTop: 10, marginTop: 4 }}>
+        <span className="iu-xs" style={{ color: '#5b2fd0', fontWeight: 700 }}>
+          Atenție: data de mai sus e doar pentru înscriere. Postezi în {c.post_deadline_days || '3–5'} zile {barter ? 'de la primirea produsului' : 'după ce ești acceptat'}, nu până la această dată.
+        </span>
       </div>
     </div>
   )
@@ -205,7 +210,7 @@ export function CampaignSections({ c, onCopy }: { c: any; onCopy?: (text: string
     { title: 'Aplică la campanie', sub: needsAddress ? 'Completează adresa de livrare' : 'Trimite aplicația ta' },
     barter && delivery && { title: 'Primești produsul acasă', sub: 'Bifează în AddFame că l-ai primit' },
     barter && !delivery && { title: 'Ridică de la locație', sub: c.pickup_location_name ? `Locație: ${c.pickup_location_name}` : 'Conform detaliilor brandului' },
-    { title: `Postează în ${c.post_deadline_days || 3} zile${barter ? ' de la primire' : ''}`, sub: 'Respectă instrucțiunile și hashtag-urile' },
+    { title: `Postează în ${c.post_deadline_days || '3–5'} zile${barter ? ' de la primire' : ''}`, sub: 'Respectă instrucțiunile și hashtag-urile' },
     { title: 'Trimite dovada în AddFame', sub: 'Link postare + screenshot obligatoriu' },
   ].filter(Boolean) as any[]
 

@@ -24,6 +24,7 @@ type Campaign = {
   brand_name: string
   budget: number
   budget_per_influencer?: number
+  fee_per_influencer?: number | null
   payment_mode?: string | null
   platforms: string[]
   deliverables: string
@@ -836,7 +837,7 @@ export default function CampaignsPage() {
                       {c.payment_mode === 'OFFER'
                         ? <div><b style={{ color: '#5b2fd0' }}>Tu propui</b><span>prețul</span></div>
                         : (c.budget_per_influencer ?? 0) > 0
-                          ? <div><b style={{ color: '#14532d' }}>{fmt(c.budget_per_influencer ?? 0)} RON</b><span>per influencer</span></div>
+                          ? <div><b style={{ color: '#14532d' }}>{fmt(c.fee_per_influencer != null ? Number(c.budget_per_influencer) : Math.round(Number(c.budget_per_influencer) * 0.85))} RON</b><span>primești</span></div>
                           : <div><b style={{ color: '#14532d' }}>{fmt(c.budget ?? 0)} RON</b><span>buget total</span></div>}
                       {c.max_influencers ? (
                         <div><b>{slotsLeft}</b><span>{slotsLeft === 1 ? 'loc liber' : 'locuri libere'}</span></div>
@@ -845,7 +846,7 @@ export default function CampaignsPage() {
                         <b style={{ color: expired ? '#b42318' : urgent ? '#9a4206' : undefined }}>
                           {expired ? 'Expirat' : days === 0 ? 'Azi' : `${days} ${days === 1 ? 'zi' : 'zile'}`}
                         </b>
-                        <span>{c.deadline ? fmtDateShort(c.deadline) : 'deadline'}</span>
+                        <span>{c.deadline ? `înscrieri până ${fmtDateShort(c.deadline)}` : 'înscrieri'}</span>
                       </div>
                     </div>
 
@@ -958,9 +959,12 @@ export default function CampaignsPage() {
                         <div><b style={{ color: '#1d4fb8' }}>Gratuit</b><span>primești produsul</span></div>
                         <div><b>{slotsLeft}</b><span>{slotsLeft === 1 ? 'loc liber' : 'locuri libere'}</span></div>
                         {c.deadline && (
-                          <div><b style={{ color: urgent ? '#9a4206' : undefined }}>{days > 0 ? `${days} ${days === 1 ? 'zi' : 'zile'}` : 'Azi'}</b><span>deadline</span></div>
+                          <div><b style={{ color: urgent ? '#9a4206' : undefined }}>{days > 0 ? `${days} ${days === 1 ? 'zi' : 'zile'}` : 'Azi'}</b><span>înscrieri</span></div>
                         )}
                       </div>
+                      <p className="iu-xs" style={{ margin: '8px 0 0', color: '#5b2fd0', fontWeight: 700 }}>
+                        Postezi în 3–5 zile de la primirea produsului. Termenul de mai sus e doar pentru înscriere.
+                      </p>
 
                       {(c.platforms || []).length > 0 && (
                         <div className="cm-chips">{c.platforms.map((p: string) => <PlatformBadge key={p} platform={p} />)}</div>
