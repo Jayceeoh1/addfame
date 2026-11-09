@@ -21,6 +21,7 @@ import { eligibility, hasTargeting, ELIG_MESSAGE } from '@/lib/eligibility'
 import { isOfferCampaign, parseOfferPrice } from '@/lib/offer'
 import { limitAction, LIMITS } from '@/lib/rate-limit'
 import { awardScore } from '@/lib/score-log'
+import { WITHDRAWALS_PAUSED, WITHDRAWALS_PAUSED_MESSAGE } from '@/lib/withdrawals-config'
 import {
   emailCollaborationApproved,
   emailPaymentReleased,
@@ -690,6 +691,7 @@ export async function requestWithdrawal(amount: number, methodId: string) {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) return { error: 'Not authenticated' }
 
+    if (WITHDRAWALS_PAUSED) return { error: WITHDRAWALS_PAUSED_MESSAGE }
     if (!amount || amount < 200) return { error: 'Suma minimă de retragere este 200 RON.' }
 
     const { data: inf } = await admin.from('influencers')

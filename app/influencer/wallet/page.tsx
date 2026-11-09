@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { requestWithdrawal } from '@/app/actions/collaborations'
+import { WITHDRAWALS_PAUSED, WITHDRAWALS_PAUSED_MESSAGE } from '@/lib/withdrawals-config'
 import {
   Wallet, TrendingUp, ArrowUpRight, ArrowDownLeft, Clock,
   CheckCircle, XCircle, AlertCircle, X, Plus, Trash2,
@@ -310,7 +311,7 @@ export default function WalletPage() {
   const hasMethod = paymentMethods.some(m => methodIsComplete(m as any))
   const wv = walletFromCollabs(collabs)
   const fmtR = (v: number) => `${v.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RON`
-  const canPayout = wallet.available_balance >= WITHDRAWAL_MIN && hasMethod
+  const canPayout = !WITHDRAWALS_PAUSED && wallet.available_balance >= WITHDRAWAL_MIN && hasMethod
   const wStatus = getWithdrawalStatus(wallet.last_payout_at)
 
   return (
@@ -390,16 +391,20 @@ export default function WalletPage() {
 
           <div className="iw-note">
             <Info className="w-4 h-4" style={{ flex: 'none', marginTop: 2 }} />
+            {WITHDRAWALS_PAUSED ? (
+              <span><strong>Retrageri în mentenanță.</strong> {WITHDRAWALS_PAUSED_MESSAGE.replace('Retragerile sunt temporar în mentenanță. ', '')}</span>
+            ) : (
             <span>
               Retragere minimă <strong>{WITHDRAWAL_MIN} RON</strong> · fără taxe · o dată la {WITHDRAWAL_CYCLE_DAYS} zile · plata în cel mult 15 zile lucrătoare
               {!wStatus.canWithdraw && wStatus.nextAvailable && <> · următoarea: <strong>{wStatus.nextAvailable.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}</strong></>}
             </span>
+            )}
           </div>
 
           <button onClick={() => setShowPayoutModal(true)} disabled={!canPayout} className="iw-cta">
-            <ArrowUpRight className="w-4 h-4" /> Retrage fonduri
+            <ArrowUpRight className="w-4 h-4" /> {WITHDRAWALS_PAUSED ? 'Retrageri în mentenanță' : 'Retrage fonduri'}
           </button>
-          {!hasMethod && (
+          {!WITHDRAWALS_PAUSED && !hasMethod && (
             <button type="button" onClick={() => setActiveTab('payment_methods')} style={{ margin: 0, padding: 0, border: 0, background: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: '#fff', textDecoration: 'underline', fontFamily: 'inherit', minHeight: 32 }}>
               {paymentMethods.length ? 'Completează metoda de plată ca să poți retrage' : 'Adaugă o metodă de plată ca să poți retrage'}
             </button>
