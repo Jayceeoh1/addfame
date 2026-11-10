@@ -571,6 +571,9 @@ export default function BrandDashboard() {
         </div>
       </section>
 
+      {/* BRANDURI PARTENERE */}
+      <PartnersShowcase />
+
       {/* CAMPANIILE TALE */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
@@ -762,7 +765,6 @@ export default function BrandDashboard() {
         </div>
       )}
 
-      <PartnersShowcase />
       <AIAssistant />
     </div>
   )
