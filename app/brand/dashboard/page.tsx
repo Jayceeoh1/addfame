@@ -1,5 +1,6 @@
 'use client'
 import { campaignName } from '@/lib/campaign-name'
+import PartnersShowcase from '@/components/brand/PartnersShowcase'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -761,6 +762,7 @@ export default function BrandDashboard() {
         </div>
       )}
 
+      <PartnersShowcase />
       <AIAssistant />
     </div>
   )

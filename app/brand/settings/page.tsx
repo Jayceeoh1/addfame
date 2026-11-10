@@ -112,6 +112,7 @@ export default function BrandSettingsPage() {
   const [country, setCountry] = useState('')
   const [phone, setPhone] = useState('')
   const [description, setDescription] = useState('')
+  const [showcase, setShowcase] = useState(false)
   const [language, setLanguage] = useState('en')
   const [currency, setCurrency] = useState('EUR')
 
@@ -196,6 +197,7 @@ export default function BrandSettingsPage() {
         setCountry(data.country || '')
         setPhone(data.phone || '')
         setDescription(data.description || '')
+        setShowcase(!!data.show_in_showcase)
         setLogo(data.logo || null)
         setLogoPreview(data.logo || null)
         if (data.instagram_connected) {
@@ -616,6 +618,16 @@ export default function BrandSettingsPage() {
                       className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     />
                     <p className="text-xs text-muted-foreground text-right mt-1">{description.length}/600</p>
+                    <SettingRow
+                      label="Arată-mă în lista de parteneri"
+                      description="Alte branduri din AddFame văd numele, logo-ul și bannerele campaniilor tale (doar previzualizare, fără buget sau creatori)."
+                      checked={showcase}
+                      onChange={async v => {
+                        setShowcase(v)
+                        const { error } = await createClient().from('brands').update({ show_in_showcase: v }).eq('id', brandId)
+                        if (error) setShowcase(!v)
+                      }}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
