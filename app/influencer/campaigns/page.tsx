@@ -2,6 +2,7 @@
 import { campaignName } from '@/lib/campaign-name'
 // @ts-nocheck
 import { applyToCampaign } from '@/app/actions/collaborations'
+import { profileMissing as computeMissing, profilePercent, PROFILE_COLUMNS, type MissingItem } from '@/lib/profile-complete'
 import { PushToggle } from '@/components/shared/PushToggle'
 import React from 'react'
 
@@ -346,7 +347,7 @@ export default function CampaignsPage() {
   const [invitedIds, setInvitedIds] = useState<Set<string>>(new Set())
   const [collabAmounts, setCollabAmounts] = useState<Record<string, number>>({})
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
-  const [profileMissing, setProfileMissing] = useState<string[]>([])
+  const [profileMissing, setProfileMissing] = useState<MissingItem[]>([])
   const [showProfileModal, setShowProfileModal] = useState(false)
 
   const notify = (msg: string, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
@@ -356,16 +357,17 @@ export default function CampaignsPage() {
       const sb = createClient()
       const { data: { user } } = await sb.auth.getUser()
       if (!user) return
-      const { data: inf } = await sb.from('influencers').select('id, identity_verified, verification_status, name, bio, niches, platforms, avatar, instagram_connected, ig_followers, tt_followers, instagram_followers').eq('user_id', user.id).single()
+      const { data: infRow } = await sb.from('influencers').select('id, identity_verified, verification_status, ig_followers, tt_followers, instagram_followers, ' + PROFILE_COLUMNS).eq('user_id', user.id).single()
+      const inf = infRow as any
       if (inf) {
-        // Verifică ce lipsește din profil
-        const missing: string[] = []
-        if (!inf.name) missing.push('Nume complet')
-        if (!inf.bio) missing.push('Bio')
-        if (!inf.avatar) missing.push('Poză de profil')
-        if (!inf.niches?.length) missing.push('Nișe de conținut')
-        if (!inf.platforms?.length) missing.push('Platforme sociale (Instagram, TikTok etc.)')
-        setProfileMissing(missing)
+        // Ce lipsește din profil (aceleași reguli ca pe server)
+        setProfileMissing(computeMissing(inf, user.email))
+        // Adresa de livrare se completează din profil; o poate modifica la aplicare
+        setApplyAddress(prev => ({
+          name: prev.name || inf.name || '', phone: prev.phone || inf.phone || '',
+          address: prev.address || inf.address_line || '', city: prev.city || inf.city || '',
+          county: prev.county || inf.county || '', postal: prev.postal || inf.postal_code || '',
+        }))
       }
       if (inf) {
         setInfluencerId(inf.id)
@@ -442,7 +444,13 @@ export default function CampaignsPage() {
         setActionLoading(null)
         return
       }
-      const result = await applyToCampaign(selected.id, applyMsg || undefined, needsDelivery ? applyAddress : undefined, isOffer ? applyOffer : undefined)
+      const result: any = await applyToCampaign(selected.id, applyMsg || undefined, needsDelivery ? applyAddress : undefined, isOffer ? applyOffer : undefined)
+      if (result.profileMissing?.length) {
+        setProfileMissing(result.profileMissing)
+        setShowProfileModal(true)
+        setActionLoading(null)
+        return
+      }
       if (result.error) {
         setApplyError(result.error)
         setActionLoading(null)
@@ -608,21 +616,30 @@ export default function CampaignsPage() {
         <div className="cm-overlay pm">
           <div className="cm-pm">
             <div className="iu-ico" style={{ width: 52, height: 52, background: '#fff1c2', color: '#854d0e', marginBottom: 14 }}><AlertCircle size={24} /></div>
-            <h2 style={{ marginBottom: 6 }}>Profilul tău e incomplet</h2>
-            <p className="iu-muted iu-sm" style={{ margin: '0 0 14px', lineHeight: 1.6 }}>
-              Brandurile nu pot vedea profiluri incomplete. Completează informațiile de mai jos pentru a putea aplica la campanii:
+            <h2 style={{ marginBottom: 6 }}>Completează-ți profilul ca să aplici</h2>
+            <p className="iu-muted iu-sm" style={{ margin: '0 0 12px', lineHeight: 1.6 }}>
+              Poți aplica la campanii doar cu profilul completat 100%. Îți mai lipsește{profileMissing.length === 1 ? '' : 'u'}:
             </p>
-            <div style={{ background: '#fff4f2', borderRadius: 14, padding: '12px 14px', marginBottom: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {profileMissing.map((item: string, i: number) => (
-                <div key={i} className="iu-row" style={{ gap: 8 }}>
+            <div style={{ marginBottom: 12 }}>
+              <div className="iu-row" style={{ justifyContent: 'space-between', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+                <span>Profil completat</span><span>{profilePercent(profileMissing)}%</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 99, background: '#efeaff' }}>
+                <div style={{ width: `${profilePercent(profileMissing)}%`, height: 8, borderRadius: 99, background: '#7040f0' }} />
+              </div>
+            </div>
+            <div style={{ background: '#fff4f2', borderRadius: 14, padding: '6px 6px', marginBottom: 18, display: 'flex', flexDirection: 'column' }}>
+              {profileMissing.map(item => (
+                <a key={item.key} href={item.href} className="iu-row" style={{ gap: 8, minHeight: 44, padding: '6px 8px', borderRadius: 10, textDecoration: 'none' }}>
                   <X size={14} color="#b42318" style={{ flex: 'none' }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#b42318' }}>{item}</span>
-                </div>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#b42318', flex: 1 }}>{item.label}</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#5b2fd0', flex: 'none' }}>Completează</span>
+                </a>
               ))}
             </div>
             <div className="iu-row" style={{ gap: 10, flexWrap: 'wrap' }}>
               <button className="iu-btn" style={{ flex: 1, minHeight: 44 }} onClick={() => setShowProfileModal(false)}>Înapoi</button>
-              <a href="/influencer/profile" className="iu-btn p" style={{ flex: 1.4, minHeight: 44 }}>Completează profilul <ArrowRight size={15} /></a>
+              <a href={profileMissing[0]?.href || '/influencer/profile'} className="iu-btn p" style={{ flex: 1.4, minHeight: 44 }}>Completează acum <ArrowRight size={15} /></a>
             </div>
           </div>
         </div>
@@ -944,7 +961,7 @@ export default function CampaignsPage() {
                       {isClosed ? (
                         <span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770', zIndex: 1 }}>Înscrieri închise</span>
                       ) : urgent ? (
-                        <span className="iu-chip" style={{ background: '#fff1e6', color: '#9a4206', zIndex: 1 }}>{days === 0 ? 'Ultima zi' : `${days} ${days === 1 ? 'zi' : 'zile'} rămase`}</span>
+                        <span className="iu-chip" style={{ background: '#fff1e6', color: '#9a4206', zIndex: 1 }}>{days === 0 ? 'Ultima zi de înscriere' : `Înscrieri: ${days} ${days === 1 ? 'zi' : 'zile'}`}</span>
                       ) : null}
                     </div>
                     <div className="cm-body">

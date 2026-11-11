@@ -324,6 +324,9 @@ function SettingsPageInner() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [city, setCity] = useState('')
+  const [addressLine, setAddressLine] = useState('')
+  const [county, setCounty] = useState('')
+  const [postalCode, setPostalCode] = useState('')
   const [cityLat, setCityLat] = useState<number | null>(null)
   const [cityLon, setCityLon] = useState<number | null>(null)
   const [language, setLanguage] = useState('en')
@@ -368,13 +371,16 @@ function SettingsPageInner() {
 
       const { data } = await supabase
         .from('influencers')
-        .select('id, phone, city, settings, is_verified, verified_at, badge_expires_at, wallet_balance, verification_status, verification_rejection_reason, telegram_chat_id, telegram_link_code')
+        .select('id, phone, city, address_line, county, postal_code, settings, is_verified, verified_at, badge_expires_at, wallet_balance, verification_status, verification_rejection_reason, telegram_chat_id, telegram_link_code')
         .eq('user_id', user.id)
         .single()
 
       if (data) {
         setPhone(data.phone || '')
         setCity(data.city || '')
+        setAddressLine(data.address_line || '')
+        setCounty(data.county || '')
+        setPostalCode(data.postal_code || '')
         setIsVerified(data.is_verified && data.badge_expires_at && new Date(data.badge_expires_at) > new Date() || false)
         setVerifiedAt(data.verified_at || null)
         setBadgeExpiresAt(data.badge_expires_at || null)
@@ -491,7 +497,7 @@ function SettingsPageInner() {
       }
 
       const updatePayload: Record<string, any> = { settings: updatedSettings }
-      if (section === 'account') { updatePayload.phone = phone; updatePayload.city = city; if (cityLat) updatePayload.latitude = cityLat; if (cityLon) updatePayload.longitude = cityLon }
+      if (section === 'account') { updatePayload.phone = phone.trim(); updatePayload.city = city; updatePayload.address_line = addressLine.trim(); updatePayload.county = county.trim(); updatePayload.postal_code = postalCode.trim(); if (cityLat) updatePayload.latitude = cityLat; if (cityLon) updatePayload.longitude = cityLon }
 
       const { error } = await supabase
         .from('influencers')
@@ -729,7 +735,7 @@ function SettingsPageInner() {
                     <p className="text-xs text-muted-foreground mt-1">Pentru a schimba emailul, folosește tab-ul Securitate.</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Număr de telefon</label>
+                    <label className="block text-sm font-medium mb-2">Număr de telefon *</label>
                     <div className="relative">
                       <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
@@ -750,6 +756,31 @@ function SettingsPageInner() {
                       Folosit pentru a-ți arăta ofertele barter locale din zona ta.
                     </p>
                     <CityPicker value={city} onChange={(v, lat, lon) => { setCity(v); if (lat) setCityLat(lat); if (lon) setCityLon(lon) }} />
+                  </div>
+
+                  {/* ── Adresa completă (obligatorie pentru aplicare; folosită la livrarea coletelor) ── */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-primary" /> Adresa completă *
+                    </label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Necesară ca să poți aplica la campanii. O folosim ca să-ți trimitem coletele; brandul o vede doar dacă ești selectat într-o campanie cu livrare.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="sm:col-span-2">
+                        <label htmlFor="addr-line" className="block text-xs font-medium mb-1">Stradă, număr, bloc, apartament *</label>
+                        <Input id="addr-line" autoComplete="street-address" placeholder="Str. Exemplu nr. 1, Bl. A, Ap. 5" value={addressLine} onChange={e => setAddressLine(e.target.value)} />
+                      </div>
+                      <div>
+                        <label htmlFor="addr-county" className="block text-xs font-medium mb-1">Județ *</label>
+                        <Input id="addr-county" autoComplete="address-level1" placeholder="Ilfov" value={county} onChange={e => setCounty(e.target.value)} />
+                      </div>
+                      <div>
+                        <label htmlFor="addr-postal" className="block text-xs font-medium mb-1">Cod poștal</label>
+                        <Input id="addr-postal" autoComplete="postal-code" inputMode="numeric" placeholder="077190" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">Orașul îl alegi mai sus, la „Orașul tău”.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
