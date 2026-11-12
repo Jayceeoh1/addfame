@@ -1381,6 +1381,7 @@ export default function AdminCampaigns() {
                           <td className="px-5 py-4">
                             <p className="font-black text-gray-900 max-w-[260px] truncate" title={c.display_name || ''}>{c.display_name || campaignName(c, c.title)}</p>
                             <p className="text-xs text-gray-400">{c.platforms?.join(', ')}</p>
+                            {c.source === 'demo_funnel' && <span className="inline-block mt-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">🆕 Propunere demo — de verificat</span>}
                           </td>
                           <td className="px-5 py-4 text-sm font-semibold text-gray-600">{c.brand_name || '—'}</td>
                           <td className="px-5 py-4">
