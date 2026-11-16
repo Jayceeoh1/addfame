@@ -36,6 +36,11 @@ const PAGE_CSS = `
 .ra-views{display:flex;align-items:center;gap:14px;min-width:220px}
 .ra-views .rk-bar{flex:1;height:10px;margin:0;background:#eeecf7}.ra-views .rk-bar div{height:10px;background:#5a35e6}
 .ra-views b{font-family:var(--font-display,system-ui),system-ui,sans-serif;font-weight:800;font-size:19px;min-width:72px;text-align:right}
+.rp-shots{order:99}
+.rp-shotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.rp-shotgrid figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.rp-shotgrid img{width:100%;max-height:420px;object-fit:contain;border:1px solid #e5e3f3;border-radius:12px;background:#fbfaff;display:block}
+.rp-shotgrid figcaption{display:flex;flex-direction:column;font-size:13px}.rp-shotgrid figcaption span{color:#6a6690;font-size:12px}
 .ra-link{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:10px;border:1.5px solid #d8d5ec;color:#4423c4;font-weight:700;font-size:13px;text-decoration:none}
 .rp-in{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
 .rp-main{max-width:1120px;margin:0 auto;padding:24px 20px 64px;display:flex;flex-direction:column;gap:20px}
@@ -67,7 +72,7 @@ const PAGE_CSS = `
 .ra-stats{grid-template-columns:1.25fr 1fr 1fr!important;gap:8px;margin:-46px 12px 0}
 .ra-st{padding:10px 14px;border-radius:12px;gap:3px;box-shadow:none;break-inside:avoid}
 .ra-st b{font-size:9px}.ra-st span{font-size:24px}.ra-st small{font-size:10px}
-.ra-card{padding:12px 14px;border-radius:12px;gap:6px;break-inside:avoid}.ra-h2{font-size:15px}.ra-sum p{font-size:11px;line-height:1.45;max-width:none}
+.ra-card{padding:12px 14px;border-radius:12px;gap:6px}.ra-sum{break-inside:avoid}.ra-h2{font-size:15px}.ra-sum p{font-size:11px;line-height:1.45;max-width:none}
 .rk{min-width:0;font-size:10.5px}.rk-wrap{overflow:visible}
 .rk th{font-size:8.5px;padding:5px 6px}.rk td{padding:4px 6px}
 .rk tr{break-inside:avoid}
@@ -75,7 +80,25 @@ const PAGE_CSS = `
 .rk-pos{width:18px;height:18px;font-size:9.5px;border-radius:5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .ra-views{min-width:0;gap:8px}.ra-views .rk-bar{height:6px;min-width:60px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.ra-views .rk-bar div{height:6px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .ra-views b{font-size:12px;min-width:46px}
-.rp-page{break-before:page;gap:6px!important}.rp-sep{margin-top:0;font-size:9.5px}
+/* creatorii: fișe compacte, 3–4 pe pagină, fără pagină nouă la fiecare */
+.rp-page{break-before:auto;break-inside:avoid;gap:0!important;border:1px solid #e5e3f3;border-radius:12px;padding:9px 12px;margin-top:2px}
+.rp-sep{display:none}
+.rp-page .cr-shotprint{display:none}
+.rp-shots{break-before:page}.rp-shotgrid{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.rp-shotgrid figure{break-inside:avoid;gap:2px}.rp-shotgrid img{max-height:78mm;border-radius:6px}.rp-shotgrid figcaption{font-size:8.5px}.rp-shotgrid figcaption span{font-size:7.5px}
+.rp-page .cr{gap:6px!important}
+.rp-page .cr-card{border:0;padding:0;border-radius:0}
+.rp-page .cr-head{flex-wrap:nowrap;align-items:center}
+.rp-page .cr-av{width:34px;height:34px;font-size:12px}.rp-page .cr-name{font-size:15px}.rp-page .cr-eyebrow{display:none}
+.rp-page .cr-meta{display:flex;flex:none;gap:14px}.rp-page .cr-meta>div:nth-child(1),.rp-page .cr-meta>div:nth-child(2),.rp-page .cr-meta>div:nth-child(4){display:none}
+.rp-page .cr-chips,.rp-page .cr-sec-tl,.rp-page .cr-foot,.rp-page .cr-h2{display:none!important}
+.rp-page .cr-sec-rez{gap:0!important}
+.rp-page .cr-kpi{padding:6px 10px;flex-direction:row;align-items:baseline;gap:8px;flex-wrap:wrap}.rp-page .cr-kpi span{font-size:17px}.rp-page .cr-kpi small{display:none}
+.rp-page .cr-posts{gap:4px}.rp-page .cr-post{padding-top:4px;border-top:0;align-items:center}
+.rp-page .cr-thumb{width:26px;aspect-ratio:1;border-radius:6px;padding:0;align-items:center;justify-content:center}.rp-page .cr-thumb .cr-tag{display:none}
+.rp-page .cr-pbody{flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 10px}.rp-page .cr-ptitle{font-size:10.5px}
+.rp-page .cr-grid{flex:1 1 100%;grid-template-columns:repeat(5,minmax(0,1fr))}.rp-page .cr-m{padding:4px 8px;display:flex;align-items:baseline;gap:6px}.rp-page .cr-m div:last-child{font-size:11.5px}
+.rp-page .cr-two{gap:0}.rp-page .cr-sec-q{flex-direction:row!important;flex-wrap:wrap;align-items:baseline;gap:4px 8px!important}
+.rp-page .cr-stars{font-size:11px;letter-spacing:1px}.rp-page .cr-quote{font-size:10px;flex:1 1 60%}.rp-page .cr-sec-q .cr-sub{font-size:9px!important}
 }
 `
 
@@ -241,6 +264,25 @@ export default function RaportCampaniePage() {
               </footer>
             </div>
           )}
+
+          {(() => {
+            // capturile cu statistici încărcate la postări — la final, destul de mari cât să se citească
+            const shots = d.reports.flatMap(r => r.rows.filter(x => x.screenshot_url).map(x => ({ id: x.id, url: x.screenshot_url as string, name: r.creator.name, label: x.label })))
+            if (!shots.length) return null
+            return (
+              <section className="ra-card rp-shots" aria-labelledby="rc-shots">
+                <h2 id="rc-shots" className="ra-h2">Capturi cu statisticile</h2>
+                <div className="rp-shotgrid">
+                  {shots.map(s => (
+                    <figure key={s.id}>
+                      <a href={s.url} target="_blank" rel="noopener noreferrer"><img src={s.url} alt={`Captura cu statisticile — ${s.name}`} /></a>
+                      <figcaption><b>{s.name}</b><span>{s.label}</span></figcaption>
+                    </figure>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
 
           {withEach && d.reports.map(r => (
             <div key={r.collabId} className="rp-page" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
