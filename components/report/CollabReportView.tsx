@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { Check, ExternalLink, Image as ImageIcon, Loader2, Download, Share2, X } from 'lucide-react'
 import type { CollabReport } from '@/lib/collab-report'
-import { fmtInt, fmtLei, fmtPct, fmtDay, fmtDate, KIND_LABEL, PLATFORM_LABEL } from '@/lib/collab-report'
+import { fmtInt, fmtLei, fmtPct, fmtDay, fmtDate, KIND_LABEL, PLATFORM_LABEL, reportForDisplay } from '@/lib/collab-report'
 
 export const REPORT_CSS = `
 .cr{--ink:#15123a;--muted:#57537a;--line:#e6e3f2;--soft:#f6f5fb;--acc:#5b2fd0;--good:#0f6b3a;--goodbg:#e3f6ec;--warm:#6b4700;--warmbg:#fff1c2;
@@ -27,6 +27,7 @@ export const REPORT_CSS = `
 .cr-chip.good{background:var(--goodbg);color:var(--good)}.cr-chip.warm{background:var(--warmbg);color:var(--warm)}.cr-chip.neutral{background:#efedf7;color:var(--muted)}
 .cr-h2{font-size:19px;font-weight:800}
 .cr-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.cr-post.nodata{align-items:center}.cr-post.nodata .cr-thumb{aspect-ratio:auto;width:auto;padding:6px 8px;background:#efedf7;color:var(--muted)}.cr-post.nodata .cr-thumb>span:last-child{display:none}.cr-post.nodata .cr-tag{background:none;color:inherit;padding:0}.cr-post.nodata .cr-grid{display:none}
 .cr-kpi{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:4px}
 .cr-kpi b{font-size:13px;color:var(--muted)}
 .cr-kpi span{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
@@ -69,9 +70,31 @@ export const REPORT_CSS = `
 @media (max-width:560px){.cr-thumb{width:64px;padding:6px}.cr-thumb>span:last-child{display:none}.cr-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.cr-kpi span{font-size:26px}.cr-meta{grid-template-columns:1fr 1fr}.cr-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cr-post{flex-wrap:nowrap;gap:12px}}
 @media print{
   .cr-noprint{display:none!important}
+  .cr{gap:8px!important}
   .cr-card,.cr-kpi,.cr-cost{break-inside:avoid}
   .cr-post{break-inside:avoid}
-  .cr-kpi.acc{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .cr-kpi.acc,.cr-chip,.cr-src,.cr-m,.cr-thumb,.cr-tl li{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .cr-card{padding:12px 14px;border-radius:12px;gap:8px!important}
+  .cr-head{gap:10px 20px}.cr-who{gap:10px;flex:1 1 260px}.cr-av{width:44px;height:44px;font-size:15px}
+  .cr-eyebrow{font-size:8.5px}.cr-name{font-size:20px}.cr-sub{font-size:10.5px}
+  .cr-meta{gap:5px 18px;flex:1 1 260px}.cr-meta dt{font-size:8.5px}.cr-meta dd{font-size:10.5px;margin:0}
+  .cr-chips{gap:5px}.cr-chip{padding:3px 9px;font-size:9.5px}
+  .cr-h2{font-size:13px}
+  .cr-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px}
+  .cr-kpi{padding:9px 12px;border-radius:12px;gap:2px}.cr-kpi b{font-size:9.5px}.cr-kpi span{font-size:22px}.cr-kpi small{font-size:9.5px}
+  .cr-costs{gap:8px}.cr-cost{padding:7px 12px;border-radius:10px}.cr-cost span{font-size:10px}.cr-cost b{font-size:13px}
+  .cr-posts{gap:8px}.cr-post{gap:10px;padding-top:8px;flex-wrap:nowrap}
+  .cr-thumb{width:48px;border-radius:8px;padding:4px;font-size:7.5px}.cr-thumb .cr-tag{font-size:6.5px;padding:2px 3px}.cr-thumb>span:last-child{display:none}
+  .cr-pbody{gap:4px}.cr-ptitle{font-size:11.5px;gap:6px}.cr-src{font-size:8.5px;padding:2px 7px}.cr-plink{font-size:9.5px}
+  .cr-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}.cr-m{padding:5px 8px;border-radius:8px}
+  .cr-m div:first-child{font-size:8.5px}.cr-m div:last-child{font-size:13px}
+  .cr-tl{grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px}.cr-tl li{gap:2px;padding-top:5px;border-top-width:2px}
+  .cr-tl span{font-size:8.5px}.cr-tl b{font-size:10px}
+  .cr-two{gap:8px}.cr-two>*{flex:1 1 240px}
+  .cr-stars{font-size:14px}.cr-quote{font-size:11px;line-height:1.4}
+  .cr-list{font-size:10.5px;gap:5px}.cr-num{width:18px;height:18px;font-size:9.5px}
+  .cr-empty{font-size:10.5px;padding:8px 12px}
+  .cr-foot{font-size:8.5px;padding-top:6px;gap:4px}
 }
 `
 
@@ -87,7 +110,8 @@ const SRC: Record<string, { cls: string; text: string }> = {
   pending: { cls: 'pending', text: 'Necompletat' },
 }
 
-export function CollabReportView({ report: r, viewer }: { report: CollabReport; viewer: 'admin' | 'brand' | 'influencer' }) {
+export function CollabReportView({ report: raw, viewer }: { report: CollabReport; viewer: 'admin' | 'brand' | 'influencer' }) {
+  const r = reportForDisplay(raw)
   const [shot, setShot] = useState<string | null>(null)
   const hidden = new Set(r.settings.hidden)
   const t = r.totals
@@ -96,7 +120,8 @@ export function CollabReportView({ report: r, viewer }: { report: CollabReport; 
   const showCost = !hidden.has('cost') && r.cost.lei != null
   const deliverables = [posts.length ? `${posts.length} ${posts.length === 1 ? 'postare' : 'postări'}` : '', stories.length ? `${stories.length} ${stories.length === 1 ? 'story' : 'story-uri'}` : ''].filter(Boolean).join(' + ') || '—'
 
-  const metric = (label: string, v: number | null) => (
+  // arătăm doar cifrele completate, ca raportul să nu fie plin de liniuțe
+  const metric = (label: string, v: number | null) => v == null ? null : (
     <div className="cr-m" key={label}><div>{label}</div><div>{fmtInt(v)}</div></div>
   )
 
@@ -137,7 +162,6 @@ export function CollabReportView({ report: r, viewer }: { report: CollabReport; 
           <div className="cr-kpis">
             <div className="cr-kpi"><b>Vizualizări</b><span>{fmtInt(t.views)}</span><small>{viewsSub || 'total'}</small></div>
             <div className="cr-kpi"><b>Interacțiuni</b><span>{fmtInt(t.interactions)}</span><small>like, comentarii, distribuiri, salvări</small></div>
-            <div className="cr-kpi"><b>Clicuri pe link</b><span>{fmtInt(t.clicks)}</span><small>din story-uri și postări</small></div>
             <div className="cr-kpi acc"><b>Rată de engagement</b><span>{fmtPct(t.er)}</span><small>{t.erBase === 'reach' ? 'interacțiuni / conturi atinse' : t.erBase === 'views' ? 'interacțiuni / vizualizări' : 'fără date suficiente'}</small></div>
           </div>
         )}
@@ -152,14 +176,14 @@ export function CollabReportView({ report: r, viewer }: { report: CollabReport; 
 
       {r.rows.length > 0 && (
         <section className="cr-card" aria-labelledby="cr-post" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <h2 id="cr-post" className="cr-h2">Postări și story-uri</h2>
+          <h2 id="cr-post" className="cr-h2">Postări</h2>
           <div className="cr-posts">
             {r.rows.map(p => {
               const src = SRC[p.source] || SRC.pending
               const isStory = p.kind === 'story'
               const img = p.thumbnail_url || (isStory ? p.screenshot_url : null)
               return (
-                <article key={p.id} className="cr-post">
+                <article key={p.id} className={`cr-post${[p.views, p.likes, p.comments, p.shares, p.saves].every(v => v == null) ? ' nodata' : ''}`}>
                   <div className={`cr-thumb${isStory ? ' story' : ''}`}>
                     {img && <img src={img} alt="" />}
                     <span className="cr-tag">{(KIND_LABEL[p.kind] || 'Postare').toUpperCase()}</span>
@@ -174,7 +198,6 @@ export function CollabReportView({ report: r, viewer }: { report: CollabReport; 
                       {metric(isStory ? 'Răspunsuri' : 'Comentarii', p.comments)}
                       {metric('Distribuiri', p.shares)}
                       {!isStory && metric('Salvări', p.saves)}
-                      {metric('Clicuri pe link', p.link_clicks)}
                     </div>
                     {p.screenshot_url && (
                       <button type="button" className="cr-shot cr-noprint" onClick={() => setShot(p.screenshot_url)}>

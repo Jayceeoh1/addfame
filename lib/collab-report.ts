@@ -163,6 +163,16 @@ export function toReportRows(raw: any[], signed: Map<string, string>): ReportRow
   })
 }
 
+/** Ce apare în raportul afișat: doar postările/reels cu cifre completate — fără story-uri și fără rânduri goale.
+ *  Totalurile și eticheta cu livrabile se recalculează pe aceleași rânduri, ca să nu apară cifre care nu se văd. */
+export function reportForDisplay<T extends { rows: ReportRow[]; totals: any; chips: { text: string; tone: any }[] }>(r: T): T {
+  const rows = r.rows.filter(x => x.kind !== 'story' && [x.views, x.likes, x.comments, x.shares, x.saves].some(v => v != null))
+  const chips = r.chips
+    .filter(c => !/livrabil/i.test(c.text) || rows.length > 0)
+    .map(c => /livrabil/i.test(c.text) ? { ...c, text: `${rows.length} ${rows.length === 1 ? 'livrabil raportat' : 'livrabile raportate'}` } : c)
+  return { ...r, rows, chips, totals: computeReportTotals(rows) }
+}
+
 export function computeReportTotals(rows: ReportRow[]) {
   const posts = rows.filter(r => r.kind !== 'story'), stories = rows.filter(r => r.kind === 'story')
   const sum = (list: ReportRow[], f: keyof ReportRow) => list.reduce((s, r) => s + (Number(r[f]) || 0), 0)
@@ -279,4 +289,68 @@ export const fmtDay = (d: string | null | undefined) => {
 export const fmtDate = (d: string | null | undefined) => {
   if (!d) return ''
   try { return new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return '' }
+}
+
+// ── Story-uri citite din Instagram ─────────────────────────────────────
+
+export const IG_STORY_PREFIX = 'igstory:'
+const STORY_COLS: Record<string, string> = { views: 'views', reach: 'reach', replies: 'comments', shares: 'shares', link_clicks: 'link_clicks' }
+
+export type IgStoryOption = { media_id: string; posted_at: string | null; thumbnail_url: string | null; views: number | null; link_clicks: number | null; attached: boolean }
+
+/** Story-urile din Instagram ale creatorului, din perioada colaborării (cu o zi înainte de acceptare). */
+export async function listIgStories(admin: SupabaseClient, collab: any): Promise<IgStoryOption[]> {
+  const since = new Date(Date.parse(collab.approved_at || collab.created_at || '') - 864e5)
+  let q = admin.from('instagram_stories').select('media_id, posted_at, thumbnail_url, views, link_clicks')
+    .eq('influencer_id', collab.influencer_id).order('posted_at', { ascending: false }).limit(60)
+  if (Number.isFinite(since.getTime())) q = q.gte('posted_at', since.toISOString())
+  const { data, error } = await q
+  if (error) return []
+  const { data: used } = await admin.from('post_metrics').select('url').eq('collaboration_id', collab.id).like('url', IG_STORY_PREFIX + '%')
+  const taken = new Set((used || []).map((u: any) => String(u.url).slice(IG_STORY_PREFIX.length)))
+  return (data || []).map((s: any) => ({ media_id: s.media_id, posted_at: s.posted_at, thumbnail_url: s.thumbnail_url, views: num(s.views), link_clicks: num(s.link_clicks), attached: taken.has(s.media_id) }))
+}
+
+function storyPatch(s: any) {
+  const patch: Record<string, any> = {}
+  const auto: string[] = []
+  for (const [k, col] of Object.entries(STORY_COLS)) if (s[k] != null) { patch[col] = Number(s[k]); auto.push(col) }
+  return { patch, auto }
+}
+
+/** Adaugă în raport un story citit din Instagram (cifrele vin automat). */
+export async function attachIgStory(admin: SupabaseClient, collab: any, mediaId: string): Promise<{ error?: string }> {
+  const { data: s } = await admin.from('instagram_stories').select('*').eq('influencer_id', collab.influencer_id).eq('media_id', mediaId).maybeSingle()
+  if (!s) return { error: 'Story-ul nu mai e în lista din Instagram.' }
+  const { patch, auto } = storyPatch(s)
+  const now = new Date().toISOString()
+  const { count } = await admin.from('post_metrics').select('id', { count: 'exact', head: true }).eq('collaboration_id', collab.id).eq('kind', 'story')
+  const { error } = await admin.from('post_metrics').insert({
+    collaboration_id: collab.id, campaign_id: collab.campaign_id, influencer_id: collab.influencer_id,
+    url: IG_STORY_PREFIX + mediaId, platform: 'instagram', kind: 'story', label: `Story ${(count || 0) + 1}`,
+    ig_media_id: mediaId, thumbnail_url: s.thumbnail_url || null, source: 'instagram', auto_fields: auto,
+    fetched_at: now, updated_at: now, ...patch,
+  })
+  if (error) return { error: error.code === '23505' ? 'Story-ul e deja în raport.' : error.message }
+  return {}
+}
+
+/** Actualizează rândurile de story din rapoarte cu ultimele cifre salvate din Instagram. */
+export async function refreshIgStoryRows(admin: SupabaseClient, influencerId: string) {
+  const { data: rows } = await admin.from('post_metrics').select('id, url, source').eq('influencer_id', influencerId).like('url', IG_STORY_PREFIX + '%')
+  if (!rows?.length) return 0
+  const ids = rows.map((r: any) => String(r.url).slice(IG_STORY_PREFIX.length))
+  const { data: stories } = await admin.from('instagram_stories').select('*').eq('influencer_id', influencerId).in('media_id', ids)
+  const byId = new Map((stories || []).map((s: any) => [s.media_id, s]))
+  let n = 0
+  for (const r of rows as any[]) {
+    if (r.source === 'admin') continue
+    const s = byId.get(String(r.url).slice(IG_STORY_PREFIX.length))
+    if (!s) continue
+    const { patch, auto } = storyPatch(s)
+    if (!auto.length) continue
+    const { error } = await admin.from('post_metrics').update({ ...patch, auto_fields: auto, thumbnail_url: s.thumbnail_url || null, fetched_at: new Date().toISOString() }).eq('id', r.id)
+    if (!error) n++
+  }
+  return n
 }

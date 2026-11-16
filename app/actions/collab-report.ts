@@ -7,7 +7,7 @@ import { getSessionUser } from '@/lib/api-auth'
 import { isUuid, notify } from '@/lib/drafts'
 import { cleanCount } from '@/lib/post-metrics'
 import { campaignName } from '@/lib/campaign-name'
-import { loadCollabReport, cleanSettings, igHandle, STORY_PREFIX, REPORT_SECTIONS, type CollabReport } from '@/lib/collab-report'
+import { loadCollabReport, cleanSettings, igHandle, listIgStories, attachIgStory, STORY_PREFIX, REPORT_SECTIONS, type CollabReport, type IgStoryOption } from '@/lib/collab-report'
 
 const EDIT_FIELDS = ['views', 'reach', 'likes', 'comments', 'shares', 'saves', 'link_clicks'] as const
 
@@ -102,9 +102,23 @@ export async function adminGetReport(collabId: string) {
   const auth = await requireAdmin()
   if ('error' in auth) return { error: auth.error as string }
   if (!isUuid(collabId)) return { error: 'Id invalid.' }
-  const report = await loadCollabReport(createAdminClient(), collabId)
+  const admin = createAdminClient()
+  const report = await loadCollabReport(admin, collabId)
   if (!report) return { error: 'Colaborarea nu există.' }
-  return { report }
+  const { data: c } = await admin.from('collaborations').select('id, influencer_id, created_at, approved_at').eq('id', collabId).maybeSingle()
+  const igStories: IgStoryOption[] = c ? await listIgStories(admin, c) : []
+  return { report, igStories }
+}
+
+/** Adminul adaugă în raport un story citit din Instagram. */
+export async function adminAttachIgStory(collabId: string, mediaId: string) {
+  const auth = await requireAdmin()
+  if ('error' in auth) return { error: auth.error as string }
+  if (!isUuid(collabId)) return { error: 'Id invalid.' }
+  const admin = createAdminClient()
+  const { data: c } = await admin.from('collaborations').select('id, campaign_id, influencer_id').eq('id', collabId).maybeSingle()
+  if (!c) return { error: 'Colaborarea nu există.' }
+  return attachIgStory(admin, c, String(mediaId || ''))
 }
 
 async function ensureReportRow(admin: ReturnType<typeof createAdminClient>, collabId: string) {
@@ -235,7 +249,7 @@ export async function adminDeleteRow(rowId: string) {
 // ── Raportul total pe campanie ─────────────────────────────────────────
 
 export type CampaignReportData = {
-  campaign: { id: string; name: string; brandName: string }
+  campaign: { id: string; name: string; brandName: string; summary: string | null }
   viewer: ReportViewer
   reports: CollabReport[]
   drafts: number            // rapoarte nepublicate (doar pentru admin)
@@ -267,7 +281,7 @@ export async function getCampaignReport(campaignId: string, includeDrafts = fals
   reports.sort((a, b) => b.totals.views - a.totals.views)
   return {
     data: {
-      campaign: { id: camp.id, name: campaignName(camp, camp.title || 'Campanie'), brandName: reports[0]?.campaign.brandName || camp.brand_name || 'Brand' },
+      campaign: { id: camp.id, name: campaignName(camp, camp.title || 'Campanie'), brandName: reports[0]?.campaign.brandName || camp.brand_name || 'Brand', summary: (camp.report_summary || '').trim() || null },
       viewer: isAdmin ? 'admin' : 'brand',
       reports,
       drafts: isAdmin ? ids.filter(id => !published.has(id)).length : 0,

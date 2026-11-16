@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { ArrowLeft, Download, Loader2, EyeOff, ExternalLink } from 'lucide-react'
 import { getCampaignReport, type CampaignReportData } from '@/app/actions/collab-report'
 import { CollabReportView, REPORT_CSS } from '@/components/report/CollabReportView'
-import { computeReportTotals, fmtInt, fmtLei, fmtPct, fmtDay, fmtDate } from '@/lib/collab-report'
+import { computeReportTotals, reportForDisplay, fmtInt, fmtLei, fmtPct, fmtDay, fmtDate } from '@/lib/collab-report'
 import { fontVars } from '@/lib/fonts'
 
 const PAGE_CSS = `
@@ -22,7 +22,8 @@ const PAGE_CSS = `
 .ra-eye{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#b9a8ff}
 .ra-title{margin:0;font-weight:800;font-size:clamp(30px,5vw,54px);letter-spacing:-.03em;line-height:1.05;max-width:900px;text-wrap:balance}
 .ra-meta{display:flex;flex-wrap:wrap;gap:8px 28px;color:#cfcbe6;font-weight:600;font-size:15px}
-.ra-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:-88px}
+.ra-stats{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;margin-top:-88px}
+@media (max-width:760px){.ra-stats{grid-template-columns:1fr}}
 .ra-st{background:#fff;border:1px solid #e5e3f3;border-radius:22px;padding:22px 24px;box-shadow:0 18px 40px -28px rgba(20,18,58,.5);display:flex;flex-direction:column;gap:8px;min-width:0}
 .ra-st b{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#6a6690}
 .ra-st span{font-family:var(--font-display,system-ui),system-ui,sans-serif;font-weight:800;font-size:clamp(36px,4.4vw,52px);letter-spacing:-.03em;line-height:1}
@@ -31,6 +32,7 @@ const PAGE_CSS = `
 .ra-st.acc b,.ra-st.acc small{color:#e2dbff}
 .ra-card{background:#fff;border:1px solid #e5e3f3;border-radius:22px;padding:24px 26px;display:flex;flex-direction:column;gap:12px}
 .ra-h2{margin:0;font-weight:800;font-size:24px;letter-spacing:-.02em}
+.ra-sum p{margin:0;font-size:16.5px;line-height:1.6;color:#2c2950;max-width:78ch;white-space:pre-line}
 .ra-views{display:flex;align-items:center;gap:14px;min-width:220px}
 .ra-views .rk-bar{flex:1;height:10px;margin:0;background:#eeecf7}.ra-views .rk-bar div{height:10px;background:#5a35e6}
 .ra-views b{font-family:var(--font-display,system-ui),system-ui,sans-serif;font-weight:800;font-size:19px;min-width:72px;text-align:right}
@@ -56,7 +58,25 @@ const PAGE_CSS = `
 .rk-pos{width:26px;height:26px;border-radius:8px;background:#f1edff;color:#4a24c4;font-weight:800;font-size:12.5px;display:inline-flex;align-items:center;justify-content:center}
 .rp-sep{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6a52e0;margin-top:12px}
 .rp-sep::after{content:'';flex:1;height:1px;background:#e6e3f2}
-@media print{.rp{background:#fff}.rp-bar,.rp-draft,.rp-noprint{display:none!important}.rp-main{padding:0}.ra-hero-in{padding:24px 20px 96px}.ra-stats{margin:-72px 16px 0}.rp-page{break-before:page}.rk{min-width:0;font-size:11.5px}.rk-wrap{overflow:visible}}
+@page{size:A4;margin:10mm}
+@media print{
+.rp{background:#fff;min-height:0}.rp-bar,.rp-draft,.rp-noprint{display:none!important}
+.rp-main{padding:0;gap:10px;max-width:none}
+.ra-hero{border-radius:14px}.ra-hero-in{padding:16px 18px 58px;gap:6px;max-width:none}
+.ra-title{font-size:26px;max-width:none}.ra-meta{font-size:11.5px;gap:4px 18px}.ra-eye{font-size:9.5px}
+.ra-stats{grid-template-columns:1.25fr 1fr 1fr!important;gap:8px;margin:-46px 12px 0}
+.ra-st{padding:10px 14px;border-radius:12px;gap:3px;box-shadow:none;break-inside:avoid}
+.ra-st b{font-size:9px}.ra-st span{font-size:24px}.ra-st small{font-size:10px}
+.ra-card{padding:12px 14px;border-radius:12px;gap:6px;break-inside:avoid}.ra-h2{font-size:15px}.ra-sum p{font-size:11px;line-height:1.45;max-width:none}
+.rk{min-width:0;font-size:10.5px}.rk-wrap{overflow:visible}
+.rk th{font-size:8.5px;padding:5px 6px}.rk td{padding:4px 6px}
+.rk tr{break-inside:avoid}
+.rk-av{width:22px;height:22px;font-size:8.5px}.rk-who{gap:7px;min-width:0}.rk-who span span{font-size:9.5px!important}
+.rk-pos{width:18px;height:18px;font-size:9.5px;border-radius:5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.ra-views{min-width:0;gap:8px}.ra-views .rk-bar{height:6px;min-width:60px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.ra-views .rk-bar div{height:6px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.ra-views b{font-size:12px;min-width:46px}
+.rp-page{break-before:page;gap:6px!important}.rp-sep{margin-top:0;font-size:9.5px}
+}
 `
 
 const initials = (s: string) => (s || '?').replace(/^@/, '').split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase()
@@ -72,7 +92,12 @@ export default function RaportCampaniePage() {
     getCampaignReport(String(id), drafts).then(setState).catch(() => setState({ error: 'Nu am putut încărca raportul.' }))
   }, [id, drafts])
 
-  const d = state?.data
+  // în raport intră doar postările/reels cu cifre completate (fără story-uri și fără rânduri goale)
+  const d = useMemo(() => {
+    const x = state?.data
+    if (!x) return undefined
+    return { ...x, reports: x.reports.map(reportForDisplay).sort((a, b) => b.totals.views - a.totals.views) }
+  }, [state])
   const agg = useMemo(() => {
     if (!d) return null
     const t = computeReportTotals(d.reports.flatMap(r => r.rows))
@@ -129,7 +154,7 @@ export default function RaportCampaniePage() {
             <div className="ra-meta">
               {agg.from && <span>{fmtDay(agg.from)} – {agg.to ? fmtDate(agg.to) : 'în desfășurare'}</span>}
               <span>{d.reports.length} {d.reports.length === 1 ? 'creator' : 'creatori'}</span>
-              <span>{[agg.posts ? `${agg.posts} postări` : '', agg.stories ? `${agg.stories} story-uri` : ''].filter(Boolean).join(' + ') || '—'}</span>
+              <span>{agg.posts} {agg.posts === 1 ? 'postare' : 'postări'}</span>
               {agg.followers > 0 && <span>{fmtInt(agg.followers)} urmăritori în total</span>}
             </div>
           </div>
@@ -150,7 +175,6 @@ export default function RaportCampaniePage() {
               <section aria-label="Totalul campaniei" className="ra-stats">
                 <div className="ra-st"><b>Vizualizări</b><span>{fmtInt(agg.t.views)}</span><small>{[agg.t.viewsPosts ? `postări ${fmtInt(agg.t.viewsPosts)}` : '', agg.t.viewsStories ? `story-uri ${fmtInt(agg.t.viewsStories)}` : ''].filter(Boolean).join(' · ') || 'total'}</small></div>
                 <div className="ra-st"><b>Interacțiuni</b><span>{fmtInt(agg.t.interactions)}</span><small>{fmtInt(agg.t.likes)} like · {fmtInt(agg.t.comments)} comentarii · {fmtInt(agg.t.saves)} salvări</small></div>
-                <div className="ra-st"><b>Clicuri pe link</b><span>{fmtInt(agg.t.clicks)}</span><small>din story-uri și postări</small></div>
                 <div className="ra-st acc"><b>Rată de engagement</b><span>{fmtPct(agg.t.er)}</span><small>{agg.t.erBase === 'reach' ? 'interacțiuni / conturi atinse' : 'interacțiuni / vizualizări'}</small></div>
               </section>
 
@@ -166,13 +190,19 @@ export default function RaportCampaniePage() {
                 </div>
               )}
 
+              <section className="ra-card ra-sum" aria-labelledby="rc-sum">
+                <h2 id="rc-sum" className="ra-h2">Pe scurt</h2>
+                <p><b>{d.reports.length} {d.reports.length === 1 ? 'creator a' : 'creatori au'} publicat {agg.posts} {agg.posts === 1 ? 'material' : 'materiale'}</b> pentru {d.campaign.brandName}, care au strâns împreună <b>{fmtInt(agg.t.views)} vizualizări</b> și <b>{fmtInt(agg.t.interactions)} interacțiuni</b>{agg.t.er != null ? <> — o rată de engagement de <b>{fmtPct(agg.t.er)}</b></> : null}.</p>
+                {d.campaign.summary && d.campaign.summary.split(/\n{2,}/).map((para, i) => <p key={i}>{para}</p>)}
+              </section>
+
               <section className="ra-card" aria-labelledby="rc-top">
                 <h2 id="rc-top" className="ra-h2">Creatorii, după vizualizări</h2>
                 <div className="rk-wrap">
                   <table className="rk">
                     <thead><tr>
                       <th>#</th><th>Creator</th><th>Livrabile</th><th>Vizualizări</th>
-                      <th className="n">Interacțiuni</th><th className="n">Clicuri pe link</th><th className="n">Engagement</th>
+                      <th className="n">Interacțiuni</th><th className="n">Engagement</th>
                       {agg.cost != null && <><th className="n">Cost</th><th className="n">Cost / 1.000</th></>}
                       <th className="rp-noprint"><span className="sr-only">Raport</span></th>
                     </tr></thead>
@@ -194,7 +224,6 @@ export default function RaportCampaniePage() {
                             <td>{[p ? `${p} post.` : '', s ? `${s} story` : ''].filter(Boolean).join(' + ') || '—'}</td>
                             <td><div className="ra-views"><div className="rk-bar"><div style={{ width: `${Math.round(r.totals.views / agg.maxViews * 100)}%` }} /></div><b>{fmtInt(r.totals.views)}</b></div></td>
                             <td className="n">{fmtInt(r.totals.interactions)}</td>
-                            <td className="n">{fmtInt(r.totals.clicks)}</td>
                             <td className="n"><b>{fmtPct(r.totals.er)}</b></td>
                             {agg.cost != null && <><td className="n">{fmtLei(r.cost.lei)}</td><td className="n">{fmtLei(r.cost.perThousand)}</td></>}
                             <td className="rp-noprint"><Link href={`/raport/${r.collabId}`} className="ra-link">Raport <ExternalLink size={12} /></Link></td>
