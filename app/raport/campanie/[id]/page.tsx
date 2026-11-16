@@ -8,10 +8,33 @@ import { ArrowLeft, Download, Loader2, EyeOff, ExternalLink } from 'lucide-react
 import { getCampaignReport, type CampaignReportData } from '@/app/actions/collab-report'
 import { CollabReportView, REPORT_CSS } from '@/components/report/CollabReportView'
 import { computeReportTotals, fmtInt, fmtLei, fmtPct, fmtDay, fmtDate } from '@/lib/collab-report'
+import { fontVars } from '@/lib/fonts'
 
 const PAGE_CSS = `
-.rp{min-height:100vh;background:#f6f5fb;color:#15123a;font-variant-numeric:tabular-nums}
-.rp-bar{background:#fff;border-bottom:1px solid #e6e3f2}
+.rp{min-height:100vh;background:#f6f6fc;color:#14123a;font-variant-numeric:tabular-nums;font-family:var(--font-body,system-ui),system-ui,sans-serif}
+.rp h1,.rp h2,.rp .ra-d{font-family:var(--font-display,system-ui),system-ui,sans-serif}
+.rp-bar{background:#14123a;color:#fff}
+.rp-bar .rp-btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+.rp-bar .rp-btn.p{background:#fff;color:#14123a;border-color:#fff}
+.rp-bar .rp-check{color:#d9d5ee}.rp-bar .rp-check input{accent-color:#b9a8ff}
+.ra-hero{background:#14123a;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.ra-hero-in{max-width:1120px;margin:0 auto;padding:28px 20px 96px;display:flex;flex-direction:column;gap:12px}
+.ra-eye{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#b9a8ff}
+.ra-title{margin:0;font-weight:800;font-size:clamp(30px,5vw,54px);letter-spacing:-.03em;line-height:1.05;max-width:900px;text-wrap:balance}
+.ra-meta{display:flex;flex-wrap:wrap;gap:8px 28px;color:#cfcbe6;font-weight:600;font-size:15px}
+.ra-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:-88px}
+.ra-st{background:#fff;border:1px solid #e5e3f3;border-radius:22px;padding:22px 24px;box-shadow:0 18px 40px -28px rgba(20,18,58,.5);display:flex;flex-direction:column;gap:8px;min-width:0}
+.ra-st b{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#6a6690}
+.ra-st span{font-family:var(--font-display,system-ui),system-ui,sans-serif;font-weight:800;font-size:clamp(36px,4.4vw,52px);letter-spacing:-.03em;line-height:1}
+.ra-st small{font-size:14px;color:#6a6690}
+.ra-st.acc{background:#5a35e6;border-color:#5a35e6;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.ra-st.acc b,.ra-st.acc small{color:#e2dbff}
+.ra-card{background:#fff;border:1px solid #e5e3f3;border-radius:22px;padding:24px 26px;display:flex;flex-direction:column;gap:12px}
+.ra-h2{margin:0;font-weight:800;font-size:24px;letter-spacing:-.02em}
+.ra-views{display:flex;align-items:center;gap:14px;min-width:220px}
+.ra-views .rk-bar{flex:1;height:10px;margin:0;background:#eeecf7}.ra-views .rk-bar div{height:10px;background:#5a35e6}
+.ra-views b{font-family:var(--font-display,system-ui),system-ui,sans-serif;font-weight:800;font-size:19px;min-width:72px;text-align:right}
+.ra-link{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:10px;border:1.5px solid #d8d5ec;color:#4423c4;font-weight:700;font-size:13px;text-decoration:none}
 .rp-in{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
 .rp-main{max-width:1120px;margin:0 auto;padding:24px 20px 64px;display:flex;flex-direction:column;gap:20px}
 .rp-btn{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid #d9d5ea;background:#fff;color:#15123a;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-family:inherit;text-decoration:none}
@@ -26,14 +49,14 @@ const PAGE_CSS = `
 .rk td{padding:12px 10px;border-bottom:1px solid #f0eef8;vertical-align:middle;white-space:nowrap}
 .rk td.n{text-align:right}.rk th.n{text-align:right}
 .rk-who{display:flex;align-items:center;gap:10px;white-space:normal;min-width:180px}
-.rk-av{width:34px;height:34px;border-radius:50%;background:#ece7ff;color:#3b2a9e;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:none;overflow:hidden}
+.rk-av{width:44px;height:44px;border-radius:50%;background:#ece7ff;color:#3b2a9e;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:none;overflow:hidden}
 .rk-av img{width:100%;height:100%;object-fit:cover}
 .rk-bar{height:6px;border-radius:99px;background:#efeaff;margin-top:5px;min-width:80px}
 .rk-bar div{height:6px;border-radius:99px;background:#5b2fd0}
 .rk-pos{width:26px;height:26px;border-radius:8px;background:#f1edff;color:#4a24c4;font-weight:800;font-size:12.5px;display:inline-flex;align-items:center;justify-content:center}
 .rp-sep{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6a52e0;margin-top:12px}
 .rp-sep::after{content:'';flex:1;height:1px;background:#e6e3f2}
-@media print{.rp{background:#fff}.rp-bar,.rp-draft,.rp-noprint{display:none!important}.rp-main{padding:0}.rp-page{break-before:page}.rk{min-width:0;font-size:11.5px}.rk-wrap{overflow:visible}}
+@media print{.rp{background:#fff}.rp-bar,.rp-draft,.rp-noprint{display:none!important}.rp-main{padding:0}.ra-hero-in{padding:24px 20px 96px}.ra-stats{margin:-72px 16px 0}.rp-page{break-before:page}.rk{min-width:0;font-size:11.5px}.rk-wrap{overflow:visible}}
 `
 
 const initials = (s: string) => (s || '?').replace(/^@/, '').split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase()
@@ -72,13 +95,13 @@ export default function RaportCampaniePage() {
   const back = d?.viewer === 'brand' ? `/brand/campaigns/${id}/report` : `/admin/rapoarte?campanie=${id}`
 
   return (
-    <div className="rp">
+    <div className={`rp ${fontVars}`}>
       <style>{PAGE_CSS + REPORT_CSS}</style>
       <header className="rp-bar">
         <div className="rp-in">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Link href={back} className="rp-btn"><ArrowLeft size={16} /> Înapoi</Link>
-            <span style={{ fontWeight: 800, fontSize: 16 }}>AddFame</span>
+            <span className="ra-d" style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-.02em' }}>AddFame</span>
           </div>
           {d && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
@@ -98,53 +121,60 @@ export default function RaportCampaniePage() {
         </div>
       )}
 
+      {d && agg && d.reports.length > 0 && (
+        <section className="ra-hero">
+          <div className="ra-hero-in">
+            <span className="ra-eye">Raport de campanie · {d.campaign.brandName}</span>
+            <h1 className="ra-title">{d.campaign.name}</h1>
+            <div className="ra-meta">
+              {agg.from && <span>{fmtDay(agg.from)} – {agg.to ? fmtDate(agg.to) : 'în desfășurare'}</span>}
+              <span>{d.reports.length} {d.reports.length === 1 ? 'creator' : 'creatori'}</span>
+              <span>{[agg.posts ? `${agg.posts} postări` : '', agg.stories ? `${agg.stories} story-uri` : ''].filter(Boolean).join(' + ') || '—'}</span>
+              {agg.followers > 0 && <span>{fmtInt(agg.followers)} urmăritori în total</span>}
+            </div>
+          </div>
+        </section>
+      )}
+
       {d && agg && (
         <main className="rp-main">
-          {d.viewer === 'admin' && d.drafts > 0 && (
-            <div className="rp-draft"><EyeOff size={17} /> {d.drafts} {d.drafts === 1 ? 'raport e încă ciornă' : 'rapoarte sunt încă ciorne'}. {drafts ? 'Le vezi acum aici, dar brandul nu le vede.' : 'Brandul vede doar rapoartele publicate.'}</div>
-          )}
-
           {!d.reports.length ? (
-            <div className="rp-msg" style={{ margin: '20px auto' }}><b>Nu există încă rapoarte publicate pentru această campanie.</b><span style={{ color: '#57537a' }}>Apar aici pe măsură ce le publicăm.</span></div>
+            <>
+              {d.viewer === 'admin' && d.drafts > 0 && (
+                <div className="rp-draft"><EyeOff size={17} /> {d.drafts} {d.drafts === 1 ? 'raport e încă ciornă' : 'rapoarte sunt încă ciorne'}. {drafts ? 'Le vezi acum aici, dar brandul nu le vede.' : 'Brandul vede doar rapoartele publicate.'}</div>
+              )}
+              <div className="rp-msg" style={{ margin: '20px auto' }}><b>Nu există încă rapoarte publicate pentru această campanie.</b><span style={{ color: '#57537a' }}>Apar aici pe măsură ce le publicăm.</span></div>
+            </>
           ) : (
             <div className="cr">
-              <section className="cr-card cr-head">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0, flex: '1 1 420px' }}>
-                  <span className="cr-eyebrow">Raport de campanie</span>
-                  <h1 className="cr-name">{d.campaign.name}</h1>
-                  <span className="cr-sub">{d.campaign.brandName} · {d.reports.length} {d.reports.length === 1 ? 'creator' : 'creatori'}{agg.followers ? ` · ${fmtInt(agg.followers)} urmăritori în total` : ''}</span>
-                </div>
-                <dl className="cr-meta">
-                  <div><dt>Perioadă</dt><dd>{agg.from ? `${fmtDay(agg.from)} – ${agg.to ? fmtDate(agg.to) : 'în desfășurare'}` : '—'}</dd></div>
-                  <div><dt>Livrabile</dt><dd>{[agg.posts ? `${agg.posts} postări` : '', agg.stories ? `${agg.stories} story-uri` : ''].filter(Boolean).join(' + ') || '—'}</dd></div>
-                </dl>
+              <section aria-label="Totalul campaniei" className="ra-stats">
+                <div className="ra-st"><b>Vizualizări</b><span>{fmtInt(agg.t.views)}</span><small>{[agg.t.viewsPosts ? `postări ${fmtInt(agg.t.viewsPosts)}` : '', agg.t.viewsStories ? `story-uri ${fmtInt(agg.t.viewsStories)}` : ''].filter(Boolean).join(' · ') || 'total'}</small></div>
+                <div className="ra-st"><b>Interacțiuni</b><span>{fmtInt(agg.t.interactions)}</span><small>{fmtInt(agg.t.likes)} like · {fmtInt(agg.t.comments)} comentarii · {fmtInt(agg.t.saves)} salvări</small></div>
+                <div className="ra-st"><b>Clicuri pe link</b><span>{fmtInt(agg.t.clicks)}</span><small>din story-uri și postări</small></div>
+                <div className="ra-st acc"><b>Rată de engagement</b><span>{fmtPct(agg.t.er)}</span><small>{agg.t.erBase === 'reach' ? 'interacțiuni / conturi atinse' : 'interacțiuni / vizualizări'}</small></div>
               </section>
 
-              <section aria-labelledby="rc-tot" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <h2 id="rc-tot" className="cr-h2">Totalul campaniei</h2>
-                <div className="cr-kpis">
-                  <div className="cr-kpi"><b>Vizualizări</b><span>{fmtInt(agg.t.views)}</span><small>{[agg.t.viewsPosts ? `postări ${fmtInt(agg.t.viewsPosts)}` : '', agg.t.viewsStories ? `story-uri ${fmtInt(agg.t.viewsStories)}` : ''].filter(Boolean).join(' · ') || 'total'}</small></div>
-                  <div className="cr-kpi"><b>Conturi atinse</b><span>{fmtInt(agg.t.reach)}</span><small>suma pe creatori</small></div>
-                  <div className="cr-kpi"><b>Interacțiuni</b><span>{fmtInt(agg.t.interactions)}</span><small>{fmtInt(agg.t.likes)} like · {fmtInt(agg.t.saves)} salvări · {fmtInt(agg.t.comments)} comentarii</small></div>
-                  {agg.t.clicks > 0 && <div className="cr-kpi"><b>Clicuri pe link</b><span>{fmtInt(agg.t.clicks)}</span><small>din story-uri și postări</small></div>}
-                  <div className="cr-kpi acc"><b>Rată de engagement</b><span>{fmtPct(agg.t.er)}</span><small>{agg.t.erBase === 'reach' ? 'interacțiuni / conturi atinse' : 'interacțiuni / vizualizări'}</small></div>
-                </div>
-                {agg.cost != null && (
-                  <div className="cr-costs">
-                    <div className="cr-cost"><span>Cost total creatori</span><b>{fmtLei(agg.cost)}</b></div>
-                    <div className="cr-cost"><span>Cost / 1.000 vizualizări</span><b>{fmtLei(agg.perThousand)}</b></div>
-                    <div className="cr-cost"><span>Cost / interacțiune</span><b>{fmtLei(agg.perInteraction)}</b></div>
-                  </div>
-                )}
-              </section>
+              {d.viewer === 'admin' && d.drafts > 0 && (
+                <div className="rp-draft"><EyeOff size={17} /> {d.drafts} {d.drafts === 1 ? 'raport e încă ciornă' : 'rapoarte sunt încă ciorne'}. {drafts ? 'Le vezi acum aici, dar brandul nu le vede.' : 'Brandul vede doar rapoartele publicate.'}</div>
+              )}
 
-              <section className="cr-card" aria-labelledby="rc-top" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <h2 id="rc-top" className="cr-h2">Creatorii, după vizualizări</h2>
+              {agg.cost != null && (
+                <div className="cr-costs">
+                  <div className="cr-cost"><span>Cost total creatori</span><b>{fmtLei(agg.cost)}</b></div>
+                  <div className="cr-cost"><span>Cost / 1.000 vizualizări</span><b>{fmtLei(agg.perThousand)}</b></div>
+                  <div className="cr-cost"><span>Cost / interacțiune</span><b>{fmtLei(agg.perInteraction)}</b></div>
+                </div>
+              )}
+
+              <section className="ra-card" aria-labelledby="rc-top">
+                <h2 id="rc-top" className="ra-h2">Creatorii, după vizualizări</h2>
                 <div className="rk-wrap">
                   <table className="rk">
                     <thead><tr>
-                      <th>#</th><th>Creator</th><th>Livrabile</th><th className="n">Vizualizări</th><th className="n">Conturi atinse</th>
-                      <th className="n">Interacțiuni</th><th className="n">Engagement</th><th className="n">Cost</th><th className="n">Cost / 1.000</th><th className="rp-noprint"><span className="sr-only">Raport</span></th>
+                      <th>#</th><th>Creator</th><th>Livrabile</th><th>Vizualizări</th>
+                      <th className="n">Interacțiuni</th><th className="n">Clicuri pe link</th><th className="n">Engagement</th>
+                      {agg.cost != null && <><th className="n">Cost</th><th className="n">Cost / 1.000</th></>}
+                      <th className="rp-noprint"><span className="sr-only">Raport</span></th>
                     </tr></thead>
                     <tbody>
                       {d.reports.map((r, i) => {
@@ -162,13 +192,12 @@ export default function RaportCampaniePage() {
                               </div>
                             </td>
                             <td>{[p ? `${p} post.` : '', s ? `${s} story` : ''].filter(Boolean).join(' + ') || '—'}</td>
-                            <td className="n"><b>{fmtInt(r.totals.views)}</b><div className="rk-bar"><div style={{ width: `${Math.round(r.totals.views / agg.maxViews * 100)}%` }} /></div></td>
-                            <td className="n">{fmtInt(r.totals.reach)}</td>
+                            <td><div className="ra-views"><div className="rk-bar"><div style={{ width: `${Math.round(r.totals.views / agg.maxViews * 100)}%` }} /></div><b>{fmtInt(r.totals.views)}</b></div></td>
                             <td className="n">{fmtInt(r.totals.interactions)}</td>
-                            <td className="n">{fmtPct(r.totals.er)}</td>
-                            <td className="n">{fmtLei(r.cost.lei)}</td>
-                            <td className="n">{fmtLei(r.cost.perThousand)}</td>
-                            <td className="rp-noprint"><Link href={`/raport/${r.collabId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 13, color: '#4a24c4' }}>Raport <ExternalLink size={12} /></Link></td>
+                            <td className="n">{fmtInt(r.totals.clicks)}</td>
+                            <td className="n"><b>{fmtPct(r.totals.er)}</b></td>
+                            {agg.cost != null && <><td className="n">{fmtLei(r.cost.lei)}</td><td className="n">{fmtLei(r.cost.perThousand)}</td></>}
+                            <td className="rp-noprint"><Link href={`/raport/${r.collabId}`} className="ra-link">Raport <ExternalLink size={12} /></Link></td>
                           </tr>
                         )
                       })}

@@ -8,9 +8,11 @@ import { ArrowLeft, Download, Pencil, Loader2, EyeOff } from 'lucide-react'
 import { getCollabReport, type ReportViewer } from '@/app/actions/collab-report'
 import { CollabReportView, ReportStoryButton, REPORT_CSS } from '@/components/report/CollabReportView'
 import type { CollabReport } from '@/lib/collab-report'
+import { fontVars } from '@/lib/fonts'
 
 const PAGE_CSS = `
-.rp{min-height:100vh;background:#f6f5fb}
+.rp{min-height:100vh;background:#f6f5fb;font-family:var(--font-body,system-ui),system-ui,sans-serif}
+.rp h1,.rp h2{font-family:var(--font-display,system-ui),system-ui,sans-serif}
 .rp-bar{background:#fff;border-bottom:1px solid #e6e3f2}
 .rp-in{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
 .rp-main{max-width:1120px;margin:0 auto;padding:24px 20px 64px;display:flex;flex-direction:column;gap:20px}
@@ -32,7 +34,7 @@ export default function RaportPage() {
     : state?.viewer === 'admin' ? '/admin/rapoarte' : '/'
 
   return (
-    <div className="rp">
+    <div className={`rp ${fontVars}`}>
       <style>{PAGE_CSS + REPORT_CSS}</style>
       <header className="rp-bar">
         <div className="rp-in">

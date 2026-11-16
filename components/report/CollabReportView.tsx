@@ -93,7 +93,6 @@ export function CollabReportView({ report: r, viewer }: { report: CollabReport; 
   const t = r.totals
   const posts = r.rows.filter(x => x.kind !== 'story'), stories = r.rows.filter(x => x.kind === 'story')
   const viewsSub = [t.viewsPosts ? `postări ${fmtInt(t.viewsPosts)}` : '', t.viewsStories ? `story-uri ${fmtInt(t.viewsStories)}` : ''].filter(Boolean).join(' · ')
-  const reachSub = r.creator.followers && t.reach ? `${(t.reach / r.creator.followers).toLocaleString('ro-RO', { maximumFractionDigits: 1 })}× numărul de urmăritori` : 'oameni unici care au văzut postarea'
   const showCost = !hidden.has('cost') && r.cost.lei != null
   const deliverables = [posts.length ? `${posts.length} ${posts.length === 1 ? 'postare' : 'postări'}` : '', stories.length ? `${stories.length} ${stories.length === 1 ? 'story' : 'story-uri'}` : ''].filter(Boolean).join(' + ') || '—'
 
@@ -137,9 +136,8 @@ export function CollabReportView({ report: r, viewer }: { report: CollabReport; 
         ) : (
           <div className="cr-kpis">
             <div className="cr-kpi"><b>Vizualizări</b><span>{fmtInt(t.views)}</span><small>{viewsSub || 'total'}</small></div>
-            <div className="cr-kpi"><b>Conturi atinse</b><span>{fmtInt(t.reach)}</span><small>{reachSub}</small></div>
             <div className="cr-kpi"><b>Interacțiuni</b><span>{fmtInt(t.interactions)}</span><small>like, comentarii, distribuiri, salvări</small></div>
-            {t.clicks > 0 && <div className="cr-kpi"><b>Clicuri pe link</b><span>{fmtInt(t.clicks)}</span><small>din story-uri și postări</small></div>}
+            <div className="cr-kpi"><b>Clicuri pe link</b><span>{fmtInt(t.clicks)}</span><small>din story-uri și postări</small></div>
             <div className="cr-kpi acc"><b>Rată de engagement</b><span>{fmtPct(t.er)}</span><small>{t.erBase === 'reach' ? 'interacțiuni / conturi atinse' : t.erBase === 'views' ? 'interacțiuni / vizualizări' : 'fără date suficiente'}</small></div>
           </div>
         )}
@@ -172,12 +170,11 @@ export function CollabReportView({ report: r, viewer }: { report: CollabReport; 
                     {p.linkable && <a className="cr-plink" href={p.url} target="_blank" rel="noopener noreferrer">{p.url.replace(/^https:\/\//, '').slice(0, 60)}<ExternalLink size={13} aria-hidden="true" /></a>}
                     <div className="cr-grid">
                       {metric('Vizualizări', p.views)}
-                      {metric('Conturi atinse', p.reach)}
                       {metric(isStory ? 'Reacții' : 'Like-uri', p.likes)}
                       {metric(isStory ? 'Răspunsuri' : 'Comentarii', p.comments)}
                       {metric('Distribuiri', p.shares)}
                       {!isStory && metric('Salvări', p.saves)}
-                      {(isStory || p.link_clicks != null) && metric('Clicuri pe link', p.link_clicks)}
+                      {metric('Clicuri pe link', p.link_clicks)}
                     </div>
                     {p.screenshot_url && (
                       <button type="button" className="cr-shot cr-noprint" onClick={() => setShot(p.screenshot_url)}>
