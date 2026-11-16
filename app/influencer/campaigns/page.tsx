@@ -854,7 +854,7 @@ export default function CampaignsPage() {
                       {c.payment_mode === 'OFFER'
                         ? <div><b style={{ color: '#5b2fd0' }}>Tu propui</b><span>prețul</span></div>
                         : (c.budget_per_influencer ?? 0) > 0
-                          ? <div><b style={{ color: '#14532d' }}>{fmt(c.fee_per_influencer != null ? Number(c.budget_per_influencer) : Math.round(Number(c.budget_per_influencer) * 0.85))} RON</b><span>primești</span></div>
+                          ? <div><b style={{ color: '#14532d' }}>{fmt(Number(c.budget_per_influencer))} RON</b><span>primești</span></div>
                           : <div><b style={{ color: '#14532d' }}>{fmt(c.budget ?? 0)} RON</b><span>buget total</span></div>}
                       {c.max_influencers ? (
                         <div><b>{slotsLeft}</b><span>{slotsLeft === 1 ? 'loc liber' : 'locuri libere'}</span></div>

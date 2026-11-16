@@ -2,7 +2,7 @@
 // și cum se afișează fiecare tranzacție. Funcții pure, folosite în pagina Wallet și testate separat.
 import { campaignPayPerSlot } from '@/lib/fee-summary'
 
-const OLD_COMMISSION = 0.15 // campaniile vechi (fără taxă de management) opresc 15% la plată
+const OLD_COMMISSION = 0 // fără comision din banii influencerului (din 16.11.2026)
 
 const n = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0)
 const round2 = (v: number) => Math.round(v * 100) / 100

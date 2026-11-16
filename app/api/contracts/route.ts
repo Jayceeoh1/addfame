@@ -275,7 +275,6 @@ Semnătura electronică are valoare juridică conform Legii nr. 455/2001 privind
   // Contract standard (paid campaigns)
   // Prețul propus de influencer (blocat la selecție) are prioritate față de suma fixă a campaniei
   const amount = Number(collab.pay_reserved) || Number(collab.offer_price) || collab.campaigns?.budget_per_influencer || collab.campaigns?.budget || 0
-  const netAmount = Math.round(amount * 0.85 * 100) / 100
 
   return `CONTRACT DE COLABORARE PENTRU INFLUENCER MARKETING
 
@@ -301,9 +300,7 @@ Data limită: ${deadline}
 ${feeModel
   ? `Suma agreată pentru influencer: ${amount.toFixed(2)} RON
 Plata se va efectua prin intermediul echipei AddFame, după aprobarea conținutului publicat.`
-  : `Suma brută agreată: ${amount.toFixed(2)} RON
-Comision platformă AddFame (15%): ${(amount * 0.15).toFixed(2)} RON
-Suma netă primită de influencer: ${netAmount.toFixed(2)} RON
+  : `Suma agreată pentru influencer: ${amount.toFixed(2)} RON
 Plata se va efectua prin platforma AddFame, după aprobarea conținutului publicat.`}
 
 6. DREPTURI DE PROPRIETATE INTELECTUALĂ

@@ -29,7 +29,7 @@ import {
   emailInfluencerInvited,
 } from '@/lib/email'
 
-const PLATFORM_COMMISSION = 0.15
+const PLATFORM_COMMISSION = 0 // fără comision AddFame din banii influencerului (din 16.11.2026)
 const WITHDRAWAL_FEE = 0 // fără taxă la retragere: creatorul primește toată suma
 
 async function notify(admin: any, userId: string, title: string, body: string, link?: string) {
@@ -202,7 +202,7 @@ export async function approveApplication(collabId: string) {
       notifyCollabApproved(
         collab.influencers.telegram_chat_id,
         collab.campaigns?.title || 'campanie',
-        Math.round(budget * 0.85)
+        Math.round(budget)
       ).catch(() => {})
     }
 
@@ -343,7 +343,7 @@ export async function approveDeliverable(collabId: string) {
     }
 
     // 5. Log platform revenue (modelul vechi: comision 15%; la modelul cu taxă venitul e taxa de la publicare)
-    if (!feeModel) try {
+    if (!feeModel && platformFee > 0) try {
       await admin.from('platform_revenue').insert({
         collab_id: collabId,
         amount: platformFee,
@@ -377,7 +377,7 @@ export async function approveDeliverable(collabId: string) {
     await notify(admin, brandOwner?.user_id || user.id,
       influencerAmount > 0 ? '✅ Post aprobat! Escrow eliberat.' : '✅ Post aprobat!',
       influencerAmount > 0
-        ? `Colaborare finalizată cu ${collab.influencers?.name}. ${influencerAmount.toFixed(2)} RON trimiși influencerului (comision AddFame: ${platformFee.toFixed(2)} RON).`
+        ? `Colaborare finalizată cu ${collab.influencers?.name}. ${influencerAmount.toFixed(2)} RON trimiși influencerului.`
         : `Colaborare finalizată cu ${collab.influencers?.name}.`,
       '/brand/collaborations'
     )

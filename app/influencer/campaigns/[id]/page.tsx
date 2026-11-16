@@ -124,11 +124,10 @@ export default function CampaignBriefPage() {
   const days = daysLeft(campaign.deadline)
   const expired = days < 0
   const urgent = !expired && days <= 3
-  // Campaniile cu taxă de management (fee_per_influencer setat): influencerul primește suma întreagă; cele vechi: −15% comision
-  const feeModel = campaign.fee_per_influencer !== null && campaign.fee_per_influencer !== undefined
+  // Influencerul primește suma întreagă (fără comision AddFame, din 16.11.2026)
   const isOffer = campaign.payment_mode === 'OFFER'
   const earnings = !isOffer && campaign.budget_per_influencer
-    ? (feeModel ? Number(campaign.budget_per_influencer) : Math.round(campaign.budget_per_influencer * 0.85)) : null
+    ? Number(campaign.budget_per_influencer) : null
 
   // Parse câmpuri array
   const hashtags: string[] = typeof campaign.required_hashtags === 'string'

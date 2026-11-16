@@ -4,9 +4,9 @@ import { expectedPay, walletFromCollabs, txView } from '@/lib/wallet-view'
 const paid = { campaign_type: 'PAID', payment_mode: 'FIXED', budget_per_influencer: 200, fee_per_influencer: 0, title: 'Intimax', brand_name: 'INTIMAX' }
 
 describe('wallet creator', () => {
-  it('suma care urmează: întreagă la campaniile cu taxă, 85% la cele vechi', () => {
+  it('suma care urmează: întreagă la toate campaniile plătite', () => {
     expect(expectedPay({ campaigns: paid })).toBe(200)
-    expect(expectedPay({ campaigns: { ...paid, fee_per_influencer: null } })).toBe(170)
+    expect(expectedPay({ campaigns: { ...paid, fee_per_influencer: null } })).toBe(200)
     expect(expectedPay({ reserved_amount: 250, campaigns: paid })).toBe(250)
     expect(expectedPay({ offer_price: 300, campaigns: { ...paid, payment_mode: 'OFFER' } })).toBe(300)
     expect(expectedPay({ campaigns: { campaign_type: 'BARTER', budget_per_influencer: 0 } })).toBe(0)
