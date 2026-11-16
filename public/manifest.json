@@ -35,14 +35,15 @@
   "screenshots": [
     {
       "src": "/screenshots/desktop.png",
-      "sizes": "1280x720",
+      "sizes": "1905x917",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
       "src": "/screenshots/mobile.png",
-      "sizes": "390x844",
-      "type": "image/png"
+      "sizes": "941x1633",
+      "type": "image/png",
+      "form_factor": "narrow"
     }
   ],
 
