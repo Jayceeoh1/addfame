@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "ro.addfame.twa",
+        "sha256_cert_fingerprints": ["0A:D3:C3:5A:2A:C3:5E:7D:AB:0F:26:F9:DA:D0:F3:06:E0:45:17:D3:C6:81:C4:8A:1F:01:96:BF:B5:D8:D8:02"]
+      }
+    }]
