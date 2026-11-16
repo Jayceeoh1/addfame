@@ -52,7 +52,6 @@ export const REPORT_CSS = `
 .cr-m{background:var(--soft);border-radius:12px;padding:10px 12px}
 .cr-m div:first-child{font-size:11.5px;color:var(--muted);font-weight:600}.cr-m div:last-child{font-size:18px;font-weight:800}
 .cr-shot{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#4a24c4;background:none;border:0;padding:0;cursor:pointer;font-family:inherit;min-height:32px}
-.cr-shotprint{display:none}
 .cr-tl{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:12px}
 .cr-tl li{display:flex;flex-direction:column;gap:5px;border-top:3px solid var(--acc);padding-top:10px}
 .cr-tl li.done{border-top-color:#0f9d58}
@@ -89,7 +88,6 @@ export const REPORT_CSS = `
   .cr-pbody{gap:4px}.cr-ptitle{font-size:11.5px;gap:6px}.cr-src{font-size:8.5px;padding:2px 7px}.cr-plink{font-size:9.5px}
   .cr-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}.cr-m{padding:5px 8px;border-radius:8px}
   .cr-m div:first-child{font-size:8.5px}.cr-m div:last-child{font-size:13px}
-  .cr-shotprint{display:block;max-height:70mm;max-width:60mm;border:1px solid var(--line);border-radius:8px;margin-top:4px}
   .cr-tl{grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px}.cr-tl li{gap:2px;padding-top:5px;border-top-width:2px}
   .cr-tl span{font-size:8.5px}.cr-tl b{font-size:10px}
   .cr-two{gap:8px}.cr-two>*{flex:1 1 240px}
@@ -183,7 +181,7 @@ export function CollabReportView({ report: raw, viewer }: { report: CollabReport
             {r.rows.map(p => {
               const src = SRC[p.source] || SRC.pending
               const isStory = p.kind === 'story'
-              const img = p.thumbnail_url || p.screenshot_url // fără miniatură → arătăm captura cu statisticile
+              const img = p.thumbnail_url || (isStory ? p.screenshot_url : null)
               return (
                 <article key={p.id} className={`cr-post${[p.views, p.likes, p.comments, p.shares, p.saves].every(v => v == null) ? ' nodata' : ''}`}>
                   <div className={`cr-thumb${isStory ? ' story' : ''}`}>
@@ -201,7 +199,6 @@ export function CollabReportView({ report: raw, viewer }: { report: CollabReport
                       {metric('Distribuiri', p.shares)}
                       {!isStory && metric('Salvări', p.saves)}
                     </div>
-                    {p.screenshot_url && <img className="cr-shotprint" src={p.screenshot_url} alt={`Captura cu statisticile — ${p.label}`} />}
                     {p.screenshot_url && (
                       <button type="button" className="cr-shot cr-noprint" onClick={() => setShot(p.screenshot_url)}>
                         <ImageIcon size={15} aria-hidden="true" /> Vezi captura cu statisticile
