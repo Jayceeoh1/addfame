@@ -22,7 +22,7 @@ import { isOfferCampaign, parseOfferPrice } from '@/lib/offer'
 import { limitAction, LIMITS } from '@/lib/rate-limit'
 import { awardScore } from '@/lib/score-log'
 import { WITHDRAWALS_PAUSED, WITHDRAWALS_PAUSED_MESSAGE } from '@/lib/withdrawals-config'
-import { profileMissing, PROFILE_COLUMNS } from '@/lib/profile-complete'
+import { PROFILE_COLUMNS } from '@/lib/profile-complete'
 import {
   emailCollaborationApproved,
   emailPaymentReleased,
@@ -785,14 +785,7 @@ export async function applyToCampaign(campaignId: string, message?: string, deli
     }
     if (!inf) return { error: 'Profilul tău de influencer nu a fost găsit. Contactează suportul.' }
 
-    // Profil complet obligatoriu: nume, Instagram sau TikTok, e-mail, telefon, adresă completă etc.
-    const missingProfile = profileMissing(inf, user.email)
-    if (missingProfile.length) {
-      return {
-        error: 'Completează-ți profilul ca să poți aplica: ' + missingProfile.map(m => m.label.toLowerCase()).join(', ') + '.',
-        profileMissing: missingProfile,
-      }
-    }
+    // Profilul complet nu mai e obligatoriu pentru aplicare (17.11.2026)
     // Verificarea identității dezactivată temporar
     // if (!inf.identity_verified) {
     //   return { error: 'Trebuie să îți verifici identitatea înainte de a aplica.', requiresVerification: true }

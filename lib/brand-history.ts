@@ -21,6 +21,18 @@ export type InfluencerHistory = {
   appliedOnly: number    // doar aplicări / invitații, fără colaborare
   avgRating: number | null
   last: { name: string; date: string; status: string } | null
+  /** toate campaniile brandului la care a fost (sau a aplicat), cele mai noi primele */
+  campaigns: { id: string; name: string; date: string; kind: HistoryKind }[]
+}
+
+export type HistoryKind = 'completed' | 'ongoing' | 'unfinished' | 'applied' | 'rejected'
+
+export const HISTORY_KIND_LABEL: Record<HistoryKind, string> = {
+  completed: 'Finalizată',
+  ongoing: 'În desfășurare',
+  unfinished: 'Nefinalizată',
+  applied: 'A aplicat',
+  rejected: 'Respins',
 }
 
 const GRACE_DAYS = 7  // după termen, mai lăsăm 7 zile până o considerăm nefinalizată
@@ -28,21 +40,24 @@ const GRACE_DAYS = 7  // după termen, mai lăsăm 7 zile până o considerăm n
 export function summarizeBrandHistory(rows: HistoryRow[], now = new Date()): Record<string, InfluencerHistory> {
   const out: Record<string, InfluencerHistory> = {}
   for (const r of rows) {
-    const h = out[r.influencer_id] ||= { completed: 0, ongoing: 0, unfinished: 0, appliedOnly: 0, avgRating: null, last: null }
+    const h = out[r.influencer_id] ||= { completed: 0, ongoing: 0, unfinished: 0, appliedOnly: 0, avgRating: null, last: null, campaigns: [] }
     const deadline = r.campaign?.deadline ? new Date(r.campaign.deadline).getTime() + GRACE_DAYS * 864e5 : null
     let worked = true
-    if (r.status === 'COMPLETED') h.completed++
-    else if (r.status === 'CANCELLED') h.unfinished++
+    let kind: HistoryKind
+    if (r.status === 'COMPLETED') { h.completed++; kind = 'completed' }
+    else if (r.status === 'CANCELLED') { h.unfinished++; kind = 'unfinished' }
     else if (r.status === 'ACTIVE') {
-      if (deadline && deadline < now.getTime() && !r.deliverable_submitted_at) h.unfinished++
-      else h.ongoing++
-    } else { h.appliedOnly++; worked = false }
+      if (deadline && deadline < now.getTime() && !r.deliverable_submitted_at) { h.unfinished++; kind = 'unfinished' }
+      else { h.ongoing++; kind = 'ongoing' }
+    } else { h.appliedOnly++; worked = false; kind = r.status === 'REJECTED' ? 'rejected' : 'applied' }
+    h.campaigns.push({ id: r.campaign_id, name: campaignName(r.campaign), date: r.completed_at || r.created_at, kind })
 
     if (worked) {
       const date = r.completed_at || r.created_at
       if (!h.last || new Date(date) > new Date(h.last.date)) h.last = { name: campaignName(r.campaign), date, status: r.status }
     }
   }
+  for (const h of Object.values(out)) h.campaigns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   // media notelor date de brand
   const ratings: Record<string, number[]> = {}
   for (const r of rows) if (r.rating && r.rating > 0) (ratings[r.influencer_id] ||= []).push(r.rating)

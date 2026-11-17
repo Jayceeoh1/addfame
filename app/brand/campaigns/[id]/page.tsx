@@ -29,7 +29,7 @@ import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
 import CampaignInvoicesCard from '@/components/brand/campaigns/CampaignInvoicesCard'
 import RightsPanel from '@/components/brand/campaigns/RightsPanel'
 import { getBrandCollabHistory } from '@/app/actions/brand-history'
-import { hasWorkedWith, type InfluencerHistory } from '@/lib/brand-history'
+import { hasWorkedWith, HISTORY_KIND_LABEL, type InfluencerHistory } from '@/lib/brand-history'
 
 /** „A mai lucrat cu tine” — etichetele de pe cardul aplicantului. */
 function HistoryPills({ h }: { h?: InfluencerHistory }) {
@@ -53,6 +53,22 @@ function HistoryPills({ h }: { h?: InfluencerHistory }) {
       )}
       {worked === 0 && h.unfinished === 0 && h.appliedOnly > 0 && (
         <span className="cx-pill">A mai aplicat la {h.appliedOnly} {h.appliedOnly === 1 ? 'campanie' : 'campanii'} ale tale</span>
+      )}
+      {h.campaigns.length > 0 && (
+        <details className="cx-hist" style={{ flexBasis: '100%' }}>
+          <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#4423c4' }}>
+            Vezi la ce campanii ale tale a mai fost ({h.campaigns.length})
+          </summary>
+          <ul style={{ listStyle: 'none', margin: '6px 0 0', padding: 0, display: 'grid', gap: 4 }}>
+            {h.campaigns.map((c, i) => (
+              <li key={c.id + i} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: '#14123a', flexWrap: 'wrap' }}>
+                <span className={'cx-pill ' + ({ completed: 'green', ongoing: 'purple', unfinished: 'red', applied: '', rejected: '' } as any)[c.kind]}>{HISTORY_KIND_LABEL[c.kind]}</span>
+                <Link href={`/brand/campaigns/${c.id}`} style={{ fontWeight: 600, color: '#14123a' }}>{c.name}</Link>
+                <span style={{ color: '#6a6690' }}>{month(c.date)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
     </>
   )

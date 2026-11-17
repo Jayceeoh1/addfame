@@ -422,11 +422,6 @@ export default function CampaignsPage() {
 
   async function handleApply() {
     if (!selected || !influencerId) return
-    // Verifică profil complet
-    if (profileMissing.length > 0) {
-      setShowProfileModal(true)
-      return
-    }
     setApplyError(null)
     setActionLoading(selected.id)
     try {

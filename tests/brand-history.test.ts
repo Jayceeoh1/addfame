@@ -17,6 +17,9 @@ describe('istoricul cu brandul', () => {
     ], now).A
     expect(h).toMatchObject({ completed: 2, ongoing: 1, unfinished: 2, appliedOnly: 2, avgRating: 4.5 })
     expect(h.last?.name).toBe('Set ceaiuri')
+    expect(h.campaigns).toHaveLength(7)
+    expect(h.campaigns[0]).toMatchObject({ name: 'Set ceaiuri', kind: 'completed' })
+    expect(h.campaigns.map(c => c.kind).sort()).toEqual(['applied', 'completed', 'completed', 'ongoing', 'rejected', 'unfinished', 'unfinished'])
     expect(hasWorkedWith(h)).toBe(true)
   })
   it('postarea trimisă după termen nu e „nefinalizată”', () => {
