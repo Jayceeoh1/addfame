@@ -85,7 +85,9 @@ export default function ContactPage() {
                 <strong>ADD FAME DIGITAL S.R.L.</strong><br />
                 CUI: 54992560<br />
                 Reg. Com.: J2026040984009<br />
-                Județul Argeș, România
+                EUID: ROONRC.J2026040984009<br />
+                Bd. Nicolae Bălcescu, Bl. C5, Sc. B, Et. 2, Ap. 9<br />
+                Municipiul Pitești, jud. Argeș, România
               </p>
             </div>
           </div>

@@ -60,7 +60,7 @@ export function SiteFooter() {
   const cols = [
     { title: 'Platformă', links: [['Pentru branduri', '/pentru-branduri'], ['Pentru influenceri', '/pentru-influenceri'], ['Cum funcționează', '/cum-functioneaza'], ['Întrebări frecvente', '/intrebari-frecvente']] },
     { title: 'Companie', links: [['Despre noi', '/despre-noi'], ['Evenimente', '/evenimente'], ['Contact', '/contact'], ['Creează cont', '/auth/register']] },
-    { title: 'Legal', links: [['Termeni și condiții', '/termeni'], ['Confidențialitate', '/politica-de-confidentialitate'], ['Cookie-uri', '/politica-de-confidentialitate#s-7']] },
+    { title: 'Legal', links: [['Termeni și condiții', '/termeni'], ['Confidențialitate', '/politica-de-confidentialitate'], ['Cookie-uri', '/politica-de-confidentialitate#s-7'], ['Raportează conținut', '/termeni#s-10']] },
   ]
   return (
     <footer className="af-footer">
@@ -87,7 +87,8 @@ export function SiteFooter() {
         <div className="af-footer-bottom">
           <div>
             <p>© 2026 AddFame. Toate drepturile rezervate.</p>
-            <p className="af-small">ADD FAME DIGITAL S.R.L. · CUI: 54992560 · Reg. Com.: J2026040984009 · Argeș, România</p>
+            <p className="af-small">ADD FAME DIGITAL S.R.L. · CUI: 54992560 · Reg. Com.: J2026040984009 · EUID: ROONRC.J2026040984009</p>
+            <p className="af-small">Sediu social: Bd. Nicolae Bălcescu, Bl. C5, Sc. B, Et. 2, Ap. 9, Municipiul Pitești, jud. Argeș</p>
           </div>
           <div className="af-footer-legal">
             {/* Pictograma oficială ANPC – SAL (Ordinul ANPC 449/2022, modificat prin Ordinul 270/2026; platforma SOL a fost desființată) */}

@@ -56,7 +56,7 @@ export default function PrivacyPage() {
           <div>
             <div className="sp-prose">
         <Section title="1. Cine suntem">
-          <p><strong>ADD FAME DIGITAL S.R.L.</strong> este operatorul de date personale responsabil pentru platforma addfame.ro.</p><p>CUI: <strong>54992560</strong> · Reg. Com.: <strong>J2026040984009</strong> · Sediu: Județul Argeș, România</p><p>Contact GDPR: <a href="mailto:privacy@addfame.ro">privacy@addfame.ro</a></p>
+          <p><strong>ADD FAME DIGITAL S.R.L.</strong> este operatorul de date personale responsabil pentru platforma addfame.ro.</p><p>CUI: <strong>54992560</strong> · Reg. Com.: <strong>J2026040984009</strong> · Sediu social: Bd. Nicolae Bălcescu, Bl. C5, Sc. B, Et. 2, Ap. 9, Municipiul Pitești, jud. Argeș, România</p><p>Contact GDPR: <a href="mailto:privacy@addfame.ro">privacy@addfame.ro</a></p>
         </Section>
 
         <Section title="2. Ce date colectăm">

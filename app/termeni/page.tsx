@@ -22,6 +22,7 @@ const TOC = [
   '7. Limitarea răspunderii',
   '8. Modificarea termenilor',
   '9. Contact',
+  '10. Raportarea conținutului ilegal (DSA)',
 ]
 
 const LEGAL_CSS = `
@@ -37,7 +38,7 @@ const LEGAL_CSS = `
 `
 
 export default function TermsPage() {
-  const updated = '24 Iunie 2026'
+  const updated = '17 Noiembrie 2026'
   return (
     <SitePage>
       <style>{LEGAL_CSS}</style>
@@ -58,7 +59,7 @@ export default function TermsPage() {
             <div className="sp-prose">
         <Section title="1. Acceptarea termenilor">
           <p>Prin accesarea și utilizarea platformei AddFame (addfame.ro), ești de acord cu acești termeni și condiții. Dacă nu ești de acord, te rugăm să nu utilizezi platforma.</p>
-          <p>AddFame este operată de <strong>ADD FAME DIGITAL S.R.L.</strong>, societate comercială înregistrată în România, CUI <strong>54992560</strong>, Nr. Reg. Com. <strong>J2026040984009</strong>, cu sediul în județul Argeș.</p>
+          <p>AddFame este operată de <strong>ADD FAME DIGITAL S.R.L.</strong>, societate comercială înregistrată în România, CUI <strong>54992560</strong>, Nr. Reg. Com. <strong>J2026040984009</strong>, EUID ROONRC.J2026040984009, cu sediul social în Bd. Nicolae Bălcescu, Bl. C5, Sc. B, Et. 2, Ap. 9, Municipiul Pitești, jud. Argeș.</p>
         </Section>
 
         <Section title="2. Descrierea serviciului">
@@ -101,10 +102,22 @@ export default function TermsPage() {
         <Section title="9. Contact">
           <p>Pentru întrebări: <a href="mailto:legal@addfame.ro">legal@addfame.ro</a></p>
           <p><strong>ADD FAME DIGITAL S.R.L.</strong><br />
-          CUI: 54992560 · Reg. Com.: J2026040984009<br />
-          Județul Argeș, România<br />
+          CUI: 54992560 · Reg. Com.: J2026040984009 · EUID: ROONRC.J2026040984009<br />
+          Sediu social: Bd. Nicolae Bălcescu, Bl. C5, Sc. B, Et. 2, Ap. 9, Municipiul Pitești, jud. Argeș, România<br />
           Email: <a href="mailto:contact@addfame.ro">contact@addfame.ro</a>
           </p>
+        </Section>
+
+        <Section title="10. Raportarea conținutului ilegal (DSA)">
+          <p><strong>Punct unic de contact.</strong> Conform Regulamentului (UE) 2022/2065 privind serviciile digitale (DSA), punctul unic de contact al AddFame pentru autoritățile statelor membre, Comisia Europeană și utilizatori este adresa <a href="mailto:contact@addfame.ro">contact@addfame.ro</a>. Ne poți scrie în limba română sau engleză.</p>
+          <p><strong>Cum raportezi conținut ilegal.</strong> Dacă vezi pe AddFame conținut pe care îl consideri ilegal (de exemplu într-un profil, o campanie sau o postare), trimite-ne un email la <a href="mailto:contact@addfame.ro?subject=Raportare%20con%C8%9Binut">contact@addfame.ro</a>, cu subiectul „Raportare conținut”, care să cuprindă:</p>
+          <ul>
+            <li>linkul exact (URL) către conținutul respectiv;</li>
+            <li>explicația motivului pentru care consideri că este ilegal;</li>
+            <li>numele și adresa ta de email (cu excepția cazurilor în care legea permite raportarea anonimă);</li>
+            <li>o declarație că informațiile din raportare sunt corecte și complete, după cunoștința ta.</li>
+          </ul>
+          <p><strong>Ce se întâmplă după raportare.</strong> Confirmăm primirea, analizăm raportarea cu atenție și fără întârzieri nejustificate și îți comunicăm decizia. Dacă eliminăm sau restricționăm conținutul unui utilizator, îi transmitem acestuia motivele deciziei, iar el o poate contesta scriindu-ne la aceeași adresă.</p>
         </Section>
             </div>
 
