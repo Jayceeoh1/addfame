@@ -435,6 +435,23 @@ function MyBriefCard({ brief, ackAt, onAck }: { brief: MyBrief; ackAt: string | 
   )
 }
 
+/** Briefil personal, sus în colaborare (înainte de draft), ca influencerul să-l vadă înainte să filmeze. */
+function CollabBrief({ collabId }: { collabId: string }) {
+  const [brief, setBrief] = useState<MyBrief | null>(null)
+  const [ackAt, setAckAt] = useState<string | null>(null)
+  useEffect(() => {
+    let alive = true
+    getMyBrief(collabId).then(r => { if (alive && !('error' in r)) { setBrief(r.brief as MyBrief | null); setAckAt(r.ackAt) } }).catch(() => {})
+    return () => { alive = false }
+  }, [collabId])
+  if (!brief) return null
+  return <MyBriefCard brief={brief} ackAt={ackAt} onAck={async () => {
+    const r = await acknowledgeMyBrief(collabId)
+    if ('error' in r) return r.error
+    setAckAt(r.ackAt); return null
+  }} />
+}
+
 function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUpdated: (updated: Partial<Collaboration> & { id: string }) => void }) {
   const existingUrls = collab.deliverable_urls?.length ? collab.deliverable_urls : collab.deliverable_url ? [collab.deliverable_url] : ['']
   const [urls, setUrls] = useState<string[]>(existingUrls)
@@ -1244,6 +1261,7 @@ export default function CollaborationsPage() {
 
         {(c.status === 'ACTIVE' || c.status === 'COMPLETED') && (
           <>
+          <CollabBrief collabId={c.id} />
           <DraftReview collabId={c.id} role="influencer" canUpload={c.status === 'ACTIVE'} />
           <DisputeButton collabId={c.id} role="influencer" />
           </>

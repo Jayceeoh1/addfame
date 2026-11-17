@@ -12,6 +12,7 @@ import {
   Instagram, Youtube, Tag, Shield, ExternalLink, Hash, Quote, Ban
 } from 'lucide-react'
 import Link from 'next/link'
+import MyCampaignBrief from '@/components/influencer/MyCampaignBrief'
 import { CampaignHero, CampaignStats, CampaignSections, CAMPAIGN_CSS, daysLeft, fmtDate } from '../campaign-sections'
 
 
@@ -210,6 +211,7 @@ export default function CampaignBriefPage() {
 
       {/* ── STATS ── */}
       <CampaignStats c={campaign} />
+      <MyCampaignBrief campaignId={campaign.id} />
 
       <div className="cp-grid">
         <div className="cp-main">

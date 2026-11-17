@@ -190,3 +190,23 @@ export async function acknowledgeMyBrief(collabId: string): Promise<{ ackAt: str
     return { ackAt: now }
   } catch (e: any) { return { error: e?.message || 'Eroare' } }
 }
+
+/** Briefil personal al influencerului logat pentru o campanie (prin colaborarea lui din campanie). */
+export async function getMyBriefForCampaign(campaignId: string):
+  Promise<{ collabId: string | null; brief: Pick<CampaignBrief, 'id' | 'title' | 'body' | 'file_url' | 'ref_url' | 'updated_at'> | null; ackAt: string | null } | Fail> {
+  try {
+    if (!isUuid(campaignId)) return { error: 'Campanie inexistentă' }
+    const sb = await createClient()
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user) return { collabId: null, brief: null, ackAt: null }
+    const admin = createAdminClient()
+    const { data: inf } = await admin.from('influencers').select('id').eq('user_id', user.id).maybeSingle()
+    if (!inf) return { collabId: null, brief: null, ackAt: null }
+    const { data: collab } = await admin.from('collaborations')
+      .select('id, brief_id, brief_ack_at').eq('campaign_id', campaignId).eq('influencer_id', inf.id)
+      .in('status', ['ACTIVE', 'COMPLETED']).maybeSingle()
+    if (!collab?.brief_id) return { collabId: collab?.id ?? null, brief: null, ackAt: null }
+    const { data: brief } = await admin.from('campaign_briefs').select('id, title, body, file_url, ref_url, updated_at').eq('id', collab.brief_id).maybeSingle()
+    return { collabId: collab.id, brief: brief ?? null, ackAt: collab.brief_ack_at ?? null }
+  } catch (e: any) { return { error: e?.message || 'Eroare' } }
+}

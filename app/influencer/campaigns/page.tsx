@@ -15,6 +15,7 @@ import {
   Briefcase, TrendingUp, Users, DollarSign, Calendar,
   Sparkles, Tag, ArchiveX, Ban
 } from 'lucide-react'
+import MyCampaignBrief from '@/components/influencer/MyCampaignBrief'
 import { CampaignHero, CampaignStats, CampaignSections, CAMPAIGN_CSS } from './campaign-sections'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 
@@ -1051,6 +1052,7 @@ export default function CampaignsPage() {
 
               {/* Recompensă · locuri · deadline */}
               <CampaignStats c={selected} collabAmount={collabAmounts[selected.id]} />
+              {appliedIds.has(selected.id) && <MyCampaignBrief campaignId={selected.id} />}
 
               {/* Brief, task-uri, caption, interzis, livrare… */}
               <CampaignSections c={selected} onCopy={(text, msg) => { navigator.clipboard.writeText(text); notify(msg) }} />
