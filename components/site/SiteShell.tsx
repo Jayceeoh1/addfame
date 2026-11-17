@@ -90,8 +90,10 @@ export function SiteFooter() {
             <p className="af-small">ADD FAME DIGITAL S.R.L. · CUI: 54992560 · Reg. Com.: J2026040984009 · Argeș, România</p>
           </div>
           <div className="af-footer-legal">
-            <a href="https://anpc.ro" target="_blank" rel="noopener noreferrer">ANPC</a>
-            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">SOL Online</a>
+            {/* Pictograma oficială ANPC – SAL (Ordinul ANPC 449/2022, modificat prin Ordinul 270/2026; platforma SOL a fost desființată) */}
+            <a className="af-anpc" href="https://reclamatiisal.anpc.ro" target="_blank" rel="noopener noreferrer" aria-label="ANPC – Soluționarea alternativă a litigiilor">
+              <img src="/anpc-sal.png" alt="ANPC – Soluționarea alternativă a litigiilor" width={250} height={50} loading="lazy" />
+            </a>
             <span>contact@addfame.ro</span>
           </div>
         </div>
@@ -281,6 +283,8 @@ textarea.sp-input{min-height:130px;resize:vertical}
 .af-small{font-size:12px}
 .af-footer-legal{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
 .af-footer-legal a{color:var(--soft);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+.af-footer-legal a.af-anpc{border:none;padding:0;border-radius:0;line-height:0}
+.af-anpc img{display:block;width:250px;max-width:100%;height:auto}
 
 @keyframes af-pulse{0%{box-shadow:0 0 0 0 rgba(34,200,240,.6)}70%{box-shadow:0 0 0 11px rgba(34,200,240,0)}100%{box-shadow:0 0 0 0 rgba(34,200,240,0)}}
 @media(prefers-reduced-motion:reduce){.af-page *{animation:none!important;transition:none!important}}
