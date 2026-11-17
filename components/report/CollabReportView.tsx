@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { Check, ExternalLink, Image as ImageIcon, Loader2, Download, Share2, X } from 'lucide-react'
 import type { CollabReport } from '@/lib/collab-report'
-import { fmtInt, fmtLei, fmtPct, fmtDay, fmtDate, KIND_LABEL, PLATFORM_LABEL, reportForDisplay } from '@/lib/collab-report'
+import { fmtInt, fmtLei, fmtPct, fmtDay, fmtDate, KIND_LABEL, PLATFORM_LABEL, reportForDisplay, deliverablesLabel, interactionParts } from '@/lib/collab-report'
 
 export const REPORT_CSS = `
 .cr{--ink:#15123a;--muted:#57537a;--line:#e6e3f2;--soft:#f6f5fb;--acc:#5b2fd0;--good:#0f6b3a;--goodbg:#e3f6ec;--warm:#6b4700;--warmbg:#fff1c2;
@@ -116,9 +116,9 @@ export function CollabReportView({ report: raw, viewer }: { report: CollabReport
   const hidden = new Set(r.settings.hidden)
   const t = r.totals
   const posts = r.rows.filter(x => x.kind !== 'story'), stories = r.rows.filter(x => x.kind === 'story')
-  const viewsSub = [t.viewsPosts ? `postări ${fmtInt(t.viewsPosts)}` : '', t.viewsStories ? `story-uri ${fmtInt(t.viewsStories)}` : ''].filter(Boolean).join(' · ')
+  const viewsSub = t.viewsStories ? `postări ${fmtInt(t.viewsPosts)} · story-uri ${fmtInt(t.viewsStories)}` : ''
   const showCost = !hidden.has('cost') && r.cost.lei != null
-  const deliverables = [posts.length ? `${posts.length} ${posts.length === 1 ? 'postare' : 'postări'}` : '', stories.length ? `${stories.length} ${stories.length === 1 ? 'story' : 'story-uri'}` : ''].filter(Boolean).join(' + ') || '—'
+  const deliverables = deliverablesLabel(r.rows) || '—'
 
   // arătăm doar cifrele completate, ca raportul să nu fie plin de liniuțe
   const metric = (label: string, v: number | null) => v == null ? null : (
@@ -161,7 +161,7 @@ export function CollabReportView({ report: raw, viewer }: { report: CollabReport
         ) : (
           <div className="cr-kpis">
             <div className="cr-kpi"><b>Vizualizări</b><span>{fmtInt(t.views)}</span><small>{viewsSub || 'total'}</small></div>
-            <div className="cr-kpi"><b>Interacțiuni</b><span>{fmtInt(t.interactions)}</span><small>like, comentarii, distribuiri, salvări</small></div>
+            <div className="cr-kpi"><b>Interacțiuni</b><span>{fmtInt(t.interactions)}</span><small>{interactionParts(t).map(([l, n]) => `${fmtInt(n)} ${l}`).join(' · ') || '—'}</small></div>
             <div className="cr-kpi acc"><b>Rată de engagement</b><span>{fmtPct(t.er)}</span><small>{t.erBase === 'reach' ? 'interacțiuni / conturi atinse' : t.erBase === 'views' ? 'interacțiuni / vizualizări' : 'fără date suficiente'}</small></div>
           </div>
         )}
@@ -183,7 +183,7 @@ export function CollabReportView({ report: raw, viewer }: { report: CollabReport
               const isStory = p.kind === 'story'
               const img = p.thumbnail_url || (isStory ? p.screenshot_url : null)
               return (
-                <article key={p.id} className={`cr-post${[p.views, p.likes, p.comments, p.shares, p.saves].every(v => v == null) ? ' nodata' : ''}`}>
+                <article key={p.id} className={`cr-post${[p.views, p.likes, p.comments, p.shares, p.saves, p.reposts].every(v => v == null) ? ' nodata' : ''}`}>
                   <div className={`cr-thumb${isStory ? ' story' : ''}`}>
                     {img && <img src={img} alt="" />}
                     <span className="cr-tag">{(KIND_LABEL[p.kind] || 'Postare').toUpperCase()}</span>
@@ -196,6 +196,7 @@ export function CollabReportView({ report: raw, viewer }: { report: CollabReport
                       {metric('Vizualizări', p.views)}
                       {metric(isStory ? 'Reacții' : 'Like-uri', p.likes)}
                       {metric(isStory ? 'Răspunsuri' : 'Comentarii', p.comments)}
+                      {!isStory && metric('Reposturi', p.reposts)}
                       {metric('Distribuiri', p.shares)}
                       {!isStory && metric('Salvări', p.saves)}
                     </div>

@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Eye, Check, Loader2, Plus, Trash2, ImagePlus, Send, Undo2, X } from 'lucide-react'
-import { adminGetReport, adminSaveReport, adminPublishReport, adminSaveMetric, adminAddRow, adminDeleteRow } from '@/app/actions/collab-report'
-import { fmtInt, fmtLei, fmtPct, REPORT_SECTIONS, type CollabReport, type ReportRow, type ReportSection } from '@/lib/collab-report'
+import { adminGetReport, adminSaveReport, adminPublishReport, adminSaveMetric, adminAddRow, adminDeleteRow, adminAttachIgStory } from '@/app/actions/collab-report'
+import { fmtInt, fmtLei, fmtPct, REPORT_SECTIONS, type CollabReport, type ReportRow, type ReportSection, type IgStoryOption } from '@/lib/collab-report'
 import { ADMIN_REPORT_CSS } from '../admin-report-css'
 
 const FIELDS: { key: keyof ReportRow & string; label: string }[] = [
@@ -14,7 +14,8 @@ const FIELDS: { key: keyof ReportRow & string; label: string }[] = [
   { key: 'reach', label: 'Conturi atinse' },
   { key: 'likes', label: 'Like-uri / reacții' },
   { key: 'comments', label: 'Comentarii' },
-  { key: 'shares', label: 'Distribuiri' },
+  { key: 'reposts', label: 'Reposturi 🔁' },
+  { key: 'shares', label: 'Distribuiri ✈️' },
   { key: 'saves', label: 'Salvări' },
   { key: 'link_clicks', label: 'Clicuri pe link' },
 ]
@@ -32,6 +33,7 @@ type Settings = {
 export default function AdminRaportEditor() {
   const { id } = useParams<{ id: string }>()
   const [rep, setRep] = useState<CollabReport | null>(null)
+  const [igStories, setIgStories] = useState<IgStoryOption[]>([])
   const [err, setErr] = useState('')
   const [draft, setDraft] = useState<Record<string, Record<string, string>>>({})
   const [s, setS] = useState<Settings | null>(null)
@@ -77,6 +79,7 @@ export default function AdminRaportEditor() {
   async function load(keepSettings = false) {
     const r: any = await adminGetReport(String(id))
     if (r?.error) { setErr(r.error); return }
+    setIgStories(r.igStories || [])
     fill(r.report, keepSettings)
   }
   useEffect(() => { load() }, [id])
@@ -100,6 +103,15 @@ export default function AdminRaportEditor() {
     setBusy(null)
     if (r?.error) return note('add', false, r.error)
     setNewLink(''); note('add', true, kind === 'story' ? 'Story adăugat.' : 'Postare adăugată.')
+    await load(true)
+  }
+
+  async function attachIg(mediaId: string) {
+    setBusy('ig:' + mediaId)
+    const r: any = await adminAttachIgStory(String(id), mediaId)
+    setBusy(null)
+    if (r?.error) return note('add', false, r.error)
+    note('add', true, 'Story adăugat din Instagram.')
     await load(true)
   }
 
@@ -242,6 +254,27 @@ export default function AdminRaportEditor() {
             </div>
           )
         })}
+        {igStories.some(st => !st.attached) && (
+          <div style={{ borderTop: '1px solid #eeebf6', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span className="ar-sub"><b style={{ color: '#15123a' }}>Story-uri găsite pe Instagram</b> în perioada colaborării. Adaugă-le pe cele din campanie: cifrele vin automat.</span>
+            <div className="ar-row" style={{ alignItems: 'flex-start' }}>
+              {igStories.filter(st => !st.attached).map(st => (
+                <div key={st.media_id} style={{ width: 104, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ width: 104, aspectRatio: '9/16', borderRadius: 10, overflow: 'hidden', background: '#ece7ff' }}>
+                    {st.thumbnail_url && <img src={st.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                  </div>
+                  <span className="ar-sub" style={{ fontSize: 11.5 }}>
+                    {st.posted_at ? new Date(st.posted_at).toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
+                    {st.views != null ? ` · ${fmtInt(st.views)} viz.` : ''}
+                  </span>
+                  <button type="button" className="ar-btn p" style={{ justifyContent: 'center' }} onClick={() => attachIg(st.media_id)} disabled={!!busy}>
+                    {busy === 'ig:' + st.media_id ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Adaugă
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="ar-row" style={{ borderTop: '1px solid #eeebf6', paddingTop: 14 }}>
           <button type="button" className="ar-btn dash" onClick={() => addRow('story')} disabled={!!busy}><Plus size={14} /> Adaugă story</button>
           <input className="ar-in" style={{ flex: '1 1 260px' }} placeholder="Link postare (Instagram, TikTok, YouTube)" value={newLink} onChange={e => setNewLink(e.target.value)} aria-label="Link postare" />

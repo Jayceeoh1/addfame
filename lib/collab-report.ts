@@ -25,6 +25,7 @@ export interface ReportRow {
   source: string
   views: number | null; reach: number | null; likes: number | null; comments: number | null
   shares: number | null; saves: number | null; link_clicks: number | null
+  reposts: number | null   // 🔁 reposturi (Instagram); distribuirile ✈️ sunt în „shares”
   thumbnail_url: string | null
   screenshot_path: string | null
   screenshot_url: string | null
@@ -60,7 +61,7 @@ export interface CollabReport {
   totals: {
     views: number; viewsPosts: number; viewsStories: number
     reach: number | null
-    interactions: number; likes: number; comments: number; shares: number; saves: number
+    interactions: number; likes: number; comments: number; shares: number; saves: number; reposts: number
     clicks: number
     er: number | null; erBase: 'reach' | 'views' | null
     withData: number
@@ -154,7 +155,7 @@ export function toReportRows(raw: any[], signed: Map<string, string>): ReportRow
       id: r.id, url: r.url, linkable: /^https?:\/\//.test(String(r.url || '')), platform: r.platform || 'instagram', kind, label,
       source: r.source || 'pending',
       views: num(r.views), reach: num(r.reach), likes: num(r.likes), comments: num(r.comments),
-      shares: num(r.shares), saves: num(r.saves), link_clicks: num(r.link_clicks),
+      shares: num(r.shares), saves: num(r.saves), link_clicks: num(r.link_clicks), reposts: num(r.reposts),
       thumbnail_url: r.thumbnail_url || null,
       screenshot_path: r.screenshot_path || null,
       screenshot_url: r.screenshot_path ? signed.get(r.screenshot_path) || null : null,
@@ -166,29 +167,46 @@ export function toReportRows(raw: any[], signed: Map<string, string>): ReportRow
 /** Ce apare în raportul afișat: doar postările/reels cu cifre completate — fără story-uri și fără rânduri goale.
  *  Totalurile și eticheta cu livrabile se recalculează pe aceleași rânduri, ca să nu apară cifre care nu se văd. */
 export function reportForDisplay<T extends { rows: ReportRow[]; totals: any; chips: { text: string; tone: any }[] }>(r: T): T {
-  const rows = r.rows.filter(x => x.kind !== 'story' && [x.views, x.likes, x.comments, x.shares, x.saves].some(v => v != null))
+  const rows = r.rows.filter(x => x.kind !== 'story' && [x.views, x.likes, x.comments, x.shares, x.saves, x.reposts].some(v => v != null))
   const chips = r.chips
     .filter(c => !/livrabil/i.test(c.text) || rows.length > 0)
     .map(c => /livrabil/i.test(c.text) ? { ...c, text: `${rows.length} ${rows.length === 1 ? 'livrabil raportat' : 'livrabile raportate'}` } : c)
   return { ...r, rows, chips, totals: computeReportTotals(rows) }
 }
 
+const KIND_COUNT: Record<RowKind, [string, string]> = { reel: ['reel', 'reels'], post: ['postare', 'postări'], video: ['video', 'videouri'], story: ['story', 'story-uri'] }
+
+/** „14 reels · 1 postare” — livrabilele pe tipuri, în ordinea reel, postare, video, story. */
+export function deliverablesLabel(rows: Pick<ReportRow, 'kind'>[]): string {
+  const order: RowKind[] = ['reel', 'post', 'video', 'story']
+  return order.map(k => {
+    const n = rows.filter(r => r.kind === k).length
+    return n ? `${n} ${KIND_COUNT[k][n === 1 ? 0 : 1]}` : ''
+  }).filter(Boolean).join(' · ')
+}
+
+/** Din ce e făcut totalul de interacțiuni (doar părțile care există), ca suma să se vadă exact. */
+export function interactionParts(t: { likes: number; comments: number; reposts?: number; shares: number; saves: number }): [string, number][] {
+  const parts: [string, number][] = [['like', t.likes], ['comentarii', t.comments], ['reposturi', t.reposts || 0], ['distribuiri', t.shares], ['salvări', t.saves]]
+  return parts.filter(([, n]) => n > 0)
+}
+
 export function computeReportTotals(rows: ReportRow[]) {
   const posts = rows.filter(r => r.kind !== 'story'), stories = rows.filter(r => r.kind === 'story')
   const sum = (list: ReportRow[], f: keyof ReportRow) => list.reduce((s, r) => s + (Number(r[f]) || 0), 0)
-  const likes = sum(rows, 'likes'), comments = sum(rows, 'comments'), shares = sum(rows, 'shares'), saves = sum(rows, 'saves')
-  const interactions = likes + comments + shares + saves
+  const likes = sum(rows, 'likes'), comments = sum(rows, 'comments'), shares = sum(rows, 'shares'), saves = sum(rows, 'saves'), reposts = sum(rows, 'reposts')
+  const interactions = likes + comments + shares + saves + reposts
   const postReach = posts.some(r => r.reach != null) ? sum(posts, 'reach') : null
   const reach = postReach ?? (rows.some(r => r.reach != null) ? sum(rows, 'reach') : null)
   // Rata de engagement: interacțiunile postărilor raportate la conturile atinse (altfel la vizualizări)
-  const postInter = sum(posts, 'likes') + sum(posts, 'comments') + sum(posts, 'shares') + sum(posts, 'saves')
+  const postInter = sum(posts, 'likes') + sum(posts, 'comments') + sum(posts, 'shares') + sum(posts, 'saves') + sum(posts, 'reposts')
   let er: number | null = null, erBase: 'reach' | 'views' | null = null
   if (postReach && postReach > 0) { er = postInter / postReach * 100; erBase = 'reach' }
   else if (sum(posts, 'views') > 0) { er = postInter / sum(posts, 'views') * 100; erBase = 'views' }
-  const fields = [...METRIC_FIELDS, 'link_clicks'] as (keyof ReportRow)[]
+  const fields = [...METRIC_FIELDS, 'link_clicks', 'reposts'] as (keyof ReportRow)[]
   return {
     views: sum(rows, 'views'), viewsPosts: sum(posts, 'views'), viewsStories: sum(stories, 'views'),
-    reach, interactions, likes, comments, shares, saves,
+    reach, interactions, likes, comments, shares, saves, reposts,
     clicks: sum(rows, 'link_clicks'),
     er: er == null ? null : Math.round(er * 10) / 10, erBase,
     withData: rows.filter(r => fields.some(f => r[f] != null)).length,

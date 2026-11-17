@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { ArrowLeft, Download, Loader2, EyeOff, ExternalLink } from 'lucide-react'
 import { getCampaignReport, type CampaignReportData } from '@/app/actions/collab-report'
 import { CollabReportView, REPORT_CSS } from '@/components/report/CollabReportView'
-import { computeReportTotals, reportForDisplay, fmtInt, fmtLei, fmtPct, fmtDay, fmtDate } from '@/lib/collab-report'
+import { computeReportTotals, reportForDisplay, deliverablesLabel, interactionParts, fmtInt, fmtLei, fmtPct, fmtDay, fmtDate } from '@/lib/collab-report'
 import { fontVars } from '@/lib/fonts'
 
 const PAGE_CSS = `
@@ -69,7 +69,7 @@ const PAGE_CSS = `
 .ra-st b{font-size:9px}.ra-st span{font-size:24px}.ra-st small{font-size:10px}
 .ra-card{padding:12px 14px;border-radius:12px;gap:6px}.ra-sum{break-inside:avoid}.ra-h2{font-size:15px}.ra-sum p{font-size:11px;line-height:1.45;max-width:none}
 .rk{min-width:0;font-size:10.5px}.rk-wrap{overflow:visible}
-.rk th{font-size:8.5px;padding:5px 6px}.rk td{padding:4px 6px}
+.rk th{font-size:8.5px;padding:4px 6px}.rk td{padding:2.5px 6px}
 .rk tr{break-inside:avoid}
 .rk-av{width:22px;height:22px;font-size:8.5px}.rk-who{gap:7px;min-width:0}.rk-who span span{font-size:9.5px!important}
 .rk-pos{width:18px;height:18px;font-size:9.5px;border-radius:5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -124,8 +124,9 @@ export default function RaportCampaniePage() {
     const followers = d.reports.reduce((s, r) => s + (r.creator.followers || 0), 0)
     const posts = d.reports.reduce((s, r) => s + r.rows.filter(x => x.kind !== 'story').length, 0)
     const stories = d.reports.reduce((s, r) => s + r.rows.filter(x => x.kind === 'story').length, 0)
+    const kinds = deliverablesLabel(d.reports.flatMap(r => r.rows))
     return {
-      t, cost, followers, posts, stories,
+      t, cost, followers, posts, stories, kinds,
       perThousand: cost != null && t.views > 0 ? Math.round(cost / t.views * 1000 * 100) / 100 : null,
       perInteraction: cost != null && t.interactions > 0 ? Math.round(cost / t.interactions * 100) / 100 : null,
       from: froms[0] || null, to: tos[tos.length - 1] || null,
@@ -170,7 +171,7 @@ export default function RaportCampaniePage() {
             <div className="ra-meta">
               {agg.from && <span>{fmtDay(agg.from)} – {agg.to ? fmtDate(agg.to) : 'în desfășurare'}</span>}
               <span>{d.reports.length} {d.reports.length === 1 ? 'creator' : 'creatori'}</span>
-              <span>{agg.posts} {agg.posts === 1 ? 'postare' : 'postări'}</span>
+              {agg.kinds && <span>{agg.kinds}</span>}
               {agg.followers > 0 && <span>{fmtInt(agg.followers)} urmăritori în total</span>}
             </div>
           </div>
@@ -189,8 +190,8 @@ export default function RaportCampaniePage() {
           ) : (
             <div className="cr">
               <section aria-label="Totalul campaniei" className="ra-stats">
-                <div className="ra-st"><b>Vizualizări</b><span>{fmtInt(agg.t.views)}</span><small>{[agg.t.viewsPosts ? `postări ${fmtInt(agg.t.viewsPosts)}` : '', agg.t.viewsStories ? `story-uri ${fmtInt(agg.t.viewsStories)}` : ''].filter(Boolean).join(' · ') || 'total'}</small></div>
-                <div className="ra-st"><b>Interacțiuni</b><span>{fmtInt(agg.t.interactions)}</span><small>{fmtInt(agg.t.likes)} like · {fmtInt(agg.t.comments)} comentarii · {fmtInt(agg.t.saves)} salvări</small></div>
+                <div className="ra-st"><b>Vizualizări</b><span>{fmtInt(agg.t.views)}</span><small>{agg.t.viewsStories ? `postări ${fmtInt(agg.t.viewsPosts)} · story-uri ${fmtInt(agg.t.viewsStories)}` : `din ${agg.posts} ${agg.posts === 1 ? 'material' : 'materiale'}`}</small></div>
+                <div className="ra-st"><b>Interacțiuni</b><span>{fmtInt(agg.t.interactions)}</span><small>{interactionParts(agg.t).map(([l, n]) => `${fmtInt(n)} ${l}`).join(' · ') || '—'}</small></div>
                 <div className="ra-st acc"><b>Rată de engagement</b><span>{fmtPct(agg.t.er)}</span><small>{agg.t.erBase === 'reach' ? 'interacțiuni / conturi atinse' : 'interacțiuni / vizualizări'}</small></div>
               </section>
 
@@ -224,7 +225,6 @@ export default function RaportCampaniePage() {
                     </tr></thead>
                     <tbody>
                       {d.reports.map((r, i) => {
-                        const p = r.rows.filter(x => x.kind !== 'story').length, s = r.rows.filter(x => x.kind === 'story').length
                         return (
                           <tr key={r.collabId}>
                             <td><span className="rk-pos">{i + 1}</span></td>
@@ -237,7 +237,7 @@ export default function RaportCampaniePage() {
                                 </span>
                               </div>
                             </td>
-                            <td>{[p ? `${p} post.` : '', s ? `${s} story` : ''].filter(Boolean).join(' + ') || '—'}</td>
+                            <td>{deliverablesLabel(r.rows) || '—'}</td>
                             <td><div className="ra-views"><div className="rk-bar"><div style={{ width: `${Math.round(r.totals.views / agg.maxViews * 100)}%` }} /></div><b>{fmtInt(r.totals.views)}</b></div></td>
                             <td className="n">{fmtInt(r.totals.interactions)}</td>
                             <td className="n"><b>{fmtPct(r.totals.er)}</b></td>
@@ -252,7 +252,7 @@ export default function RaportCampaniePage() {
               </section>
 
               <footer className="cr-foot">
-                <span>Cifre: automat din conturile conectate, verificate de echipa AddFame sau raportate de creatori cu captură de ecran.</span>
+                <span>Cifre: din statisticile fiecărui material pe Instagram, preluate automat sau introduse și verificate de echipa AddFame. Interacțiuni = like-uri + comentarii + reposturi + distribuiri + salvări; engagement = interacțiuni ÷ {agg.t.erBase === 'reach' ? 'conturi atinse' : 'vizualizări'}.</span>
                 <span>Generat de AddFame · {fmtDate(new Date().toISOString())}</span>
               </footer>
             </div>

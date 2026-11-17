@@ -51,3 +51,20 @@ describe('raport colaborare', () => {
     expect(igHandle({})).toBeNull()
   })
 })
+
+import { deliverablesLabel, interactionParts, computeReportTotals as crt } from '@/lib/collab-report'
+describe('raport: reposturi, livrabile, defalcare', () => {
+  const row = (o: any) => ({ id: 'x', url: 'u', linkable: true, platform: 'instagram', kind: 'reel', label: '', source: 'admin', views: null, reach: null, likes: null, comments: null, shares: null, saves: null, link_clicks: null, reposts: null, thumbnail_url: null, screenshot_path: null, screenshot_url: null, reported_at: null, admin_edited_at: null, ...o })
+  it('reposturile intră în interacțiuni, iar defalcarea adună exact totalul', () => {
+    const t = crt([row({ views: 1000, likes: 100, comments: 10, reposts: 57, shares: 1 }), row({ kind: 'post', views: 500, likes: 50, comments: 5 })] as any)
+    expect(t.interactions).toBe(223)
+    expect(interactionParts(t).reduce((s, [, n]) => s + n, 0)).toBe(t.interactions)
+    expect(interactionParts(t).map(p => p[0])).toEqual(['like', 'comentarii', 'reposturi', 'distribuiri'])
+    expect(t.er).toBe(14.9)
+  })
+  it('livrabilele pe tipuri', () => {
+    expect(deliverablesLabel([{ kind: 'reel' }, { kind: 'reel' }, { kind: 'post' }] as any)).toBe('2 reels · 1 postare')
+    expect(deliverablesLabel([{ kind: 'post' }] as any)).toBe('1 postare')
+    expect(deliverablesLabel([])).toBe('')
+  })
+})

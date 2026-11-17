@@ -9,7 +9,7 @@ import { cleanCount } from '@/lib/post-metrics'
 import { campaignName } from '@/lib/campaign-name'
 import { loadCollabReport, cleanSettings, igHandle, listIgStories, attachIgStory, STORY_PREFIX, REPORT_SECTIONS, type CollabReport, type IgStoryOption } from '@/lib/collab-report'
 
-const EDIT_FIELDS = ['views', 'reach', 'likes', 'comments', 'shares', 'saves', 'link_clicks'] as const
+const EDIT_FIELDS = ['views', 'reach', 'likes', 'comments', 'reposts', 'shares', 'saves', 'link_clicks'] as const
 
 export type ReportViewer = 'admin' | 'brand' | 'influencer'
 
