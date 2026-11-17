@@ -393,14 +393,14 @@ function Note({ tone = 'grey', title, right, children }: { tone?: string; title?
 
 type MyBrief = { id: string; title: string; body: string; file_url: string | null; ref_url: string | null; updated_at?: string }
 
-/** „Briefil tău” — briefil personal dat de brand acestui creator, cu bifa de citire. */
+/** „Brieful tău” — brieful personal dat de brand acestui creator, cu bifa de citire. */
 function MyBriefCard({ brief, ackAt, onAck }: { brief: MyBrief; ackAt: string | null; onAck: () => Promise<string | null> }) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   return (
     <div className="ic-brief" style={{ background: '#fff', border: '2px solid #7040f0' }}>
       <div className="iu-row" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-        <b className="iu-label" style={{ color: '#5b2fd0', display: 'flex', alignItems: 'center', gap: 6 }}><FileText size={14} /> Briefil tău</b>
+        <b className="iu-label" style={{ color: '#5b2fd0', display: 'flex', alignItems: 'center', gap: 6 }}><FileText size={14} /> Brieful tău</b>
         <span className="iu-xs" style={{ fontWeight: 700, color: '#4a4770' }}>{brief.title}</span>
       </div>
       {brief.body && <div className="iu-sm" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#1e1b4b', overflowWrap: 'anywhere' }}>{brief.body}</div>}
@@ -416,7 +416,7 @@ function MyBriefCard({ brief, ackAt, onAck }: { brief: MyBrief; ackAt: string | 
         </a>
       )}
       {ackAt ? (
-        <span className="iu-xs" style={{ color: '#14532d', fontWeight: 700 }}>✓ Ai confirmat că ai citit și respecți briefil ({fmtDateTime(ackAt)})</span>
+        <span className="iu-xs" style={{ color: '#14532d', fontWeight: 700 }}>✓ Ai confirmat că ai citit și respecți brieful ({fmtDateTime(ackAt)})</span>
       ) : (
         <label className="ic-consent" style={{ cursor: busy ? 'wait' : 'pointer' }}>
           <input type="checkbox" checked={false} disabled={busy} onChange={async () => {
@@ -426,7 +426,7 @@ function MyBriefCard({ brief, ackAt, onAck }: { brief: MyBrief; ackAt: string | 
             setBusy(false)
           }} />
           <span className="iu-xs" style={{ lineHeight: 1.55, color: '#4a4770' }}>
-            <b style={{ color: '#5b2fd0' }}>Am citit și respect briefil</b> — postarea trebuie să urmeze acest brief. <span style={{ color: '#b42318', fontWeight: 700 }}>obligatoriu înainte să trimiți postarea</span>
+            <b style={{ color: '#5b2fd0' }}>Am citit și respect brieful</b> — postarea trebuie să urmeze acest brief. <span style={{ color: '#b42318', fontWeight: 700 }}>obligatoriu înainte să trimiți postarea</span>
             {err && <><br /><span style={{ color: '#b42318' }}>{err}</span></>}
           </span>
         </label>
@@ -435,7 +435,7 @@ function MyBriefCard({ brief, ackAt, onAck }: { brief: MyBrief; ackAt: string | 
   )
 }
 
-/** Briefil personal, sus în colaborare (înainte de draft), ca influencerul să-l vadă înainte să filmeze. */
+/** Brieful personal, sus în colaborare (înainte de draft), ca influencerul să-l vadă înainte să filmeze. */
 function CollabBrief({ collabId }: { collabId: string }) {
   const [brief, setBrief] = useState<MyBrief | null>(null)
   const [ackAt, setAckAt] = useState<string | null>(null)
@@ -503,7 +503,7 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
       try { new URL(u) } catch { setError(`URL invalid: ${u}`); return }
     }
     if (!licenseConsent) { setError('Trebuie să accepți acordul de utilizare a conținutului pentru a trimite dovada'); return }
-    if (briefBlocks) { setError('Bifează „Am citit și respect briefil” (sus, în Briefil tău) înainte să trimiți postarea.'); return }
+    if (briefBlocks) { setError('Bifează „Am citit și respect brieful” (sus, în Brieful tău) înainte să trimiți postarea.'); return }
     // screenshot-ul e opțional: linkul postării ajunge (unii creatori nu reușesc să încarce poza de pe telefon)
     setSaving(true); setError(null)
     const sb = createClient()
@@ -721,7 +721,7 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
       {/* Motivare Creator Score cu timer live */}
       <ScoreTimerBanner acceptedAt={collab.created_at} />
 
-      {/* Briefil personal dat de brand (dacă există) */}
+      {/* Brieful personal dat de brand (dacă există) */}
       {briefCard}
 
       {/* Brief complet campanie */}

@@ -86,7 +86,7 @@ export default function BriefsPanel({ campaignId }: { campaignId: string }) {
         <div style={{ minWidth: 0, maxWidth: 560 }}>
           <div style={{ fontSize: 17, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}><FileText size={18} color={C.violet} /> Briefuri individuale</div>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: C.muted, lineHeight: 1.5 }}>
-            Scrie unul sau mai multe briefuri și dă-le creatorilor: același brief la mai mulți sau câte unul pentru fiecare. Fiecare creator își vede doar briefil lui și bifează că l-a citit înainte să posteze.
+            Scrie unul sau mai multe briefuri și dă-le creatorilor: același brief la mai mulți sau câte unul pentru fiecare. Fiecare creator își vede doar brieful lui și bifează că l-a citit înainte să posteze.
           </p>
         </div>
         {!form && <button style={btn(true)} onClick={() => setForm({ ...EMPTY, title: `Brief ${letter(briefs.length)}` })}><Plus size={15} /> Brief nou</button>}
@@ -98,7 +98,7 @@ export default function BriefsPanel({ campaignId }: { campaignId: string }) {
       {/* Formular */}
       {form && (
         <div style={{ border: `1px solid ${C.violet}`, borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, background: '#fff' }}>
-          <div style={{ fontWeight: 800, fontSize: 15 }}>{form.id ? 'Editează briefil' : 'Brief nou'}</div>
+          <div style={{ fontWeight: 800, fontSize: 15 }}>{form.id ? 'Editează brieful' : 'Brief nou'}</div>
           <div>
             <span style={label}>Titlu</span>
             <input style={input} value={form.title} maxLength={120} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="ex. Brief A · Rutina de dimineață" />
@@ -133,7 +133,7 @@ export default function BriefsPanel({ campaignId }: { campaignId: string }) {
       {/* Lista briefurilor */}
       {briefs.length === 0 && !form && (
         <div style={{ padding: 20, borderRadius: 16, background: C.soft, fontSize: 14, color: C.muted, textAlign: 'center' }}>
-          Nu ai încă briefuri individuale. Creatorii văd doar briefil general al campaniei.
+          Nu ai încă briefuri individuale. Creatorii văd doar brieful general al campaniei.
         </div>
       )}
       {briefs.length > 0 && (
@@ -189,11 +189,11 @@ export default function BriefsPanel({ campaignId }: { campaignId: string }) {
             <div style={{ padding: '10px 14px', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', background: C.violetSoft }}>
               <b style={{ fontSize: 13 }}>{sel.length} {sel.length === 1 ? 'selectat' : 'selectați'}</b>
               <select value={bulkBrief} onChange={e => setBulkBrief(e.target.value)} style={{ ...input, width: 'auto', minWidth: 180, padding: '7px 10px' }}>
-                <option value="">Alege briefil…</option>
+                <option value="">Alege brieful…</option>
                 {briefs.map(b => <option key={b.id} value={b.id}>{b.title}</option>)}
               </select>
-              <button style={btn(true)} disabled={!bulkBrief || busy} onClick={() => assign(sel, bulkBrief)}>{busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Dă briefil</button>
-              <button style={btn()} disabled={busy} onClick={() => assign(sel, null)}>Scoate briefil</button>
+              <button style={btn(true)} disabled={!bulkBrief || busy} onClick={() => assign(sel, bulkBrief)}>{busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Dă brieful</button>
+              <button style={btn()} disabled={busy} onClick={() => assign(sel, null)}>Scoate brieful</button>
               <button style={{ ...btn(), padding: 6 }} title="Renunță" onClick={() => setSel([])}><X size={14} /></button>
             </div>
           )}

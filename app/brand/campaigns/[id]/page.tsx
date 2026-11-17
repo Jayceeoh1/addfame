@@ -159,7 +159,7 @@ export default function CampaignDetailPage() {
       setCollabs(rows)
       // istoricul aplicanților cu acest brand (nu blochează pagina)
       getBrandCollabHistory(campaignId).then(r => { if ('success' in r) setHistory(r.history) }).catch(() => {})
-      // briefil individual al fiecărui creator (dacă există), ca să-l vezi lângă postare
+      // brieful individual al fiecărui creator (dacă există), ca să-l vezi lângă postare
       listCampaignBriefs(campaignId).then(r => {
         if ('error' in r) return
         const byId = new Map(r.briefs.map(b => [b.id, b]))

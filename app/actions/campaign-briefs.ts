@@ -1,7 +1,7 @@
 'use server'
 
 // Briefuri individuale pe campanie. Brandul (doar campaniile lui) și adminul creează briefuri
-// și le dau creatorilor; influencerul vede doar briefil colaborării lui.
+// și le dau creatorilor; influencerul vede doar brieful colaborării lui.
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -76,8 +76,8 @@ export async function saveCampaignBrief(campaignId: string, input: BriefInput & 
       const { data: affected } = await admin.from('collaborations')
         .update({ brief_ack_at: null }).eq('brief_id', input.id).neq('status', 'COMPLETED')
         .select('influencer_id, influencers(user_id)')
-      await notifyCreators(admin, affected ?? [], auth.campaign, 'Briefil tău a fost actualizat',
-        `Brandul a modificat briefil pentru „${campaignName(auth.campaign)}”. Citește-l din nou înainte să postezi.`)
+      await notifyCreators(admin, affected ?? [], auth.campaign, 'Brieful tău a fost actualizat',
+        `Brandul a modificat brieful pentru „${campaignName(auth.campaign)}”. Citește-l din nou înainte să postezi.`)
       return { brief: data as CampaignBrief }
     }
     const { count } = await admin.from('campaign_briefs').select('id', { count: 'exact', head: true }).eq('campaign_id', campaignId)
@@ -134,7 +134,7 @@ export async function assignCampaignBrief(campaignId: string, collabIds: string[
       .in('id', changed.map((r: any) => r.id))
     if (upErr) return { error: upErr.message }
     if (brief) {
-      await notifyCreators(admin, changed, auth.campaign, '📋 Ai primit briefil tău',
+      await notifyCreators(admin, changed, auth.campaign, '📋 Ai primit brieful tău',
         `Pentru campania „${campaignName(auth.campaign)}” ai un brief personal. Citește-l și bifează că îl respecți înainte să postezi.`)
     }
     return { ok: true, count: changed.length }
@@ -164,7 +164,7 @@ async function myCollab(collabId: string) {
   return collab
 }
 
-/** Briefil personal al colaborării (null dacă nu are). */
+/** Brieful personal al colaborării (null dacă nu are). */
 export async function getMyBrief(collabId: string):
   Promise<{ brief: Pick<CampaignBrief, 'id' | 'title' | 'body' | 'file_url' | 'ref_url' | 'updated_at'> | null; ackAt: string | null } | Fail> {
   try {
@@ -191,7 +191,7 @@ export async function acknowledgeMyBrief(collabId: string): Promise<{ ackAt: str
   } catch (e: any) { return { error: e?.message || 'Eroare' } }
 }
 
-/** Briefil personal al influencerului logat pentru o campanie (prin colaborarea lui din campanie). */
+/** Brieful personal al influencerului logat pentru o campanie (prin colaborarea lui din campanie). */
 export async function getMyBriefForCampaign(campaignId: string):
   Promise<{ collabId: string | null; brief: Pick<CampaignBrief, 'id' | 'title' | 'body' | 'file_url' | 'ref_url' | 'updated_at'> | null; ackAt: string | null } | Fail> {
   try {
