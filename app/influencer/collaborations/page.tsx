@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { checkInWithCode, acceptInviteWithOffer, updateMyOffer } from '@/app/actions/collaborations'
+import { getMyBrief, acknowledgeMyBrief } from '@/app/actions/campaign-briefs'
 import { InstagramIcon, TikTokIcon as TikTokSVG, YoutubeIcon, TwitterXIcon, LinkedInIcon } from '@/components/shared/platform-icons'
 import { PostStatsForm } from '@/components/shared/PostStatsForm'
 import { LeaveReview } from '@/components/shared/leave-review'
@@ -390,6 +391,50 @@ function Note({ tone = 'grey', title, right, children }: { tone?: string; title?
   )
 }
 
+type MyBrief = { id: string; title: string; body: string; file_url: string | null; ref_url: string | null; updated_at?: string }
+
+/** „Briefil tău” — briefil personal dat de brand acestui creator, cu bifa de citire. */
+function MyBriefCard({ brief, ackAt, onAck }: { brief: MyBrief; ackAt: string | null; onAck: () => Promise<string | null> }) {
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  return (
+    <div className="ic-brief" style={{ background: '#fff', border: '2px solid #7040f0' }}>
+      <div className="iu-row" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+        <b className="iu-label" style={{ color: '#5b2fd0', display: 'flex', alignItems: 'center', gap: 6 }}><FileText size={14} /> Briefil tău</b>
+        <span className="iu-xs" style={{ fontWeight: 700, color: '#4a4770' }}>{brief.title}</span>
+      </div>
+      {brief.body && <div className="iu-sm" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#1e1b4b', overflowWrap: 'anywhere' }}>{brief.body}</div>}
+      {brief.file_url && (
+        <a href={brief.file_url} target="_blank" rel="noopener noreferrer" className="iu-btn p big" style={{ justifyContent: 'space-between' }}>
+          <span className="iu-row" style={{ gap: 8 }}><FileText size={16} /> Deschide fișierul briefului</span>
+          <ExternalLink size={14} />
+        </a>
+      )}
+      {brief.ref_url && (
+        <a href={brief.ref_url} target="_blank" rel="noopener noreferrer" className="ic-linkbox">
+          <Link2 size={14} style={{ flex: 'none' }} /><span className="ic-linktxt">Exemplu / referință: {brief.ref_url}</span><ExternalLink size={13} style={{ flex: 'none' }} />
+        </a>
+      )}
+      {ackAt ? (
+        <span className="iu-xs" style={{ color: '#14532d', fontWeight: 700 }}>✓ Ai confirmat că ai citit și respecți briefil ({fmtDateTime(ackAt)})</span>
+      ) : (
+        <label className="ic-consent" style={{ cursor: busy ? 'wait' : 'pointer' }}>
+          <input type="checkbox" checked={false} disabled={busy} onChange={async () => {
+            setBusy(true); setErr('')
+            const e = await onAck()
+            if (e) setErr(e)
+            setBusy(false)
+          }} />
+          <span className="iu-xs" style={{ lineHeight: 1.55, color: '#4a4770' }}>
+            <b style={{ color: '#5b2fd0' }}>Am citit și respect briefil</b> — postarea trebuie să urmeze acest brief. <span style={{ color: '#b42318', fontWeight: 700 }}>obligatoriu înainte să trimiți postarea</span>
+            {err && <><br /><span style={{ color: '#b42318' }}>{err}</span></>}
+          </span>
+        </label>
+      )}
+    </div>
+  )
+}
+
 function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUpdated: (updated: Partial<Collaboration> & { id: string }) => void }) {
   const existingUrls = collab.deliverable_urls?.length ? collab.deliverable_urls : collab.deliverable_url ? [collab.deliverable_url] : ['']
   const [urls, setUrls] = useState<string[]>(existingUrls)
@@ -401,6 +446,22 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
   const [showAdsHelp, setShowAdsHelp] = useState(false)
   const [licenseConsent, setLicenseConsent] = useState(!!collab.content_license_granted)
   const [thumbnailUrl, setThumbnailUrl] = useState(collab.thumbnail_url || '')
+  const [myBrief, setMyBrief] = useState<MyBrief | null>(null)
+  const [briefAck, setBriefAck] = useState<string | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    getMyBrief(collab.id).then(r => { if (alive && !('error' in r)) { setMyBrief(r.brief as MyBrief | null); setBriefAck(r.ackAt) } }).catch(() => {})
+    return () => { alive = false }
+  }, [collab.id])
+  const briefBlocks = !!myBrief && !briefAck
+  const ackBrief = async () => {
+    const r = await acknowledgeMyBrief(collab.id)
+    if ('error' in r) return r.error
+    setBriefAck(r.ackAt); setError(null)
+    return null
+  }
+  const briefCard = myBrief ? <MyBriefCard brief={myBrief} ackAt={briefAck} onAck={ackBrief} /> : null
 
   const url = urls[0] || ''
 
@@ -425,6 +486,7 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
       try { new URL(u) } catch { setError(`URL invalid: ${u}`); return }
     }
     if (!licenseConsent) { setError('Trebuie să accepți acordul de utilizare a conținutului pentru a trimite dovada'); return }
+    if (briefBlocks) { setError('Bifează „Am citit și respect briefil” (sus, în Briefil tău) înainte să trimiți postarea.'); return }
     // screenshot-ul e opțional: linkul postării ajunge (unii creatori nu reușesc să încarce poza de pe telefon)
     setSaving(true); setError(null)
     const sb = createClient()
@@ -574,7 +636,7 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
   )
 
   const renderSubmitBtn = (label: string) => (
-    <button onClick={submit} disabled={saving || !licenseConsent} className="iu-btn p big" style={{ flex: 1 }}>
+    <button onClick={submit} disabled={saving || !licenseConsent || briefBlocks} className="iu-btn p big" style={{ flex: 1 }}>
       {saving
         ? <><Loader2 size={16} className="ic-spin" /> Se trimite…</>
         : <><Send size={15} /> {label}</>}
@@ -595,6 +657,7 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
           </div>
         </Note>
       )}
+      {briefCard}
       <b className="iu-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <Upload size={13} /> {wasRejected ? 'Retrimite dovada postului' : 'Editează dovada'}
       </b>
@@ -640,6 +703,9 @@ function DeliverableSection({ collab, onUpdated }: { collab: Collaboration; onUp
     <div className="ic-col" style={{ gap: 14 }}>
       {/* Motivare Creator Score cu timer live */}
       <ScoreTimerBanner acceptedAt={collab.created_at} />
+
+      {/* Briefil personal dat de brand (dacă există) */}
+      {briefCard}
 
       {/* Brief complet campanie */}
       {(collab.campaigns?.deliverables || collab.campaigns?.content_type?.length > 0 || collab.campaigns?.required_caption || collab.campaigns?.required_hashtags?.length > 0 || collab.campaigns?.key_messages?.length > 0 || collab.campaigns?.min_duration || collab.campaigns?.min_days_online || collab.campaigns?.story_instructions || collab.campaigns?.forbidden_mentions?.length > 0 || collab.campaigns?.tasks_ig_reel || collab.campaigns?.tasks_ig_post || collab.campaigns?.tasks_include_post || (collab.campaigns?.tasks_stories_count ?? 0) > 0 || collab.campaigns?.tasks_tt_video || collab.campaigns?.tasks_tt_live || collab.campaigns?.tasks_yt_short || collab.campaigns?.tasks_yt_video || collab.campaigns?.tasks_fb_post || collab.campaigns?.promotion_link || collab.campaigns?.brief_pdf_url) && (

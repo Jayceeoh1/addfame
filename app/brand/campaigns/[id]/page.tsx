@@ -28,6 +28,8 @@ import { getAcademyTiers } from '@/app/actions/academy'
 import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
 import CampaignInvoicesCard from '@/components/brand/campaigns/CampaignInvoicesCard'
 import RightsPanel from '@/components/brand/campaigns/RightsPanel'
+import BriefsPanel from '@/components/campaigns/BriefsPanel'
+import { listCampaignBriefs } from '@/app/actions/campaign-briefs'
 import { getBrandCollabHistory } from '@/app/actions/brand-history'
 import { hasWorkedWith, HISTORY_KIND_LABEL, type InfluencerHistory } from '@/lib/brand-history'
 
@@ -108,6 +110,7 @@ export default function CampaignDetailPage() {
   const [sortBy, setSortBy] = useState<'date' | 'followers' | 'rating'>('date')
   const [tierFilter, setTierFilter] = useState<string[]>([])
   const [history, setHistory] = useState<Record<string, InfluencerHistory>>({})
+  const [collabBriefs, setCollabBriefs] = useState<Record<string, { title: string; body: string; read: boolean }>>({})
   const [historyFilter, setHistoryFilter] = useState<'all' | 'returning' | 'new'>('all')
   const [menuOpen, setMenuOpen] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -127,7 +130,7 @@ export default function CampaignDetailPage() {
   const [rejectReason, setRejectReason] = useState('')
   const [rejecting, setRejecting] = useState(false)
   const [profileModal, setProfileModal] = useState<any | null>(null)
-  const [view, setView] = useState<'collabs' | 'stats' | 'participanti' | 'drepturi'>('collabs')
+  const [view, setView] = useState<'collabs' | 'stats' | 'participanti' | 'drepturi' | 'briefuri'>('collabs')
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({})
   const [draftPending, setDraftPending] = useState<string[]>([])
 
@@ -156,6 +159,14 @@ export default function CampaignDetailPage() {
       setCollabs(rows)
       // istoricul aplicanților cu acest brand (nu blochează pagina)
       getBrandCollabHistory(campaignId).then(r => { if ('success' in r) setHistory(r.history) }).catch(() => {})
+      // briefil individual al fiecărui creator (dacă există), ca să-l vezi lângă postare
+      listCampaignBriefs(campaignId).then(r => {
+        if ('error' in r) return
+        const byId = new Map(r.briefs.map(b => [b.id, b]))
+        const m: Record<string, { title: string; body: string; read: boolean }> = {}
+        for (const c of r.creators) { const b = c.briefId && byId.get(c.briefId); if (b) m[c.collabId] = { title: b.title, body: b.body, read: !!c.ackAt } }
+        setCollabBriefs(m)
+      }).catch(() => {})
       const infIds = [...new Set(rows.map((c: any) => c.influencer_id).filter(Boolean))]
       if (infIds.length > 0) {
         // nivelul din Academie (Bronze…Platinum), nu blochează pagina
@@ -590,7 +601,7 @@ export default function CampaignDetailPage() {
       <div className="flex gap-2 mb-5" style={{ overflowX: 'auto', scrollbarWidth: 'none' }}>
         {(campaign?.campaign_type === 'OPEN_CALL'
           ? [{ k: 'participanti', l: 'Cine vrea să vină' }, { k: 'collabs', l: `Invitații (${collabs.length})` }, { k: 'stats', l: 'Statistici' }]
-          : [{ k: 'collabs', l: `Colaborări (${collabs.length})` }, { k: 'stats', l: 'Statistici și economii' }, { k: 'drepturi', l: 'Drepturi de autor' }]
+          : [{ k: 'collabs', l: `Colaborări (${collabs.length})` }, { k: 'briefuri', l: 'Briefuri' }, { k: 'stats', l: 'Statistici și economii' }, { k: 'drepturi', l: 'Drepturi de autor' }]
         ).map(t => (
           <button key={t.k} className={`tab-btn flex-shrink-0 ${view === t.k ? 'on' : ''}`} onClick={() => setView(t.k as any)}>{t.l}</button>
         ))}
@@ -601,6 +612,8 @@ export default function CampaignDetailPage() {
       )}
 
       {view === 'drepturi' && <div className="mb-5"><RightsPanel campaignId={campaignId} /></div>}
+
+      {view === 'briefuri' && <div className="card p-5 mb-5"><BriefsPanel campaignId={campaignId} /></div>}
 
       {view === 'stats' && (
         <>
@@ -755,6 +768,11 @@ export default function CampaignDetailPage() {
                   badges={(
                     <>
                       <HistoryPills h={history[collab.influencer_id]} />
+                      {collabBriefs[collab.id] && (
+                        <span className={`cx-pill ${collabBriefs[collab.id].read ? 'green' : ''}`} title={collabBriefs[collab.id].body.slice(0, 600)}>
+                          📋 {collabBriefs[collab.id].title}{collabBriefs[collab.id].read ? ' · citit' : ' · necitit'}
+                        </span>
+                      )}
                       {inf && <TierChip of={inf} />}
                       <AcademyTierChip tier={academyTiers[collab.influencer_id]} />
                       {isActive && <>

@@ -4,6 +4,7 @@ import CampaignPromoAdmin from '@/components/admin/CampaignPromoAdmin'
 import { campaignName } from '@/lib/campaign-name'
 import EventApplicationsPanel from '@/components/events/EventApplicationsPanel'
 import CampaignInvoicePanel from '@/components/admin/CampaignInvoicePanel'
+import BriefsPanel from '@/components/campaigns/BriefsPanel'
 import { useState, useEffect, useCallback } from 'react'
 import { getAllCampaigns, adminUpdateCampaignStatus, deleteCampaign, getAllInfluencers, adminUpdateDeliveryAddress, adminUpdateCampaign, adminImpersonateUser, updateCampaignImages } from '@/app/actions/admin'
 import { getManagedCampaigns, assignInfluencersToManaged, inviteInfluencersToBarter, inviteInfluencersToOpenCall } from '@/app/actions/managed-campaigns'
@@ -799,7 +800,7 @@ export default function AdminCampaigns() {
   const [editInstructionsText, setEditInstructionsText] = useState('')
   const [editingDeliverableUrl, setEditingDeliverableUrl] = useState('')
   const [savingDeliverableUrl, setSavingDeliverableUrl] = useState(false)
-  const [activeSection, setActiveSection] = useState<'brief' | 'influencers' | 'actions' | 'collabs' | 'registrations'>('brief')
+  const [activeSection, setActiveSection] = useState<'brief' | 'influencers' | 'actions' | 'collabs' | 'registrations' | 'briefuri'>('brief')
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
   const [adminNote, setAdminNote] = useState('')
   const [savingNote, setSavingNote] = useState(false)
@@ -1562,6 +1563,7 @@ export default function AdminCampaigns() {
                 ] : [
                   { id: 'influencers', label: `Influenceri (${(selectedInfluencers[selectedCampaign.id] || []).length} sel.)`, icon: Users },
                   { id: 'collabs', label: `Colaborări (${campaignCollabs.length})`, icon: CheckCircle },
+                  { id: 'briefuri', label: 'Briefuri', icon: FileText },
                 ]),
                 { id: 'actions', label: 'Acțiuni Admin', icon: CheckCircle },
               ].map(s => (
@@ -2891,6 +2893,10 @@ export default function AdminCampaigns() {
                     )}
                   </div>
                 </div>
+              )}
+
+              {activeSection === 'briefuri' && (
+                <div className="p-5"><BriefsPanel campaignId={selectedCampaign.id} /></div>
               )}
 
               {activeSection === 'actions' && (
