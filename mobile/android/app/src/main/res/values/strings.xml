@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AddFame</string>
+    <string name="title_activity_main">AddFame</string>
+    <string name="package_name">ro.addfame.app</string>
+    <string name="custom_url_scheme">ro.addfame.app</string>
+</resources>
