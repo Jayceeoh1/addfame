@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ACADEMY_PRICE_RON, ACADEMY_BADGE_LABEL, isAcademyMember } from '@/lib/academy-member'
+import { getLaunchOffer } from '@/lib/academy-launch'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
 
@@ -42,7 +43,10 @@ export async function POST(req: NextRequest) {
     // Acordul pentru acces imediat la conținut digital (fără drept de retragere după începerea accesului)
     await admin.from('influencers').update({ academy_terms_accepted_at: new Date().toISOString() }).eq('id', inf.id)
 
-    const meta = { type: 'ACADEMY', influencer_id: inf.id, user_id: user.id }
+    // oferta de lansare: doar la primul abonament al creatorului și cât mai sunt locuri
+    const { count: paidBefore } = await admin.from('academy_invoices').select('id', { count: 'exact', head: true }).eq('influencer_id', inf.id)
+    const launch = !paidBefore ? await getLaunchOffer({ fresh: true }) : null
+    const meta = { type: 'ACADEMY', influencer_id: inf.id, user_id: user.id, launch: launch ? '1' : '0' }
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
@@ -60,6 +64,8 @@ export async function POST(req: NextRequest) {
       subscription_data: { metadata: meta },
       // plata se deschide într-o fereastră peste pagină (Stripe Embedded Checkout), fără să plece de pe AddFame
       ui_mode: 'embedded',
+      // cu oferta de lansare se aplică reducerea; altfel se pot folosi coduri promoționale create în Stripe
+      ...(launch ? { discounts: [{ coupon: launch.couponId }] } : { allow_promotion_codes: true }),
       redirect_on_completion: 'never',
     })
     return NextResponse.json({ clientSecret: session.client_secret })

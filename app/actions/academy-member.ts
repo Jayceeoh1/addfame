@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/verify-admin'
 import { isAcademyMember, ACADEMY_PRICE_RON } from '@/lib/academy-member'
+import { getLaunchOffer } from '@/lib/academy-launch'
 
 const COMMUNITY_KEY = 'academy_community'
 
@@ -17,7 +18,7 @@ async function communityUrl(admin: ReturnType<typeof createAdminClient>): Promis
 
 export async function getMyMembership(): Promise<
   | { error: string }
-  | { success: true; active: boolean; community: string | null; invoices: { id: string; at: string; amount: number; ready: boolean }[]; until: string | null; canceling: boolean; hasSubscription: boolean; price: number }
+  | { success: true; active: boolean; launch: { left: number; total: number; firstMonth: number } | null; community: string | null; invoices: { id: string; at: string; amount: number; ready: boolean }[]; until: string | null; canceling: boolean; hasSubscription: boolean; price: number }
 > {
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
@@ -32,9 +33,11 @@ export async function getMyMembership(): Promise<
   const community = active ? await communityUrl(admin) : null
   const { data: invs } = await admin.from('academy_invoices').select('id, amount, smartbill_number, created_at')
     .eq('influencer_id', inf.id).order('created_at', { ascending: false }).limit(36)
+  const offer = !active && !(invs || []).length ? await getLaunchOffer() : null
   return {
     success: true,
     active,
+    launch: offer ? { left: offer.left, total: offer.total, firstMonth: offer.firstMonth } : null,
     community,
     invoices: (invs || []).map((x: any) => ({ id: x.id, at: x.created_at, amount: Number(x.amount || 0), ready: !!x.smartbill_number })),
     until: inf.badge_expires_at ?? null,

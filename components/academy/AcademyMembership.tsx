@@ -144,8 +144,17 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
       <style>{CSS}</style>
       <div className="am-row">
         <span className="am-badge">🎓 {ACADEMY_BADGE_LABEL}</span>
-        <span className="am-price"><b>{st.price} lei</b> / lună</span>
+        {st.launch
+          ? <span className="am-price"><s>{st.price} lei</s> <b>{st.launch.firstMonth} lei</b> prima lună</span>
+          : <span className="am-price"><b>{st.price} lei</b> / lună</span>}
       </div>
+      {st.launch && (
+        <div className="am-launch">
+          <div className="am-launch-t">🔥 <b>Ofertă de lansare:</b> primii {st.launch.total} membri plătesc {st.launch.firstMonth} lei prima lună, apoi {st.price} lei / lună.</div>
+          <div className="am-launch-bar" aria-hidden="true"><i style={{ width: `${Math.round(((st.launch.total - st.launch.left) / st.launch.total) * 100)}%` }} /></div>
+          <div className="am-launch-n">{st.launch.left === 1 ? 'A mai rămas un singur loc' : `Mai sunt ${st.launch.left} locuri din ${st.launch.total}`}</div>
+        </div>
+      )}
       <h3>Devino {ACADEMY_BADGE_LABEL}</h3>
       {returned === 'ok' && <p className="am-ok">Mulțumim! Confirmăm plata, durează câteva secunde…</p>}
       {!compact && (
@@ -158,7 +167,7 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
         <span>Vreau acces imediat la cursuri și înțeleg că, odată ce accesul la conținutul digital începe, renunț la dreptul de retragere de 14 zile. Am citit <Link href="/termeni#s-11" target="_blank">termenii abonamentului</Link>.</span>
       </label>
       {err && <p className="am-err">{err}</p>}
-      <button className="am-btn" disabled={!accept || busy} onClick={subscribe}>{busy ? 'Se pregătește plata…' : `Abonează-te cu cardul — ${st.price} lei / lună`}</button>
+      <button className="am-btn" disabled={!accept || busy} onClick={subscribe}>{busy ? 'Se pregătește plata…' : st.launch ? `Abonează-te cu cardul — ${st.launch.firstMonth} lei prima lună` : `Abonează-te cu cardul — ${st.price} lei / lună`}</button>
       {modal}
       <Invoices list={st.invoices} />
       <p className="am-muted am-small">Plata se face prin Stripe. Abonamentul se reînnoiește lunar și îl poți anula oricând de aici; accesul rămâne până la sfârșitul lunii plătite.</p>
@@ -191,7 +200,12 @@ const CSS = `
 .am-card h3{margin:0;font-size:20px;font-weight:800;letter-spacing:-.02em}
 .am-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .am-badge{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:999px;background:linear-gradient(120deg,#5b2fd0,#3a8bff);color:#fff;font-weight:800;font-size:12.5px}
-.am-price{font-size:14px;color:#4a4770}.am-price b{font-size:20px;color:#14123a}
+.am-price{font-size:14px;color:#4a4770}.am-price b{font-size:20px;color:#14123a}.am-price s{color:#8a87a8;margin-right:4px}
+.am-launch{border-radius:16px;padding:12px 14px;background:linear-gradient(120deg,#fff4e5,#ffe9f1);border:1px solid #ffd3b0;display:flex;flex-direction:column;gap:8px}
+.am-launch-t{font-size:13.5px;line-height:1.45;color:#5a2a00}
+.am-launch-bar{height:8px;border-radius:99px;background:#ffffffb3;overflow:hidden}
+.am-launch-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#ff7a1a,#ff3d77)}
+.am-launch-n{font-size:12.5px;font-weight:800;color:#b33a00;font-variant-numeric:tabular-nums}
 .am-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .am-list li{display:flex;gap:10px;align-items:flex-start}.am-list li>span{font-size:18px;line-height:1.2}
 .am-list b{display:block;font-size:14.5px}.am-list small{display:block;font-size:12.5px;color:#6a6690}

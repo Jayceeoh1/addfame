@@ -1,6 +1,9 @@
 // Academy Member: abonamentul lunar AddFame Academy și accesul la lecții. Funcții pure, testate separat.
 
 export const ACADEMY_PRICE_RON = 200
+/** Oferta de lansare: primii ACADEMY_LAUNCH_SPOTS membri plătesc ACADEMY_LAUNCH_PRICE_RON în prima lună. */
+export const ACADEMY_LAUNCH_PRICE_RON = 125
+export const ACADEMY_LAUNCH_SPOTS = 50
 export const ACADEMY_BADGE_LABEL = 'Academy Member'
 
 /** Membru = bifa plătită activă (is_verified + badge_expires_at în viitor). */
