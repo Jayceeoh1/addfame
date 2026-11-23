@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Calendar, MapPin, Users, ArrowRight, Loader2, Megaphone } from 'lucide-react'
+import { Calendar, MapPin, Users, ArrowRight, Loader2, Megaphone, Images, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { getEventsForInfluencer } from '@/app/actions/event-signup'
+import { getEventsForInfluencer, getPastEventsForInfluencer } from '@/app/actions/event-signup'
 
 type EventItem = {
   id: string
@@ -23,6 +23,11 @@ type EventItem = {
   href?: string | null
 }
 
+type PastEvent = {
+  id: string; title: string; date: string | null; location: string | null; organizer: string; logo: string | null
+  description: string | null; cover: string | null; photos: { url: string; caption: string | null }[]; href: string | null
+}
+
 function fmt(date: string) {
   return new Date(date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })
 }
@@ -37,13 +42,29 @@ export default function EvenimentePage() {
   const [campaigns, setCampaigns] = useState<EventItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [past, setPast] = useState<PastEvent[]>([])
+  const [viewer, setViewer] = useState<{ ev: PastEvent; i: number } | null>(null)
 
   useEffect(() => {
     getEventsForInfluencer().then(r => {
       if ('success' in r) setCampaigns(r.events as EventItem[])
       else setError(r.error || 'Eroare')
     }).catch(() => setError('Nu am putut încărca evenimentele.')).finally(() => setLoading(false))
+    getPastEventsForInfluencer().then(r => { if ('success' in r) setPast(r.events as PastEvent[]) }).catch(() => {})
   }, [])
+
+  // galeria: săgeți și Escape
+  useEffect(() => {
+    if (!viewer) return
+    const n = viewer.ev.photos.length
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setViewer(null)
+      if (e.key === 'ArrowRight') setViewer(v => v && { ...v, i: (v.i + 1) % n })
+      if (e.key === 'ArrowLeft') setViewer(v => v && { ...v, i: (v.i - 1 + n) % n })
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [viewer])
 
   const appChip = (st: string) =>
     st === 'approved' ? { bg: '#dcf5ec', fg: '#14532d', t: '✓ Ești pe lista de invitați' }
@@ -67,6 +88,22 @@ export default function EvenimentePage() {
         .cs-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: auto; }
         .cs-empty { text-align: center; padding: 56px 20px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         @media (max-width: 767px) { .cs-grid { grid-template-columns: 1fr; gap: 14px; } .cs-foot .iu-btn { width: 100%; height: 44px; } }
+        .cs-past-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 34px; margin-bottom: 14px; }
+        .cs-past .cs-ban { height: 190px; cursor: pointer; border: 0; padding: 0; width: 100%; }
+        .cs-past .cs-ban .cs-count { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 99px; background: rgba(20,18,58,.72); color: #fff; font-size: 12px; font-weight: 800; }
+        .cs-past .cs-ban .cs-was { position: absolute; left: 10px; top: 10px; padding: 4px 10px; border-radius: 99px; background: rgba(255,255,255,.92); color: #14123a; font-size: 11.5px; font-weight: 800; }
+        .cs-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .cs-strip button { position: relative; aspect-ratio: 1; border: 0; padding: 0; border-radius: 10px; overflow: hidden; cursor: pointer; background: #f0eff7; }
+        .cs-strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .cs-strip .more { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(20,18,58,.6); color: #fff; font-weight: 800; font-size: 15px; }
+        .cs-desc { margin: 0; font-size: 13.5px; line-height: 1.5; color: #4a4770; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .cs-lb { position: fixed; inset: 0; z-index: 1000; background: rgba(10,9,30,.97); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 56px 12px 20px; }
+        .cs-lb img { max-width: min(100%, 1100px); max-height: calc(100vh - 140px); object-fit: contain; border-radius: 12px; }
+        .cs-lb-top { position: absolute; top: 12px; left: 16px; right: 12px; display: flex; justify-content: space-between; align-items: center; color: #fff; gap: 10px; }
+        .cs-lb-top b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cs-lb-btn { width: 44px; height: 44px; border-radius: 99px; border: 0; background: rgba(255,255,255,.14); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+        .cs-lb-nav { position: absolute; top: 50%; transform: translateY(-50%); }
+        .cs-lb-cap { color: #e6e3f7; font-size: 13px; margin-top: 10px; text-align: center; }
       `}</style>
 
       <div className="iu-head">
@@ -152,6 +189,69 @@ export default function EvenimentePage() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {past.length > 0 && (
+        <section className="cs-past">
+          <div className="cs-past-h">
+            <h2 style={{ margin: 0, fontSize: 22 }}>Evenimente care au avut loc</h2>
+            <span className="iu-muted iu-sm">{past.length} {past.length === 1 ? 'eveniment' : 'evenimente'} · {past.reduce((n, e) => n + e.photos.length, 0)} poze</span>
+          </div>
+          <div className="cs-grid">
+            {past.map(ev => (
+              <div key={ev.id} className="iu-card cs-card">
+                <button type="button" className="cs-ban" onClick={() => ev.photos.length && setViewer({ ev, i: 0 })} aria-label={`Pozele de la ${ev.title}`}>
+                  {ev.cover ? <img src={ev.cover} alt={ev.title} loading="lazy" /> : <Megaphone size={44} />}
+                  {ev.date && <span className="cs-was">A avut loc · {fmt(ev.date)}</span>}
+                  {ev.photos.length > 1 && <span className="cs-count"><Images size={13} /> {ev.photos.length} poze</span>}
+                </button>
+                <div className="cs-body">
+                  <div className="iu-row" style={{ gap: 8, minWidth: 0 }}>
+                    {ev.logo
+                      ? <img src={ev.logo} alt={ev.organizer} style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'cover', flex: 'none' }} />
+                      : <span className="iu-face" style={{ width: 26, height: 26, borderRadius: 8, background: '#efeaff', color: '#5b2fd0', fontSize: 12 }}>{ev.organizer[0]}</span>}
+                    <span className="iu-xs iu-muted" style={{ fontWeight: 700 }}>{ev.organizer}</span>
+                  </div>
+                  <h3 className="cs-title">{ev.title}</h3>
+                  {ev.location && <div className="cs-meta"><span className="iu-chip" style={{ background: '#f0eff7', color: '#4a4770' }}><MapPin size={12} /> {ev.location}</span></div>}
+                  {ev.description && <p className="cs-desc">{ev.description}</p>}
+                  {ev.photos.length > 1 && (
+                    <div className="cs-strip">
+                      {ev.photos.slice(1, 5).map((p, k) => (
+                        <button key={k} type="button" onClick={() => setViewer({ ev, i: k + 1 })} aria-label="Deschide poza">
+                          <img src={p.url} alt={p.caption || ev.title} loading="lazy" />
+                          {k === 3 && ev.photos.length > 5 && <span className="more">+{ev.photos.length - 5}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {ev.href && (
+                    <div className="cs-foot">
+                      <a href={ev.href} target="_blank" rel="noopener noreferrer" className="iu-btn" style={{ marginLeft: 'auto' }}>Povestea evenimentului <ArrowRight size={14} /></a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {viewer && (
+        <div className="cs-lb" role="dialog" aria-modal="true" aria-label={`Galerie: ${viewer.ev.title}`} onClick={() => setViewer(null)}>
+          <div className="cs-lb-top" onClick={e => e.stopPropagation()}>
+            <b>{viewer.ev.title} · {viewer.i + 1} / {viewer.ev.photos.length}</b>
+            <button className="cs-lb-btn" onClick={() => setViewer(null)} aria-label="Închide"><X size={20} /></button>
+          </div>
+          <img src={viewer.ev.photos[viewer.i].url} alt={viewer.ev.photos[viewer.i].caption || viewer.ev.title} onClick={e => e.stopPropagation()} />
+          {viewer.ev.photos[viewer.i].caption && <div className="cs-lb-cap">{viewer.ev.photos[viewer.i].caption}</div>}
+          {viewer.ev.photos.length > 1 && (<>
+            <button className="cs-lb-btn cs-lb-nav" style={{ left: 12 }} aria-label="Poza anterioară"
+              onClick={e => { e.stopPropagation(); setViewer(v => v && { ...v, i: (v.i - 1 + v.ev.photos.length) % v.ev.photos.length }) }}><ChevronLeft size={22} /></button>
+            <button className="cs-lb-btn cs-lb-nav" style={{ right: 12 }} aria-label="Poza următoare"
+              onClick={e => { e.stopPropagation(); setViewer(v => v && { ...v, i: (v.i + 1) % v.ev.photos.length }) }}><ChevronRight size={22} /></button>
+          </>)}
         </div>
       )}
     </div>

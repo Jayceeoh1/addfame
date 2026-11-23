@@ -303,3 +303,60 @@ export async function decideEventApplication(applicationId: string, decision: 'a
     return { success: true, status: r.status as string, entry_code: (r.entry_code ?? null) as string | null, approved: r.approved as number }
   } catch (e: any) { return { error: e?.message || 'Eroare' } }
 }
+
+/** Evenimentele care au avut loc: cele AddFame de pe site (cu galeria de poze) și evenimentele brandurilor încheiate. */
+export async function getPastEventsForInfluencer() {
+  try {
+    const inf = await currentInfluencer()
+    if (!inf) return { error: 'Neautentificat' }
+    const admin = createAdminClient()
+    const now = new Date().toISOString()
+    const out: {
+      id: string; title: string; date: string | null; location: string | null; organizer: string; logo: string | null
+      description: string | null; cover: string | null; photos: { url: string; caption: string | null }[]; href: string | null
+    }[] = []
+
+    try {
+      const { data: sites } = await admin.from('site_events')
+        .select('id, slug, title, status, starts_at, location, city, description, summary, cover_photo_id')
+        .eq('status', 'published').lt('starts_at', now).order('starts_at', { ascending: false }).limit(30)
+      const ids = (sites ?? []).map(e => e.id)
+      const { data: ph } = ids.length
+        ? await admin.from('site_event_photos').select('id, event_id, path, caption, position, created_at').in('event_id', ids).order('position').order('created_at')
+        : { data: [] as any[] }
+      for (const e of sites ?? []) {
+        const photos = ((ph ?? []).filter((x: any) => x.event_id === e.id)) as SiteEventPhoto[]
+        const cover = coverOf(e as unknown as SiteEvent, photos)
+        out.push({
+          id: 'site-' + e.id, title: e.title, date: e.starts_at,
+          location: [e.location, e.city].filter(Boolean).join(', ') || null,
+          organizer: 'AddFame', logo: null,
+          description: (e as any).summary || e.description,
+          cover: cover ? photoUrl(cover.path) : null,
+          photos: photos.slice(0, 60).map(p => ({ url: photoUrl(p.path), caption: p.caption })),
+          href: `/evenimente/${e.slug}`,
+        })
+      }
+    } catch { /* fără tabelul site_events */ }
+
+    // evenimentele brandurilor (Open Call) care s-au încheiat
+    const { data: camps } = await admin.from('campaigns')
+      .select('id, title, description, banner_url, event_date, event_location, status, brand_id')
+      .eq('campaign_type', 'OPEN_CALL').in('status', ['ACTIVE', 'COMPLETED']).lt('event_date', now)
+      .order('event_date', { ascending: false }).limit(30)
+    const bIds = [...new Set((camps ?? []).map(c => c.brand_id).filter(Boolean))]
+    const { data: brands } = bIds.length ? await admin.from('brands_public').select('id, name, logo').in('id', bIds) : { data: [] as any[] }
+    const bMap = new Map((brands ?? []).map((b: any) => [b.id, b]))
+    for (const c of camps ?? []) {
+      const b: any = bMap.get(c.brand_id)
+      out.push({
+        id: c.id, title: c.title, date: c.event_date, location: c.event_location,
+        organizer: b?.name || 'Brand', logo: b?.logo || null, description: c.description,
+        cover: c.banner_url, photos: c.banner_url ? [{ url: c.banner_url, caption: null }] : [], href: null,
+      })
+    }
+
+    out.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
+    return { success: true as const, events: out }
+  } catch (e: any) { return { error: e?.message || 'Eroare' } }
+}

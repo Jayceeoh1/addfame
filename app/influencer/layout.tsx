@@ -10,7 +10,7 @@ import AdminFloatingButton from '@/components/AdminFloatingButton'
 import {
   LayoutDashboard, Briefcase, Zap, MessageSquare, Megaphone,
   Wallet, Settings, LogOut, Menu, X, User, ChevronRight, Sliders,
-  Star, Award, Building2, GraduationCap, CreditCard, AlertCircle, Check, Copy, ArrowLeft, Shield, BarChart2, FileText, Lock, Loader2
+  Star, Award, Building2, GraduationCap, CreditCard, AlertCircle, Check, Copy, ArrowLeft, Shield, FileText, Lock, Loader2
 } from 'lucide-react'
 import { fontVars } from '@/lib/fonts'
 import './influencer-ui.css'
@@ -29,7 +29,6 @@ const NAV = [
   { icon: Zap, label: 'Colaborări', href: '/influencer/collaborations' },
   { icon: MessageSquare, label: 'Mesaje', href: '/influencer/inbox' },
   { icon: Wallet, label: 'Portofel', href: '/influencer/wallet' },
-  { icon: BarChart2, label: 'Calculator ER', href: '/influencer/engagement-calculator' },
   { icon: User, label: 'Profil', href: '/influencer/profile' },
   { icon: FileText, label: 'Media Kit', href: '/influencer/media-kit' },
   { icon: Sliders, label: 'Setup Media Kit', href: '/influencer/media-kit-setup' },
