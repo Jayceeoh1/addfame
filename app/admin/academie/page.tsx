@@ -133,6 +133,7 @@ export default function AdminAcademiePage() {
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800 }}>Lecții</h1>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Link href="/admin/academie/cereri" className="aa-b p" style={{ textDecoration: 'none' }}>🎬 Cereri Academy Members</Link>
           <div className="bg-white border rounded-2xl" style={{ padding: '6px 14px' }}><b style={{ fontSize: 18 }}>{meta.certified}</b> <span style={{ fontSize: 12, color: '#5a5780' }}>creatori certificați</span></div>
           <div className="bg-white border rounded-2xl" style={{ padding: '6px 14px' }}><b style={{ fontSize: 18 }}>{meta.started}</b> <span style={{ fontSize: 12, color: '#5a5780' }}>au început</span></div>
           {meta.certified > 0 && meta.byTier && (

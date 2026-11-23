@@ -8,6 +8,7 @@ import { ACADEMY_CSS } from './academy-css'
 import CertificateCard from '@/components/academy/CertificateCard'
 import { TIERS, TIER_ORDER } from '@/lib/academy'
 import AcademyMembership from '@/components/academy/AcademyMembership'
+import AcademyRequests from '@/components/academy/AcademyRequests'
 import { ACADEMY_BADGE_LABEL } from '@/lib/academy-member'
 
 export default function AcademiePage() {
@@ -132,6 +133,8 @@ export default function AcademiePage() {
                 })}
               </div>
             </div>
+            <div className="ac-sec-h" style={{ marginTop: 22 }}><h2>Feedback și analiza profilului</h2><span className="ac-muted">Răspunde echipa AddFame</span></div>
+            <AcademyRequests />
           </section>
         </>)}
       </div>
