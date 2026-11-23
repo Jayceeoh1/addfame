@@ -14,8 +14,6 @@ import { OnboardingChecklist } from '@/components/shared/onboarding-checklist'
 import AnnouncementBanner from '@/components/AnnouncementBanner'
 import PendingContracts from '@/components/influencer/PendingContracts'
 import { PointEventsSection } from '@/components/shared/PointEventCard'
-import HalloweenTreat from '@/components/influencer/HalloweenTreat'
-import HalloweenQuizCard from '@/components/influencer/HalloweenQuizCard'
 import AcademyBannerCard from '@/components/influencer/AcademyBannerCard'
 import FeaturedCampaignCard from '@/components/influencer/FeaturedCampaignCard'
 import WhatsAppOptInCard from '@/components/influencer/WhatsAppOptInCard'
@@ -645,8 +643,6 @@ export default function InfluencerDashboard() {
       <FeaturedCampaignCard />
       <WhatsAppOptInCard />
       <AcademyBannerCard />
-      <HalloweenQuizCard />
-      <HalloweenTreat />
       {profile?.id && <PointEventsSection influencerId={profile.id} />}
 
       {profile?.blacklisted && (
