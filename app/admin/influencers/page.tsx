@@ -540,15 +540,17 @@ export default function AdminInfluencers() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 1 }}>
-                      <p className="font-black text-sm text-gray-900 truncate">{inf.name}</p>
+                    {/* numele complet, pe cel mult 2 rânduri (nu mai e tăiat cu „…”) */}
+                    <p className="font-black text-sm text-gray-900" title={inf.name}
+                      style={{ marginBottom: 2, lineHeight: 1.25, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{inf.name}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
                       {inf.creator_score != null && (() => {
                         const lvl = getCreatorLevel(inf.creator_score || 0)
                         const cfg = LEVEL_CONFIG[lvl]
                         return <span style={{ fontSize: 9, fontWeight: 800, color: cfg.color, background: `${cfg.color}18`, padding: '1px 5px', borderRadius: 99, flexShrink: 0 }}>{cfg.label}</span>
                       })()}
+                      <p className="text-xs text-gray-400 truncate">{inf.creator_score || 0} pts · {inf.city || inf.country || 'România'}</p>
                     </div>
-                    <p className="text-xs text-gray-400 truncate">{inf.creator_score || 0} pts · {inf.city || inf.country || 'România'}</p>
                     {inf.last_active_at && (() => {
                       const days = Math.floor((Date.now() - new Date(inf.last_active_at).getTime()) / 86_400_000)
                       const color = days <= 1 ? '#10b981' : days <= 7 ? '#f59e0b' : '#ef4444'
