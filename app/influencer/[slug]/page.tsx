@@ -429,7 +429,7 @@ export default function PublicInfluencerProfile() {
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                 <h1 className="pf-name">{inf.name}</h1>
                 {tier && <span className="pf-chip" style={{ background: tier.bg, color: tier.fg }}>{tier.label} · {formatCount(Math.max(...platCards.map(followersOf)))}</span>}
-                {isVerified && <span className="pf-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star size={12} fill="currentColor" /> Verified Creator</span>}
+                {isVerified && <span className="pf-chip" style={{ background: '#efeaff', color: '#4423c4' }}>🎓 Academy Member</span>}
                 {isIdentityVerified && <span className="pf-chip" style={{ background: '#e8f0ff', color: '#1d4ed8' }}><Shield size={12} /> ID verificat</span>}
                 {inf.academy_certified_at && <AcademyTierChip tier={inf.academy_tier || 'bronze'} style={{ height: 26, padding: '0 10px', fontSize: 12 }} />}
               </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { finalizeTopup, billingFromMetadata } from '@/lib/topup'
+import { academyCheckoutCompleted, academyInvoicePaid, academySubscriptionChanged } from '@/lib/academy-billing'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
 
@@ -21,6 +22,19 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+
+  // ── Academy Member (abonament lunar) ─────────────────────────────────────
+  try {
+    if (event.type === 'checkout.session.completed'
+      && await academyCheckoutCompleted(supabase, event.data.object as Stripe.Checkout.Session)) return NextResponse.json({ ok: true })
+    if (event.type === 'invoice.paid'
+      && await academyInvoicePaid(supabase, event.data.object as Stripe.Invoice)) return NextResponse.json({ ok: true })
+    if ((event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted')
+      && await academySubscriptionChanged(supabase, event.data.object as Stripe.Subscription, event.type === 'customer.subscription.deleted')) return NextResponse.json({ ok: true })
+  } catch (e: any) {
+    console.error('[webhook] academy', e?.message)
+    return NextResponse.json({ error: 'academy' }, { status: 500 }) // Stripe reîncearcă
+  }
 
   // ── Plată reușită ─────────────────────────────────────────────────────────
   if (event.type === 'payment_intent.succeeded') {

@@ -7,12 +7,17 @@ import { getAcademy } from '@/app/actions/academy'
 import { ACADEMY_CSS } from './academy-css'
 import CertificateCard from '@/components/academy/CertificateCard'
 import { TIERS, TIER_ORDER } from '@/lib/academy'
+import AcademyMembership from '@/components/academy/AcademyMembership'
+import { ACADEMY_BADGE_LABEL } from '@/lib/academy-member'
 
 export default function AcademiePage() {
   const [st, setSt] = useState<any>(null)
   useEffect(() => { getAcademy().then(setSt).catch(() => setSt({ error: 'Nu am putut încărca Academia.' })) }, [])
 
-  const lessons: any[] = st?.lessons || []
+  const all: any[] = st?.lessons || []
+  // cursul gratuit (certificatul) și lecțiile Academy Member, separat
+  const lessons = all.filter(l => !l.membersOnly && l.lock !== 'soon')
+  const memberLessons = all.filter(l => l.membersOnly || l.lock === 'soon')
   const done = lessons.filter(l => l.passed).length
   const next = lessons.find(l => !l.passed)
   const pct = lessons.length ? Math.round(done / lessons.length * 100) : 0
@@ -29,7 +34,7 @@ export default function AcademiePage() {
         {st?.success && (<>
           <div className="ac-top">
             <section className="ac-hero">
-              <span className="ac-tag"><Cap /> Academia AddFame</span>
+              <span className="ac-tag"><Cap /> Academia AddFame{st.member?.active ? ` · 🎓 ${ACADEMY_BADGE_LABEL}` : ''}</span>
               <h1>{st.certifiedAt ? 'Ești creator certificat AddFame' : 'Devino creator certificat AddFame'}</h1>
               <p>Un curs scurt, cu exemple și exerciții, despre ce verifică brandurile la fiecare colaborare. La final dai un test de 20 de întrebări și primești certificatul și rama pe poza de profil: Bronze, Silver, Gold sau Platinum, după răspunsurile de la prima încercare.</p>
               {lessons.length > 0 && (
@@ -80,7 +85,7 @@ export default function AcademiePage() {
 
           {lessons.length > 0 && (
             <section className="ac-sec">
-              <div className="ac-sec-h"><h2>Lecțiile</h2><span className="ac-muted">Treci testul de la final ca să bifezi lecția</span></div>
+              <div className="ac-sec-h"><h2>Cursul gratuit</h2><span className="ac-muted">Treci testul de la final ca să bifezi lecția</span></div>
               <div className="ac-grid">
                 {lessons.map(l => {
                   const isNext = next?.id === l.id
@@ -101,6 +106,33 @@ export default function AcademiePage() {
               </div>
             </section>
           )}
+          <section className="ac-sec" id="academy">
+            <div className="ac-sec-h"><h2>AddFame Academy · {ACADEMY_BADGE_LABEL}</h2><span className="ac-muted">3 cursuri noi în fiecare luni</span></div>
+            <div className="ac-member-grid">
+              <AcademyMembership />
+              <div className="ac-grid" style={{ alignContent: 'start' }}>
+                {memberLessons.length === 0 && <div className="ac-card"><p className="ac-muted">Primele cursuri pentru membri apar în curând.</p></div>}
+                {memberLessons.map(l => {
+                  const locked = !!l.lock
+                  const chip = l.lock === 'soon'
+                    ? <span className="ac-chip">🔒 {l.release ? `Urmează · ${l.release}` : 'În curând'}</span>
+                    : l.lock === 'members' ? <span className="ac-chip v">🔒 {ACADEMY_BADGE_LABEL}</span>
+                    : l.passed ? <span className="ac-chip ok"><Check s={12} /> Trecută</span> : <span className="ac-chip v">Deschisă</span>
+                  const inner = (<>
+                    <div className="ac-lesson-h"><span className="ac-muted">{l.minutes} min{l.total ? ` · ${l.total} întrebări` : ''}</span>{chip}</div>
+                    <h3>{l.title}</h3>
+                    {l.summary && <p>{l.summary}</p>}
+                    <span className="ac-lesson-f"><b>{l.points ? `+${l.points} puncte` : ''}</b><span>{l.lock === 'soon' ? 'În curând' : l.lock === 'members' ? 'Doar pentru membri' : l.passed ? 'Revezi lecția →' : 'Deschide →'}</span></span>
+                  </>)
+                  return locked
+                    ? (l.lock === 'members'
+                      ? <a key={l.id} href="#academy-member" className="ac-lesson is-locked">{inner}</a>
+                      : <div key={l.id} className="ac-lesson is-locked" aria-disabled="true">{inner}</div>)
+                    : <Link key={l.id} href={`/influencer/academie/${l.id}`} className={`ac-lesson ${l.passed ? 'is-done' : ''}`}>{inner}</Link>
+                })}
+              </div>
+            </div>
+          </section>
         </>)}
       </div>
     </div>

@@ -6,6 +6,8 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 const BADGE_PRICE = 50 // RON/lună — același preț ca în UI și în app/actions/badge.ts
 
 export async function POST(req: NextRequest) {
+  // Înlocuit de Academy Member (app/api/academy/subscribe)
+  if (process.env.LEGACY_BADGE !== '1') return NextResponse.json({ error: 'Bifa Verified Creator a fost înlocuită de abonamentul Academy Member (200 lei/lună, cu cardul). Îl găsești în Academie.' }, { status: 410 })
   try {
     const { billingName, billingAddress } = await req.json()
     if (!billingName?.trim()) return NextResponse.json({ error: 'Numele este obligatoriu.' }, { status: 400 })

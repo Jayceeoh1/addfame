@@ -252,7 +252,7 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
               <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
                 <h3 style={{ fontSize: 20, fontWeight: 800 }}>{influencer.name}</h3>
                 {influencer.is_verified && (
-                  <span className="bu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star className="w-3 h-3" /> Verified Creator</span>
+                  <span className="bu-chip" style={{ background: '#efeaff', color: '#4423c4' }}>🎓 Academy Member</span>
                 )}
                 {influencer.approval_status === 'approved' && !influencer.is_verified && (
                   <CheckCircle className="w-4 h-4" style={{ color: '#5a35e6' }} />
@@ -482,7 +482,7 @@ function InfluencerCard({ influencer, isSaved, onSave, onClick, stats }: {
       <div className="bu-row" style={{ gap: 6, flexWrap: 'wrap' }}>
         <TierChip of={influencer} />
         <RatingChip of={influencer} />
-        {influencer.is_verified && <span className="bu-chip" style={{ background: '#fff1c2', color: '#854d0e' }}><Star className="w-3 h-3" /> Verified</span>}
+        {influencer.is_verified && (!(influencer as any).badge_expires_at || new Date((influencer as any).badge_expires_at) > new Date()) && <span className="bu-chip" style={{ background: '#efeaff', color: '#4423c4' }}>🎓 Academy Member</span>}
       </div>
 
       {influencer.bio && <p className="bu-muted bu-sm" style={{ margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{influencer.bio}</p>}

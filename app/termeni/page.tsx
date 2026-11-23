@@ -23,6 +23,7 @@ const TOC = [
   '8. Modificarea termenilor',
   '9. Contact',
   '10. Raportarea conținutului ilegal (DSA)',
+  '11. Abonamentul AddFame Academy (Academy Member)',
 ]
 
 const LEGAL_CSS = `
@@ -38,7 +39,7 @@ const LEGAL_CSS = `
 `
 
 export default function TermsPage() {
-  const updated = '17 Noiembrie 2026'
+  const updated = '23 Noiembrie 2026'
   return (
     <SitePage>
       <style>{LEGAL_CSS}</style>
@@ -118,6 +119,14 @@ export default function TermsPage() {
             <li>o declarație că informațiile din raportare sunt corecte și complete, după cunoștința ta.</li>
           </ul>
           <p><strong>Ce se întâmplă după raportare.</strong> Confirmăm primirea, analizăm raportarea cu atenție și fără întârzieri nejustificate și îți comunicăm decizia. Dacă eliminăm sau restricționăm conținutul unui utilizator, îi transmitem acestuia motivele deciziei, iar el o poate contesta scriindu-ne la aceeași adresă.</p>
+        </Section>
+
+        <Section title="11. Abonamentul AddFame Academy (Academy Member)">
+          <p><strong>Ce este.</strong> Academy Member este un abonament lunar opțional pentru creatori, care oferă acces la cursurile AddFame Academy marcate „doar pentru membri”, la beneficiile descrise în pagina Academiei și bifa „Academy Member” pe profil, vizibilă și brandurilor cât timp abonamentul este activ. Bifa arată participarea la program; nu reprezintă o verificare a identității sau o garanție privind activitatea creatorului.</p>
+          <p><strong>Preț și plată.</strong> Prețul este cel afișat în Academie la momentul abonării (preț de lansare: 200 lei pe lună). Plata se face cu cardul, prin procesatorul Stripe, iar abonamentul se reînnoiește automat în fiecare lună până la anulare. Pentru fiecare plată emitem factură. Despre orice schimbare de preț te anunțăm cu cel puțin 30 de zile înainte să se aplice.</p>
+          <p><strong>Anulare.</strong> Poți anula oricând din Academie sau din Setări → Academy Member. Anularea oprește reînnoirea; accesul și bifa rămân active până la sfârșitul lunii deja plătite, iar sumele pentru luna în curs nu se returnează.</p>
+          <p><strong>Dreptul de retragere.</strong> Cursurile sunt conținut digital furnizat imediat. La abonare îți exprimi acordul expres ca accesul să înceapă imediat și confirmi că, odată început accesul, pierzi dreptul de retragere de 14 zile pentru luna respectivă (OUG 34/2014, art. 16 lit. m).</p>
+          <p><strong>Beneficii personalizate.</strong> Feedbackul pe materiale, analiza profilului și asistența se oferă în limitele anunțate în Academie, în ordinea solicitărilor. Bonusurile (de exemplu kituri cadou) se acordă doar în condițiile anunțate pentru luna respectivă.</p>
         </Section>
             </div>
 

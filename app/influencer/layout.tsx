@@ -15,6 +15,7 @@ import {
 import { fontVars } from '@/lib/fonts'
 import './influencer-ui.css'
 import { WITHDRAWALS_PAUSED } from '@/lib/withdrawals-config'
+import { ACADEMY_PRICE_RON } from '@/lib/academy-member'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
@@ -331,27 +332,27 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
             <div className="pt-3 mt-2" style={{ borderTop: '1.5px solid #f5f5f5' }}>
               {open ? (
                 <button
-                  onClick={() => { setBadgeModal('choose'); setBadgeError(null) }}
+                  onClick={() => router.push('/influencer/academie#academy')}
                   className="badge-pulse w-full rounded-2xl p-3.5 text-left transition hover:scale-[1.02] active:scale-[0.98]"
                   style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 4px 16px rgba(251,191,36,0.35)' }}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <Star className="w-4 h-4 text-white fill-white flex-shrink-0" />
-                    <span className="text-white font-black text-xs uppercase tracking-wide">Verified Creator</span>
+                    <span className="text-white font-black text-xs uppercase tracking-wide">Academy Member</span>
                   </div>
                   <p className="text-white/90 text-[11px] leading-relaxed font-medium mb-2.5">
-                    Apari primul în lista brandurilor și îți crești șansele de colaborare.
+                    Cursuri noi în fiecare luni, feedback și bifa Academy Member pe profil.
                   </p>
                   <div className="bg-white/20 rounded-lg px-3 py-1.5 flex items-center justify-between">
-                    <span className="text-white font-black text-xs">Activează acum</span>
-                    <span className="text-white font-black text-sm">{BADGE_PRICE} RON/lună</span>
+                    <span className="text-white font-black text-xs">Află mai multe</span>
+                    <span className="text-white font-black text-sm">{ACADEMY_PRICE_RON} lei/lună</span>
                   </div>
                 </button>
               ) : (
                 <button
-                  onClick={() => { setBadgeModal('choose'); setBadgeError(null) }}
+                  onClick={() => router.push('/influencer/academie#academy')}
                   className="badge-pulse relative w-full flex justify-center py-2"
-                  title="Verified Creator — 50 RON/lună"
+                  title={`Academy Member — ${ACADEMY_PRICE_RON} lei/lună`}
                 >
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}>
                     <Star className="w-4 h-4 text-white fill-white" />
@@ -368,7 +369,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
               <div className="flex flex-col gap-1 px-3 py-2 rounded-xl bg-amber-50">
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-400 flex-shrink-0" />
-                  <span className="text-xs font-black text-amber-700">Verified Creator</span>
+                  <span className="text-xs font-black text-amber-700">🎓 Academy Member</span>
                   <Check className="w-3.5 h-3.5 text-amber-500 ml-auto" />
                 </div>
                 {profile?.badge_expires_at && (
@@ -449,11 +450,11 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
             {/* Badge CTA in topbar for mobile */}
             {profile !== null && !profile.is_verified && (
               <button
-                onClick={() => { setBadgeModal('choose'); setBadgeError(null) }}
+                onClick={() => router.push('/influencer/academie#academy')}
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-white badge-pulse"
                 style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 2px 8px rgba(251,191,36,0.4)' }}
               >
-                <Star className="w-3.5 h-3.5 fill-white" /> Verified — {BADGE_PRICE} RON/lună
+                <GraduationCap className="w-3.5 h-3.5" /> Academy Member — {ACADEMY_PRICE_RON} lei/lună
               </button>
             )}
             <NotificationsBell accentColor="#8b5cf6" />

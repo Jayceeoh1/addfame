@@ -6,6 +6,8 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 const BADGE_MONTHLY_PRICE = 50
 
 export async function POST(req: NextRequest) {
+  // Înlocuit de Academy Member (app/api/academy/subscribe)
+  if (process.env.LEGACY_BADGE !== '1') return NextResponse.json({ error: 'Bifa Verified Creator a fost înlocuită de abonamentul Academy Member (200 lei/lună, cu cardul). Îl găsești în Academie.' }, { status: 410 })
   try {
     const cookieStore = await cookies()
     const supabase = createServerClient(

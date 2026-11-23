@@ -10,7 +10,14 @@ import { parseQuestionsText, passNeeded, videoEmbed, TIERS, TIER_ORDER, type Aca
 type Row = AcademyLesson & { stats: { tried: number; passed: number } }
 const LETTERS = ['A', 'B', 'C', 'D']
 const EMPTY: Omit<AcademyLesson, 'id' | 'position'> = {
-  title: '', summary: '', badge_name: '', minutes: 5, points: 20, body: '', video_url: '', questions: [], steps: [], pass_min: 0, published: false,
+  title: '', summary: '', badge_name: '', minutes: 5, points: 20, body: '', video_url: '', questions: [], steps: [], pass_min: 0, published: false, members_only: false, release_at: '',
+}
+
+function toLocalInput(iso?: string | null) {
+  if (!iso) return ''
+  const d = new Date(iso); if (isNaN(d.getTime())) return ''
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
 export default function AdminAcademiePage() {
@@ -45,7 +52,7 @@ export default function AdminAcademiePage() {
     setConfirmDel(false); setNote(''); setImportOpen(false); setDirty(false)
     if (!l) { setSelId('new'); setF({ ...EMPTY, questions: [], steps: [] }); return }
     setSelId(l.id)
-    setF({ ...l, summary: l.summary || '', badge_name: l.badge_name || '', body: l.body || '', video_url: l.video_url || '', questions: l.questions.map(q => ({ ...q, options: [...q.options] })), steps: (l.steps || []).map(st => ({ ...st, ...(st.type === 'concept' ? { checklist: [...(st.checklist || [])] } : {}) })) })
+    setF({ ...l, members_only: !!l.members_only, release_at: toLocalInput(l.release_at), summary: l.summary || '', badge_name: l.badge_name || '', body: l.body || '', video_url: l.video_url || '', questions: l.questions.map(q => ({ ...q, options: [...q.options] })), steps: (l.steps || []).map(st => ({ ...st, ...(st.type === 'concept' ? { checklist: [...(st.checklist || [])] } : {}) })) })
   }
   function set(k: string, v: any) { setF((p: any) => ({ ...p, [k]: v })); setDirty(true); setNote('') }
   function setQ(i: number, patch: Partial<AcademyQuestion>) { set('questions', f.questions.map((q: AcademyQuestion, k: number) => k === i ? { ...q, ...patch } : q)) }
@@ -82,7 +89,7 @@ export default function AdminAcademiePage() {
 
   async function save(publish?: boolean) {
     setSaving(true); setNote('')
-    const payload = { ...f, published: publish === undefined ? f.published : publish }
+    const payload = { ...f, published: publish === undefined ? f.published : publish, release_at: f.release_at ? new Date(f.release_at).toISOString() : null }
     if (selId && selId !== 'new') payload.id = selId
     const r: any = await adminSaveLesson(payload)
     setSaving(false)
@@ -159,7 +166,8 @@ export default function AdminAcademiePage() {
                 <b style={{ fontSize: 14, display: 'block' }}>{k + 1}. {l.title}</b>
                 <span style={{ fontSize: 12, color: '#5a5780' }}>{l.minutes} min · {l.questions.length} întrebări · +{l.points} p · {l.stats.passed}/{l.stats.tried} au trecut</span>
               </button>
-              <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 99, flex: 'none', background: l.published ? '#dcf5ec' : '#f1f0f8', color: l.published ? '#14532d' : '#4a4770' }}>{l.published ? 'Publicată' : 'Ciornă'}</span>
+              {l.members_only && <span title="Doar pentru Academy Members" style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 99, flex: 'none', background: '#efeaff', color: '#4423c4' }}>🔒 Membri</span>}
+              <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 99, flex: 'none', background: l.published ? '#dcf5ec' : '#f1f0f8', color: l.published ? '#14532d' : '#4a4770' }}>{l.published ? (l.release_at && new Date(l.release_at) > new Date() ? 'În curând' : 'Publicată') : 'Ciornă'}</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <button className="aa-ib" style={{ width: 26, height: 22 }} disabled={k === 0} onClick={() => move(l.id, -1)} aria-label="Mută mai sus"><ChevronUp size={14} /></button>
                 <button className="aa-ib" style={{ width: 26, height: 22 }} disabled={k === rows.length - 1} onClick={() => move(l.id, 1)} aria-label="Mută mai jos"><ChevronDown size={14} /></button>
@@ -189,6 +197,14 @@ export default function AdminAcademiePage() {
               <label className="aa-l">Puncte la trecere<input className="aa-in" type="number" min={0} value={f.points} onChange={e => set('points', e.target.value)} /></label>
               <label className="aa-l">Răspunsuri corecte necesare<input className="aa-in" type="number" min={0} value={f.pass_min} onChange={e => set('pass_min', e.target.value)} /><span style={{ fontWeight: 600, color: '#6b6890' }}>{qCount ? `Trece cu ${needed} din ${qCount}${!Number(f.pass_min) ? ' (80%)' : ''}` : '0 = 80% din întrebări'}</span></label>
               <label className="aa-l">Nume badge<input className="aa-in" value={f.badge_name} onChange={e => set('badge_name', e.target.value)} /></label>
+              <label className="aa-l" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <input type="checkbox" checked={!!f.members_only} onChange={e => set('members_only', e.target.checked)} style={{ width: 18, height: 18, accentColor: '#5b2fd0' }} />
+                <span>🔒 Doar pentru Academy Members<br /><span style={{ fontWeight: 600, color: '#6b6890' }}>ceilalți văd lecția cu lacăt</span></span>
+              </label>
+              <label className="aa-l">Se deschide pe (opțional)
+                <input className="aa-in" type="datetime-local" value={f.release_at || ''} onChange={e => set('release_at', e.target.value)} />
+                <span style={{ fontWeight: 600, color: '#6b6890' }}>{f.release_at ? 'Până atunci apare cu „În curând” și data. Se poate publica și fără test.' : 'Gol = deschisă imediat după publicare'}</span>
+              </label>
             </div>
 
             <label className="aa-l">Video (opțional) · link YouTube sau Vimeo

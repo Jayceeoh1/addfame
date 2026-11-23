@@ -9,6 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/verify-admin'
 import { passNeeded, cleanSteps, tierFor, TIERS, isTier, type AcademyLesson, type AcademyQuestion, type AcademyTier } from '@/lib/academy'
 import { logScore } from '@/lib/score-log'
+import { isAcademyMember, lessonLock, releaseLabel } from '@/lib/academy-member'
 
 const NOT_READY = 'Academia nu e pornită încă (rulează SQL 44).'
 
@@ -18,7 +19,7 @@ async function me() {
   if (!user) return null
   const admin = createAdminClient()
   const { data: inf } = await admin.from('influencers')
-    .select('id, user_id, name, avatar, instagram_handle, approval_status, creator_score, academy_certified_at, academy_tier, academy_cert_code')
+    .select('id, user_id, name, avatar, instagram_handle, approval_status, creator_score, academy_certified_at, academy_tier, academy_cert_code, is_verified, badge_expires_at, academy_cancel_at_period_end')
     .eq('user_id', user.id).maybeSingle()
   return inf ? { admin, inf } : null
 }
@@ -40,12 +41,13 @@ export async function getAcademy() {
   if (!ctx) return { error: 'Intră în contul de creator.' }
   const { admin, inf } = ctx
   const { data: lessons, error } = await admin.from('academy_lessons')
-    .select('id, position, title, summary, badge_name, minutes, points, questions, steps, pass_min')
+    .select('id, position, title, summary, badge_name, minutes, points, questions, steps, pass_min, members_only, release_at')
     .eq('published', true).order('position')
   if (error) return { error: NOT_READY }
   const { data: prog } = await admin.from('academy_progress')
     .select('lesson_id, best_score, total, attempts, passed_at, points').eq('influencer_id', inf.id)
   const byLesson = new Map((prog || []).map((p: any) => [p.lesson_id, p]))
+  const member = isAcademyMember(inf)
   const list = (lessons || []).map((l: any) => {
     const p: any = byLesson.get(l.id)
     const total = Array.isArray(l.questions) ? l.questions.length : 0
@@ -53,6 +55,8 @@ export async function getAcademy() {
       id: l.id, position: l.position, title: l.title, summary: l.summary, badge_name: l.badge_name,
       minutes: l.minutes, points: l.points, total, needed: passNeeded(l.pass_min, total), steps: Array.isArray(l.steps) ? l.steps.length : 0,
       passed: !!p?.passed_at, bestScore: p?.best_score ?? null, attempts: p?.attempts ?? 0,
+      membersOnly: !!l.members_only, lock: lessonLock({ members_only: l.members_only, release_at: l.release_at, total }, member),
+      release: releaseLabel(l.release_at),
     }
   })
   const passedRows = (prog || []).filter((p: any) => p.passed_at)
@@ -75,6 +79,7 @@ export async function getAcademy() {
     score: (inf.creator_score as number) ?? 0,
     handle: inf.instagram_handle ? '@' + String(inf.instagram_handle).replace(/^@/, '') : (inf.name || ''),
     lessons: list,
+    member: { active: member, until: member ? (inf.badge_expires_at as string) : null, canceling: !!inf.academy_cancel_at_period_end },
   }
 }
 
@@ -85,9 +90,12 @@ export async function getLesson(id: string) {
   const { data: l, error } = await admin.from('academy_lessons').select('*').eq('id', id).eq('published', true).maybeSingle()
   if (error) return { error: NOT_READY }
   if (!l) return { error: 'Lecția nu există sau nu e publicată.' }
+  const qs = cleanQuestions(l.questions)
+  const lock = lessonLock({ members_only: l.members_only, release_at: l.release_at, total: qs.length }, isAcademyMember(inf))
+  if (lock === 'soon') return { error: `Lecția „${l.title}” apare în curând${releaseLabel(l.release_at) ? `, ${releaseLabel(l.release_at)}` : ''}.`, lock }
+  if (lock === 'members') return { error: `Lecția „${l.title}” e doar pentru Academy Members.`, lock }
   const { data: p } = await admin.from('academy_progress')
     .select('best_score, total, attempts, passed_at, points').eq('influencer_id', inf.id).eq('lesson_id', id).maybeSingle()
-  const qs = cleanQuestions(l.questions)
   const { data: nx } = await admin.from('academy_lessons').select('id, title, position').eq('published', true).gt('position', l.position).order('position').limit(1)
   return {
     success: true as const,
@@ -110,8 +118,9 @@ export async function getLesson(id: string) {
 export async function checkAnswer(id: string, index: number, choice: number) {
   const ctx = await me()
   if (!ctx) return { error: 'Intră în contul de creator.' }
-  const { data: l, error } = await ctx.admin.from('academy_lessons').select('questions').eq('id', id).eq('published', true).maybeSingle()
+  const { data: l, error } = await ctx.admin.from('academy_lessons').select('questions, members_only, release_at').eq('id', id).eq('published', true).maybeSingle()
   if (error || !l) return { error: 'Lecția nu există.' }
+  if (lessonLock({ members_only: l.members_only, release_at: l.release_at, total: cleanQuestions(l.questions).length }, isAcademyMember(ctx.inf))) return { error: 'Lecția nu e deschisă pentru tine.' }
   const q = cleanQuestions(l.questions)[index]
   if (!q) return { error: 'Întrebarea nu există.' }
   if (!Number.isInteger(choice) || choice < 0 || choice >= q.options.length) return { error: 'Răspuns invalid.' }
@@ -132,10 +141,11 @@ export async function submitLesson(id: string, answers: number[]) {
   const ctx = await me()
   if (!ctx) return { error: 'Intră în contul de creator.' }
   const { admin, inf } = ctx
-  const { data: l, error } = await admin.from('academy_lessons').select('id, title, points, questions, pass_min, badge_name').eq('id', id).eq('published', true).maybeSingle()
+  const { data: l, error } = await admin.from('academy_lessons').select('id, title, points, questions, pass_min, badge_name, members_only, release_at').eq('id', id).eq('published', true).maybeSingle()
   if (error) return { error: NOT_READY }
   if (!l) return { error: 'Lecția nu există sau nu e publicată.' }
   const qs = cleanQuestions(l.questions)
+  if (lessonLock({ members_only: l.members_only, release_at: l.release_at, total: qs.length }, isAcademyMember(inf))) return { error: 'Lecția nu e deschisă pentru tine.' }
   if (!Array.isArray(answers) || answers.length !== qs.length || answers.some(a => !Number.isInteger(a) || a < 0))
     return { error: 'Răspunde la toate întrebările.' }
 
@@ -190,7 +200,8 @@ export async function submitLesson(id: string, answers: number[]) {
   let firstCorrect = 0, firstTotal = 0, bonus = 0
   let certCode: string | null = (inf.academy_cert_code as string | null) ?? null
   if (passed && !certified) {
-    const { data: pub } = await admin.from('academy_lessons').select('id').eq('published', true)
+    // certificatul e pentru cursul gratuit: lecțiile Academy Member nu îl condiționează
+    const { data: pub } = await admin.from('academy_lessons').select('id').eq('published', true).eq('members_only', false)
     const { data: done } = await admin.from('academy_progress').select('lesson_id, passed_at, first_score, first_total, best_score, total').eq('influencer_id', inf.id)
     const byL = new Map((done || []).map((d: any) => [d.lesson_id, d]))
     const all = (pub || []).length > 0 && (pub || []).every((p: any) => byL.get(p.id)?.passed_at)
@@ -292,7 +303,11 @@ export async function adminSaveLesson(input: Partial<AcademyLesson> & { title: s
   const title = String(input.title || '').trim()
   if (!title) return { error: 'Scrie un titlu.' }
   const questions = cleanQuestions(input.questions)
-  if (input.published && questions.length === 0) return { error: 'O lecție publicată are nevoie de cel puțin o întrebare.' }
+  const releaseAt = (input as any).release_at ? new Date((input as any).release_at) : null
+  if (releaseAt && isNaN(releaseAt.getTime())) return { error: 'Data de lansare nu e validă.' }
+  // O lecție anunțată („În curând”, cu dată în viitor) se poate publica și fără test; la data lansării trebuie să aibă întrebări.
+  if (input.published && questions.length === 0 && !(releaseAt && releaseAt > new Date()))
+    return { error: 'O lecție publicată are nevoie de cel puțin o întrebare (sau pune o dată de lansare în viitor, ca să apară „În curând”).' }
   const row = {
     title,
     summary: input.summary ? String(input.summary).trim() : null,
@@ -305,6 +320,8 @@ export async function adminSaveLesson(input: Partial<AcademyLesson> & { title: s
     steps: cleanSteps(input.steps),
     pass_min: Math.max(0, Math.min(questions.length, Math.round(Number(input.pass_min) || 0))),
     published: !!input.published,
+    members_only: !!(input as any).members_only,
+    release_at: releaseAt ? releaseAt.toISOString() : null,
     updated_at: new Date().toISOString(),
   }
   if (input.id) {

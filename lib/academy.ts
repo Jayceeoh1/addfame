@@ -56,6 +56,8 @@ export type AcademyLesson = {
   steps: AcademyStep[]
   pass_min: number
   published: boolean
+  members_only?: boolean
+  release_at?: string | null
 }
 
 /** Câte răspunsuri corecte trebuie (pass_min 0 = 80% rotunjit în sus). */

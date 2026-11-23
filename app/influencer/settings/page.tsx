@@ -14,6 +14,7 @@ import {
   TrendingUp, Award, Wallet, Building2, CreditCard, Copy, Check, X, ArrowLeft, MapPin, Send, Loader2
 } from 'lucide-react'
 import { purchaseVerifiedBadgeWallet, initiateBadgeBankTransfer, getInfluencerStats } from '@/app/actions/badge'
+import AcademyMembership from '@/components/academy/AcademyMembership'
 const BADGE_PRICE = 50 // RON
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
@@ -285,9 +286,6 @@ function SettingsPageInner() {
   useEffect(() => {
     const tab = searchParams.get('tab') as Tab | null
     if (tab) setActiveTab(tab)
-    if (tab === 'verified' && searchParams.get('pay') === 'stripe') {
-      setTimeout(() => setBadgeModal('choose'), 300)
-    }
   }, [searchParams])
   const [telegramCode, setTelegramCode] = useState<string | null>(null)
   const [telegramLinked, setTelegramLinked] = useState(false)
@@ -640,7 +638,7 @@ function SettingsPageInner() {
     { id: 'privacy', label: 'Confidențialitate', icon: Eye },
     { id: 'security', label: 'Securitate', icon: Lock },
     { id: 'telegram', label: 'Bot Telegram', icon: Send },
-    { id: 'verified', label: 'Creator Verificat', icon: Star },
+    { id: 'verified', label: 'Academy Member', icon: Star },
     { id: 'danger', label: 'Ștergere cont', icon: Trash2 },
   ]
 
@@ -1103,169 +1101,11 @@ function SettingsPageInner() {
             </div>
           )}
 
-          {/* VERIFIED CREATOR TAB */}
+          {/* ACADEMY MEMBER (înlocuiește vechiul Verified Creator) */}
           {activeTab === 'verified' && (
-            <div className="space-y-5">
-
-              {/* Current status */}
-              {isVerified ? (
-                <div className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-400 flex items-center justify-center shadow-lg flex-shrink-0">
-                      <Star className="w-7 h-7 text-white fill-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h2 className="text-xl font-black text-amber-800 dark:text-amber-200">Verified Creator</h2>
-                        <CheckCircle className="w-5 h-5 text-amber-600" />
-                      </div>
-                      <p className="text-sm text-amber-600 dark:text-amber-400">
-                        Activ din {verifiedAt ? new Date(verifiedAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
-                      </p>
-                      {/* Expiry info */}
-                      {badgeExpiresAt && (
-                        <div className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${new Date(badgeExpiresAt) < new Date(Date.now() + 7 * 86400000)
-                          ? 'bg-red-100 text-red-700 border border-red-200'
-                          : 'bg-amber-100 text-amber-700 border border-amber-200'
-                          }`}>
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          {new Date(badgeExpiresAt) < new Date()
-                            ? 'Expirat!'
-                            : new Date(badgeExpiresAt) < new Date(Date.now() + 7 * 86400000)
-                              ? `Expiră în ${Math.ceil((new Date(badgeExpiresAt).getTime() - Date.now()) / 86400000)} zile!`
-                              : `Activ până pe ${new Date(badgeExpiresAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                          }
-                        </div>
-                      )}
-                    </div>
-                    {/* Renew button */}
-                    <button
-                      onClick={() => setBadgeModal('choose')}
-                      className="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-black text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-200 transition"
-                    >
-                      Reînnoiește
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { label: 'Apari primul', icon: TrendingUp, desc: 'În lista brandurilor' },
-                      { label: 'Badge vizibil', icon: Star, desc: 'Pe profilul tău' },
-                      { label: 'Statistici', icon: Award, desc: 'Rata de succes vizibilă' },
-                    ].map(b => (
-                      <div key={b.label} className="bg-white/60 dark:bg-black/20 rounded-xl p-3 text-center">
-                        <b.icon className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                        <p className="text-xs font-bold text-amber-800 dark:text-amber-200">{b.label}</p>
-                        <p className="text-[10px] text-amber-600 dark:text-amber-400">{b.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-card border-2 border-dashed border-amber-300 dark:border-amber-700 rounded-xl p-6">
-                  <div className="flex items-center gap-4 mb-5">
-                    <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                      <Star className="w-7 h-7 text-amber-500" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-black text-foreground">Devino Verified Creator</h2>
-                      <p className="text-sm text-muted-foreground">Abonament lunar · {BADGE_PRICE} RON/lună</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 mb-5">
-                    {[
-                      { icon: TrendingUp, title: 'Apari primul în lista brandurilor', desc: 'Profilul tău e afișat înaintea influencerilor neverificați' },
-                      { icon: Star, title: 'Badge ⭐ Verified pe profil', desc: 'Brandurile văd că ești un creator de încredere' },
-                      { icon: Award, title: 'Statistici de succes vizibile', desc: 'Rata ta de succes și campaniile completate apar la branduri' },
-                      { icon: Zap, title: 'Mai multe invitații', desc: 'Brandurile preferă influenceri verificați pentru campanii' },
-                    ].map(b => (
-                      <div key={b.title} className="flex items-start gap-3 p-3 rounded-xl bg-muted/40">
-                        <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-                          <b.icon className="w-4 h-4 text-amber-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold">{b.title}</p>
-                          <p className="text-xs text-muted-foreground">{b.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {badgeError && (
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-4 flex items-center gap-2 text-sm text-destructive">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" /> {badgeError}
-                    </div>
-                  )}
-
-                  {badgeSuccess && (
-                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-4 text-center">
-                      <Star className="w-8 h-8 text-amber-500 fill-amber-400 mx-auto mb-2" />
-                      <p className="font-black text-green-700">Felicitări! Ești acum Verified Creator!</p>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between bg-muted/40 rounded-xl px-4 py-3 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Wallet className="w-4 h-4 text-primary" />
-                      <span className="text-sm text-muted-foreground">Wallet disponibil</span>
-                    </div>
-                    <span className={`font-bold ${walletBalance >= BADGE_PRICE ? 'text-green-600' : 'text-destructive'}`}>
-                      {walletBalance.toLocaleString('ro-RO')} RON
-                    </span>
-                  </div>
-
-                  {badgeError && (
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-3 flex items-center gap-2 text-sm text-destructive">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" /> {badgeError}
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => setBadgeModal('choose')}
-                    className="w-full py-3.5 rounded-xl font-black text-sm text-white bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 transition flex items-center justify-center gap-2 shadow-lg"
-                  >
-                    <Star className="w-4 h-4 fill-white" /> Activează Verified Creator — {BADGE_PRICE} RON/lună
-                  </button>
-                  <p className="text-xs text-muted-foreground text-center mt-2">Abonament lunar {BADGE_PRICE} RON/lună. Se reînnoiește automat.</p>
-                </div>
-              )}
-
-              {/* Stats card */}
-              {stats && (
-                <div className="iu-card iu-card-pad">
-                  <h3 className="font-bold mb-4 flex items-center gap-2"><Award className="w-4 h-4 text-primary" /> Statisticile tale de performanță</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                      { label: 'Campanii totale', value: stats.total, color: 'text-foreground' },
-                      { label: 'Completate', value: stats.completed, color: 'text-green-600' },
-                      { label: 'Rată succes', value: `${stats.successRate}%`, color: stats.successRate >= 80 ? 'text-green-600' : stats.successRate >= 50 ? 'text-amber-600' : 'text-destructive' },
-                      { label: 'Total câștigat', value: `${stats.totalEarned.toLocaleString('ro-RO')} RON`, color: 'text-primary' },
-                    ].map(s => (
-                      <div key={s.label} className="bg-muted/40 rounded-xl p-4 text-center">
-                        <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {stats.total > 0 && (
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-muted-foreground">Rată succes</span>
-                        <span className="text-xs font-bold">{stats.successRate}%</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${stats.successRate >= 80 ? 'bg-green-500' : stats.successRate >= 50 ? 'bg-amber-500' : 'bg-destructive'}`}
-                          style={{ width: `${stats.successRate}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {isVerified && (
-                    <p className="text-xs text-muted-foreground mt-4 text-center">Aceste statistici sunt vizibile brandurilor pe profilul tău</p>
-                  )}
-                </div>
-              )}
+            <div className="space-y-4">
+              <AcademyMembership />
+              <a href="/influencer/academie#academy" className="text-sm font-bold" style={{ color: '#5b2fd0' }}>Vezi cursurile din Academie →</a>
             </div>
           )}
 

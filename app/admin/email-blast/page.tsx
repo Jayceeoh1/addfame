@@ -235,7 +235,7 @@ export default function EmailBlastPage() {
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" checked={filterVerified} onChange={e => setFilterVerified(e.target.checked)}
                   className="w-4 h-4 rounded accent-indigo-600" />
-                <span className="text-sm font-bold text-gray-700">Doar Verified Creator ⭐</span>
+                <span className="text-sm font-bold text-gray-700">Doar Academy Members 🎓</span>
               </label>
 
               {/* Search */}

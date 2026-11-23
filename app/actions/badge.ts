@@ -56,6 +56,8 @@ export async function checkBadgeActive(influencerId: string): Promise<boolean> {
 
 // ─── Plată abonament lunar din wallet ────────────────────────────────────────
 export async function purchaseVerifiedBadgeWallet() {
+  // Înlocuit de Academy Member
+  if (process.env.LEGACY_BADGE !== '1') return { error: 'Bifa Verified Creator a fost înlocuită de abonamentul Academy Member (200 lei/lună, cu cardul). Îl găsești în Academie.' } as any
   try {
     const sb = await createClient()
     const admin = createAdminClient()
@@ -130,6 +132,8 @@ export async function purchaseVerifiedBadgeWallet() {
 
 // ─── Inițiază transfer bancar pentru abonament ────────────────────────────────
 export async function initiateBadgeBankTransfer(billingName: string, billingAddress?: string) {
+  // Înlocuit de Academy Member
+  if (process.env.LEGACY_BADGE !== '1') return { error: 'Bifa Verified Creator a fost înlocuită de abonamentul Academy Member (200 lei/lună, cu cardul). Îl găsești în Academie.' } as any
   try {
     const sb = await createClient()
     const admin = createAdminClient()
@@ -254,9 +258,9 @@ export async function expireOverdueBadges() {
       // Notificare expirare
       await admin.from('notifications').insert({
         user_id: inf.user_id,
-        title: '⚠️ Abonamentul Verified Creator a expirat',
-        body: 'Badge-ul tău auriu a expirat. Reînnoiește din Settings pentru a apărea primul la branduri.',
-        link: '/influencer/settings',
+        title: '⚠️ Abonamentul Academy Member a expirat',
+        body: 'Bifa Academy Member nu mai e activă. Te poți abona din nou oricând din Academie.',
+        link: '/influencer/academie#academy',
         read: false,
       })
     }

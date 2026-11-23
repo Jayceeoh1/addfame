@@ -34,6 +34,10 @@ export const ACADEMY_CSS = `
 .ac-lesson:hover { border-color: #c9bdf7; box-shadow: 0 6px 20px rgba(91,47,208,.08); }
 .ac-lesson.is-next { border: 2px solid #5b2fd0; }
 .ac-lesson.is-done { background: #fbfaff; }
+.ac-lesson.is-locked { background: #f7f6fb; border-style: dashed; }
+.ac-lesson.is-locked h3, .ac-lesson.is-locked p { color: #6a6690; }
+.ac-member-grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .ac-member-grid { grid-template-columns: minmax(0, 1fr); } }
 .ac-lesson h3 { font-size: 17px; font-weight: 800; }
 .ac-lesson p { font-size: 14px; line-height: 1.5; color: #4a4770; }
 .ac-lesson-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
