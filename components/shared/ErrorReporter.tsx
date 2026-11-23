@@ -1,7 +1,8 @@
 'use client'
 import { useEffect } from 'react'
 
-const IGNORE = /ResizeObserver|Script error|chrome-extension|moz-extension|Non-Error promise rejection|Loading chunk|ChunkLoadError|NetworkError|Failed to fetch|Load failed/i
+// „Lock was stolen…”: lacătul de sesiune al Supabase pe iPhone (Safari / aplicația Google) când pagina revine din fundal — inofensiv, sesiunea merge mai departe.
+const IGNORE = /ResizeObserver|Script error|chrome-extension|moz-extension|Non-Error promise rejection|Loading chunk|ChunkLoadError|NetworkError|Failed to fetch|Load failed|Lock was stolen|Lock broken by another request|another request stole it|NavigatorLockAcquireTimeoutError/i
 
 export function reportClientError(message: string, stack?: string, extra?: Record<string, unknown>) {
   try {
