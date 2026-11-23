@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { GraduationCap, Plus, ChevronUp, ChevronDown, Trash2, Eye, RefreshCw } from 'lucide-react'
 import AcademyPeople from '@/components/admin/AcademyPeople'
+import AcademyMembers from '@/components/admin/AcademyMembers'
 import { adminAcademy, adminSaveLesson, adminDeleteLesson, adminMoveLesson } from '@/app/actions/academy'
 import { parseQuestionsText, passNeeded, videoEmbed, TIERS, TIER_ORDER, type AcademyLesson, type AcademyQuestion, type AcademyStep } from '@/lib/academy'
 
@@ -33,7 +34,7 @@ export default function AdminAcademiePage() {
   const [importOpen, setImportOpen] = useState(false)
   const [importText, setImportText] = useState('')
   const [confirmDel, setConfirmDel] = useState(false)
-  const [tab, setTab] = useState<'people' | 'lessons'>('people')
+  const [tab, setTab] = useState<'people' | 'lessons' | 'members'>('people')
 
   async function load(keep?: string | null) {
     setLoading(true); setErr('')
@@ -142,20 +143,21 @@ export default function AdminAcademiePage() {
             </div>
           )}
           <button className="aa-b" onClick={() => load(selId)}><RefreshCw size={14} /> Reîncarcă</button>
-          <button className="aa-b p" onClick={() => open(null)}><Plus size={16} /> Lecție nouă</button>
+          <button className="aa-b p" onClick={() => { open(null); setTab('lessons') }}><Plus size={16} /> Lecție nouă</button>
         </div>
       </div>
 
       {err && <div className="bg-red-50 text-red-700 rounded-xl p-3 text-sm font-semibold mb-3">{err}</div>}
 
       <div role="tablist" style={{ display: 'flex', gap: 6, marginBottom: 14, borderBottom: '1px solid #e8e5f3' }}>
-        {([['people', 'Creatori'], ['lessons', 'Lecția și testul']] as const).map(([k, label]) => (
+        {([['people', 'Creatori'], ['lessons', 'Lecții'], ['members', '🎓 Academy Members']] as const).map(([k, label]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
             style={{ height: 42, padding: '0 14px', border: 0, background: 'none', font: 'inherit', fontWeight: 800, fontSize: 14, cursor: 'pointer', color: tab === k ? '#5b2fd0' : '#6b6890', borderBottom: `3px solid ${tab === k ? '#5b2fd0' : 'transparent'}`, marginBottom: -1 }}>{label}</button>
         ))}
       </div>
 
       {tab === 'people' && <AcademyPeople onChange={() => load(selId)} />}
+      {tab === 'members' && <AcademyMembers />}
 
       <div style={{ display: tab === 'lessons' ? 'flex' : 'none', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
         <div className="bg-white border rounded-2xl" style={{ flex: '1 1 280px', minWidth: 0, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
