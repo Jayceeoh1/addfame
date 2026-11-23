@@ -10,10 +10,11 @@ import { TIERS, TIER_ORDER } from '@/lib/academy'
 import AcademyMembership from '@/components/academy/AcademyMembership'
 import AcademyRequests from '@/components/academy/AcademyRequests'
 import { ACADEMY_BADGE_LABEL } from '@/lib/academy-member'
+import { logAcademyEvent } from '@/app/actions/academy-funnel'
 
 export default function AcademiePage() {
   const [st, setSt] = useState<any>(null)
-  useEffect(() => { getAcademy().then(setSt).catch(() => setSt({ error: 'Nu am putut încărca Academia.' })) }, [])
+  useEffect(() => { getAcademy().then(setSt).catch(() => setSt({ error: 'Nu am putut încărca Academia.' })); logAcademyEvent('page_view').catch(() => {}) }, [])
 
   const all: any[] = st?.lessons || []
   // cursul gratuit (certificatul) și lecțiile Academy Member, separat
@@ -127,7 +128,7 @@ export default function AcademiePage() {
                   </>)
                   return locked
                     ? (l.lock === 'members'
-                      ? <a key={l.id} href="#academy-member" className="ac-lesson is-locked">{inner}</a>
+                      ? <a key={l.id} href="#academy-member" className="ac-lesson is-locked" onClick={() => { logAcademyEvent('locked_click').catch(() => {}) }}>{inner}</a>
                       : <div key={l.id} className="ac-lesson is-locked" aria-disabled="true">{inner}</div>)
                     : <Link key={l.id} href={`/influencer/academie/${l.id}`} className={`ac-lesson ${l.passed ? 'is-done' : ''}`}>{inner}</Link>
                 })}

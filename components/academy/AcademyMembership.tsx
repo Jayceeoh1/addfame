@@ -1,8 +1,9 @@
 'use client'
 // Abonamentul Academy Member: prezentare + plată cu cardul (Stripe), iar pentru membri starea și anularea.
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { getMyMembership } from '@/app/actions/academy-member'
+import { logAcademyEvent } from '@/app/actions/academy-funnel'
 import { ACADEMY_BADGE_LABEL } from '@/lib/academy-member'
 import { loadStripe } from '@stripe/stripe-js'
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
@@ -27,12 +28,23 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [returned, setReturned] = useState<string | null>(null)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const offerRef = useRef<HTMLDivElement>(null)
+  const track = (e: Parameters<typeof logAcademyEvent>[0]) => { logAcademyEvent(e).catch(() => {}) }
 
   const load = useCallback(() => getMyMembership().then(setSt).catch(() => setSt({ error: 'Nu am putut încărca abonamentul.' })), [])
   useEffect(() => {
     load()
     try { setReturned(new URLSearchParams(window.location.search).get('abonament')) } catch { /* */ }
   }, [load])
+  // statistici: creatorul (care nu e membru) a ajuns cu ochii pe ofertă
+  useEffect(() => {
+    const el = offerRef.current
+    if (!el || !st || st.active || st.error) return
+    if (typeof IntersectionObserver === 'undefined') { track('offer_view'); return }
+    const io = new IntersectionObserver(es => { if (es.some(x => x.isIntersecting)) { track('offer_view'); io.disconnect() } }, { threshold: 0.4 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [st?.active, !!st]) // eslint-disable-line react-hooks/exhaustive-deps
   // după plată, Stripe confirmă în câteva secunde: reîncărcăm de câteva ori
   useEffect(() => {
     if (returned !== 'ok' || st?.active) return
@@ -48,6 +60,7 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
       const j = await r.json().catch(() => ({}))
       if (!r.ok || !j.clientSecret) { setErr(j.error || 'Nu am putut porni plata.'); setBusy(false); return }
       setClientSecret(j.clientSecret)
+      track('checkout_open')
     } catch { setErr('Nu am putut porni plata.') }
     setBusy(false)
   }
@@ -64,7 +77,7 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
       <div className="am-modal-box">
         <div className="am-modal-head">
           <b>🎓 {ACADEMY_BADGE_LABEL}</b>
-          <button className="am-x" aria-label="Închide" onClick={() => setClientSecret(null)}>✕</button>
+          <button className="am-x" aria-label="Închide" onClick={() => { setClientSecret(null); track('checkout_close') }}>✕</button>
         </div>
         <div className="am-modal-body">
           <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret, onComplete }}>
@@ -127,7 +140,7 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
   }
 
   return (
-    <div className="am-card" id="academy-member">
+    <div className="am-card" id="academy-member" ref={offerRef}>
       <style>{CSS}</style>
       <div className="am-row">
         <span className="am-badge">🎓 {ACADEMY_BADGE_LABEL}</span>
@@ -141,7 +154,7 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
         </ul>
       )}
       <label className="am-consent">
-        <input type="checkbox" checked={accept} onChange={e => setAccept(e.target.checked)} />
+        <input type="checkbox" checked={accept} onChange={e => { setAccept(e.target.checked); if (e.target.checked) track('consent_checked') }} />
         <span>Vreau acces imediat la cursuri și înțeleg că, odată ce accesul la conținutul digital începe, renunț la dreptul de retragere de 14 zile. Am citit <Link href="/termeni#s-11" target="_blank">termenii abonamentului</Link>.</span>
       </label>
       {err && <p className="am-err">{err}</p>}
