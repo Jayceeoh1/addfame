@@ -24,6 +24,7 @@ type Campaign = {
   title: string
   description: string
   brand_name: string
+  brand_id?: string | null
   budget: number
   budget_per_influencer?: number
   fee_per_influencer?: number | null
@@ -312,6 +313,7 @@ function CampaignScoreTimer({ acceptedAt }: { acceptedAt?: string }) {
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [barterAll, setBarterCampaigns] = useState<any[]>([])
+  const [brandLogos, setBrandLogos] = useState<Record<string, string>>({})
   const [creatorRow, setCreatorRow] = useState<any>(null)
   const [noReplyCollabs, setNoReplyCollabs] = useState<any[]>([])
   const [archivedCollabs, setArchivedCollabs] = useState<any[]>([])
@@ -382,6 +384,15 @@ export default function CampaignsPage() {
       ])
       if (camp) setCampaigns(camp)
       if (barter) setBarterCampaigns(barter)
+      // logourile brandurilor (pozele de profil) pentru carduri
+      const brandIds = [...new Set([...(camp || []), ...(barter || [])].map((c: any) => c.brand_id).filter(Boolean))]
+      if (brandIds.length) {
+        sb.from('brands_public').select('id, logo').in('id', brandIds).then(({ data: bl }) => {
+          const m: Record<string, string> = {}
+          for (const b of bl || []) if (b.logo) m[b.id] = b.logo
+          setBrandLogos(m)
+        })
+      }
       if (inf) {
         const { data: colls } = await sb.from('collaborations').select('campaign_id, status, reserved_amount, payment_amount, admin_invited, created_at, campaigns(id, title, offer_name, product_name, brand_name, campaign_type, offer_value, registration_opened_at, registration_deadline_days)').eq('influencer_id', inf.id)
         if (colls) {
@@ -840,7 +851,9 @@ export default function CampaignsPage() {
                   </div>
                   <div className="cm-body">
                     <div className="cm-brand">
-                      <span className="iu-face" style={{ width: 28, height: 28, fontSize: 11, background: '#efeaff', color: '#5b2fd0' }}>{initials(c.brand_name)}</span>
+                      {brandLogos[c.brand_id]
+                        ? <img src={brandLogos[c.brand_id]} alt={c.brand_name} className="iu-face" style={{ width: 28, height: 28, objectFit: 'cover', background: '#fff' }} />
+                        : <span className="iu-face" style={{ width: 28, height: 28, fontSize: 11, background: '#efeaff', color: '#5b2fd0' }}>{initials(c.brand_name)}</span>}
                       <span className="nm">{c.brand_name}</span>
                     </div>
                     <h3 className="cm-title">{campaignName(c)}</h3>
@@ -962,7 +975,9 @@ export default function CampaignsPage() {
                     </div>
                     <div className="cm-body">
                       <div className="cm-brand">
-                        <span className="iu-face" style={{ width: 28, height: 28, fontSize: 11, background: '#e6f0ff', color: '#1d4fb8' }}>{initials(c.brand_name)}</span>
+                        {brandLogos[c.brand_id]
+                          ? <img src={brandLogos[c.brand_id]} alt={c.brand_name} className="iu-face" style={{ width: 28, height: 28, objectFit: 'cover', background: '#fff' }} />
+                          : <span className="iu-face" style={{ width: 28, height: 28, fontSize: 11, background: '#e6f0ff', color: '#1d4fb8' }}>{initials(c.brand_name)}</span>}
                         <span className="nm">{c.brand_name}</span>
                       </div>
                       <h3 className="cm-title">{c.offer_name || 'Campanie barter'}</h3>
