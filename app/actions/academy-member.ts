@@ -20,7 +20,7 @@ async function communityUrl(admin: ReturnType<typeof createAdminClient>): Promis
 
 export async function getMyMembership(): Promise<
   | { error: string }
-  | { success: true; active: boolean; paid: boolean; launch: { left: number; total: number; firstMonth: number } | null; community: string | null; invoices: { id: string; at: string; amount: number; ready: boolean }[]; until: string | null; canceling: boolean; hasSubscription: boolean; price: number }
+  | { success: true; active: boolean; paid: boolean; launch: { left: number; total: number; firstMonth: number; endsAt: string } | null; community: string | null; invoices: { id: string; at: string; amount: number; ready: boolean }[]; until: string | null; canceling: boolean; hasSubscription: boolean; price: number }
 > {
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
@@ -52,7 +52,7 @@ export async function getMyMembership(): Promise<
     success: true,
     active,
     paid: isPaidAcademyMember(inf),
-    launch: offer ? { left: offer.left, total: offer.total, firstMonth: offer.firstMonth } : null,
+    launch: offer ? { left: offer.left, total: offer.total, firstMonth: offer.firstMonth, endsAt: offer.endsAt } : null,
     community,
     invoices: (invs || []).map((x: any) => ({ id: x.id, at: x.created_at, amount: Number(x.amount || 0), ready: !!x.smartbill_number })),
     until: (isPaidAcademyMember(inf) ? inf.badge_expires_at : inf.academy_free_until || inf.badge_expires_at) ?? null,
