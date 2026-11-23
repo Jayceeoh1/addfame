@@ -411,7 +411,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1">
                   <p className="text-sm font-black text-gray-900 truncate">{profile?.name || '…'}</p>
-                  {profile?.is_verified && <Star className="w-3 h-3 text-amber-500 fill-amber-400 flex-shrink-0" />}
+                  {profile?.is_verified && <AcademyCheck size={15} />}
                 </div>
                 <p className="text-xs text-gray-400 font-medium">Creator</p>
               </div>

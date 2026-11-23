@@ -8,6 +8,7 @@ import {
   Star, AlertCircle, AlertTriangle, Ban, Search, Mail, Instagram, Youtube
 } from 'lucide-react'
 import Link from 'next/link'
+import AcademyCheck, { isPaidMember } from '@/components/shared/AcademyCheck'
 import { AvatarWithBadge } from '@/components/shared/CreatorBadge'
 import { BADGE_IMAGES, LEVEL_CONFIG, getCreatorLevel } from '@/lib/creator-score'
 import { OnboardingChecklist } from '@/components/shared/onboarding-checklist'
@@ -590,7 +591,7 @@ export default function InfluencerDashboard() {
           <AvatarWithBadge avatarUrl={profile?.avatar} name={profile?.name} score={score} size={64} frame={profile?.academy_certified_at ? (profile?.academy_tier || 'bronze') : null} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
             <span className="cd-muted" style={{ fontSize: 13, fontWeight: 600 }}>{greeting} · {today}</span>
-            <h1>Salut, {firstName}.</h1>
+            <h1 style={{ display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>Salut, {firstName}.{isPaidMember(profile as any) && <AcademyCheck size={28} />}</h1>
             <p style={{ margin: 0, color: '#4a4770' }}>
               {actionCount > 0
                 ? <>Ai <b style={{ color: '#6a2fe0' }}>{actionCount === 1 ? 'un lucru' : `${actionCount} lucruri`}</b> de făcut azi.</>
