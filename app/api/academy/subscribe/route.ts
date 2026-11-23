@@ -6,7 +6,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ACADEMY_PRICE_RON, ACADEMY_BADGE_LABEL, isAcademyMember } from '@/lib/academy-member'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://addfame.ro'
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,10 +58,11 @@ export async function POST(req: NextRequest) {
       }],
       metadata: meta,
       subscription_data: { metadata: meta },
-      success_url: `${APP_URL}/influencer/academie?abonament=ok`,
-      cancel_url: `${APP_URL}/influencer/academie?abonament=renuntat`,
+      // plata se deschide într-o fereastră peste pagină (Stripe Embedded Checkout), fără să plece de pe AddFame
+      ui_mode: 'embedded',
+      redirect_on_completion: 'never',
     })
-    return NextResponse.json({ url: session.url })
+    return NextResponse.json({ clientSecret: session.client_secret })
   } catch (e: any) {
     console.error('[academy/subscribe]', e?.message)
     return NextResponse.json({ error: 'Nu am putut porni plata. Încearcă din nou.' }, { status: 500 })

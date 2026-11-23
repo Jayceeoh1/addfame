@@ -4,6 +4,10 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getMyMembership } from '@/app/actions/academy-member'
 import { ACADEMY_BADGE_LABEL } from '@/lib/academy-member'
+import { loadStripe } from '@stripe/stripe-js'
+import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 const BENEFITS = [
   ['📚', '3 cursuri noi în fiecare luni', 'aproximativ 12 pe lună, practice și ușor de aplicat'],
@@ -22,6 +26,7 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
   const [err, setErr] = useState('')
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [returned, setReturned] = useState<string | null>(null)
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
 
   const load = useCallback(() => getMyMembership().then(setSt).catch(() => setSt({ error: 'Nu am putut încărca abonamentul.' })), [])
   useEffect(() => {
@@ -41,10 +46,34 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
     try {
       const r = await fetch('/api/academy/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accept }) })
       const j = await r.json().catch(() => ({}))
-      if (!r.ok || !j.url) { setErr(j.error || 'Nu am putut porni plata.'); setBusy(false); return }
-      window.location.href = j.url
-    } catch { setErr('Nu am putut porni plata.'); setBusy(false) }
+      if (!r.ok || !j.clientSecret) { setErr(j.error || 'Nu am putut porni plata.'); setBusy(false); return }
+      setClientSecret(j.clientSecret)
+    } catch { setErr('Nu am putut porni plata.') }
+    setBusy(false)
   }
+
+  // plata s-a încheiat în fereastră: o închidem și așteptăm confirmarea de la Stripe
+  const onComplete = useCallback(() => {
+    setClientSecret(null)
+    setReturned('ok')
+    load()
+  }, [load])
+
+  const modal = clientSecret && (
+    <div className="am-modal" role="dialog" aria-modal="true" aria-label="Plata abonamentului Academy Member">
+      <div className="am-modal-box">
+        <div className="am-modal-head">
+          <b>🎓 {ACADEMY_BADGE_LABEL}</b>
+          <button className="am-x" aria-label="Închide" onClick={() => setClientSecret(null)}>✕</button>
+        </div>
+        <div className="am-modal-body">
+          <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret, onComplete }}>
+            <EmbeddedCheckout />
+          </EmbeddedCheckoutProvider>
+        </div>
+      </div>
+    </div>
+  )
 
   async function manage(action: 'cancel' | 'resume') {
     setBusy(true); setErr('')
@@ -109,7 +138,8 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
         <span>Vreau acces imediat la cursuri și înțeleg că, odată ce accesul la conținutul digital începe, renunț la dreptul de retragere de 14 zile. Am citit <Link href="/termeni#s-11" target="_blank">termenii abonamentului</Link>.</span>
       </label>
       {err && <p className="am-err">{err}</p>}
-      <button className="am-btn" disabled={!accept || busy} onClick={subscribe}>{busy ? 'Se deschide plata…' : `Abonează-te cu cardul — ${st.price} lei / lună`}</button>
+      <button className="am-btn" disabled={!accept || busy} onClick={subscribe}>{busy ? 'Se pregătește plata…' : `Abonează-te cu cardul — ${st.price} lei / lună`}</button>
+      {modal}
       <p className="am-muted am-small">Plata se face prin Stripe. Abonamentul se reînnoiește lunar și îl poți anula oricând de aici; accesul rămâne până la sfârșitul lunii plătite.</p>
     </div>
   )
@@ -135,4 +165,10 @@ const CSS = `
 .am-muted{color:#6a6690;font-size:13.5px;line-height:1.5;margin:0}.am-small{font-size:12px}
 .am-err{margin:0;color:#b42318;font-weight:700;font-size:13px}
 .am-ok{margin:0;color:#14532d;font-weight:700;font-size:13px}
+.am-modal{position:fixed;inset:0;z-index:1000;background:rgba(20,18,58,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.am-modal-box{background:#fff;border-radius:22px;width:100%;max-width:520px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(20,18,58,.35)}
+.am-modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #eee;color:#14123a}
+.am-x{width:34px;height:34px;border-radius:10px;border:0;background:#f3f1fa;font-size:16px;cursor:pointer;color:#14123a}
+.am-modal-body{overflow-y:auto;padding:8px 4px}
+@media (max-width:520px){.am-modal{padding:0;align-items:flex-end}.am-modal-box{border-radius:22px 22px 0 0;max-height:95vh}}
 `
