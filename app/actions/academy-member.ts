@@ -17,23 +17,26 @@ async function communityUrl(admin: ReturnType<typeof createAdminClient>): Promis
 
 export async function getMyMembership(): Promise<
   | { error: string }
-  | { success: true; active: boolean; community: string | null; until: string | null; canceling: boolean; hasSubscription: boolean; price: number }
+  | { success: true; active: boolean; community: string | null; invoices: { id: string; at: string; amount: number; ready: boolean }[]; until: string | null; canceling: boolean; hasSubscription: boolean; price: number }
 > {
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return { error: 'Intră în contul de creator.' }
   const admin = createAdminClient()
   const { data: inf, error } = await admin.from('influencers')
-    .select('is_verified, badge_expires_at, academy_sub_id, academy_sub_status, academy_cancel_at_period_end')
+    .select('id, is_verified, badge_expires_at, academy_sub_id, academy_sub_status, academy_cancel_at_period_end')
     .eq('user_id', user.id).maybeSingle()
   if (error) return { error: /academy_sub/.test(error.message) ? 'Rulează întâi SQL 64 (Academy Member).' : error.message }
   if (!inf) return { error: 'Contul de creator nu există.' }
   const active = isAcademyMember(inf)
   const community = active ? await communityUrl(admin) : null
+  const { data: invs } = await admin.from('academy_invoices').select('id, amount, smartbill_number, created_at')
+    .eq('influencer_id', inf.id).order('created_at', { ascending: false }).limit(36)
   return {
     success: true,
     active,
     community,
+    invoices: (invs || []).map((x: any) => ({ id: x.id, at: x.created_at, amount: Number(x.amount || 0), ready: !!x.smartbill_number })),
     until: inf.badge_expires_at ?? null,
     canceling: !!inf.academy_cancel_at_period_end,
     hasSubscription: !!inf.academy_sub_id && inf.academy_sub_status !== 'canceled',
@@ -50,7 +53,7 @@ export type AdminAcademyMember = {
   status: 'activ' | 'se_opreste' | 'plata_esuata' | 'anulat' | 'manual' | 'expirat'
   hasSubscription: boolean
   payments: number; totalPaid: number; lastPaymentAt: string | null
-  invoices: { at: string; amount: number; number: string | null; error: string | null }[]
+  invoices: { id: string; at: string; amount: number; number: string | null; error: string | null }[]
 }
 
 export async function adminAcademyMembers(): Promise<{ error: string } | { success: true; members: AdminAcademyMember[] }> {
@@ -62,7 +65,7 @@ export async function adminAcademyMembers(): Promise<{ error: string } | { succe
     .or('academy_sub_id.not.is.null,badge_expires_at.not.is.null')
     .limit(2000)
   if (error) return { error: /academy_sub/.test(error.message) ? 'Rulează întâi SQL 64 (Academy Member).' : error.message }
-  const { data: invs } = await admin.from('academy_invoices').select('influencer_id, amount, smartbill_number, error, created_at').order('created_at', { ascending: false }).limit(5000)
+  const { data: invs } = await admin.from('academy_invoices').select('id, influencer_id, amount, smartbill_number, error, created_at').order('created_at', { ascending: false }).limit(5000)
   const byInf = new Map<string, any[]>()
   for (const i of invs || []) { const a = byInf.get(i.influencer_id) || []; a.push(i); byInf.set(i.influencer_id, a) }
 
@@ -80,7 +83,7 @@ export async function adminAcademyMembers(): Promise<{ error: string } | { succe
       id: i.id, name: i.name, email: i.email, phone: i.phone, instagram: i.instagram_handle, slug: i.slug,
       active, until: i.badge_expires_at, since: i.verified_at, status, hasSubscription: hasSub,
       payments: inv.length, totalPaid: inv.reduce((s, x) => s + Number(x.amount || 0), 0), lastPaymentAt: inv[0]?.created_at || null,
-      invoices: inv.slice(0, 24).map(x => ({ at: x.created_at, amount: Number(x.amount || 0), number: x.smartbill_number, error: x.error })),
+      invoices: inv.slice(0, 24).map(x => ({ id: x.id, at: x.created_at, amount: Number(x.amount || 0), number: x.smartbill_number, error: x.error })),
     }
   })
   const rank = { plata_esuata: 0, activ: 1, se_opreste: 2, manual: 3, anulat: 4, expirat: 5 }

@@ -148,7 +148,9 @@ export default function AcademyMembers() {
                     {r.invoices.map((x, k) => (
                       <div key={k} style={{ display: 'flex', gap: 12, fontSize: 13, padding: '3px 0', flexWrap: 'wrap' }}>
                         <span style={{ width: 110 }}>{fmtD(x.at)}</span><b style={{ width: 80 }}>{lei(x.amount)}</b>
-                        <span style={{ color: x.error ? '#9b1c1c' : '#14532d' }}>{x.number ? `Factura ${x.number}` : x.error || 'Factură în curs'}</span>
+                        {x.number
+                          ? <a href={`/api/smartbill/academy-invoice-pdf?id=${x.id}`} target="_blank" rel="noopener noreferrer" style={{ color: '#14532d', fontWeight: 700 }}>Factura {x.number} · PDF</a>
+                          : <span style={{ color: x.error ? '#9b1c1c' : '#5a5780' }}>{x.error || 'Factură în curs'}</span>}
                       </div>
                     ))}
                   </td></tr>

@@ -107,6 +107,7 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
             <a className="am-btn am-wa" href={st.community} target="_blank" rel="noopener noreferrer">Intră în grup</a>
           </div>
         )}
+        <Invoices list={st.invoices} />
         {err && <p className="am-err">{err}</p>}
         {st.hasSubscription && (
           st.canceling ? (
@@ -146,8 +147,28 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
       {err && <p className="am-err">{err}</p>}
       <button className="am-btn" disabled={!accept || busy} onClick={subscribe}>{busy ? 'Se pregătește plata…' : `Abonează-te cu cardul — ${st.price} lei / lună`}</button>
       {modal}
+      <Invoices list={st.invoices} />
       <p className="am-muted am-small">Plata se face prin Stripe. Abonamentul se reînnoiește lunar și îl poți anula oricând de aici; accesul rămâne până la sfârșitul lunii plătite.</p>
     </div>
+  )
+}
+
+function Invoices({ list }: { list?: { id: string; at: string; amount: number; ready: boolean }[] }) {
+  if (!list?.length) return null
+  return (
+    <details className="am-inv">
+      <summary>🧾 Facturile tale ({list.length})</summary>
+      <ul>
+        {list.map(x => (
+          <li key={x.id}>
+            <span>{fmtDate(x.at)}</span><b>{x.amount.toLocaleString('ro-RO')} lei</b>
+            {x.ready
+              ? <a href={`/api/smartbill/academy-invoice-pdf?id=${x.id}`} target="_blank" rel="noopener noreferrer">Descarcă PDF</a>
+              : <em>Se emite…</em>}
+          </li>
+        ))}
+      </ul>
+    </details>
   )
 }
 
@@ -171,6 +192,12 @@ const CSS = `
 .am-muted{color:#6a6690;font-size:13.5px;line-height:1.5;margin:0}.am-small{font-size:12px}
 .am-err{margin:0;color:#b42318;font-weight:700;font-size:13px}
 .am-ok{margin:0;color:#14532d;font-weight:700;font-size:13px}
+.am-inv{border:1px solid #e6dcff;border-radius:14px;background:#fff;padding:0 12px}
+.am-inv summary{cursor:pointer;font-weight:800;font-size:13.5px;padding:11px 0;color:#14123a}
+.am-inv ul{list-style:none;margin:0;padding:0 0 10px;display:flex;flex-direction:column;gap:6px}
+.am-inv li{display:flex;gap:12px;align-items:center;font-size:13px;color:#4a4770;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.am-inv li span{min-width:110px}.am-inv li b{min-width:70px;color:#14123a}
+.am-inv a{color:#5b2fd0;font-weight:800;margin-left:auto}.am-inv em{margin-left:auto;font-style:normal;color:#8a87a8}
 .am-comm{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px;border-radius:16px;background:#fff;border:1px solid #d9ccff}
 .am-comm b{display:block;font-size:14.5px}.am-comm span{display:block;font-size:12.5px;color:#6a6690;margin-top:2px}
 .am-wa{background:#1f9d55;display:inline-flex;align-items:center;text-decoration:none;min-height:42px}
