@@ -27,8 +27,12 @@ export async function POST(req: NextRequest) {
   try {
     if (event.type === 'checkout.session.completed'
       && await academyCheckoutCompleted(supabase, event.data.object as Stripe.Checkout.Session)) return NextResponse.json({ ok: true })
-    if (event.type === 'invoice.paid'
-      && await academyInvoicePaid(supabase, event.data.object as Stripe.Invoice)) return NextResponse.json({ ok: true })
+    if (event.type === 'invoice.paid') {
+      // recitim factura cu versiunea API a codului (evenimentul poate veni în altă formă, după setarea contului Stripe)
+      const raw = event.data.object as Stripe.Invoice
+      const inv = await stripe.invoices.retrieve(raw.id).catch(() => raw)
+      if (await academyInvoicePaid(supabase, inv)) return NextResponse.json({ ok: true })
+    }
     if ((event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted')
       && await academySubscriptionChanged(supabase, event.data.object as Stripe.Subscription, event.type === 'customer.subscription.deleted')) return NextResponse.json({ ok: true })
   } catch (e: any) {

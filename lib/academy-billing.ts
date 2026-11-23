@@ -31,8 +31,11 @@ export async function academyCheckoutCompleted(sb: SupabaseClient, s: Stripe.Che
 
 /** invoice.paid — prelungește bifa până la sfârșitul lunii plătite și emite factura. */
 export async function academyInvoicePaid(sb: SupabaseClient, inv: Stripe.Invoice) {
-  const sid = subId(inv.subscription as any)
-  const meta = (inv as any).subscription_details?.metadata || {}
+  const x: any = inv
+  // forma facturii diferă între versiunile API Stripe: căutăm abonamentul în toate locurile posibile
+  const sid = subId(x.subscription) || subId(x.parent?.subscription_details?.subscription)
+    || subId(x.lines?.data?.[0]?.subscription) || subId(x.lines?.data?.[0]?.parent?.subscription_item_details?.subscription)
+  const meta = x.subscription_details?.metadata || x.parent?.subscription_details?.metadata || x.lines?.data?.[0]?.metadata || {}
   if (!sid) return false
   if (meta.type && meta.type !== 'ACADEMY') return false
   const inf = await findInfluencer(sb, meta.influencer_id, sid)
@@ -107,6 +110,33 @@ export async function academySubscriptionChanged(sb: SupabaseClient, sub: Stripe
       link: '/influencer/academie',
       read: false,
     })
+  }
+  return true
+}
+
+/**
+ * Sincronizare directă cu Stripe (nu depinde de webhook): caută abonamentul Academy al creatorului,
+ * îi salvează starea și, dacă ultima factură e plătită, activează bifa (factura SmartBill rămâne o singură dată).
+ */
+export async function syncAcademyFromStripe(
+  sb: SupabaseClient, stripe: Stripe,
+  inf: { id: string; stripe_customer_id?: string | null; academy_sub_id?: string | null },
+) {
+  let sub: Stripe.Subscription | null = null
+  if (inf.academy_sub_id) {
+    sub = await stripe.subscriptions.retrieve(inf.academy_sub_id, { expand: ['latest_invoice'] }).catch(() => null)
+  }
+  if (!sub && inf.stripe_customer_id) {
+    const list = await stripe.subscriptions.list({ customer: inf.stripe_customer_id, status: 'all', limit: 10, expand: ['data.latest_invoice'] })
+    sub = list.data
+      .filter(x => x.metadata?.type === 'ACADEMY' && (!x.metadata.influencer_id || x.metadata.influencer_id === inf.id))
+      .sort((a, b) => b.created - a.created)[0] || null
+  }
+  if (!sub) return false
+  await academySubscriptionChanged(sb, sub, sub.status === 'canceled')
+  const inv = sub.latest_invoice
+  if (inv && typeof inv === 'object' && inv.status === 'paid' && ['active', 'trialing', 'past_due'].includes(sub.status)) {
+    await academyInvoicePaid(sb, inv)
   }
   return true
 }

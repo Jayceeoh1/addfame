@@ -6,6 +6,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/verify-admin'
 import { isAcademyMember, ACADEMY_PRICE_RON } from '@/lib/academy-member'
 import { getLaunchOffer } from '@/lib/academy-launch'
+import Stripe from 'stripe'
+import { syncAcademyFromStripe } from '@/lib/academy-billing'
 
 const COMMUNITY_KEY = 'academy_community'
 
@@ -25,10 +27,22 @@ export async function getMyMembership(): Promise<
   if (!user) return { error: 'Intră în contul de creator.' }
   const admin = createAdminClient()
   const { data: inf, error } = await admin.from('influencers')
-    .select('id, is_verified, badge_expires_at, academy_sub_id, academy_sub_status, academy_cancel_at_period_end')
+    .select('id, is_verified, badge_expires_at, academy_sub_id, academy_sub_status, academy_cancel_at_period_end, stripe_customer_id, academy_terms_accepted_at')
     .eq('user_id', user.id).maybeSingle()
   if (error) return { error: /academy_sub/.test(error.message) ? 'Rulează întâi SQL 64 (Academy Member).' : error.message }
   if (!inf) return { error: 'Contul de creator nu există.' }
+  // a plătit, dar webhook-ul n-a ajuns încă (sau n-a mers)? verificăm direct în Stripe
+  if (!isAcademyMember(inf) && inf.stripe_customer_id && (inf.academy_sub_id
+      || (inf.academy_terms_accepted_at && Date.now() - new Date(inf.academy_terms_accepted_at).getTime() < 14 * 86400000))) {
+    try {
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
+      if (await syncAcademyFromStripe(admin, stripe, inf)) {
+        const { data: fresh } = await admin.from('influencers')
+          .select('is_verified, badge_expires_at, academy_sub_id, academy_sub_status, academy_cancel_at_period_end').eq('id', inf.id).maybeSingle()
+        if (fresh) Object.assign(inf, fresh)
+      }
+    } catch (e: any) { console.error('[academy] sync Stripe', e?.message) }
+  }
   const active = isAcademyMember(inf)
   const community = active ? await communityUrl(admin) : null
   const { data: invs } = await admin.from('academy_invoices').select('id, amount, smartbill_number, created_at')

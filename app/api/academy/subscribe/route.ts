@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ACADEMY_PRICE_RON, ACADEMY_BADGE_LABEL, isAcademyMember } from '@/lib/academy-member'
 import { getLaunchOffer } from '@/lib/academy-launch'
+import { syncAcademyFromStripe } from '@/lib/academy-billing'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
 
@@ -25,8 +26,13 @@ export async function POST(req: NextRequest) {
       .eq('user_id', user.id).maybeSingle()
     if (error) return NextResponse.json({ error: /academy_sub/.test(error.message) ? 'Rulează întâi SQL 64 (Academy Member).' : error.message }, { status: 500 })
     if (!inf) return NextResponse.json({ error: 'Contul de creator nu există.' }, { status: 404 })
-    if (inf.academy_sub_id && ['active', 'trialing', 'past_due'].includes(String(inf.academy_sub_status)) && isAcademyMember(inf)) {
-      return NextResponse.json({ error: 'Ai deja abonamentul Academy Member activ.' }, { status: 400 })
+    // nu lăsăm un al doilea abonament: verificăm întâi direct în Stripe
+    if (inf.stripe_customer_id || inf.academy_sub_id) {
+      await syncAcademyFromStripe(admin, stripe, inf).catch(() => false)
+      const { data: now } = await admin.from('influencers').select('academy_sub_id, academy_sub_status, is_verified, badge_expires_at').eq('id', inf.id).maybeSingle()
+      if (now && (isAcademyMember(now) || (now.academy_sub_id && ['active', 'trialing', 'past_due', 'incomplete'].includes(String(now.academy_sub_status))))) {
+        return NextResponse.json({ error: 'Ai deja abonamentul Academy Member. Reîncarcă pagina.' }, { status: 400 })
+      }
     }
 
     let customerId = inf.stripe_customer_id as string | null

@@ -116,6 +116,7 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
           <span className="am-badge">🎓 {ACADEMY_BADGE_LABEL}</span>
           <span className="am-muted">{st.price} lei / lună</span>
         </div>
+        {returned === 'ok' && <p className="am-welcome">🎉 Bine ai venit în AddFame Academy! Plata a trecut, iar bifa {ACADEMY_BADGE_LABEL} apare acum pe profilul tău.</p>}
         <h3>Ești membru AddFame Academy</h3>
         <p className="am-muted">
           {st.canceling
@@ -239,6 +240,7 @@ const CSS = `
 .am-inv a{color:#5b2fd0;font-weight:800;margin-left:auto}.am-inv em{margin-left:auto;font-style:normal;color:#8a87a8}
 .am-bonus{border-radius:16px;padding:12px 14px;background:#fff;border:1px dashed #d9b8ff;display:flex;flex-direction:column;gap:4px}
 .am-bonus b{font-size:14px}.am-bonus p{margin:0;font-size:13.5px;line-height:1.5;color:#2b2850}
+.am-welcome{margin:0;padding:12px 14px;border-radius:14px;background:#e6f7ec;color:#14532d;font-weight:700;font-size:14px;line-height:1.5}
 .am-comm{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px;border-radius:16px;background:#fff;border:1px solid #d9ccff}
 .am-comm b{display:block;font-size:14.5px}.am-comm span{display:block;font-size:12.5px;color:#6a6690;margin-top:2px}
 .am-wa{background:#1f9d55;display:inline-flex;align-items:center;text-decoration:none;min-height:42px}
