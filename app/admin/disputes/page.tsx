@@ -13,6 +13,26 @@ const STATUS: Record<string, { t: string; bg: string; fg: string }> = {
 const WHO: Record<string, string> = { brand: 'Brand', influencer: 'Creator', system: 'Sistem' }
 const fmt = (iso: string) => new Date(iso).toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
+function igUrl(inf: any): string | null {
+  const p = Array.isArray(inf?.platforms) ? inf.platforms.find((x: any) => x?.platform === 'instagram' && x?.url) : null
+  if (p?.url) return String(p.url).split('?')[0]
+  const h = String(inf?.instagram_handle || '').replace(/^@/, '').trim()
+  return h ? `https://instagram.com/${h}` : null
+}
+function igHandle(inf: any): string {
+  const u = igUrl(inf) || ''
+  return '@' + u.replace(/\/+$/, '').split('/').pop()
+}
+function Party({ title, name, lines, opened }: { title: string; name?: string; lines: React.ReactNode[]; opened: boolean }) {
+  return (
+    <div style={{ border: `1px solid ${opened ? '#c7b8ff' : '#e5e3f3'}`, background: opened ? '#f5f1ff' : '#fff', borderRadius: 12, padding: '8px 12px', fontSize: 13, display: 'grid', gap: 2 }}>
+      <span style={{ fontSize: 11, fontWeight: 800, color: '#6a6690', textTransform: 'uppercase', letterSpacing: '.06em' }}>{title}{opened ? ' · a deschis litigiul' : ''}</span>
+      <b>{name || '—'}</b>
+      {lines.filter(Boolean).map((l, i) => <span key={i} style={{ overflowWrap: 'anywhere' }}>{l}</span>)}
+    </div>
+  )
+}
+
 export default function DisputesPage() {
   const [rows, setRows] = useState<any[]>([])
   const [resolved, setResolved] = useState(false)
@@ -63,7 +83,7 @@ export default function DisputesPage() {
       ) : (
         <div style={{ display: 'grid', gap: 12 }}>
           {rows.map(d => {
-            const s = STATUS[d.status]; const camp = d.collaborations?.campaigns
+            const s = STATUS[d.status]; const camp = d.collaborations?.campaigns; const inf = d.collaborations?.influencers
             return (
               <div key={d.id} className="bg-white border rounded-2xl p-4" style={{ display: 'grid', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -72,7 +92,17 @@ export default function DisputesPage() {
                   <span style={{ color: '#6a6690', fontSize: 13 }}>{camp?.brand_name} ↔ {d.collaborations?.influencers?.name} · {d.collaborations?.payment_amount ?? 0} RON</span>
                   <span style={{ marginLeft: 'auto', color: '#6a6690', fontSize: 12 }}>{fmt(d.created_at)}</span>
                 </div>
-                <div style={{ fontSize: 13 }}><b>{REASONS[d.reason as keyof typeof REASONS]}</b> · deschis de {WHO[d.opened_by_role]}</div>
+                <div style={{ fontSize: 13 }}><b>{REASONS[d.reason as keyof typeof REASONS]}</b> · deschis de <b>{WHO[d.opened_by_role]}</b>{d.opened_by_role === 'influencer' && inf?.name ? <> — <b>{inf.name}</b></> : d.opened_by_role === 'brand' && (d.brand?.name || camp?.brand_name) ? <> — <b>{d.brand?.name || camp?.brand_name}</b></> : null}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 8 }}>
+                  <Party title="Creator" opened={d.opened_by_role === 'influencer'} name={inf?.name} lines={[
+                    igUrl(inf) ? <a key="ig" href={igUrl(inf)!} target="_blank" rel="noopener noreferrer" style={{ color: '#5a35e6', fontWeight: 700 }}>{igHandle(inf)}</a> : null,
+                    inf?.email ? <a key="em" href={`mailto:${inf.email}`} style={{ color: '#14123a' }}>{inf.email}</a> : null,
+                    inf?.phone ? <a key="ph" href={`tel:${inf.phone}`} style={{ color: '#14123a' }}>{inf.phone}</a> : null,
+                  ]} />
+                  <Party title="Brand" opened={d.opened_by_role === 'brand'} name={d.brand?.name || camp?.brand_name} lines={[
+                    d.brand?.email ? <a key="em" href={`mailto:${d.brand.email}`} style={{ color: '#14123a' }}>{d.brand.email}</a> : null,
+                  ]} />
+                </div>
                 <div style={{ fontSize: 14, background: '#f6f6fc', borderRadius: 12, padding: 10, overflowWrap: 'anywhere' }}>{d.description}</div>
                 {d.response && <div style={{ fontSize: 14, background: '#f6f6fc', borderRadius: 12, padding: 10, overflowWrap: 'anywhere' }}><b>Răspuns:</b> {d.response}</div>}
                 {d.status === 'awaiting_response' && d.respond_by && <div style={{ fontSize: 12, color: '#854d0e' }}>Termen de răspuns: {fmt(d.respond_by)}</div>}

@@ -10,11 +10,16 @@ export async function GET(req: NextRequest) {
   const showResolved = req.nextUrl.searchParams.get('resolved') === '1'
   const admin = createAdminClient()
   const q = admin.from('disputes')
-    .select('id, collaboration_id, opened_by_role, reason, description, status, respond_by, response, responded_at, resolution, resolution_note, resolved_at, created_at, collaborations(id, status, payment_amount, campaigns(title, offer_name, product_name, brand_name), influencers(name))')
+    .select('id, collaboration_id, opened_by_role, reason, description, status, respond_by, response, responded_at, resolution, resolution_note, resolved_at, created_at, collaborations(id, status, payment_amount, campaigns(title, offer_name, product_name, brand_name, brand_id), influencers(id, name, email, phone, instagram_handle, platforms))')
     .order('created_at', { ascending: false }).limit(200)
   const { data, error } = showResolved ? await q.eq('status', 'resolved') : await q.neq('status', 'resolved')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ disputes: data || [] })
+  // Datele de contact ale brandului, ca adminul să vadă cine sunt părțile
+  const brandIds = [...new Set((data || []).map((d: any) => d.collaborations?.campaigns?.brand_id).filter(Boolean))]
+  const { data: brands } = brandIds.length ? await admin.from('brands').select('id, name, email').in('id', brandIds) : { data: [] as any[] }
+  const byId = new Map((brands || []).map((b: any) => [b.id, b]))
+  const disputes = (data || []).map((d: any) => ({ ...d, brand: byId.get(d.collaborations?.campaigns?.brand_id) || null }))
+  return NextResponse.json({ disputes })
 }
 
 // POST { id, resolution, note } → adminul decide. Nu mută bani: plata se gestionează din Admin → Plăți.
