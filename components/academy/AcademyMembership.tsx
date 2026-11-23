@@ -16,7 +16,15 @@ const BENEFITS = [
   ['🔎', 'Analiza profilului tău', 'puncte forte, branduri potrivite și ce poți îmbunătăți'],
   ['🎓', `Bifa ${ACADEMY_BADGE_LABEL} pe profil`, 'o văd și brandurile, cât timp ești membru'],
   ['💬', 'Comunitatea privată și ajutor în privat', 'pentru briefuri, Reel-uri și colaborări'],
+  ['🎁', 'Creator Relax Kit AddFame, în decembrie', 'în valoare de aproximativ 200 lei, după ce finalizezi cursurile din luna decembrie'],
 ] as const
+
+/** Bonusul lunii (textul exact anunțat de AddFame). */
+const BONUS = {
+  title: '🎁 Bonus decembrie: Creator Relax Kit',
+  text: 'După ce finalizezi cursurile din luna decembrie, primești și Creator Relax Kit-ul Addfame, în valoare de aproximativ 200 lei.',
+  details: 'Kit-ul poate conține parfum, produse de skincare, mască de față, creme, produse pentru relaxare și alte surprize.',
+}
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -120,6 +128,7 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
             <a className="am-btn am-wa" href={st.community} target="_blank" rel="noopener noreferrer">Intră în grup</a>
           </div>
         )}
+        <div className="am-bonus"><b>{BONUS.title}</b><p>{BONUS.text}</p><p className="am-muted am-small">{BONUS.details}</p></div>
         <Invoices list={st.invoices} />
         {err && <p className="am-err">{err}</p>}
         {st.hasSubscription && (
@@ -157,6 +166,9 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
       )}
       <h3>Devino {ACADEMY_BADGE_LABEL}</h3>
       {returned === 'ok' && <p className="am-ok">Mulțumim! Confirmăm plata, durează câteva secunde…</p>}
+      {!compact && (
+        <div className="am-bonus"><b>{BONUS.title}</b><p>{BONUS.text}</p><p className="am-muted am-small">{BONUS.details}</p></div>
+      )}
       {!compact && (
         <ul className="am-list">
           {BENEFITS.map(([ic, t, d]) => <li key={t}><span>{ic}</span><div><b>{t}</b><small>{d}</small></div></li>)}
@@ -225,6 +237,8 @@ const CSS = `
 .am-inv li{display:flex;gap:12px;align-items:center;font-size:13px;color:#4a4770;font-variant-numeric:tabular-nums;flex-wrap:wrap}
 .am-inv li span{min-width:110px}.am-inv li b{min-width:70px;color:#14123a}
 .am-inv a{color:#5b2fd0;font-weight:800;margin-left:auto}.am-inv em{margin-left:auto;font-style:normal;color:#8a87a8}
+.am-bonus{border-radius:16px;padding:12px 14px;background:#fff;border:1px dashed #d9b8ff;display:flex;flex-direction:column;gap:4px}
+.am-bonus b{font-size:14px}.am-bonus p{margin:0;font-size:13.5px;line-height:1.5;color:#2b2850}
 .am-comm{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px;border-radius:16px;background:#fff;border:1px solid #d9ccff}
 .am-comm b{display:block;font-size:14.5px}.am-comm span{display:block;font-size:12.5px;color:#6a6690;margin-top:2px}
 .am-wa{background:#1f9d55;display:inline-flex;align-items:center;text-decoration:none;min-height:42px}

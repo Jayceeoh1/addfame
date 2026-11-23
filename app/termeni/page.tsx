@@ -127,6 +127,7 @@ export default function TermsPage() {
           <p><strong>Anulare.</strong> Poți anula oricând din Academie sau din Setări → Academy Member. Anularea oprește reînnoirea; accesul și bifa rămân active până la sfârșitul lunii deja plătite, iar sumele pentru luna în curs nu se returnează.</p>
           <p><strong>Dreptul de retragere.</strong> Cursurile sunt conținut digital furnizat imediat. La abonare îți exprimi acordul expres ca accesul să înceapă imediat și confirmi că, odată început accesul, pierzi dreptul de retragere de 14 zile pentru luna respectivă (OUG 34/2014, art. 16 lit. m).</p>
           <p><strong>Beneficii personalizate.</strong> Feedbackul pe materiale, analiza profilului și asistența se oferă în limitele anunțate în Academie, în ordinea solicitărilor. Bonusurile (de exemplu kituri cadou) se acordă doar în condițiile anunțate pentru luna respectivă.</p>
+          <p><strong>Creator Relax Kit (decembrie).</strong> După ce finalizezi cursurile din luna decembrie, primești și Creator Relax Kit-ul Addfame, în valoare de aproximativ 200 lei. Kit-ul poate conține parfum, produse de skincare, mască de față, creme, produse pentru relaxare și alte surprize. Conținutul exact poate varia de la un kit la altul. Kit-ul se acordă membrilor care au abonamentul activ și au trecut testele tuturor cursurilor pentru membri publicate în luna decembrie, se trimite o singură dată și se livrează la adresa de livrare din profilul AddFame, pe care ne-o confirmi înainte de trimitere.</p>
         </Section>
             </div>
 
