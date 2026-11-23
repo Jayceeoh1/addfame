@@ -101,6 +101,12 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
             ? <>Abonamentul nu se mai reînnoiește. Accesul și bifa rămân active până pe <b>{st.until ? fmtDate(st.until) : '—'}</b>.</>
             : <>Accesul și bifa sunt active până pe <b>{st.until ? fmtDate(st.until) : '—'}</b>, apoi abonamentul se reînnoiește automat.</>}
         </p>
+        {st.community && (
+          <div className="am-comm">
+            <div><b>💬 Comunitatea privată AddFame Academy</b><span>Intră cu numărul de telefon din profil. Un admin te aprobă în câteva ore.</span></div>
+            <a className="am-btn am-wa" href={st.community} target="_blank" rel="noopener noreferrer">Intră în grup</a>
+          </div>
+        )}
         {err && <p className="am-err">{err}</p>}
         {st.hasSubscription && (
           st.canceling ? (
@@ -165,6 +171,9 @@ const CSS = `
 .am-muted{color:#6a6690;font-size:13.5px;line-height:1.5;margin:0}.am-small{font-size:12px}
 .am-err{margin:0;color:#b42318;font-weight:700;font-size:13px}
 .am-ok{margin:0;color:#14532d;font-weight:700;font-size:13px}
+.am-comm{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px;border-radius:16px;background:#fff;border:1px solid #d9ccff}
+.am-comm b{display:block;font-size:14.5px}.am-comm span{display:block;font-size:12.5px;color:#6a6690;margin-top:2px}
+.am-wa{background:#1f9d55;display:inline-flex;align-items:center;text-decoration:none;min-height:42px}
 .am-modal{position:fixed;inset:0;z-index:1000;background:rgba(20,18,58,.55);display:flex;align-items:center;justify-content:center;padding:16px}
 .am-modal-box{background:#fff;border-radius:22px;width:100%;max-width:520px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(20,18,58,.35)}
 .am-modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #eee;color:#14123a}

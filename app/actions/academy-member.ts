@@ -6,9 +6,18 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/verify-admin'
 import { isAcademyMember, ACADEMY_PRICE_RON } from '@/lib/academy-member'
 
+const COMMUNITY_KEY = 'academy_community'
+
+/** Linkul grupului privat (WhatsApp) — îl primesc doar membrii activi. */
+async function communityUrl(admin: ReturnType<typeof createAdminClient>): Promise<string | null> {
+  const { data } = await admin.from('platform_settings').select('value').eq('key', COMMUNITY_KEY).maybeSingle()
+  const url = (data?.value as any)?.url
+  return typeof url === 'string' && url ? url : null
+}
+
 export async function getMyMembership(): Promise<
   | { error: string }
-  | { success: true; active: boolean; until: string | null; canceling: boolean; hasSubscription: boolean; price: number }
+  | { success: true; active: boolean; community: string | null; until: string | null; canceling: boolean; hasSubscription: boolean; price: number }
 > {
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
@@ -20,9 +29,11 @@ export async function getMyMembership(): Promise<
   if (error) return { error: /academy_sub/.test(error.message) ? 'Rulează întâi SQL 64 (Academy Member).' : error.message }
   if (!inf) return { error: 'Contul de creator nu există.' }
   const active = isAcademyMember(inf)
+  const community = active ? await communityUrl(admin) : null
   return {
     success: true,
     active,
+    community,
     until: inf.badge_expires_at ?? null,
     canceling: !!inf.academy_cancel_at_period_end,
     hasSubscription: !!inf.academy_sub_id && inf.academy_sub_status !== 'canceled',
@@ -34,7 +45,7 @@ export async function getMyMembership(): Promise<
 
 
 export type AdminAcademyMember = {
-  id: string; name: string | null; email: string | null; instagram: string | null; slug: string | null
+  id: string; name: string | null; email: string | null; phone: string | null; instagram: string | null; slug: string | null
   active: boolean; until: string | null; since: string | null
   status: 'activ' | 'se_opreste' | 'plata_esuata' | 'anulat' | 'manual' | 'expirat'
   hasSubscription: boolean
@@ -47,7 +58,7 @@ export async function adminAcademyMembers(): Promise<{ error: string } | { succe
   if ('error' in auth) return auth
   const admin = createAdminClient()
   const { data: infs, error } = await admin.from('influencers')
-    .select('id, name, email, instagram_handle, slug, is_verified, badge_expires_at, verified_at, academy_sub_id, academy_sub_status, academy_cancel_at_period_end')
+    .select('id, name, email, phone, instagram_handle, slug, is_verified, badge_expires_at, verified_at, academy_sub_id, academy_sub_status, academy_cancel_at_period_end')
     .or('academy_sub_id.not.is.null,badge_expires_at.not.is.null')
     .limit(2000)
   if (error) return { error: /academy_sub/.test(error.message) ? 'Rulează întâi SQL 64 (Academy Member).' : error.message }
@@ -66,7 +77,7 @@ export async function adminAcademyMembers(): Promise<{ error: string } | { succe
       : i.academy_sub_id ? 'anulat' : 'expirat'
     const inv = byInf.get(i.id) || []
     return {
-      id: i.id, name: i.name, email: i.email, instagram: i.instagram_handle, slug: i.slug,
+      id: i.id, name: i.name, email: i.email, phone: i.phone, instagram: i.instagram_handle, slug: i.slug,
       active, until: i.badge_expires_at, since: i.verified_at, status, hasSubscription: hasSub,
       payments: inv.length, totalPaid: inv.reduce((s, x) => s + Number(x.amount || 0), 0), lastPaymentAt: inv[0]?.created_at || null,
       invoices: inv.slice(0, 24).map(x => ({ at: x.created_at, amount: Number(x.amount || 0), number: x.smartbill_number, error: x.error })),
@@ -120,4 +131,22 @@ export async function adminFindInfluencerByEmail(email: string) {
   if (!data?.length) return { error: 'Nu există creator cu emailul ăsta.' }
   if (data.length > 1) return { error: 'Mai mulți creatori au emailul ăsta. Verifică în Admin → Influenceri.' }
   return { success: true as const, id: data[0].id as string, name: data[0].name as string | null }
+}
+
+export async function adminGetAcademyCommunity() {
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth
+  return { success: true as const, url: await communityUrl(createAdminClient()) }
+}
+
+export async function adminSetAcademyCommunity(raw: string) {
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth
+  const url = String(raw || '').trim()
+  if (url && !/^https:\/\/(chat\.whatsapp\.com|t\.me|discord\.gg)\/[A-Za-z0-9_+\-]+\/?$/.test(url))
+    return { error: 'Pune linkul de invitație (ex.: https://chat.whatsapp.com/…).' }
+  const { error } = await createAdminClient().from('platform_settings')
+    .upsert({ key: COMMUNITY_KEY, value: { url: url || null }, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+  if (error) return { error: error.message }
+  return { success: true as const, url: url || null }
 }

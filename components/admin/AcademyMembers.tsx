@@ -2,7 +2,7 @@
 // Admin → Academie → Academy Members: cine a plătit, până când are acces, plățile și facturile SmartBill; acces gratuit manual.
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { RefreshCw, Search, Download } from 'lucide-react'
-import { adminAcademyMembers, adminGrantAcademy, adminRevokeAcademy, adminFindInfluencerByEmail, type AdminAcademyMember } from '@/app/actions/academy-member'
+import { adminAcademyMembers, adminGrantAcademy, adminRevokeAcademy, adminFindInfluencerByEmail, adminGetAcademyCommunity, adminSetAcademyCommunity, type AdminAcademyMember } from '@/app/actions/academy-member'
 
 const fmtD = (d: string | null) => d ? new Date(d).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
 const lei = (n: number) => `${n.toLocaleString('ro-RO', { maximumFractionDigits: 2 })} lei`
@@ -20,7 +20,7 @@ export default function AcademyMembers() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [q, setQ] = useState('')
-  const [filter, setFilter] = useState<'active' | 'all'>('active')
+  const [filter, setFilter] = useState<'active' | 'all' | 'remove'>('active')
   const [open, setOpen] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState('')
@@ -38,7 +38,7 @@ export default function AcademyMembers() {
 
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase()
-    return rows.filter(r => (filter === 'all' || r.active || r.status === 'plata_esuata')
+    return rows.filter(r => (filter === 'all' || (filter === 'remove' ? !r.active && r.status !== 'plata_esuata' : r.active || r.status === 'plata_esuata'))
       && (!t || [r.name, r.email, r.instagram].some(v => String(v || '').toLowerCase().includes(t))))
   }, [rows, q, filter])
 
@@ -98,10 +98,13 @@ export default function AcademyMembers() {
         <select className="aa-in" style={{ width: 'auto' }} value={filter} onChange={e => setFilter(e.target.value as any)}>
           <option value="active">Doar cu acces acum</option>
           <option value="all">Toți (și foști membri)</option>
+          <option value="remove">De scos din grupul WhatsApp</option>
         </select>
         <button className="aa-b" onClick={load} disabled={loading}><RefreshCw size={14} /> Reîncarcă</button>
         <button className="aa-b" onClick={csv} disabled={!shown.length}><Download size={14} /> CSV</button>
       </div>
+
+      <CommunityLink />
 
       <div className="bg-white border rounded-2xl" style={{ padding: 14, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <label className="aa-l" style={{ flex: '1 1 260px' }}>Acces gratuit pentru un creator (email exact)
@@ -128,7 +131,7 @@ export default function AcademyMembers() {
               const s = STATUS[r.status]
               return (<Fragment key={r.id}>
                 <tr>
-                  <td><b>{r.name || '—'}</b><div style={{ fontSize: 12, color: '#5a5780' }}>{r.email}{r.instagram ? ` · @${String(r.instagram).replace(/^@/, '')}` : ''}</div></td>
+                  <td><b>{r.name || '—'}</b><div style={{ fontSize: 12, color: '#5a5780' }}>{r.phone ? `${r.phone} · ` : ''}{r.email}{r.instagram ? ` · @${String(r.instagram).replace(/^@/, '')}` : ''}</div></td>
                   <td><span className="am-chip" title={s.hint} style={{ background: s.bg, color: s.fg }}>{s.label}</span></td>
                   <td>{fmtD(r.until)}</td>
                   <td>{fmtD(r.since)}</td>
@@ -175,4 +178,30 @@ function GrantByEmail({ email, months, onGrant, disabled }: { email: string; mon
     <button className="aa-b p" onClick={go} disabled={disabled || !email.includes('@')}>Dă acces</button>
     {msg && <span style={{ fontSize: 13, color: '#9b1c1c', fontWeight: 700 }}>{msg}</span>}
   </>)
+}
+
+/** Linkul grupului privat: îl văd doar membrii activi, în Academie. */
+function CommunityLink() {
+  const [url, setUrl] = useState('')
+  const [saved, setSaved] = useState<string | null>(null)
+  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { adminGetAcademyCommunity().then((r: any) => { if (r.success) { setUrl(r.url || ''); setSaved(r.url || '') } }).catch(() => {}) }, [])
+  async function save() {
+    setBusy(true); setMsg(null)
+    const r: any = await adminSetAcademyCommunity(url).catch(() => ({ error: 'Nu am putut salva.' }))
+    setBusy(false)
+    if (r.error) { setMsg({ ok: false, t: r.error }); return }
+    setSaved(r.url || ''); setMsg({ ok: true, t: r.url ? 'Salvat. Membrii activi văd butonul „Intră în grup” în Academie.' : 'Linkul a fost scos.' })
+  }
+  return (
+    <div className="bg-white border rounded-2xl" style={{ padding: 14, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+      <label className="aa-l" style={{ flex: '1 1 320px' }}>💬 Linkul grupului privat (îl văd doar membrii activi)
+        <input className="aa-in" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://chat.whatsapp.com/…" />
+      </label>
+      <button className="aa-b p" onClick={save} disabled={busy || url.trim() === (saved || '')}>{busy ? 'Se salvează…' : 'Salvează linkul'}</button>
+      {msg && <span style={{ fontSize: 13, fontWeight: 700, color: msg.ok ? '#14532d' : '#9b1c1c', flexBasis: '100%' }}>{msg.t}</span>}
+      <span style={{ fontSize: 12, color: '#5a5780', flexBasis: '100%' }}>Dacă linkul scapă: în WhatsApp → Invite via link → Reset link, apoi pune aici linkul nou.</span>
+    </div>
+  )
 }
