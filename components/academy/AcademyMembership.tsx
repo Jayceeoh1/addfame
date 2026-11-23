@@ -44,6 +44,10 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
     load()
     try { setReturned(new URLSearchParams(window.location.search).get('abonament')) } catch { /* */ }
   }, [load])
+  // anunțăm meniul (layout-ul) că bifa e activă, ca să nu mai arate butonul de abonare fără refresh
+  useEffect(() => {
+    if (st?.active) window.dispatchEvent(new CustomEvent('addfame:academy-member', { detail: { until: st.until } }))
+  }, [st?.active, st?.until])
   // statistici: creatorul (care nu e membru) a ajuns cu ochii pe ofertă
   useEffect(() => {
     const el = offerRef.current

@@ -122,6 +122,16 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Academia anunță când creatorul a devenit Academy Member (ex.: imediat după plată)
+  useEffect(() => {
+    const on = (e: Event) => {
+      const until = (e as CustomEvent).detail?.until ?? null
+      setProfile(prev => prev ? { ...prev, is_verified: true, badge_expires_at: until } : prev)
+    }
+    window.addEventListener('addfame:academy-member', on)
+    return () => window.removeEventListener('addfame:academy-member', on)
+  }, [])
+
   useEffect(() => {
     const sb = createClient()
     let cancelled = false
@@ -144,6 +154,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
             avatar: data.avatar || null,
             is_verified: data.is_verified && data.badge_expires_at && new Date(data.badge_expires_at) > new Date() || false,
             wallet_balance: data.wallet_balance || 0,
+            badge_expires_at: data.badge_expires_at || null,
           })
         })
 
@@ -374,7 +385,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
                 </div>
                 {profile?.badge_expires_at && (
                   <span className="text-[10px] text-amber-500 font-semibold">
-                    Expiră {new Date(profile.badge_expires_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}
+                    Activ până pe {new Date(profile.badge_expires_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}
                   </span>
                 )}
               </div>
