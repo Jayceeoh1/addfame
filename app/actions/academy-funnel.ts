@@ -63,7 +63,7 @@ export async function adminAcademyFunnel(days: number) {
   const people: FunnelPerson[] = []
   for (let k = 0; k < ids.length; k += 500) {
     const { data: infs } = await admin.from('influencers')
-      .select('id, name, email, phone, instagram_handle, is_verified, badge_expires_at').in('id', ids.slice(k, k + 500))
+      .select('id, name, email, phone, instagram_handle, is_verified, badge_expires_at, academy_free_until').in('id', ids.slice(k, k + 500))
     for (const i of infs || []) {
       const member = isAcademyMember(i)
       if (member) continue

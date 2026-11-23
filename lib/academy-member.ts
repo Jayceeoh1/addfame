@@ -6,9 +6,16 @@ export const ACADEMY_LAUNCH_PRICE_RON = 125
 export const ACADEMY_LAUNCH_SPOTS = 50
 export const ACADEMY_BADGE_LABEL = 'Academy Member'
 
-/** Membru = bifa plătită activă (is_verified + badge_expires_at în viitor). */
-export function isAcademyMember(inf: { is_verified?: boolean | null; badge_expires_at?: string | null } | null | undefined, now = new Date()): boolean {
+type MemberFields = { is_verified?: boolean | null; badge_expires_at?: string | null; academy_free_until?: string | null }
+
+/** Abonament PLĂTIT activ (is_verified + badge_expires_at în viitor) — doar el primește bifa verde pe profil. */
+export function isPaidAcademyMember(inf: MemberFields | null | undefined, now = new Date()): boolean {
   return !!inf?.is_verified && !!inf.badge_expires_at && new Date(inf.badge_expires_at) > now
+}
+
+/** Membru = abonament plătit activ SAU acces gratuit dat din admin (academy_free_until în viitor): vede lecțiile pentru membri. */
+export function isAcademyMember(inf: MemberFields | null | undefined, now = new Date()): boolean {
+  return isPaidAcademyMember(inf, now) || (!!inf?.academy_free_until && new Date(inf.academy_free_until) > now)
 }
 
 export type LessonLock = null | 'soon' | 'members'

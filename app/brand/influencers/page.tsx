@@ -1,4 +1,5 @@
 'use client'
+import AcademyCheck, { isPaidMember } from '@/components/shared/AcademyCheck'
 import { campaignName } from '@/lib/campaign-name'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
@@ -250,9 +251,9 @@ function InfluencerDrawer({ influencer, campaigns, savedIds, onClose, onSave, on
             <Face influencer={influencer} size={64} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="bu-row" style={{ gap: 8, flexWrap: 'wrap' }}>
-                <h3 style={{ fontSize: 20, fontWeight: 800 }}>{influencer.name}</h3>
-                {influencer.is_verified && (
-                  <span className="bu-chip" style={{ background: '#efeaff', color: '#4423c4' }}>🎓 Academy Member</span>
+                <h3 style={{ fontSize: 20, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 6 }}>{influencer.name}{isPaidMember(influencer as any) && <AcademyCheck size={20} />}</h3>
+                {isPaidMember(influencer as any) && (
+                  <span className="bu-chip" style={{ background: '#e3f8ec', color: '#0f6b37' }}><AcademyCheck size={13} /> Academy Member</span>
                 )}
                 {influencer.approval_status === 'approved' && !influencer.is_verified && (
                   <CheckCircle className="w-4 h-4" style={{ color: '#5a35e6' }} />
@@ -453,8 +454,8 @@ function InfluencerCard({ influencer, isSaved, onSave, onClick, stats }: {
         <Face influencer={influencer} size={52} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="bu-row" style={{ gap: 6 }}>
-            <h3 style={{ fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{influencer.name}</h3>
-            {influencer.approval_status === 'approved' && <CheckCircle className="w-3.5 h-3.5" style={{ color: '#1d4fb8', flex: 'none' }} />}
+            <h3 style={{ fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{influencer.name}</span>{isPaidMember(influencer as any) && <AcademyCheck size={16} />}</h3>
+            {influencer.approval_status === 'approved' && !isPaidMember(influencer as any) && <CheckCircle className="w-3.5 h-3.5" style={{ color: '#1d4fb8', flex: 'none' }} />}
           </div>
           {influencer.city && (
             <div className="bu-row bu-xs" style={{ gap: 3, color: '#6a6690', marginTop: 2 }}>
@@ -482,7 +483,7 @@ function InfluencerCard({ influencer, isSaved, onSave, onClick, stats }: {
       <div className="bu-row" style={{ gap: 6, flexWrap: 'wrap' }}>
         <TierChip of={influencer} />
         <RatingChip of={influencer} />
-        {influencer.is_verified && (!(influencer as any).badge_expires_at || new Date((influencer as any).badge_expires_at) > new Date()) && <span className="bu-chip" style={{ background: '#efeaff', color: '#4423c4' }}>🎓 Academy Member</span>}
+        {isPaidMember(influencer as any) && <span className="bu-chip" style={{ background: '#e3f8ec', color: '#0f6b37' }}><AcademyCheck size={13} /> Academy Member</span>}
       </div>
 
       {influencer.bio && <p className="bu-muted bu-sm" style={{ margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{influencer.bio}</p>}

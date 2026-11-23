@@ -45,6 +45,11 @@ export async function academyInvoicePaid(sb: SupabaseClient, inv: Stripe.Invoice
   const until = memberUntil(periodEnd)
   const first = !inf.badge_expires_at || new Date(inf.badge_expires_at) < new Date()
   const now = new Date().toISOString()
+  // 0 lei (cod promoțional 100%): acces la cursuri, dar fără bifa verde — bifa e doar pentru abonamentele plătite
+  if ((inv.amount_paid || 0) <= 0) {
+    await sb.from('influencers').update({ academy_free_until: until, academy_sub_id: sid, academy_sub_status: 'active' }).eq('id', inf.id)
+    return true
+  }
   await sb.from('influencers').update({
     is_verified: true,
     badge_expires_at: !inf.badge_expires_at || new Date(inf.badge_expires_at) < new Date(until) ? until : inf.badge_expires_at,

@@ -17,7 +17,7 @@ async function meCreator() {
   if (!user) return null
   const admin = createAdminClient()
   const { data: inf } = await admin.from('influencers')
-    .select('id, user_id, name, instagram_handle, is_verified, badge_expires_at')
+    .select('id, user_id, name, instagram_handle, is_verified, badge_expires_at, academy_free_until')
     .eq('user_id', user.id).maybeSingle()
   return inf ? { admin, inf } : null
 }
@@ -106,7 +106,7 @@ export async function adminAcademyRequests(): Promise<{ error: string } | { succ
   if (error) return { error: NOT_READY }
   const ids = [...new Set((data || []).map((r: any) => r.influencer_id))]
   const { data: infs } = ids.length
-    ? await admin.from('influencers').select('id, name, email, instagram_handle, avatar, is_verified, badge_expires_at').in('id', ids)
+    ? await admin.from('influencers').select('id, name, email, instagram_handle, avatar, is_verified, badge_expires_at, academy_free_until').in('id', ids)
     : { data: [] as any[] }
   const byId = new Map((infs || []).map((i: any) => [i.id, i]))
   return {

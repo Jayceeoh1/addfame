@@ -140,7 +140,7 @@ export default function AcademyMembers() {
                   <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
                     {r.payments > 0 && <button className="aa-b" style={{ height: 32 }} onClick={() => setOpen(open === r.id ? null : r.id)}>Plăți</button>}{' '}
                     <button className="aa-b" style={{ height: 32 }} disabled={busy === r.id} onClick={() => grant(r.id, 1)} title="Prelungește gratuit cu o lună">+1 lună</button>{' '}
-                    {r.active && !r.hasSubscription && <button className="aa-b r" style={{ height: 32 }} disabled={busy === r.id} onClick={() => revoke(r.id)}>Oprește</button>}
+                    {r.status === 'manual' && <button className="aa-b r" style={{ height: 32 }} disabled={busy === r.id} onClick={() => revoke(r.id)}>Oprește</button>}
                   </td>
                 </tr>
                 {open === r.id && (
@@ -161,7 +161,7 @@ export default function AcademyMembers() {
         </table>
       </div>
       <p style={{ fontSize: 12.5, color: '#5a5780', margin: 0 }}>
-        Plata și reînnoirea vin automat din Stripe; la fiecare plată se emite factura SmartBill. „+1 lună” dă acces gratuit (fără plată și fără factură). Un abonament plătit se anulează din Stripe sau de către creator.
+        Plata și reînnoirea vin automat din Stripe; la fiecare plată se emite factura SmartBill. „+1 lună” dă acces gratuit la cursuri (fără plată, fără factură și fără bifa verde, care e doar pentru abonamentele plătite). Un abonament plătit se anulează din Stripe sau de către creator.
       </p>
     </div>
   )

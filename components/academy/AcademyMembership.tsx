@@ -46,8 +46,8 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
   }, [load])
   // anunțăm meniul (layout-ul) că bifa e activă, ca să nu mai arate butonul de abonare fără refresh
   useEffect(() => {
-    if (st?.active) window.dispatchEvent(new CustomEvent('addfame:academy-member', { detail: { until: st.until } }))
-  }, [st?.active, st?.until])
+    if (st?.active && st?.paid) window.dispatchEvent(new CustomEvent('addfame:academy-member', { detail: { until: st.until } }))
+  }, [st?.active, st?.paid, st?.until])
   // statistici: creatorul (care nu e membru) a ajuns cu ochii pe ofertă
   useEffect(() => {
     const el = offerRef.current
@@ -125,6 +125,7 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
         <p className="am-muted">
           {st.canceling
             ? <>Abonamentul nu se mai reînnoiește. Accesul și bifa rămân active până pe <b>{st.until ? fmtDate(st.until) : '—'}</b>.</>
+            : !st.paid ? <>Ai acces gratuit la cursurile pentru membri până pe <b>{st.until ? fmtDate(st.until) : '—'}</b>.</>
             : <>Accesul și bifa sunt active până pe <b>{st.until ? fmtDate(st.until) : '—'}</b>, apoi abonamentul se reînnoiește automat.</>}
         </p>
         {st.community && (

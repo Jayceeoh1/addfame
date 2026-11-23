@@ -25,3 +25,16 @@ describe('Academy Member', () => {
     expect(memberUntil(Date.parse('2026-12-23T12:00:00Z') / 1000)).toBe('2026-12-24T12:00:00.000Z')
   })
 })
+
+import { isPaidAcademyMember } from '@/lib/academy-member'
+describe('acces gratuit vs plătit', () => {
+  const later = new Date(Date.now() + 86400000).toISOString()
+  it('gratuit: vede lecțiile, fără bifă', () => {
+    expect(isAcademyMember({ academy_free_until: later })).toBe(true)
+    expect(isPaidAcademyMember({ academy_free_until: later })).toBe(false)
+  })
+  it('plătit: bifă + lecții', () => {
+    expect(isPaidAcademyMember({ is_verified: true, badge_expires_at: later })).toBe(true)
+    expect(isAcademyMember({ is_verified: true, badge_expires_at: later })).toBe(true)
+  })
+})

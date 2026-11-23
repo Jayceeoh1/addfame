@@ -19,7 +19,7 @@ async function me() {
   if (!user) return null
   const admin = createAdminClient()
   const { data: inf } = await admin.from('influencers')
-    .select('id, user_id, name, avatar, instagram_handle, approval_status, creator_score, academy_certified_at, academy_tier, academy_cert_code, is_verified, badge_expires_at, academy_cancel_at_period_end')
+    .select('id, user_id, name, avatar, instagram_handle, approval_status, creator_score, academy_certified_at, academy_tier, academy_cert_code, is_verified, badge_expires_at, academy_free_until, academy_cancel_at_period_end')
     .eq('user_id', user.id).maybeSingle()
   return inf ? { admin, inf } : null
 }

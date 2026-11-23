@@ -1,5 +1,6 @@
 'use client'
 
+import AcademyCheck from '@/components/shared/AcademyCheck'
 import { useEffect, useState } from 'react'
 import PWAInstallModal from '@/components/PWAInstallModal'
 import Link from 'next/link'
@@ -379,7 +380,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
               <div className="flex flex-col gap-1 px-3 py-2 rounded-xl bg-amber-50">
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-400 flex-shrink-0" />
-                  <span className="text-xs font-black text-amber-700">🎓 Academy Member</span>
+                  <span className="text-xs font-black text-amber-700" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><AcademyCheck size={15} /> Academy Member</span>
                   <Check className="w-3.5 h-3.5 text-amber-500 ml-auto" />
                 </div>
                 {profile?.badge_expires_at && (

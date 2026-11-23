@@ -1,6 +1,7 @@
 'use client'
 import { AvatarWithBadge, AcademyTierChip } from '@/components/shared/CreatorBadge'
 // @ts-nocheck
+import AcademyCheck from '@/components/shared/AcademyCheck'
 import { parseCount, getTier, formatCount } from '@/lib/tiers'
 
 import React, { useEffect, useState } from 'react'
@@ -427,9 +428,9 @@ export default function PublicInfluencerProfile() {
             )}
             <div className="pf-id">
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-                <h1 className="pf-name">{inf.name}</h1>
+                <h1 className="pf-name" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{inf.name}{isVerified && <AcademyCheck size={26} />}</h1>
                 {tier && <span className="pf-chip" style={{ background: tier.bg, color: tier.fg }}>{tier.label} · {formatCount(Math.max(...platCards.map(followersOf)))}</span>}
-                {isVerified && <span className="pf-chip" style={{ background: '#efeaff', color: '#4423c4' }}>🎓 Academy Member</span>}
+                {isVerified && <span className="pf-chip" style={{ background: '#e3f8ec', color: '#0f6b37' }}><AcademyCheck size={14} /> Academy Member</span>}
                 {isIdentityVerified && <span className="pf-chip" style={{ background: '#e8f0ff', color: '#1d4ed8' }}><Shield size={12} /> ID verificat</span>}
                 {inf.academy_certified_at && <AcademyTierChip tier={inf.academy_tier || 'bronze'} style={{ height: 26, padding: '0 10px', fontSize: 12 }} />}
               </div>
