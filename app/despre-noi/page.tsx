@@ -61,7 +61,7 @@ const TEAM: Member[] = [
 
 const VALUES = [
   { Icon: Handshake, title: 'Transparență totală', desc: 'Fără surprize. Costurile, plățile și procesele sunt clare de la început — atât pentru branduri, cât și pentru influenceri.' },
-  { Icon: CreditCard, title: 'Prețuri transparente', desc: 'Costul campaniei e afișat înainte de publicare. Fără abonamente, fără costuri ascunse.' },
+  { Icon: CreditCard, title: 'Prețuri transparente', desc: 'Costul campaniei e afișat înainte de publicare. Fără costuri ascunse.' },
   { Icon: MapPin, title: 'Făcut pentru România', desc: 'Înțelegem piața locală. Suntem construiți pentru branduri și influenceri din România, cu suport în română.' },
   { Icon: Zap, title: 'Simplitate radicală', desc: 'De la brief la plată în câteva click-uri. Platformele complexe pierd timp. Noi câștigăm timp.' },
 ]

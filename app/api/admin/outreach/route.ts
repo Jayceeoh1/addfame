@@ -218,7 +218,7 @@ const BRAND_TEMPLATES: Record<string, Record<string, { subject: string; html: (d
           <h1 style="font-size:22px;font-weight:900;margin:0 0 16px;color:#111">Bună${d.contactName ? `, ${d.contactName}` : ''}!</h1>
           <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 14px">Suntem <strong>AddFame</strong> — o platformă românească la început de drum, construită special pentru branduri și influenceri din România.</p>
           <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 14px">Nu suntem o corporație. Suntem o echipă mică, pasionată, care vrea să facă influencer marketing-ul <strong>accesibil, corect și transparent</strong> — de la branduri mici până la cele mari.</p>
-          <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 20px">Tocmai am lansat și vrem să creștem împreună cu primii noștri parteneri. De aceea prețul nostru e simplu: <strong>o taxă fixă per influencer</strong>, fără comisioane procentuale și fără abonamente — știi costul total înainte să publici.</p>
+          <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 20px">Tocmai am lansat și vrem să creștem împreună cu primii noștri parteneri. De aceea prețul nostru e simplu: <strong>o taxă fixă per influencer</strong>, fără comisioane procentuale — știi costul total înainte să publici.</p>
           ${STATS_BRAND()}
           <div style="background:#fff7ed;border-radius:14px;padding:20px;margin:0 0 24px;border:1.5px solid #fed7aa">
             <p style="font-weight:900;color:#111;margin:0 0 10px;font-size:14px">Pe AddFame găsești:</p>
@@ -242,7 +242,7 @@ const BRAND_TEMPLATES: Record<string, Record<string, { subject: string; html: (d
           <h1 style="font-size:22px;font-weight:900;margin:0 0 16px;color:#111">Hi${d.contactName ? ` ${d.contactName}` : ''}!</h1>
           <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 14px">We're <strong>AddFame</strong> — a Romanian startup just launched, built specifically for brands and influencers in Romania.</p>
           <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 14px">We're not a corporation. We're a small, passionate team that wants to make influencer marketing <strong>accessible, fair, and transparent</strong> for everyone.</p>
-          <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 20px">We just launched and want to grow together with our first partners. That's why our pricing is simple: <strong>a fixed fee per influencer</strong>, no percentage commissions and no subscriptions — you see the total cost before you publish.</p>
+          <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 20px">We just launched and want to grow together with our first partners. That's why our pricing is simple: <strong>a fixed fee per influencer</strong>, no percentage commissions — you see the total cost before you publish.</p>
           ${STATS_BRAND()}
           <div style="text-align:center;margin:0 0 20px">
             <a href="${APP_URL}/auth/register" style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg,#f97316,#ec4899);color:white;text-decoration:none;border-radius:14px;font-weight:900;font-size:15px">Let's grow together →</a>

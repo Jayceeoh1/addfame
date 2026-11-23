@@ -15,7 +15,7 @@ const _geistMono = localFont({ src: '../lib/fonts/geist-mono-latin-wght-normal.w
 
 export const metadata: Metadata = {
   title: {
-    default: 'AddFame — Influencer Marketing fără abonamente',
+    default: 'AddFame — Influencer Marketing fără agenție',
     template: '%s | AddFame',
   },
   manifest: '/manifest.json',
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'AddFame',
   },
-  description: 'Conectăm branduri cu influenceri români verificați. Campanii cu micro-influenceri reali, fără agenție și fără abonamente.',
+  description: 'Conectăm branduri cu influenceri români verificați. Campanii cu micro-influenceri reali, fără agenție.',
   keywords: [
     'influencer marketing', 'marketing influenceri', 'campanii influenceri',
     'influencer marketing Romania', 'platform influenceri Romania',
@@ -41,14 +41,14 @@ export const metadata: Metadata = {
     locale: 'ro_RO',
     url: 'https://addfame.ro',
     siteName: 'AddFame',
-    title: 'AddFame — Influencer Marketing fără abonamente',
-    description: 'Conectăm branduri cu influenceri români verificați. Campanii cu micro-influenceri reali, fără agenție și fără abonamente.',
+    title: 'AddFame — Influencer Marketing fără agenție',
+    description: 'Conectăm branduri cu influenceri români verificați. Campanii cu micro-influenceri reali, fără agenție.',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'AddFame — Influencer Marketing Platform' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AddFame — Influencer Marketing fără abonamente',
-    description: 'Conectăm branduri cu influenceri români verificați. Campanii cu micro-influenceri reali, fără agenție și fără abonamente.',
+    title: 'AddFame — Influencer Marketing fără agenție',
+    description: 'Conectăm branduri cu influenceri români verificați. Campanii cu micro-influenceri reali, fără agenție.',
     images: ['/og-image.png'],
   },
   robots: {

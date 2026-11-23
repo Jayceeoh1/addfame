@@ -195,7 +195,7 @@ export default function HomePage() {
             {s(stats?.influencers, '+')} influenceri · {s(stats?.brands)} branduri
           </span>
           <h1 className="af-h1">Oameni reali care îți recomandă <span className="af-grad-text">produsul.</span></h1>
-          <p className="af-lead">Alegi creatorii potriviți pentru brandul tău, iar ei îți prezintă produsul în postări naturale, direct din conturile lor. Fără agenție, fără abonament.</p>
+          <p className="af-lead">Alegi creatorii potriviți pentru brandul tău, iar ei îți prezintă produsul în postări naturale, direct din conturile lor. Fără agenție.</p>
           <div className="af-row">
             <Link href="/auth/register?type=brand" className="af-btn af-btn-ink">Lansează o campanie <ArrowRight size={18} /></Link>
             <Link href="/auth/register?type=influencer" className="af-btn af-btn-ghost">Sunt influencer</Link>

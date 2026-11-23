@@ -23,7 +23,7 @@ const INFL_STEPS = [
 ]
 
 const FAQ = [
-  { q: 'Cât costă AddFame?', a: 'Costul depinde de câți influenceri alegi și îl vezi înainte să publici campania. Fără abonamente. Locurile neocupate se returnează la final.' },
+  { q: 'Cât costă AddFame?', a: 'Costul depinde de câți influenceri alegi și îl vezi înainte să publici campania. Locurile neocupate se returnează la final.' },
   { q: 'Cum primesc banii ca influencer?', a: 'După ce brandul confirmă livrarea, echipa AddFame se ocupă de plata ta. Înscrierea e gratuită pentru creatori.' },
   { q: 'De câți urmăritori am nevoie?', a: 'Minimum 1.000 urmăritori pe orice platformă (Instagram, TikTok, YouTube etc.).' },
   { q: 'Ce se întâmplă dacă influencerul nu livrează?', a: 'Echipa AddFame intervine: influencerul primește un avertisment sau este suspendat, iar brandul poate selecta alt influencer în locul lui.' },

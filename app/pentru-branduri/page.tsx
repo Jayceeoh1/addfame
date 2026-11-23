@@ -9,10 +9,10 @@ import RevealOnScroll from '@/components/site/RevealOnScroll'
 
 export const metadata: Metadata = {
   title: 'Pentru Branduri — AddFame | Influencer Marketing România',
-  description: 'Campanii cu micro-influenceri români, de la brief la raport, într-un singur loc. Preț fix per influencer, fără abonamente.',
+  description: 'Campanii cu micro-influenceri români, de la brief la raport, într-un singur loc. Preț fix per influencer.',
 }
 
-const LEAD = 'Găsești creatorii potriviți, le trimiți produsul, aprobi conținutul și primești raportul — totul dintr-un singur loc, fără abonamente și fără mesaje pierdute prin DM.'
+const LEAD = 'Găsești creatorii potriviți, le trimiți produsul, aprobi conținutul și primești raportul — totul dintr-un singur loc, fără mesaje pierdute prin DM.'
 
 const STEPS = [
   { Icon: PenLine, title: 'Scrii brieful', desc: 'Produsul, ce trebuie să arate creatorii și ce livrează. Poți da același brief tuturor sau câte un script diferit fiecărui creator.' },
@@ -34,7 +34,7 @@ const FAQ = [
   { q: 'Cât durează să lansez prima campanie?', a: 'Contul îl faci în câteva minute, iar campania o descrii în același timp. Creatorii încep să aplice imediat ce campania e publicată; ritmul îl stabilești tu, prin cât de repede alegi creatorii.' },
   { q: 'Pierd controlul asupra conținutului?', a: 'Nu. Scrii brieful (sau câte un brief pentru fiecare creator), vezi draftul înainte de publicare și poți cere modificări. Creatorul confirmă că a citit brieful înainte să posteze.' },
   { q: 'Ce se întâmplă dacă un creator nu livrează?', a: 'Fiecare colaborare are un termen clar. Dacă e nevoie, termenul se poate prelungi; dacă tot nu livrează, se deschide un litigiu și echipa AddFame intervine.' },
-  { q: 'Cât costă?', a: 'Înregistrarea e gratuită și nu există abonament. Plătești o taxă fixă pentru fiecare influencer inclus în campanie, pe care o vezi înainte să publici. Pentru campanii mari îți facem o ofertă personalizată.' },
+  { q: 'Cât costă?', a: 'Înregistrarea e gratuită. Plătești o taxă fixă pentru fiecare influencer inclus în campanie, pe care o vezi înainte să publici. Pentru campanii mari îți facem o ofertă personalizată.' },
   { q: 'Pot folosi materialele în reclame?', a: 'Da. Drepturile de utilizare se stabilesc în campanie, iar creatorii le acceptă înainte să trimită postarea, așa că poți refolosi videoclipurile în reclame plătite.' },
 ]
 
@@ -215,7 +215,6 @@ export default function PentruBranduri() {
                 <Link href="/demo-campanie" className="pb-btn pb-btn-g">Vezi o campanie demo</Link>
               </div>
               <div className="pb-trust">
-                <span><Check size={16} aria-hidden="true" /> Fără abonament</span>
                 <span><Check size={16} aria-hidden="true" /> Preț fix per influencer</span>
                 <span><Check size={16} aria-hidden="true" /> Fără card de credit</span>
               </div>
@@ -273,7 +272,7 @@ export default function PentruBranduri() {
                 <p>Micro-influencerii din nișa și orașul tău văd campania și aplică singuri. Tu vezi profilul, audiența și istoricul fiecăruia, apoi alegi.</p>
               </div>
               <div className="pb-card c-b rv d1">
-                <div className="pb-art"><div className="art-price"><b>0 lei</b><span>abonament lunar</span></div></div>
+                <div className="pb-art"><div className="art-price"><b>0 lei</b><span>înregistrarea</span></div></div>
                 <span className="pb-ic"><Wallet size={20} aria-hidden="true" /></span>
                 <h3>Preț fix, fără surprize</h3>
                 <p>Plătești o taxă fixă pentru fiecare influencer și vezi costul total înainte să publici.</p>
