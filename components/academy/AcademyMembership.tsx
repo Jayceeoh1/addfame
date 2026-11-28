@@ -166,10 +166,10 @@ export default function AcademyMembership({ compact = false }: { compact?: boole
       </div>
       {st.launch && (
         <div className="am-launch">
-          <div className="am-launch-t">🔥 <b>Ofertă de lansare, până pe 1 decembrie:</b> primii {st.launch.total} membri plătesc {st.launch.firstMonth} lei prima lună, apoi {st.price} lei / lună.</div>
+          <div className="am-launch-t">🔥 <b>Ofertă de lansare, până pe 1 decembrie:</b> ultimele locuri rămase plătesc {st.launch.firstMonth} lei prima lună, apoi {st.price} lei / lună.</div>
           {st.launch.endsAt && <LaunchCountdown endsAt={st.launch.endsAt} onEnd={load} />}
           <div className="am-launch-bar" aria-hidden="true"><i style={{ width: `${Math.round(((st.launch.total - st.launch.left) / st.launch.total) * 100)}%` }} /></div>
-          <div className="am-launch-n">{st.launch.left === 1 ? 'A mai rămas un singur loc' : `Mai sunt ${st.launch.left} locuri din ${st.launch.total}`}</div>
+          <div className="am-launch-n">{st.launch.left === 1 ? 'A mai rămas un singur loc' : `Mai sunt doar ${st.launch.left} locuri la ${st.launch.firstMonth} lei`}</div>
         </div>
       )}
       <h3>Devino {ACADEMY_BADGE_LABEL}</h3>

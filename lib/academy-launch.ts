@@ -6,10 +6,10 @@ import { ACADEMY_PRICE_RON, ACADEMY_LAUNCH_PRICE_RON, ACADEMY_LAUNCH_SPOTS, ACAD
 
 const COUPON_ID = 'ACADEMY_LAUNCH_125'
 /**
- * Câte locuri are oferta în total (26 noiembrie: redusă de la 50 la 14 — 9 deja ocupate + 5 rămase).
+ * Câte locuri are oferta în total (28 noiembrie: 9 deja ocupate + ultimele 3 locuri).
  * Se poate schimba fără cod, din Vercel: ACADEMY_LAUNCH_TOTAL.
  */
-const LAUNCH_TOTAL = Math.max(0, Math.min(ACADEMY_LAUNCH_SPOTS, Number(process.env.ACADEMY_LAUNCH_TOTAL) || 14))
+const LAUNCH_TOTAL = Math.max(0, Math.min(ACADEMY_LAUNCH_SPOTS, Number(process.env.ACADEMY_LAUNCH_TOTAL) || 12))
 
 let cache: { at: number; left: number } | null = null
 

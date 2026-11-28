@@ -47,10 +47,10 @@ export default function AcademyBannerCard() {
           <span className="acb-s">Cursuri noi în fiecare luni, feedback pe materiale, analiza profilului și comunitatea privată.</span>
         </>) : launch ? (<>
           <span className="acb-t">Devino {ACADEMY_BADGE_LABEL}: {launch.firstMonth} lei prima lună</span>
-          <span className="acb-s">Reducere la înscriere până pe 1 decembrie, doar pentru primii {launch.total} membri. Apoi {st.price} lei / lună. Cursuri noi în fiecare luni, feedback, analiza profilului și bifa verde pe profil.</span>
+          <span className="acb-s">Reducere la înscriere până pe 1 decembrie, pentru ultimele locuri rămase. Apoi {st.price} lei / lună. Cursuri noi în fiecare luni, feedback, analiza profilului și bifa verde pe profil.</span>
           {launch.endsAt && <span style={{ marginTop: 6 }}><LaunchCountdown endsAt={launch.endsAt} dark onEnd={() => getMyMembership().then(setSt).catch(() => {})} /></span>}
           <span className="acb-spots">
-            <b>🔥 {launch.left === 1 ? 'A mai rămas un singur loc' : `Mai sunt ${launch.left} locuri din ${launch.total}`}</b>
+            <b>🔥 {launch.left === 1 ? 'A mai rămas un singur loc' : `Mai sunt doar ${launch.left} locuri la ${launch.firstMonth} lei`}</b>
             <span className="acb-bar"><i style={{ width: `${Math.round((taken / launch.total) * 100)}%` }} /></span>
           </span>
         </>) : (<>
